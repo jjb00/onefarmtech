@@ -1,0 +1,20 @@
+export type DraftOrder = {
+  id: string;
+  code: string;
+  buyerName: string;
+  phone: string;
+  buyerType: string;
+  orderType: string;
+  produceItem: string;
+  produceGrade: string;
+  quantity: string;
+  unitPrice: string;
+  estimatedTotal: number;
+  paymentStatus: string;
+  fulfilmentStatus: string;
+  deliveryMethod: string;
+  deliveryNote: string;
+  whatsappPreview: string;
+  paymentInstruction: string;
+  createdAt: string;
+};

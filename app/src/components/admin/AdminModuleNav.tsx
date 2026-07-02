@@ -12,6 +12,11 @@ export const adminModuleLinks = [
     description: "Manually enter WhatsApp, phone, business, and group-buy orders.",
   },
   {
+    title: "Draft orders",
+    href: "/admin/drafts",
+    description: "Review local browser drafts before database integration.",
+  },
+  {
     title: "Customers",
     href: "/admin/customers",
     description: "Manage buyer profiles, credit terms, and business accounts.",
