@@ -1,83 +1,5 @@
 import Link from "next/link";
-
-const orders = [
-  {
-    code: "OFT-0001",
-    buyer: "Mama T Foods",
-    buyerType: "Restaurant",
-    items: "Tomatoes, pepper, onions",
-    orderType: "Recurring",
-    paymentStatus: "Deposit paid",
-    fulfilmentStatus: "Sourcing",
-    total: "₦185,000",
-    delivery: "Platform delivery",
-  },
-  {
-    code: "OFT-0002",
-    buyer: "Chika Household",
-    buyerType: "Large household",
-    items: "Irish potatoes - 10kg",
-    orderType: "Group-buy",
-    paymentStatus: "Fully paid",
-    fulfilmentStatus: "Minimum met",
-    total: "₦22,000",
-    delivery: "Pickup point",
-  },
-  {
-    code: "OFT-0003",
-    buyer: "Green Bowl Caterers",
-    buyerType: "Caterer",
-    items: "Yam - 50 tubers",
-    orderType: "Direct",
-    paymentStatus: "Unpaid",
-    fulfilmentStatus: "New order",
-    total: "₦310,000",
-    delivery: "Customer pickup",
-  },
-  {
-    code: "OFT-0004",
-    buyer: "Urban Mini Mart",
-    buyerType: "Retailer",
-    items: "Rice, beans, garri",
-    orderType: "Direct",
-    paymentStatus: "Credit approved",
-    fulfilmentStatus: "Ready for dispatch",
-    total: "₦460,000",
-    delivery: "Scheduled delivery",
-  },
-];
-
-const stats = [
-  { label: "New orders", value: "12" },
-  { label: "Paid / ready", value: "7" },
-  { label: "In sourcing", value: "5" },
-  { label: "Issues", value: "1" },
-];
-
-const adminModules = [
-  "Orders",
-  "Customers",
-  "Products",
-  "Farmers & suppliers",
-  "Group-buys",
-  "Payments",
-  "Deliveries",
-  "Complaints",
-];
-
-function statusClass(status: string) {
-  const normalized = status.toLowerCase();
-
-  if (normalized.includes("paid") || normalized.includes("approved")) {
-    return "bg-[#e7f3df] text-[#1f7a3f]";
-  }
-
-  if (normalized.includes("unpaid") || normalized.includes("issue")) {
-    return "bg-[#fff1d6] text-[#8a5a00]";
-  }
-
-  return "bg-white/10 text-white";
-}
+import { adminModules, mockOrders, mockStats, paymentStatusClass } from "@/data/mockOrders";
 
 export default function AdminPage() {
   return (
@@ -103,7 +25,7 @@ export default function AdminPage() {
         </div>
 
         <section className="mt-8 grid gap-4 md:grid-cols-4">
-          {stats.map((stat) => (
+          {mockStats.map((stat) => (
             <div key={stat.label} className="rounded-2xl bg-white/10 p-6">
               <p className="text-sm text-[#d8e8dc]">{stat.label}</p>
               <p className="mt-2 text-4xl font-bold">{stat.value}</p>
@@ -150,7 +72,7 @@ export default function AdminPage() {
               </thead>
 
               <tbody>
-                {orders.map((order) => (
+                {mockOrders.map((order) => (
                   <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
                     <td className="rounded-l-2xl px-4 py-4 font-bold">
                       {order.code}
@@ -163,7 +85,7 @@ export default function AdminPage() {
                     <td className="px-4 py-4">{order.orderType}</td>
                     <td className="px-4 py-4">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass(
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentStatusClass(
                           order.paymentStatus
                         )}`}
                       >

@@ -1,73 +1,5 @@
 import Link from "next/link";
-
-const orders = [
-  {
-    code: "OFT-0001",
-    buyer: "Mama T Foods",
-    buyerType: "Restaurant",
-    phone: "+234 800 000 0001",
-    items: "Tomatoes, pepper, onions",
-    orderType: "Recurring",
-    paymentStatus: "Deposit paid",
-    fulfilmentStatus: "Sourcing",
-    total: "₦185,000",
-    delivery: "Platform delivery",
-    date: "Today",
-  },
-  {
-    code: "OFT-0002",
-    buyer: "Chika Household",
-    buyerType: "Large household",
-    phone: "+234 800 000 0002",
-    items: "Irish potatoes - 10kg",
-    orderType: "Group-buy",
-    paymentStatus: "Fully paid",
-    fulfilmentStatus: "Minimum met",
-    total: "₦22,000",
-    delivery: "Pickup point",
-    date: "Today",
-  },
-  {
-    code: "OFT-0003",
-    buyer: "Green Bowl Caterers",
-    buyerType: "Caterer",
-    phone: "+234 800 000 0003",
-    items: "Yam - 50 tubers",
-    orderType: "Direct",
-    paymentStatus: "Unpaid",
-    fulfilmentStatus: "New order",
-    total: "₦310,000",
-    delivery: "Customer pickup",
-    date: "Yesterday",
-  },
-  {
-    code: "OFT-0004",
-    buyer: "Urban Mini Mart",
-    buyerType: "Retailer",
-    phone: "+234 800 000 0004",
-    items: "Rice, beans, garri",
-    orderType: "Direct",
-    paymentStatus: "Credit approved",
-    fulfilmentStatus: "Ready for dispatch",
-    total: "₦460,000",
-    delivery: "Scheduled delivery",
-    date: "Yesterday",
-  },
-];
-
-function paymentClass(status: string) {
-  const normalized = status.toLowerCase();
-
-  if (normalized.includes("paid") || normalized.includes("approved")) {
-    return "bg-[#e7f3df] text-[#1f7a3f]";
-  }
-
-  if (normalized.includes("unpaid")) {
-    return "bg-[#fff1d6] text-[#8a5a00]";
-  }
-
-  return "bg-[#f7f5ec] text-[#405348]";
-}
+import { mockOrders, paymentStatusClass } from "@/data/mockOrders";
 
 export default function AdminOrdersPage() {
   return (
@@ -154,7 +86,7 @@ export default function AdminOrdersPage() {
               </thead>
 
               <tbody>
-                {orders.map((order) => (
+                {mockOrders.map((order) => (
                   <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
                     <td className="rounded-l-2xl px-4 py-4 font-bold">
                       {order.code}
@@ -168,7 +100,7 @@ export default function AdminOrdersPage() {
                     <td className="px-4 py-4">{order.orderType}</td>
                     <td className="px-4 py-4">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentClass(
+                        className={`rounded-full px-3 py-1 text-xs font-semibold ${paymentStatusClass(
                           order.paymentStatus
                         )}`}
                       >
