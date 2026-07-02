@@ -1,31 +1,42 @@
 import Link from "next/link";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
-const whatsappMessage = encodeURIComponent(
-  "Hi OneFarmTech, I want to order farm produce.\n\nBuyer type:\nProduce needed:\nQuantity:\nDelivery area:\nPreferred delivery/pickup date:"
-);
-
-const whatsappNumber = "234XXXXXXXXXX";
+const navLinks = [
+  { href: "/faq", label: "FAQ" },
+  { href: "/login", label: "Login" },
+  { href: "/dashboard", label: "Buyer Dashboard" },
+  { href: "/admin", label: "Admin" },
+];
 
 export default function SiteHeader() {
   return (
-    <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6 text-[#102015]">
-      <Link href="/" className="text-2xl font-bold tracking-tight">
-        OneFarmTech
-      </Link>
+    <header className="bg-[#f7f5ec] px-6 py-5 text-[#102015]">
+      <section className="mx-auto flex max-w-6xl flex-col gap-4">
+        <div className="flex items-center justify-between gap-4">
+          <Link href="/" className="text-2xl font-bold tracking-tight">
+            OneFarmTech
+          </Link>
 
-      <nav className="hidden items-center gap-6 text-sm font-medium md:flex">
-        <Link href="/faq">FAQ</Link>
-        <Link href="/login">Login</Link>
-        <Link href="/dashboard">Buyer Dashboard</Link>
-        <Link href="/admin">Admin</Link>
-      </nav>
+          <a
+            href={buildWhatsAppLink()}
+            className="rounded-full bg-[#1f7a3f] px-4 py-3 text-sm font-semibold text-white shadow-sm"
+          >
+            WhatsApp
+          </a>
+        </div>
 
-      <a
-        href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
-        className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-semibold text-white shadow-sm"
-      >
-        Order on WhatsApp
-      </a>
+        <nav className="flex flex-wrap gap-3 text-sm font-medium">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className="rounded-full bg-white px-4 py-2 shadow-sm"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+      </section>
     </header>
   );
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import PublicPageShell from "@/components/PublicPageShell";
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 
 const recentOrders = [
   {
@@ -164,12 +165,12 @@ export default function DashboardPage() {
                   <p className="mt-2 text-sm text-[#d8e8dc]">
                     {groupBuy.delivery}
                   </p>
-                  <button
-                    type="button"
-                    className="mt-4 rounded-full bg-[#9ee6ad] px-4 py-2 text-sm font-semibold text-[#102015]"
+                  <a
+                    href={buildWhatsAppLink()}
+                    className="mt-4 inline-flex rounded-full bg-[#9ee6ad] px-4 py-2 text-sm font-semibold text-[#102015]"
                   >
                     Join via WhatsApp
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>

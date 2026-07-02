@@ -84,3 +84,8 @@ export function paymentStatusClass(status: string) {
 
   return "bg-[#f7f5ec] text-[#405348]";
 }
+
+
+export function getMockOrderByCode(code: string) {
+  return mockOrders.find((order) => order.code === code);
+}

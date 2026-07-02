@@ -20,12 +20,6 @@ const buyerTypes = [
   "Food processors",
 ];
 
-const whatsappMessage = encodeURIComponent(
-  "Hi OneFarmTech, I want to order farm produce.\n\nBuyer type:\nProduce needed:\nQuantity:\nDelivery area:\nPreferred delivery/pickup date:"
-);
-
-const whatsappNumber = "234XXXXXXXXXX";
-
 export default function Home() {
   return (
     <main className="min-h-screen bg-[#f7f5ec] text-[#102015]">
@@ -41,7 +35,7 @@ export default function Home() {
           </div>
 
           <a
-            href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+            href={buildWhatsAppLink()}
             className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-semibold text-white shadow-sm"
           >
             Order on WhatsApp
@@ -66,7 +60,7 @@ export default function Home() {
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+                href={buildWhatsAppLink()}
                 className="rounded-full bg-[#1f7a3f] px-6 py-4 text-center font-semibold text-white shadow-sm"
               >
                 Order on WhatsApp
@@ -173,7 +167,7 @@ export default function Home() {
           </p>
 
           <a
-            href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+            href={buildWhatsAppLink()}
             className="mt-8 inline-flex rounded-full bg-[#1f7a3f] px-8 py-4 font-semibold text-white"
           >
             Start WhatsApp Order
