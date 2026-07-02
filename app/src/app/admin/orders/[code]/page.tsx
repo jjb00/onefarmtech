@@ -2,7 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { getMockOrderByCode, mockOrders } from "@/data/mockOrders";
+import {
+  formatOrderTotal,
+  getDbOrderByCode,
+  getDbOrderCodes,
+} from "@/data/dbOrders";
+import { formatNaira } from "@/lib/format";
 
 type OrderDetailPageProps = {
   params: Promise<{
@@ -10,15 +15,40 @@ type OrderDetailPageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return mockOrders.map((order) => ({
-    code: order.code,
-  }));
+type OrderItemRow = {
+  id: string;
+  name: string;
+  grade: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  lineTotal: number;
+};
+
+type PaymentRow = {
+  id: string;
+  reference: string;
+  provider: string;
+  amount: number;
+  status: string;
+};
+
+type ComplaintRow = {
+  id: string;
+  code: string;
+  issue: string;
+  status: string;
+  resolution: string | null;
+};
+
+
+export async function generateStaticParams() {
+  return getDbOrderCodes();
 }
 
 export default async function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { code } = await params;
-  const order = getMockOrderByCode(code);
+  const order = await getDbOrderByCode(code);
 
   if (!order) {
     notFound();
@@ -27,7 +57,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   return (
     <AdminShell
       title={order.code}
-      description="Order detail view for admin review, payment tracking, sourcing, delivery, and issue handling."
+      description="Database-backed order detail view for admin review, payment tracking, sourcing, delivery, and issue handling."
       action={
         <Link
           href="/admin/orders"
@@ -37,74 +67,186 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         </Link>
       }
     >
-      <section className="mt-10 grid gap-8 lg:grid-cols-[1fr_0.8fr]">
-        <div className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-          <h2 className="text-2xl font-bold">Order summary</h2>
+      <section className="mt-10 grid gap-8 xl:grid-cols-[1fr_0.8fr]">
+        <div className="grid gap-8">
+          <div className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+            <h2 className="text-2xl font-bold">Order summary</h2>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Buyer</p>
-              <p className="mt-1 text-xl font-bold">{order.buyer}</p>
-              <p className="mt-1 text-sm text-[#405348]">{order.buyerType}</p>
-            </div>
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Buyer</p>
+                <p className="mt-1 text-xl font-bold">{order.buyerName}</p>
+                <p className="mt-1 text-sm text-[#405348]">{order.buyerType}</p>
+              </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Contact</p>
-              <p className="mt-1 text-xl font-bold">{order.phone}</p>
-            </div>
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Contact</p>
+                <p className="mt-1 text-xl font-bold">{order.phone}</p>
+              </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Items</p>
-              <p className="mt-1 text-xl font-bold">{order.items}</p>
-            </div>
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Total</p>
+                <p className="mt-1 text-xl font-bold">
+                  {formatOrderTotal(order.estimatedTotal)}
+                </p>
+              </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Total</p>
-              <p className="mt-1 text-xl font-bold">{order.total}</p>
-            </div>
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Order type</p>
+                <p className="mt-1 text-xl font-bold">{order.orderType}</p>
+              </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Payment</p>
-              <div className="mt-2">
-                <StatusBadge status={order.paymentStatus} />
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Payment</p>
+                <div className="mt-2">
+                  <StatusBadge status={order.paymentStatus} />
+                </div>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Fulfilment</p>
+                <p className="mt-1 text-xl font-bold">
+                  {order.fulfilmentStatus}
+                </p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Delivery method</p>
+                <p className="mt-1 text-xl font-bold">{order.deliveryMethod}</p>
+              </div>
+
+              <div className="rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm text-[#405348]">Delivery note</p>
+                <p className="mt-1 text-sm font-semibold">
+                  {order.deliveryNote || "No delivery note"}
+                </p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Fulfilment</p>
-              <p className="mt-1 text-xl font-bold">{order.fulfilmentStatus}</p>
-            </div>
+            {order.adminNote && (
+              <div className="mt-6 rounded-2xl bg-[#fff1d6] p-5">
+                <p className="text-sm font-bold text-[#8a5a00]">Admin note</p>
+                <p className="mt-2 text-sm leading-6 text-[#405348]">
+                  {order.adminNote}
+                </p>
+              </div>
+            )}
+          </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Delivery</p>
-              <p className="mt-1 text-xl font-bold">{order.delivery}</p>
-            </div>
+          <div className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+            <h2 className="text-2xl font-bold">Order items</h2>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-5">
-              <p className="text-sm text-[#405348]">Order type</p>
-              <p className="mt-1 text-xl font-bold">{order.orderType}</p>
+            <div className="mt-6 grid gap-4">
+              {order.items.map((item: OrderItemRow) => (
+                <article key={item.id} className="rounded-2xl bg-[#f7f5ec] p-5">
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <h3 className="text-xl font-bold">{item.name}</h3>
+                      <p className="mt-1 text-sm text-[#405348]">
+                        {item.grade} · {item.quantity} {item.unit}
+                      </p>
+                    </div>
+
+                    <div className="text-left md:text-right">
+                      <p className="font-semibold">
+                        {formatNaira(item.unitPrice)} / {item.unit}
+                      </p>
+                      <p className="mt-1 text-lg font-bold">
+                        {formatNaira(item.lineTotal)}
+                      </p>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </div>
 
-        <aside className="rounded-[2rem] bg-white/10 p-6 text-white">
-          <h2 className="text-2xl font-bold">Admin checklist</h2>
-          <div className="mt-6 grid gap-4">
-            {[
-              "Confirm payment reference",
-              "Confirm produce grade and quantity",
-              "Assign supplier or sourcing route",
-              "Record quality check before dispatch",
-              "Confirm delivery method and fee",
-              "Send buyer update on WhatsApp",
-              "Mark order completed or issue reported",
-            ].map((step, index) => (
-              <div key={step} className="rounded-2xl bg-white/10 p-4">
-                <p className="text-sm text-[#9ee6ad]">Step {index + 1}</p>
-                <p className="mt-1 font-semibold">{step}</p>
-              </div>
-            ))}
-          </div>
+        <aside className="grid gap-8">
+          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <h2 className="text-2xl font-bold">Payments</h2>
+
+            <div className="mt-6 grid gap-4">
+              {order.payments.length === 0 ? (
+                <p className="rounded-2xl bg-white/10 p-4 text-sm text-[#d8e8dc]">
+                  No payment records yet.
+                </p>
+              ) : (
+                order.payments.map((payment: PaymentRow) => (
+                  <article key={payment.id} className="rounded-2xl bg-white/10 p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold">{payment.reference}</p>
+                        <p className="mt-1 text-sm text-[#d8e8dc]">
+                          {payment.provider}
+                        </p>
+                      </div>
+
+                      <StatusBadge status={payment.status} />
+                    </div>
+
+                    <p className="mt-3 text-xl font-bold">
+                      {formatNaira(payment.amount)}
+                    </p>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <h2 className="text-2xl font-bold">Complaints</h2>
+
+            <div className="mt-6 grid gap-4">
+              {order.complaints.length === 0 ? (
+                <p className="rounded-2xl bg-white/10 p-4 text-sm text-[#d8e8dc]">
+                  No complaints recorded.
+                </p>
+              ) : (
+                order.complaints.map((complaint: ComplaintRow) => (
+                  <article
+                    key={complaint.id}
+                    className="rounded-2xl bg-white/10 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-bold">{complaint.code}</p>
+                        <p className="mt-1 text-sm text-[#d8e8dc]">
+                          {complaint.issue}
+                        </p>
+                      </div>
+
+                      <StatusBadge status={complaint.status} />
+                    </div>
+
+                    <p className="mt-3 text-sm leading-6 text-[#d8e8dc]">
+                      Resolution: {complaint.resolution || "Pending"}
+                    </p>
+                  </article>
+                ))
+              )}
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <h2 className="text-2xl font-bold">Admin checklist</h2>
+            <div className="mt-6 grid gap-4">
+              {[
+                "Confirm payment reference",
+                "Confirm produce grade and quantity",
+                "Assign supplier or sourcing route",
+                "Record quality check before dispatch",
+                "Confirm delivery method and fee",
+                "Send buyer update on WhatsApp",
+                "Mark order completed or issue reported",
+              ].map((step, index) => (
+                <div key={step} className="rounded-2xl bg-white/10 p-4">
+                  <p className="text-sm text-[#9ee6ad]">Step {index + 1}</p>
+                  <p className="mt-1 font-semibold">{step}</p>
+                </div>
+              ))}
+            </div>
+          </section>
         </aside>
       </section>
     </AdminShell>
