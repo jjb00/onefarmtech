@@ -1,4 +1,6 @@
-export const mockOrders = [
+import type { OrderRecord } from "@/types/domain";
+
+export const mockOrders: OrderRecord[] = [
   {
     code: "OFT-0001",
     buyer: "Mama T Foods",

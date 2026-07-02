@@ -51,6 +51,11 @@ export const adminModuleLinks = [
     href: "/admin/pickup-locations",
     description: "Manage office pickup, collection points, and handling fees.",
   },
+  {
+    title: "Workflows",
+    href: "/admin/workflows",
+    description: "Review order rules, payment rules, statuses, and admin SOPs.",
+  },
 ];
 
 export default function AdminModuleNav() {

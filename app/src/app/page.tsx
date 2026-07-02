@@ -1,3 +1,4 @@
+import { buildWhatsAppLink } from "@/lib/whatsapp";
 const featuredProduce = [
   "Tomatoes",
   "Pepper",
