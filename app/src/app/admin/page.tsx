@@ -1,47 +1,45 @@
 import Link from "next/link";
+import AdminLayoutFrame from "@/components/admin/AdminLayoutFrame";
 import AdminModuleNav from "@/components/admin/AdminModuleNav";
 import AdminTableShell from "@/components/admin/AdminTableShell";
+import AdminHealthGrid from "@/components/admin/AdminHealthGrid";
+import OperationalTimeline from "@/components/admin/OperationalTimeline";
+import QuickActionsGrid from "@/components/admin/QuickActionsGrid";
 import StatCard from "@/components/admin/StatCard";
 import StatusBadge from "@/components/admin/StatusBadge";
 import { mockOrders, mockStats } from "@/data/mockOrders";
 
+const dashboardMetrics = [
+  ...mockStats,
+  { label: "Draft workflow", value: "Local" },
+];
+
 export default function AdminPage() {
   return (
-    <main className="min-h-screen bg-[#102015] px-6 py-10 text-white">
-      <section className="mx-auto max-w-7xl">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <Link href="/" className="text-sm font-semibold text-[#9ee6ad]">
-              ← Back to public site
-            </Link>
+    <AdminLayoutFrame
+      title="OneFarmTech Admin"
+      description="Operations centre for managing orders, customers, sourcing, payments, group-buys, deliveries, pickup points, complaints, and workflow rules."
+      action={
+        <Link
+          href="/admin/create-order"
+          className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
+        >
+          Create order
+        </Link>
+      }
+    >
+      <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        {dashboardMetrics.map((stat) => (
+          <StatCard key={stat.label} label={stat.label} value={stat.value} />
+        ))}
+      </section>
 
-            <h1 className="mt-6 text-4xl font-bold">OneFarmTech Admin</h1>
+      <QuickActionsGrid />
 
-            <p className="mt-3 max-w-3xl text-[#d8e8dc]">
-              Operations centre for managing orders, customers, sourcing,
-              payments, group-buys, deliveries, and complaints.
-            </p>
-          </div>
-
-          <Link
-            href="/admin/create-order"
-            className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
-          >
-            Create order
-          </Link>
-        </div>
-
-        <section className="mt-8 grid gap-4 md:grid-cols-4">
-          {mockStats.map((stat) => (
-            <StatCard key={stat.label} label={stat.label} value={stat.value} />
-          ))}
-        </section>
-
-        <AdminModuleNav />
-
+      <section className="mt-8 grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
         <AdminTableShell
           title="Recent orders"
-          description="Latest mock order data for testing the first admin workflow."
+          description="Latest mock order data for testing the admin workflow before database integration."
           label="View all orders"
         >
           <table className="w-full min-w-[900px] border-separate border-spacing-y-3 text-left text-sm">
@@ -50,9 +48,7 @@ export default function AdminPage() {
                 <th className="px-4 py-2">Order</th>
                 <th className="px-4 py-2">Buyer</th>
                 <th className="px-4 py-2">Items</th>
-                <th className="px-4 py-2">Type</th>
                 <th className="px-4 py-2">Payment</th>
-                <th className="px-4 py-2">Fulfilment</th>
                 <th className="px-4 py-2">Total</th>
                 <th className="px-4 py-2">Delivery</th>
               </tr>
@@ -62,7 +58,10 @@ export default function AdminPage() {
               {mockOrders.slice(0, 4).map((order) => (
                 <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
                   <td className="rounded-l-2xl px-4 py-4 font-bold">
-                    <Link href={`/admin/orders/${order.code}`} className="underline decoration-[#1f7a3f] underline-offset-4">
+                    <Link
+                      href={`/admin/orders/${order.code}`}
+                      className="underline decoration-[#1f7a3f] underline-offset-4"
+                    >
                       {order.code}
                     </Link>
                   </td>
@@ -71,11 +70,9 @@ export default function AdminPage() {
                     <p className="text-xs text-[#405348]">{order.buyerType}</p>
                   </td>
                   <td className="px-4 py-4">{order.items}</td>
-                  <td className="px-4 py-4">{order.orderType}</td>
                   <td className="px-4 py-4">
                     <StatusBadge status={order.paymentStatus} />
                   </td>
-                  <td className="px-4 py-4">{order.fulfilmentStatus}</td>
                   <td className="px-4 py-4 font-semibold">{order.total}</td>
                   <td className="rounded-r-2xl px-4 py-4">{order.delivery}</td>
                 </tr>
@@ -83,7 +80,22 @@ export default function AdminPage() {
             </tbody>
           </table>
         </AdminTableShell>
+
+        <AdminHealthGrid />
       </section>
-    </main>
+
+      <section className="mt-8 grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
+        <OperationalTimeline />
+
+        <section className="rounded-[2rem] bg-white/10 p-6">
+          <h2 className="text-2xl font-bold">Admin modules</h2>
+          <p className="mt-2 text-sm leading-6 text-[#d8e8dc]">
+            The admin area is now grouped into Orders, Supply, Operations, and
+            Commercial modules.
+          </p>
+          <AdminModuleNav />
+        </section>
+      </section>
+    </AdminLayoutFrame>
   );
 }
