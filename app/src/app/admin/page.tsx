@@ -32,6 +32,21 @@ const moduleCards = [
     href: "/admin/deliveries",
     description: "Manage pickup points, delivery methods, and dispatch status.",
   },
+  {
+    title: "Payments",
+    href: "/admin/payments",
+    description: "Track deposits, full payments, references, and credit approvals.",
+  },
+  {
+    title: "Complaints",
+    href: "/admin/complaints",
+    description: "Manage quality issues, delivery disputes, and resolutions.",
+  },
+  {
+    title: "Pickup locations",
+    href: "/admin/pickup-locations",
+    description: "Manage office pickup, collection points, and handling fees.",
+  },
 ];
 
 export default function AdminPage() {
@@ -53,10 +68,10 @@ export default function AdminPage() {
           </div>
 
           <Link
-            href="/admin/orders"
+            href="/admin/create-order"
             className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
           >
-            View orders
+            Create order
           </Link>
         </div>
 
