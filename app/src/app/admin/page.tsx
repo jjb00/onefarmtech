@@ -1,5 +1,38 @@
 import Link from "next/link";
-import { adminModules, mockOrders, mockStats, paymentStatusClass } from "@/data/mockOrders";
+import { mockOrders, mockStats, paymentStatusClass } from "@/data/mockOrders";
+
+const moduleCards = [
+  {
+    title: "Orders",
+    href: "/admin/orders",
+    description: "Track order queue, payments, sourcing, and delivery status.",
+  },
+  {
+    title: "Customers",
+    href: "/admin/customers",
+    description: "Manage buyer profiles, credit terms, and business accounts.",
+  },
+  {
+    title: "Products",
+    href: "/admin/products",
+    description: "Manage produce categories, units, grades, and availability.",
+  },
+  {
+    title: "Farmers & suppliers",
+    href: "/admin/suppliers",
+    description: "Track trusted rural suppliers, harvest notes, and reliability.",
+  },
+  {
+    title: "Group-buys",
+    href: "/admin/group-buys",
+    description: "Create and monitor split bulk-buy opportunities.",
+  },
+  {
+    title: "Deliveries",
+    href: "/admin/deliveries",
+    description: "Manage pickup points, delivery methods, and dispatch status.",
+  },
+];
 
 export default function AdminPage() {
   return (
@@ -19,7 +52,10 @@ export default function AdminPage() {
             </p>
           </div>
 
-          <Link href="/admin/orders" className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]">
+          <Link
+            href="/admin/orders"
+            className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
+          >
             View orders
           </Link>
         </div>
@@ -33,12 +69,18 @@ export default function AdminPage() {
           ))}
         </section>
 
-        <section className="mt-8 grid gap-4 md:grid-cols-4">
-          {adminModules.map((module) => (
-            <div key={module} className="rounded-2xl bg-white/10 p-5">
-              <h2 className="font-bold">{module}</h2>
-              <p className="mt-2 text-sm text-[#d8e8dc]">Coming soon</p>
-            </div>
+        <section className="mt-8 grid gap-4 md:grid-cols-3">
+          {moduleCards.map((module) => (
+            <Link
+              key={module.title}
+              href={module.href}
+              className="rounded-2xl bg-white/10 p-6 transition hover:bg-white/15"
+            >
+              <h2 className="text-xl font-bold text-white">{module.title}</h2>
+              <p className="mt-3 text-sm leading-6 text-[#d8e8dc]">
+                {module.description}
+              </p>
+            </Link>
           ))}
         </section>
 
@@ -47,13 +89,16 @@ export default function AdminPage() {
             <div>
               <h2 className="text-2xl font-bold">Recent orders</h2>
               <p className="mt-2 text-sm text-[#405348]">
-                Mock order data for testing the first admin workflow.
+                Latest mock order data for testing the first admin workflow.
               </p>
             </div>
 
-            <div className="rounded-full bg-[#f7f5ec] px-4 py-2 text-sm font-semibold text-[#405348]">
-              Manual order management MVP
-            </div>
+            <Link
+              href="/admin/orders"
+              className="rounded-full bg-[#f7f5ec] px-4 py-2 text-sm font-semibold text-[#405348]"
+            >
+              View all orders
+            </Link>
           </div>
 
           <div className="mt-6 overflow-x-auto">
@@ -72,7 +117,7 @@ export default function AdminPage() {
               </thead>
 
               <tbody>
-                {mockOrders.map((order) => (
+                {mockOrders.slice(0, 4).map((order) => (
                   <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
                     <td className="rounded-l-2xl px-4 py-4 font-bold">
                       {order.code}
