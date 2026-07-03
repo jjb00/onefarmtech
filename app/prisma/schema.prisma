@@ -14,12 +14,19 @@ model Customer {
   email        String?
   buyerType    String
   location     String?
-  paymentTerms String   @default("Full payment before sourcing")
-  creditLimit  Int      @default(0)
-  status       String   @default("Active")
-  orders       Order[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  paymentTerms       String    @default("Full payment before order allocation")
+  creditLimit        Int       @default(0)
+  outstandingBalance Int       @default(0)
+  accountStatus      String    @default("Manual WhatsApp")
+  accountLoginReady  Boolean   @default(false)
+  receiptEmail       String?
+  approvedBy         String?
+  approvedAt         DateTime?
+  status             String    @default("Active")
+  orders             Order[]
+  receipts           Receipt[]
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model Product {
@@ -68,6 +75,7 @@ model Order {
   items             OrderItem[]
   payments          Payment[]
   complaints        Complaint[]
+  receipts          Receipt[]
   createdAt         DateTime    @default(now())
   updatedAt         DateTime    @updatedAt
 }
@@ -143,6 +151,7 @@ model Payment {
   amount    Int
   status    String
   paidAt    DateTime?
+  receipts  Receipt[]
   createdAt DateTime @default(now())
 }
 
@@ -169,4 +178,48 @@ model PickupLocation {
   status    String   @default("Active")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+model StaffUser {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  role      String   @default("Operations")
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  actorName     String   @default("Local admin")
+  actorEmail    String?
+  actorRole     String   @default("Admin")
+  action        String
+  entityType    String
+  entityId      String?
+  entityLabel   String?
+  previousValue String?
+  newValue      String?
+  metadata      String?
+  createdAt     DateTime @default(now())
+}
+
+model Receipt {
+  id            String    @id @default(cuid())
+  code          String    @unique
+  orderId       String
+  order         Order     @relation(fields: [orderId], references: [id])
+  customerId    String?
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  paymentId     String?
+  payment       Payment?  @relation(fields: [paymentId], references: [id])
+  buyerName     String
+  buyerEmail    String?
+  amount        Int
+  status        String    @default("Issued")
+  issuedBy      String    @default("Local admin")
+  issuedAt      DateTime  @default(now())
+  createdAt     DateTime  @default(now())
 }

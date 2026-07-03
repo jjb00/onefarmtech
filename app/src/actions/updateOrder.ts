@@ -1,8 +1,9 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { prisma } from "@/lib/prisma";
+import {redirect} from "next/navigation";
+import {revalidatePath} from "next/cache";
+import {prisma} from "@/lib/prisma";
+import {createAuditLog} from "@/lib/auditLog";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -20,10 +21,24 @@ export async function updateOrderAction(formData: FormData) {
     throw new Error("Order code is required.");
   }
 
-  await prisma.order.update({
-    where: {
-      code,
+  const existingOrder = await prisma.order.findUnique({
+    where: {code},
+    select: {
+      id: true,
+      code: true,
+      paymentStatus: true,
+      fulfilmentStatus: true,
+      deliveryNote: true,
+      adminNote: true,
     },
+  });
+
+  if (!existingOrder) {
+    throw new Error("Order not found.");
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: {code},
     data: {
       paymentStatus,
       fulfilmentStatus,
@@ -32,7 +47,22 @@ export async function updateOrderAction(formData: FormData) {
     },
   });
 
+  await createAuditLog({
+    action: "Updated order",
+    entityType: "Order",
+    entityId: updatedOrder.id,
+    entityLabel: updatedOrder.code,
+    previousValue: existingOrder,
+    newValue: {
+      paymentStatus,
+      fulfilmentStatus,
+      deliveryNote: deliveryNote || null,
+      adminNote: adminNote || null,
+    },
+  });
+
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/audit-log");
   revalidatePath(`/admin/orders/${code}`);
   redirect(`/admin/orders/${code}`);
 }

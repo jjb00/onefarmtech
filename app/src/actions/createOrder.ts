@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import {createAuditLog} from "@/lib/auditLog";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -119,6 +120,24 @@ export async function createOrderAction(formData: FormData) {
           },
         ],
       },
+    },
+  });
+
+  await createAuditLog({
+    action: "Created order",
+    entityType: "Order",
+    entityId: order.id,
+    entityLabel: order.code,
+    newValue: {
+      code: order.code,
+      buyerName,
+      phone,
+      buyerType,
+      orderType,
+      paymentStatus,
+      fulfilmentStatus,
+      deliveryMethod,
+      estimatedTotal: lineTotal,
     },
   });
 

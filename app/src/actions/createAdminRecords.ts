@@ -1,12 +1,18 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { prisma } from "@/lib/prisma";
+import {revalidatePath} from "next/cache";
+import {redirect} from "next/navigation";
+import {prisma} from "@/lib/prisma";
+import {createAuditLog} from "@/lib/auditLog";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
+}
+
+function readBoolean(formData: FormData, key: string) {
+  const value = formData.get(key);
+  return value === "on" || value === "true" || value === "1";
 }
 
 function readNumber(formData: FormData, key: string) {
@@ -23,13 +29,17 @@ export async function createCustomerAction(formData: FormData) {
   const location = readText(formData, "location");
   const paymentTerms = readText(formData, "paymentTerms", "Full payment before order allocation");
   const creditLimit = readNumber(formData, "creditLimit");
+  const outstandingBalance = readNumber(formData, "outstandingBalance");
+  const accountStatus = readText(formData, "accountStatus", "Manual WhatsApp");
+  const accountLoginReady = readBoolean(formData, "accountLoginReady");
+  const receiptEmail = readText(formData, "receiptEmail");
   const status = readText(formData, "status", "Active");
 
   if (!name || !phone) {
     throw new Error("Customer name and phone are required.");
   }
 
-  await prisma.customer.create({
+  const customer = await prisma.customer.create({
     data: {
       name,
       phone,
@@ -38,11 +48,25 @@ export async function createCustomerAction(formData: FormData) {
       location: location || null,
       paymentTerms,
       creditLimit,
+      outstandingBalance,
+      accountStatus,
+      accountLoginReady,
+      receiptEmail: receiptEmail || email || null,
       status,
     },
   });
 
+  await createAuditLog({
+    action: "Created customer",
+    entityType: "Customer",
+    entityId: customer.id,
+    entityLabel: customer.name,
+    newValue: customer,
+  });
+
   revalidatePath("/admin/customers");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath("/admin/audit-log");
   redirect("/admin/customers");
 }
 
@@ -59,7 +83,7 @@ export async function createProductAction(formData: FormData) {
     throw new Error("Product name is required.");
   }
 
-  await prisma.product.create({
+  const product = await prisma.product.create({
     data: {
       name,
       category,
@@ -71,13 +95,22 @@ export async function createProductAction(formData: FormData) {
     },
   });
 
+  await createAuditLog({
+    action: "Created product",
+    entityType: "Product",
+    entityId: product.id,
+    entityLabel: product.name,
+    newValue: product,
+  });
+
   revalidatePath("/admin/products");
+  revalidatePath("/admin/audit-log");
   redirect("/admin/products");
 }
 
 export async function createSupplierAction(formData: FormData) {
   const name = readText(formData, "name");
-  const type = readText(formData, "type", "Aggregator");
+  const type = readText(formData, "type", "Farm / supply partner");
   const phone = readText(formData, "phone");
   const location = readText(formData, "location");
   const produceFocus = readText(formData, "produceFocus");
@@ -89,7 +122,7 @@ export async function createSupplierAction(formData: FormData) {
     throw new Error("Supplier name, location, and produce focus are required.");
   }
 
-  await prisma.supplier.create({
+  const supplier = await prisma.supplier.create({
     data: {
       name,
       type,
@@ -102,6 +135,15 @@ export async function createSupplierAction(formData: FormData) {
     },
   });
 
+  await createAuditLog({
+    action: "Created supplier",
+    entityType: "Supplier",
+    entityId: supplier.id,
+    entityLabel: supplier.name,
+    newValue: supplier,
+  });
+
   revalidatePath("/admin/suppliers");
+  revalidatePath("/admin/audit-log");
   redirect("/admin/suppliers");
 }
