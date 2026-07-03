@@ -21,7 +21,7 @@ export async function createCustomerAction(formData: FormData) {
   const email = readText(formData, "email");
   const buyerType = readText(formData, "buyerType", "Individual");
   const location = readText(formData, "location");
-  const paymentTerms = readText(formData, "paymentTerms", "Full payment before sourcing");
+  const paymentTerms = readText(formData, "paymentTerms", "Full payment before order allocation");
   const creditLimit = readNumber(formData, "creditLimit");
   const status = readText(formData, "status", "Active");
 

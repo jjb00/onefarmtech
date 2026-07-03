@@ -25,8 +25,8 @@ export type PaymentStatus =
 export type FulfilmentStatus =
   | "New order"
   | "Awaiting customer confirmation"
-  | "Approved for sourcing"
-  | "Sourcing"
+  | "Allocation approved"
+  | "Allocation"
   | "Awaiting harvest"
   | "Picked up"
   | "Quality checked"

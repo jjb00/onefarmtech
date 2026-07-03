@@ -1,40 +1,58 @@
 import Image from "next/image";
 
+type BrandMarkVariant = "light" | "dark";
+
 type BrandMarkProps = {
   compact?: boolean;
-  variant?: "light" | "dark";
+  variant?: BrandMarkVariant;
+  size?: "sm" | "md";
 };
 
-export default function BrandMark({
-  compact = false,
-  variant = "dark",
-}: BrandMarkProps) {
-  const textColor = variant === "light" ? "text-white" : "text-[#102015]";
-  const mutedColor = variant === "light" ? "text-white/55" : "text-[#405348]";
+function BrandMark({compact = false, variant = "dark", size = "md"}: BrandMarkProps) {
+  const isLight = variant === "light";
+  const logoSize = size === "sm" ? "h-10 w-10 rounded-xl" : "h-12 w-12 rounded-2xl";
+  const titleSize = size === "sm" ? "text-sm" : "text-base";
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+      <div
+        className={`relative flex ${logoSize} items-center justify-center overflow-hidden border shadow-sm ${
+          isLight
+            ? "border-[#F2B84B]/30 bg-[#101712]"
+            : "border-[#101712]/10 bg-[#101712]"
+        }`}
+      >
         <Image
           src="/onefarm-logo.jpeg"
-          alt="OneFarmTech logo"
-          width={44}
-          height={44}
-          className="h-10 w-10 object-contain"
+          alt="OneFarmTech"
+          fill
+          sizes={size === "sm" ? "40px" : "48px"}
+          className="object-cover"
           priority
         />
       </div>
 
       {!compact && (
-        <div className="leading-none">
-          <p className={`text-lg font-black tracking-tight ${textColor}`}>
+        <div>
+          <p
+            className={`${titleSize} font-black leading-none tracking-tight ${
+              isLight ? "text-white" : "text-[#101712]"
+            }`}
+          >
             OneFarmTech
           </p>
-          <p className={`mt-1 text-[11px] font-semibold uppercase tracking-[0.22em] ${mutedColor}`}>
-            Managed food procurement
+          <p
+            className={`mt-1 text-xs font-semibold leading-none ${
+              isLight ? "text-white/60" : "text-[#1E2420]/60"
+            }`}
+          >
+            Farm-to-city procurement
           </p>
         </div>
       )}
     </div>
   );
 }
+
+export {BrandMark};
+export default BrandMark;

@@ -89,7 +89,7 @@ export default async function CustomersPage() {
               Payment terms
               <input
                 name="paymentTerms"
-                defaultValue="Full payment before sourcing"
+                defaultValue="Full payment before order allocation"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               />
             </label>

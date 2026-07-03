@@ -135,7 +135,7 @@ export const mockGroupBuys = [
     committed: "4 bags",
     minimum: "3 bags",
     closes: "Closed",
-    fulfilment: "Ready for sourcing",
+    fulfilment: "Ready for allocation",
     status: "Minimum met",
   },
 ];

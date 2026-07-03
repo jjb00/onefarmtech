@@ -41,8 +41,8 @@ export const paymentStatuses: PaymentStatus[] = [
 export const fulfilmentStatuses: FulfilmentStatus[] = [
   "New order",
   "Awaiting customer confirmation",
-  "Approved for sourcing",
-  "Sourcing",
+  "Allocation approved",
+  "Allocation",
   "Awaiting harvest",
   "Picked up",
   "Quality checked",
@@ -86,11 +86,11 @@ export const produceItems = [
 export const paymentRules = [
   {
     title: "New individual buyers",
-    description: "Require full payment before sourcing or dispatch.",
+    description: "Require full payment before order allocation or dispatch.",
   },
   {
     title: "New business buyers",
-    description: "Use full payment or deposit before sourcing until trust is built.",
+    description: "Use full payment or deposit before order allocation until trust is built.",
   },
   {
     title: "Verified business buyers",
@@ -113,7 +113,7 @@ export const orderWorkflowSteps = [
   "Set payment requirement based on buyer type",
   "Send payment instruction or payment link",
   "Confirm payment or approved credit terms",
-  "Approve order for sourcing",
+  "Approve order for allocation",
   "Assign supplier or route",
   "Record quality check before dispatch",
   "Update buyer by WhatsApp",

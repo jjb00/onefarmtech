@@ -9,7 +9,7 @@ export const mockOrders: OrderRecord[] = [
     items: "Tomatoes, pepper, onions",
     orderType: "Recurring",
     paymentStatus: "Deposit paid",
-    fulfilmentStatus: "Sourcing",
+    fulfilmentStatus: "Allocation",
     total: "₦185,000",
     delivery: "Platform delivery",
     date: "Today",
@@ -58,7 +58,7 @@ export const mockOrders: OrderRecord[] = [
 export const mockStats = [
   { label: "New orders", value: "12" },
   { label: "Paid / ready", value: "7" },
-  { label: "In sourcing", value: "5" },
+  { label: "In allocation", value: "5" },
   { label: "Issues", value: "1" },
 ];
 

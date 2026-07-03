@@ -17,7 +17,7 @@ export default async function SuppliersPage() {
         >
           <h2 className="text-2xl font-bold">Create supplier</h2>
           <p className="mt-2 text-sm text-[#405348]">
-            Add farms, aggregators, cooperatives, and sourcing partners for internal procurement.
+            Add farms, aggregators, cooperatives, and supply coordination partners for internal procurement.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">

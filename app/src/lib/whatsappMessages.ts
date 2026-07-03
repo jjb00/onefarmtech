@@ -96,7 +96,7 @@ export function createPaymentReminderMessage(order: OrderMessageInput) {
 Amount due: ${order.estimatedTotal > 0 ? formatNaira(order.estimatedTotal) : "To be confirmed"}
 Current payment status: ${order.paymentStatus}
 
-Please send payment confirmation/reference once paid so we can proceed with sourcing and fulfilment.`;
+Please send payment confirmation/reference once paid so we can proceed with allocation and fulfilment.`;
 }
 
 export function createDeliveryUpdateMessage(order: OrderMessageInput) {
@@ -106,7 +106,7 @@ Fulfilment status: ${order.fulfilmentStatus}
 Delivery method: ${order.deliveryMethod}
 Delivery note: ${order.deliveryNote || "To be confirmed"}
 
-We will keep you updated as the order moves through sourcing, packing, and delivery.`;
+We will keep you updated as the order moves through allocation, packing, and delivery.`;
 }
 
 export function createGroupBuyBroadcastMessage(groupBuy: GroupBuyMessageInput) {

@@ -10,7 +10,7 @@ export default function SiteFooter() {
         </div>
 
         <p className="text-sm text-[#d8e8dc]">
-          Built for managed sourcing, group-buys, business supply, and delivery coordination.
+          Built for managed supply coordination, group-buys, business supply, and delivery coordination.
         </p>
       </section>
     </footer>

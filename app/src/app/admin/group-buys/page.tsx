@@ -38,7 +38,7 @@ const groupBuyPaymentStatuses = [
 ];
 const groupBuyFulfilmentStatuses = [
   "Planning",
-  "Sourcing",
+  "Allocation",
   "Awaiting harvest",
   "Packed",
   "Ready for pickup",
@@ -64,7 +64,7 @@ export default async function GroupBuysPage() {
         >
           <h2 className="text-2xl font-bold">Create group buy</h2>
           <p className="mt-2 text-sm text-[#405348]">
-            Use this for admin-created bulk offers where buyers reserve slots before sourcing.
+            Use this for admin-created bulk offers where buyers reserve slots before order allocation.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">

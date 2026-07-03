@@ -118,8 +118,8 @@ export const orderFormOptions = {
   fulfilmentStatuses: [
     "New order",
     "Awaiting customer confirmation",
-    "Approved for sourcing",
-    "Sourcing",
+    "Allocation approved",
+    "Allocation",
     "Quality checked",
     "Packed",
     "Ready for dispatch",

@@ -63,7 +63,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
   return (
     <AdminShell
       title={order.code}
-      description="Database-backed order detail view for admin review, payment tracking, sourcing, delivery, and issue handling."
+      description="Database-backed order detail view for admin review, payment tracking, supply coordination, delivery, and issue handling."
       action={
         <Link
           href="/admin/orders"
@@ -204,7 +204,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   name="adminNote"
                   defaultValue={order.adminNote || ""}
                   className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Add sourcing notes, payment follow-up, supplier assignment, or quality check comments."
+                  placeholder="Add supply coordination notes, payment follow-up, supplier assignment, or quality check comments."
                 />
               </label>
             </div>
@@ -442,7 +442,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               {[
                 "Confirm payment reference",
                 "Confirm produce grade and quantity",
-                "Assign supplier or sourcing route",
+                "Assign supplier or fulfilment route",
                 "Record quality check before dispatch",
                 "Confirm delivery method and fee",
                 "Send buyer update on WhatsApp",

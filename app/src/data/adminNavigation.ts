@@ -129,7 +129,7 @@ export const adminOperationalTimeline = [
     note: "Payment instruction preview exists. Gateway integration comes later.",
   },
   {
-    stage: "Sourcing",
+    stage: "Allocation",
     owner: "Ops team",
     status: "Mock workflow",
     note: "Supplier/product pages exist as management screens before real database records.",

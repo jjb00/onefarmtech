@@ -8,7 +8,7 @@ export default function OperationalTimeline() {
         <h2 className="text-2xl font-bold">Operating workflow</h2>
         <p className="mt-2 text-sm leading-6 text-[#405348]">
           A simple view of how OneFarmTech orders should move from WhatsApp
-          request to payment, sourcing, quality check, and fulfilment.
+          request to payment, allocation, quality check, and fulfilment.
         </p>
       </div>
 

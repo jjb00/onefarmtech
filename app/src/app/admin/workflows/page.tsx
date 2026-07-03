@@ -10,8 +10,8 @@ const workflowGroups = [
     statuses: ["New order", "Awaiting customer confirmation"],
   },
   {
-    title: "Sourcing",
-    statuses: ["Approved for sourcing", "Sourcing", "Awaiting harvest"],
+    title: "Allocation",
+    statuses: ["Allocation approved", "Allocation", "Awaiting harvest"],
   },
   {
     title: "Quality / packing",
@@ -33,7 +33,7 @@ export default async function WorkflowsPage() {
   return (
     <AdminPageShell
       title="Workflows"
-      description="Database-backed workflow board for admin order progression, sourcing, delivery, and issue handling."
+      description="Database-backed workflow board for admin order progression, supply coordination, delivery, and issue handling."
     >
       <div className="grid gap-8">
         <section className="grid gap-4 md:grid-cols-5">

@@ -14,7 +14,7 @@ const faqs = [
   {
     question: "Do farmers sell directly on the platform?",
     answer:
-      "Not at this stage. OneFarmTech works with trusted farmers and rural suppliers, but sourcing is managed by the team to protect quality, fulfilment, and buyer trust.",
+      "Not at this stage. OneFarmTech works with trusted farmers and rural suppliers, but procurement is managed by the team to protect quality, fulfilment, and buyer trust.",
   },
   {
     question: "Can I split a bulk order with others?",
