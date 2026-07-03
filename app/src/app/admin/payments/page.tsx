@@ -1,45 +1,67 @@
 import AdminPageShell from "@/components/AdminPageShell";
-import { mockPayments, opsBadgeClass } from "@/data/mockOperations";
+import { getDbPayments } from "@/data/dbAdmin";
 
-export default function Page() {
+function formatNaira(amount: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
+function formatDate(date: Date | null) {
+  if (!date) {
+    return "Not paid yet";
+  }
+
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
+
+export default async function PaymentsPage() {
+  const payments = await getDbPayments();
+
   return (
     <AdminPageShell
       title="Payments"
-      description="Track gateway references, transfer confirmations, deposits, full payments, credit approvals, and payment exceptions."
-      actionLabel="Record payment"
+      description="Track payment references, providers, order links, and buyer payment status."
     >
-      <section className="mt-10 rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 className="text-2xl font-bold">Payments table</h2>
-            <p className="mt-2 text-sm text-[#405348]">
-              MVP mock data. Later this will connect to database records and admin actions.
-            </p>
-          </div>
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+        <table className="min-w-full divide-y divide-white/10 text-sm">
+          <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-[0.18em] text-white/45">
+            <tr>
+              <th className="px-5 py-4 font-semibold">Reference</th>
+              <th className="px-5 py-4 font-semibold">Order</th>
+              <th className="px-5 py-4 font-semibold">Buyer</th>
+              <th className="px-5 py-4 font-semibold">Provider</th>
+              <th className="px-5 py-4 font-semibold">Amount</th>
+              <th className="px-5 py-4 font-semibold">Paid date</th>
+              <th className="px-5 py-4 font-semibold">Status</th>
+            </tr>
+          </thead>
 
-          <div className="rounded-full bg-[#f7f5ec] px-4 py-2 text-sm font-semibold text-[#405348]">
-            Mock admin module
-          </div>
-        </div>
-
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full min-w-[900px] border-separate border-spacing-y-3 text-left text-sm">
-            <thead>
-              <tr className="text-[#405348]">
-                  <th className="px-4 py-2">Reference</th>\n                  <th className="px-4 py-2">Order</th>\n                  <th className="px-4 py-2">Buyer</th>\n                  <th className="px-4 py-2">Method</th>\n                  <th className="px-4 py-2">Amount</th>\n                  <th className="px-4 py-2">Status</th>\n                  <th className="px-4 py-2">Date</th>
+          <tbody className="divide-y divide-white/10">
+            {payments.map((payment) => (
+              <tr key={payment.id} className="text-white/75">
+                <td className="px-5 py-4 font-semibold text-white">{payment.reference}</td>
+                <td className="px-5 py-4">{payment.order.code}</td>
+                <td className="px-5 py-4">{payment.order.customer?.name || payment.order.buyerName}</td>
+                <td className="px-5 py-4">{payment.provider}</td>
+                <td className="px-5 py-4">{formatNaira(payment.amount)}</td>
+                <td className="px-5 py-4">{formatDate(payment.paidAt)}</td>
+                <td className="px-5 py-4">
+                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/70">
+                    {payment.status}
+                  </span>
+                </td>
               </tr>
-            </thead>
-
-            <tbody>
-              {mockPayments.map((item, index) => (
-                <tr key={index} className="rounded-2xl bg-[#f7f5ec]">
-                  <td className="rounded-l-2xl px-4 py-4 font-bold">{item.reference}</td>\n                  <td className="px-4 py-4">{item.order}</td>\n                  <td className="px-4 py-4">{item.buyer}</td>\n                  <td className="px-4 py-4">{item.method}</td>\n                  <td className="px-4 py-4 font-semibold">{item.amount}</td>\n                  <td className="px-4 py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${opsBadgeClass(item.status)}`}>{item.status}</span></td>\n                  <td className="rounded-r-2xl px-4 py-4">{item.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </AdminPageShell>
   );
 }
