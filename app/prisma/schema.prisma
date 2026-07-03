@@ -86,6 +86,54 @@ model OrderItem {
   lineTotal Int
 }
 
+
+model GroupBuy {
+  id                String                @id @default(cuid())
+  code              String                @unique
+  title             String
+  description       String?
+  status            String                @default("Draft")
+  minQuantity       Int                   @default(0)
+  targetQuantity    Int                   @default(0)
+  reservedQuantity  Int                   @default(0)
+  unit              String                @default("unit")
+  closingDate       DateTime?
+  pickupWindow      String?
+  paymentStatus     String                @default("Collecting payments")
+  fulfilmentStatus  String                @default("Planning")
+  adminNote         String?
+  items             GroupBuyItem[]
+  reservations      GroupBuyReservation[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model GroupBuyItem {
+  id          String   @id @default(cuid())
+  groupBuyId  String
+  groupBuy    GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  productId   String?
+  name        String
+  grade       String
+  quantity    Int
+  unit        String
+  unitPrice   Int
+  lineTotal   Int
+}
+
+model GroupBuyReservation {
+  id            String   @id @default(cuid())
+  groupBuyId    String
+  groupBuy      GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  buyerName     String
+  phone         String
+  buyerType     String
+  quantity      Int
+  amount        Int
+  paymentStatus String   @default("Unpaid")
+  createdAt     DateTime @default(now())
+}
+
 model Payment {
   id        String   @id @default(cuid())
   orderId   String

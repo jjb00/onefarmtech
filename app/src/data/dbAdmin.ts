@@ -67,3 +67,16 @@ export async function getDbPickupLocations() {
     },
   });
 }
+
+
+export async function getDbGroupBuys() {
+  return prisma.groupBuy.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      items: true,
+      reservations: true,
+    },
+  });
+}
