@@ -1,15 +1,36 @@
 import AdminPageShell from "@/components/AdminPageShell";
-import { getDbCustomers } from "@/data/dbAdmin";
-import { createCustomerAction } from "@/actions/createAdminRecords";
-import { buyerTypes } from "@/constants/orderOptions";
+import {prisma} from "@/lib/prisma";
+import {createCustomerAction} from "@/actions/createAdminRecords";
+import {buyerTypes} from "@/constants/orderOptions";
+
+function money(value: number) {
+  return `₦${value.toLocaleString()}`;
+}
 
 export default async function CustomersPage() {
-  const customers = await getDbCustomers();
+  const customers = await prisma.customer.findMany({
+    orderBy: {createdAt: "desc"},
+    include: {
+      orders: {
+        select: {
+          id: true,
+          estimatedTotal: true,
+          paymentStatus: true,
+        },
+      },
+      receipts: {
+        select: {
+          id: true,
+          amount: true,
+        },
+      },
+    },
+  });
 
   return (
     <AdminPageShell
       title="Customers"
-      description="View buyer accounts, order history, and customer readiness for WhatsApp-first procurement."
+      description="View buyer accounts, payment terms, credit limits, receipt readiness, and customer readiness for WhatsApp-first procurement."
     >
       <div className="grid gap-8">
         <form
@@ -18,7 +39,9 @@ export default async function CustomersPage() {
         >
           <h2 className="text-2xl font-bold">Create customer</h2>
           <p className="mt-2 text-sm text-[#405348]">
-            Add a buyer account for restaurants, hotels, caterers, retailers, households, or buying groups.
+            Add a buyer record for restaurants, hotels, caterers, retailers,
+            households, or buying groups. Recurring buyers can later be upgraded
+            into approved account-login users.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -28,7 +51,7 @@ export default async function CustomersPage() {
                 name="name"
                 required
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                placeholder="e.g. Mama T Foods"
+                placeholder="e.g. Lagos restaurant buyer"
               />
             </label>
 
@@ -53,11 +76,21 @@ export default async function CustomersPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
+              Receipt email
+              <input
+                name="receiptEmail"
+                type="email"
+                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                placeholder="optional receipt address"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold">
               Buyer type
               <select
                 name="buyerType"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                defaultValue="Individual"
+                defaultValue="Restaurant"
               >
                 {buyerTypes.map((type) => (
                   <option key={type}>{type}</option>
@@ -85,13 +118,31 @@ export default async function CustomersPage() {
               />
             </label>
 
-            <label className="grid gap-2 text-sm font-semibold md:col-span-2">
-              Payment terms
+            <label className="grid gap-2 text-sm font-semibold">
+              Outstanding balance
               <input
-                name="paymentTerms"
-                defaultValue="Full payment before order allocation"
+                name="outstandingBalance"
+                type="number"
+                min="0"
+                defaultValue="0"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               />
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold">
+              Account status
+              <select
+                name="accountStatus"
+                defaultValue="Manual WhatsApp"
+                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              >
+                <option>Manual WhatsApp</option>
+                <option>Approved recurring buyer</option>
+                <option>Credit review</option>
+                <option>Account login pending</option>
+                <option>Account login ready</option>
+                <option>Paused</option>
+              </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
@@ -106,6 +157,20 @@ export default async function CustomersPage() {
                 <option>Paused</option>
               </select>
             </label>
+
+            <label className="grid gap-2 text-sm font-semibold md:col-span-2">
+              Payment terms
+              <input
+                name="paymentTerms"
+                defaultValue="Full payment before order allocation"
+                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              />
+            </label>
+
+            <label className="flex items-center gap-3 rounded-2xl bg-[#f7f5ec] px-4 py-3 text-sm font-semibold md:col-span-2">
+              <input name="accountLoginReady" type="checkbox" className="h-4 w-4" />
+              Mark buyer as login-ready when proper auth is connected
+            </label>
           </div>
 
           <button
@@ -116,41 +181,66 @@ export default async function CustomersPage() {
           </button>
         </form>
 
-        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
-          <table className="min-w-full divide-y divide-white/10 text-sm">
+        <div className="overflow-x-auto rounded-3xl border border-white/10 bg-white/[0.03]">
+          <table className="min-w-[1100px] divide-y divide-white/10 text-sm">
             <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-[0.18em] text-white/45">
               <tr>
                 <th className="px-5 py-4 font-semibold">Customer</th>
-                <th className="px-5 py-4 font-semibold">Phone</th>
                 <th className="px-5 py-4 font-semibold">Buyer type</th>
                 <th className="px-5 py-4 font-semibold">Location</th>
-                <th className="px-5 py-4 font-semibold">Payment terms</th>
+                <th className="px-5 py-4 font-semibold">Account</th>
+                <th className="px-5 py-4 font-semibold">Credit</th>
+                <th className="px-5 py-4 font-semibold">Balance</th>
+                <th className="px-5 py-4 font-semibold">Receipts</th>
                 <th className="px-5 py-4 font-semibold">Orders</th>
                 <th className="px-5 py-4 font-semibold">Status</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-white/10">
-              {customers.map((customer) => (
-                <tr key={customer.id} className="text-white/75">
-                  <td className="px-5 py-4">
-                    <div className="font-semibold text-white">{customer.name}</div>
-                    <div className="text-xs text-white/45">
-                      {customer.email || "No email yet"}
-                    </div>
-                  </td>
-                  <td className="px-5 py-4">{customer.phone}</td>
-                  <td className="px-5 py-4">{customer.buyerType}</td>
-                  <td className="px-5 py-4">{customer.location || "Not set"}</td>
-                  <td className="px-5 py-4">{customer.paymentTerms}</td>
-                  <td className="px-5 py-4">{customer.orders.length}</td>
-                  <td className="px-5 py-4">
-                    <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/70">
-                      {customer.status}
-                    </span>
+              {customers.map((customer) => {
+                const receiptTotal = customer.receipts.reduce(
+                  (sum, receipt) => sum + receipt.amount,
+                  0,
+                );
+
+                return (
+                  <tr key={customer.id} className="text-white/75">
+                    <td className="px-5 py-4">
+                      <div className="font-semibold text-white">{customer.name}</div>
+                      <div className="text-xs text-white/45">{customer.phone}</div>
+                      <div className="text-xs text-white/45">
+                        {customer.receiptEmail || customer.email || "No receipt email"}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">{customer.buyerType}</td>
+                    <td className="px-5 py-4">{customer.location || "Not set"}</td>
+                    <td className="px-5 py-4">
+                      <div className="font-semibold">{customer.accountStatus}</div>
+                      <div className="text-xs text-white/45">
+                        {customer.accountLoginReady ? "Login ready" : "Manual account"}
+                      </div>
+                    </td>
+                    <td className="px-5 py-4">{money(customer.creditLimit)}</td>
+                    <td className="px-5 py-4">{money(customer.outstandingBalance)}</td>
+                    <td className="px-5 py-4">{money(receiptTotal)}</td>
+                    <td className="px-5 py-4">{customer.orders.length}</td>
+                    <td className="px-5 py-4">
+                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/70">
+                        {customer.status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!customers.length ? (
+                <tr>
+                  <td className="px-5 py-8 text-center text-white/50" colSpan={9}>
+                    No customers yet.
                   </td>
                 </tr>
-              ))}
+              ) : null}
             </tbody>
           </table>
         </div>

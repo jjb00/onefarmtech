@@ -25,6 +25,31 @@ export const adminNavigationGroups = [
     ],
   },
   {
+    title: "Commercial",
+    links: [
+      {
+        title: "Customers",
+        href: "/admin/customers",
+        description: "Buyer records",
+      },
+      {
+        title: "Buyer accounts",
+        href: "/admin/buyer-accounts",
+        description: "Credit, balances, receipts",
+      },
+      {
+        title: "Payments",
+        href: "/admin/payments",
+        description: "References and status",
+      },
+      {
+        title: "Receipts",
+        href: "/admin/receipts",
+        description: "Electronic receipt issue log",
+      },
+    ],
+  },
+  {
     title: "Supply",
     links: [
       {
@@ -35,7 +60,7 @@ export const adminNavigationGroups = [
       {
         title: "Suppliers",
         href: "/admin/suppliers",
-        description: "Farmers and aggregators",
+        description: "Farmers and supply partners",
       },
       {
         title: "Group-buys",
@@ -67,20 +92,25 @@ export const adminNavigationGroups = [
         href: "/admin/workflows",
         description: "SOPs and rules",
       },
+      {
+        title: "WhatsApp ops",
+        href: "/admin/whatsapp",
+        description: "Manual message centre",
+      },
     ],
   },
   {
-    title: "Commercial",
+    title: "Control",
     links: [
       {
-        title: "Customers",
-        href: "/admin/customers",
-        description: "Buyer records",
+        title: "Staff & roles",
+        href: "/admin/staff",
+        description: "Access role planning",
       },
       {
-        title: "Payments",
-        href: "/admin/payments",
-        description: "References and status",
+        title: "Audit log",
+        href: "/admin/audit-log",
+        description: "Backend action history",
       },
     ],
   },
@@ -93,9 +123,9 @@ export const adminQuickActions = [
     description: "Capture a WhatsApp, phone, group-buy, or business order.",
   },
   {
-    title: "Review drafts",
-    href: "/admin/drafts",
-    description: "Check local browser drafts before database integration.",
+    title: "Review buyer accounts",
+    href: "/admin/buyer-accounts",
+    description: "Check credit limits, balances, receipt readiness, and login readiness.",
   },
   {
     title: "Check payments",
@@ -103,9 +133,14 @@ export const adminQuickActions = [
     description: "Review deposits, full payments, unpaid orders, and credit approvals.",
   },
   {
-    title: "Handle complaint",
-    href: "/admin/complaints",
-    description: "Resolve quality, delivery, refund, and buyer support issues.",
+    title: "Issue receipt",
+    href: "/admin/receipts",
+    description: "Create electronic receipt records from paid or approved orders.",
+  },
+  {
+    title: "Review audit log",
+    href: "/admin/audit-log",
+    description: "Check who changed important backend records.",
   },
 ];
 
@@ -113,61 +148,67 @@ export const adminOperationalTimeline = [
   {
     stage: "Order capture",
     owner: "Admin / WhatsApp operator",
-    status: "Live in demo",
-    note: "Create order form can capture buyer, produce, payment, fulfilment, and delivery details.",
+    status: "Live locally",
+    note: "Create order form captures buyer, produce, payment, fulfilment, and delivery details.",
   },
   {
-    stage: "Draft saving",
-    owner: "Admin",
-    status: "Local only",
-    note: "Drafts save to browser localStorage until database is added.",
+    stage: "Buyer account readiness",
+    owner: "Commercial / account manager",
+    status: "Foundation added",
+    note: "Recurring buyer accounts now track credit limits, balances, receipt email, and login readiness.",
   },
   {
     stage: "Payment confirmation",
-    owner: "Admin / finance",
-    status: "Mock workflow",
-    note: "Payment instruction preview exists. Gateway integration comes later.",
+    owner: "Finance",
+    status: "Manual workflow",
+    note: "Manual payment recording exists. Paystack integration comes after auth/database architecture is stable.",
   },
   {
     stage: "Allocation",
-    owner: "Ops team",
-    status: "Mock workflow",
-    note: "Supplier/product pages exist as management screens before real database records.",
+    owner: "Operations team",
+    status: "Manual workflow",
+    note: "Products, suppliers, pickup points, and group-buy records support coordinated fulfilment.",
   },
   {
     stage: "Quality check",
-    owner: "Ops team",
+    owner: "Operations team",
     status: "SOP defined",
-    note: "Workflow rules exist. Later add checklists and image upload.",
+    note: "Workflow rules exist. Later add checklists, image upload, and supplier reliability scoring.",
   },
   {
     stage: "Delivery / pickup",
     owner: "Dispatch",
-    status: "Mock workflow",
-    note: "Delivery and pickup modules exist for manual operations planning.",
+    status: "Manual workflow",
+    note: "Delivery and pickup modules support manual planning before automation.",
+  },
+  {
+    stage: "Accountability",
+    owner: "Super admin",
+    status: "Audit foundation added",
+    note: "Audit log records important backend actions while proper staff auth is prepared.",
   },
 ];
 
 export const adminHealthCards = [
   {
-    title: "Frontend shell",
+    title: "Local SQLite database",
     status: "Healthy",
-    description: "Core public, buyer, and admin pages are building successfully.",
+    description: "Orders, customers, products, suppliers, payments, complaints, group-buys, receipts, and audit logs are local database-backed.",
   },
   {
     title: "Order workflow",
-    status: "Demo ready",
-    description: "Create-order form, previews, order details, and draft saving are in place.",
+    status: "Operational locally",
+    description: "Create-order, order details, payment recording, complaints, and fulfilment status changes are connected to local SQLite.",
   },
   {
-    title: "Database",
-    status: "Not connected",
-    description: "Current data is mock/static/local browser storage.",
+    title: "Buyer accounts",
+    status: "Foundation added",
+    description: "Recurring buyers can now carry credit limits, balances, receipt emails, and login-readiness flags.",
   },
   {
     title: "Payments",
-    status: "Pending integration",
-    description: "Payment instruction preview exists. Paystack/Flutterwave comes later.",
+    status: "Manual first",
+    description: "Payment recording is manual. Paystack links and webhooks come later.",
   },
   {
     title: "WhatsApp",
@@ -176,7 +217,7 @@ export const adminHealthCards = [
   },
   {
     title: "Authentication",
-    status: "Not connected",
-    description: "Admin pages are not protected yet. Auth should come after database setup.",
+    status: "Temporary gate",
+    description: "Admin still uses the basic local password gate. Proper staff/buyer auth is required before Vercel team testing.",
   },
 ];

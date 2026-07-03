@@ -1,7 +1,7 @@
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { getDbOrders, getDbOrderStats, formatOrderTotal } from "@/data/dbOrders";
+import {getDbOrders, getDbOrderStats, formatOrderTotal} from "@/data/dbOrders";
 import {
   getDbComplaints,
   getDbCustomers,
@@ -9,30 +9,51 @@ import {
   getDbProducts,
   getDbSuppliers,
 } from "@/data/dbAdmin";
-import { formatNaira } from "@/lib/format";
+import {formatNaira} from "@/lib/format";
+import {prisma} from "@/lib/prisma";
 
 export default async function AdminDashboardPage() {
-  const [orders, stats, customers, products, suppliers, payments, complaints] =
-    await Promise.all([
-      getDbOrders(),
-      getDbOrderStats(),
-      getDbCustomers(),
-      getDbProducts(),
-      getDbSuppliers(),
-      getDbPayments(),
-      getDbComplaints(),
-    ]);
+  const [
+    orders,
+    stats,
+    customers,
+    products,
+    suppliers,
+    payments,
+    complaints,
+    receipts,
+    auditLogs,
+    staffUsers,
+  ] = await Promise.all([
+    getDbOrders(),
+    getDbOrderStats(),
+    getDbCustomers(),
+    getDbProducts(),
+    getDbSuppliers(),
+    getDbPayments(),
+    getDbComplaints(),
+    prisma.receipt.findMany({orderBy: {issuedAt: "desc"}, take: 5}),
+    prisma.auditLog.findMany({orderBy: {createdAt: "desc"}, take: 5}),
+    prisma.staffUser.findMany({orderBy: {createdAt: "desc"}, take: 10}),
+  ]);
 
   const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const receiptTotal = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
   const activeComplaints = complaints.filter(
-    (complaint) => !["Closed", "Resolved"].includes(complaint.status)
+    (complaint) => !["Closed", "Resolved"].includes(complaint.status),
   );
   const recentOrders = orders.slice(0, 5);
+  const buyerLoginReady = customers.filter((customer) => customer.accountLoginReady).length;
+  const totalCreditLimit = customers.reduce((sum, customer) => sum + customer.creditLimit, 0);
+  const outstandingBalance = customers.reduce(
+    (sum, customer) => sum + customer.outstandingBalance,
+    0,
+  );
 
   return (
     <AdminShell
       title="Admin dashboard"
-      description="Database-backed operating view for orders, buyers, suppliers, payments, and issues."
+      description="Database-backed operating view for orders, buyers, suppliers, payments, receipts, staff roles, audit logs, and issues."
       action={
         <Link
           href="/admin/create-order"
@@ -56,22 +77,14 @@ export default async function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-4">
-          <div className="rounded-3xl bg-white p-5 text-[#102015]">
-            <p className="text-sm text-[#405348]">Customers</p>
-            <p className="mt-2 text-3xl font-black">{customers.length}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-5 text-[#102015]">
-            <p className="text-sm text-[#405348]">Products</p>
-            <p className="mt-2 text-3xl font-black">{products.length}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-5 text-[#102015]">
-            <p className="text-sm text-[#405348]">Suppliers</p>
-            <p className="mt-2 text-3xl font-black">{suppliers.length}</p>
-          </div>
-          <div className="rounded-3xl bg-white p-5 text-[#102015]">
-            <p className="text-sm text-[#405348]">Payments recorded</p>
-            <p className="mt-2 text-3xl font-black">{formatNaira(paymentTotal)}</p>
-          </div>
+          <MetricCard label="Customers" value={String(customers.length)} href="/admin/customers" />
+          <MetricCard label="Buyer login ready" value={String(buyerLoginReady)} href="/admin/buyer-accounts" />
+          <MetricCard label="Credit exposure" value={formatNaira(totalCreditLimit)} href="/admin/buyer-accounts" />
+          <MetricCard label="Outstanding balance" value={formatNaira(outstandingBalance)} href="/admin/buyer-accounts" />
+          <MetricCard label="Products" value={String(products.length)} href="/admin/products" />
+          <MetricCard label="Supply partners" value={String(suppliers.length)} href="/admin/suppliers" />
+          <MetricCard label="Payments recorded" value={formatNaira(paymentTotal)} href="/admin/payments" />
+          <MetricCard label="Receipts issued" value={formatNaira(receiptTotal)} href="/admin/receipts" />
         </div>
 
         <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
@@ -115,6 +128,12 @@ export default async function AdminDashboardPage() {
                   </div>
                 </Link>
               ))}
+
+              {!recentOrders.length ? (
+                <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm text-[#405348]">
+                  No orders yet.
+                </p>
+              ) : null}
             </div>
           </section>
 
@@ -149,13 +168,50 @@ export default async function AdminDashboardPage() {
             </section>
 
             <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+              <h2 className="text-2xl font-bold">Recent audit activity</h2>
+              <div className="mt-6 grid gap-3">
+                {auditLogs.map((log) => (
+                  <Link
+                    key={log.id}
+                    href="/admin/audit-log"
+                    className="rounded-2xl bg-white/10 p-4"
+                  >
+                    <p className="font-bold text-[#9ee6ad]">{log.action}</p>
+                    <p className="mt-1 text-xs text-white/50">
+                      {log.entityType}
+                      {log.entityLabel ? ` · ${log.entityLabel}` : ""} ·{" "}
+                      {log.createdAt.toLocaleString()}
+                    </p>
+                  </Link>
+                ))}
+
+                {!auditLogs.length ? (
+                  <p className="rounded-2xl bg-white/10 p-4 text-sm text-white/60">
+                    No audit activity yet.
+                  </p>
+                ) : null}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+              <h2 className="text-2xl font-bold">Control readiness</h2>
+              <div className="mt-6 grid gap-3 text-sm">
+                <ControlRow label="Staff records" value={String(staffUsers.length)} href="/admin/staff" />
+                <ControlRow label="Audit events" value={String(auditLogs.length)} href="/admin/audit-log" />
+                <ControlRow label="Receipt records" value={String(receipts.length)} href="/admin/receipts" />
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
               <h2 className="text-2xl font-bold">Quick actions</h2>
               <div className="mt-6 grid gap-3">
                 {[
                   ["Create order", "/admin/create-order"],
                   ["Add customer", "/admin/customers"],
-                  ["Record pickup point", "/admin/pickup-locations"],
-                  ["View workflow board", "/admin/workflows"],
+                  ["Buyer accounts", "/admin/buyer-accounts"],
+                  ["Issue receipt", "/admin/receipts"],
+                  ["Audit log", "/admin/audit-log"],
+                  ["Staff & roles", "/admin/staff"],
                 ].map(([label, href]) => (
                   <Link
                     key={href}
@@ -171,5 +227,23 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
     </AdminShell>
+  );
+}
+
+function MetricCard({label, value, href}: {label: string; value: string; href: string}) {
+  return (
+    <Link href={href} className="rounded-3xl bg-white p-5 text-[#102015] transition hover:translate-y-[-1px]">
+      <p className="text-sm text-[#405348]">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </Link>
+  );
+}
+
+function ControlRow({label, value, href}: {label: string; value: string; href: string}) {
+  return (
+    <Link href={href} className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
+      <span className="font-semibold text-white/75">{label}</span>
+      <span className="font-black text-[#F2B84B]">{value}</span>
+    </Link>
   );
 }

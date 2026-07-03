@@ -147,3 +147,37 @@ export async function createSupplierAction(formData: FormData) {
   revalidatePath("/admin/audit-log");
   redirect("/admin/suppliers");
 }
+
+
+export async function createStaffUserAction(formData: FormData) {
+  const name = readText(formData, "name");
+  const email = readText(formData, "email");
+  const role = readText(formData, "role", "Operations");
+  const status = readText(formData, "status", "Active");
+
+  if (!name || !email) {
+    throw new Error("Staff name and email are required.");
+  }
+
+  const staffUser = await prisma.staffUser.create({
+    data: {
+      name,
+      email,
+      role,
+      status,
+    },
+  });
+
+  await createAuditLog({
+    action: "Created staff user",
+    entityType: "StaffUser",
+    entityId: staffUser.id,
+    entityLabel: staffUser.email,
+    newValue: staffUser,
+    actorRole: "Super admin",
+  });
+
+  revalidatePath("/admin/staff");
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/staff");
+}
