@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import { adminNavigationGroups } from "@/data/adminNavigation";
+import {adminNavigationGroups} from "@/data/adminNavigation";
+import {getCurrentStaffActor} from "@/lib/currentStaff";
 
 type AdminLayoutFrameProps = {
   title: string;
@@ -9,12 +10,14 @@ type AdminLayoutFrameProps = {
   children: React.ReactNode;
 };
 
-export default function AdminLayoutFrame({
+export default async function AdminLayoutFrame({
   title,
   description,
   action,
   children,
 }: AdminLayoutFrameProps) {
+  const staff = await getCurrentStaffActor();
+
   return (
     <main className="min-h-screen bg-[#07120c] text-white">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
@@ -22,6 +25,22 @@ export default function AdminLayoutFrame({
           <Link href="/admin" className="block">
             <BrandMark variant="light" />
           </Link>
+
+          <div className="mt-6 rounded-3xl border border-[#F2B84B]/20 bg-[#F2B84B]/10 p-4">
+            <p className="text-sm font-black text-[#F2B84B]">
+              Temporary staff gate
+            </p>
+            <p className="mt-2 text-xs leading-5 text-white/60">
+              Signed in as <strong>{staff.name}</strong> · {staff.role}. Proper
+              staff and buyer auth is required before Vercel team testing.
+            </p>
+            <Link
+              href="/admin/security"
+              className="mt-3 inline-flex rounded-full border border-[#F2B84B]/30 px-3 py-2 text-xs font-bold text-[#F2B84B]"
+            >
+              Security status
+            </Link>
+          </div>
 
           <div className="mt-10 grid gap-8">
             {adminNavigationGroups.map((group) => (
@@ -51,8 +70,8 @@ export default function AdminLayoutFrame({
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
             <p className="text-sm font-bold text-[#9ee6ad]">Internal console</p>
             <p className="mt-2 text-xs leading-5 text-white/50">
-              Admin-only workspace for orders, suppliers, payments, complaints,
-              group buys, pickup points, and WhatsApp operations.
+              Admin-only workspace for orders, suppliers, payments, receipts,
+              complaints, group buys, pickup points, and WhatsApp operations.
             </p>
             <Link
               href="/admin/logout"

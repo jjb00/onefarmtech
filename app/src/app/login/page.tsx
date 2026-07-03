@@ -1,5 +1,6 @@
 import BrandMark from "@/components/BrandMark";
-import { loginAction } from "@/actions/auth";
+import {loginAction} from "@/actions/auth";
+import {staffRoles} from "@/lib/permissions";
 
 type LoginPageProps = {
   searchParams?: Promise<{
@@ -8,7 +9,7 @@ type LoginPageProps = {
   }>;
 };
 
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+export default async function LoginPage({searchParams}: LoginPageProps) {
   const params = await searchParams;
   const hasError = params?.error === "1";
   const nextPath = params?.next || "/admin";
@@ -20,12 +21,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           <div className="rounded-[1.5rem] bg-[#f8f1e7] p-8 text-[#102015]">
             <BrandMark />
             <h1 className="mt-8 text-4xl font-black leading-tight">
-              Internal operations console.
+              Staff operations console.
             </h1>
             <p className="mt-5 text-sm leading-6 text-[#405348]">
-              Manage OneFarmTech orders, customers, payments, complaints, group buys,
-              and manual WhatsApp operations from one controlled admin desk.
+              Manage OneFarmTech orders, customers, payments, receipts, complaints,
+              group buys, buyer accounts, and manual WhatsApp operations from one
+              controlled admin desk.
             </p>
+
+            <div className="mt-6 rounded-2xl border border-[#c95f3d]/20 bg-[#c95f3d]/10 p-4">
+              <p className="text-sm font-black text-[#7a321f]">
+                Temporary MVP gate
+              </p>
+              <p className="mt-2 text-xs leading-5 text-[#405348]">
+                This is not production authentication. Use it only for local/internal
+                testing until proper staff and buyer auth is connected.
+              </p>
+            </div>
           </div>
 
           <form
@@ -39,7 +51,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </p>
             <h2 className="mt-3 text-3xl font-black">Sign in</h2>
             <p className="mt-2 text-sm text-[#405348]">
-              Enter the MVP admin password.
+              Enter the temporary MVP admin password and identify your staff role
+              so audit logs can attribute local actions more clearly.
             </p>
 
             {hasError && (
@@ -48,23 +61,58 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </div>
             )}
 
-            <label className="mt-6 grid gap-2 text-sm font-semibold">
-              Password
-              <input
-                name="password"
-                type="password"
-                required
-                autoFocus
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                placeholder="Enter admin password"
-              />
-            </label>
+            <div className="mt-6 grid gap-4">
+              <label className="grid gap-2 text-sm font-semibold">
+                Staff name
+                <input
+                  name="staffName"
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  placeholder="e.g. Joy / Ops desk"
+                  defaultValue="Local staff user"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Staff email
+                <input
+                  name="staffEmail"
+                  type="email"
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  placeholder="optional for local testing"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Role for this session
+                <select
+                  name="staffRole"
+                  defaultValue="Admin"
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                >
+                  {staffRoles.map((role) => (
+                    <option key={role}>{role}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Password
+                <input
+                  name="password"
+                  type="password"
+                  required
+                  autoFocus
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  placeholder="Enter admin password"
+                />
+              </label>
+            </div>
 
             <button
               type="submit"
               className="mt-6 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
             >
-              Enter admin
+              Enter staff console
             </button>
           </form>
         </div>

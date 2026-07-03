@@ -108,6 +108,16 @@ export const adminNavigationGroups = [
         description: "Access role planning",
       },
       {
+        title: "Permissions",
+        href: "/admin/permissions",
+        description: "Role matrix",
+      },
+      {
+        title: "Security",
+        href: "/admin/security",
+        description: "Auth readiness",
+      },
+      {
         title: "Audit log",
         href: "/admin/audit-log",
         description: "Backend action history",
