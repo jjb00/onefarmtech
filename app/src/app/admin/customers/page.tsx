@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
 import {createCustomerAction} from "@/actions/createAdminRecords";
@@ -207,7 +208,12 @@ export default async function CustomersPage() {
                 return (
                   <tr key={customer.id} className="text-white/75">
                     <td className="px-5 py-4">
-                      <div className="font-semibold text-white">{customer.name}</div>
+                      <Link
+                        href={`/admin/customers/${customer.id}`}
+                        className="font-semibold text-white underline-offset-4 hover:underline"
+                      >
+                        {customer.name}
+                      </Link>
                       <div className="text-xs text-white/45">{customer.phone}</div>
                       <div className="text-xs text-white/45">
                         {customer.receiptEmail || customer.email || "No receipt email"}

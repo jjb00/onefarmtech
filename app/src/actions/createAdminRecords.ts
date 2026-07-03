@@ -181,3 +181,79 @@ export async function createStaffUserAction(formData: FormData) {
   revalidatePath("/admin/audit-log");
   redirect("/admin/staff");
 }
+
+export async function updateCustomerAccountAction(formData: FormData) {
+  const customerId = readText(formData, "customerId");
+  const paymentTerms = readText(formData, "paymentTerms", "Full payment before order allocation");
+  const creditLimit = readNumber(formData, "creditLimit");
+  const outstandingBalance = readNumber(formData, "outstandingBalance");
+  const accountStatus = readText(formData, "accountStatus", "Manual WhatsApp");
+  const accountLoginReady = readBoolean(formData, "accountLoginReady");
+  const receiptEmail = readText(formData, "receiptEmail");
+  const status = readText(formData, "status", "Active");
+
+  if (!customerId) {
+    throw new Error("Customer is required.");
+  }
+
+  const existingCustomer = await prisma.customer.findUnique({
+    where: {id: customerId},
+  });
+
+  if (!existingCustomer) {
+    throw new Error("Customer not found.");
+  }
+
+  const updatedCustomer = await prisma.customer.update({
+    where: {id: customerId},
+    data: {
+      paymentTerms,
+      creditLimit,
+      outstandingBalance,
+      accountStatus,
+      accountLoginReady,
+      receiptEmail: receiptEmail || null,
+      status,
+      approvedAt:
+        accountLoginReady && !existingCustomer.approvedAt
+          ? new Date()
+          : existingCustomer.approvedAt,
+      approvedBy:
+        accountLoginReady && !existingCustomer.approvedBy
+          ? "Local admin"
+          : existingCustomer.approvedBy,
+    },
+  });
+
+  await createAuditLog({
+    action: "Updated buyer account",
+    entityType: "Customer",
+    entityId: updatedCustomer.id,
+    entityLabel: updatedCustomer.name,
+    previousValue: {
+      paymentTerms: existingCustomer.paymentTerms,
+      creditLimit: existingCustomer.creditLimit,
+      outstandingBalance: existingCustomer.outstandingBalance,
+      accountStatus: existingCustomer.accountStatus,
+      accountLoginReady: existingCustomer.accountLoginReady,
+      receiptEmail: existingCustomer.receiptEmail,
+      status: existingCustomer.status,
+    },
+    newValue: {
+      paymentTerms: updatedCustomer.paymentTerms,
+      creditLimit: updatedCustomer.creditLimit,
+      outstandingBalance: updatedCustomer.outstandingBalance,
+      accountStatus: updatedCustomer.accountStatus,
+      accountLoginReady: updatedCustomer.accountLoginReady,
+      receiptEmail: updatedCustomer.receiptEmail,
+      status: updatedCustomer.status,
+    },
+    actorRole: "Buyer account manager",
+  });
+
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath("/admin/audit-log");
+  revalidatePath(`/admin/customers/${customerId}`);
+  redirect(`/admin/customers/${customerId}`);
+}

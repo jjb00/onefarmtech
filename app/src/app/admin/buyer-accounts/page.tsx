@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {prisma} from "@/lib/prisma";
 
 function money(value: number) {
@@ -67,7 +68,7 @@ export default async function BuyerAccountsPage() {
           );
 
           return (
-            <article
+            <Link href={`/admin/customers/${customer.id}`}
               key={customer.id}
               className="rounded-[1.5rem] border border-[#101712]/10 bg-white p-5 shadow-sm"
             >
@@ -106,7 +107,7 @@ export default async function BuyerAccountsPage() {
                 <strong>Receipt email:</strong>{" "}
                 {customer.receiptEmail || customer.email || "Not set"}
               </div>
-            </article>
+            </Link>
           );
         })}
 
