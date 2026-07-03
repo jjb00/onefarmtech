@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {prisma} from "@/lib/prisma";
 import {issueReceiptAction} from "@/actions/orderOperations";
 
@@ -141,7 +142,14 @@ export default async function ReceiptsPage() {
           <tbody>
             {receipts.map((receipt) => (
               <tr key={receipt.id} className="border-t border-[#101712]/10">
-                <td className="px-4 py-3 font-bold">{receipt.code}</td>
+                <td className="px-4 py-3 font-bold">
+                  <Link
+                    href={`/admin/receipts/${receipt.code}`}
+                    className="text-[#1f7a3f] underline-offset-4 hover:underline"
+                  >
+                    {receipt.code}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">
                   <div className="font-semibold">{receipt.buyerName}</div>
                   <div className="text-xs text-[#1E2420]/55">

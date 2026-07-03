@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {prisma} from "@/lib/prisma";
 
 export default async function AuditLogPage() {
@@ -37,7 +38,14 @@ export default async function AuditLogPage() {
                   {log.createdAt.toLocaleString()}
                 </td>
                 <td className="px-4 py-3 font-bold">{log.actorName}</td>
-                <td className="px-4 py-3">{log.action}</td>
+                <td className="px-4 py-3">
+                  <Link
+                    href={`/admin/audit-log/${log.id}`}
+                    className="font-bold text-[#1f7a3f] underline-offset-4 hover:underline"
+                  >
+                    {log.action}
+                  </Link>
+                </td>
                 <td className="px-4 py-3">
                   <span className="font-bold">{log.entityType}</span>
                   {log.entityLabel ? (

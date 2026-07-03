@@ -300,7 +300,14 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
               <tbody>
                 {customer.receipts.map((receipt) => (
                   <tr key={receipt.id} className="border-b border-[#102015]/10">
-                    <td className="py-3 pr-4 font-bold">{receipt.code}</td>
+                    <td className="py-3 pr-4 font-bold">
+                      <Link
+                        href={`/admin/receipts/${receipt.code}`}
+                        className="text-[#1f7a3f] underline-offset-4 hover:underline"
+                      >
+                        {receipt.code}
+                      </Link>
+                    </td>
                     <td className="py-3 pr-4">{receipt.order.code}</td>
                     <td className="py-3 pr-4">{formatNaira(receipt.amount)}</td>
                     <td className="py-3 pr-4">{receipt.buyerEmail || "No email"}</td>
