@@ -16,6 +16,10 @@ import { saveDraftOrder } from "@/lib/draftOrders";
 import { createOrderCode, formatNaira } from "@/lib/format";
 import type { DraftOrder } from "@/types/draftOrder";
 
+type CreateOrderClientProps = {
+  createOrderAction: (formData: FormData) => void | Promise<void>;
+};
+
 const initialForm = {
   buyerName: "",
   phone: "",
@@ -29,9 +33,12 @@ const initialForm = {
   fulfilmentStatus: "New order",
   deliveryMethod: "Platform delivery",
   deliveryNote: "",
+  adminNote: "",
 };
 
-export default function CreateOrderClient() {
+export default function CreateOrderClient({
+  createOrderAction,
+}: CreateOrderClientProps) {
   const [form, setForm] = useState(initialForm);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -43,7 +50,7 @@ export default function CreateOrderClient() {
     createOrderCode(Math.floor(Date.now() / 1000) % 10000)
   );
 
-  const whatsappPreview = `Hi ${form.buyerName || "Customer"}, your OneFarmTech order ${orderCode} has been created.
+  const whatsappPreview = `Hi ${form.buyerName || "Customer"}, your OneFarmTech order will be created once admin saves it.
 
 Item: ${form.produceItem}
 Grade: ${form.produceGrade}
@@ -53,13 +60,13 @@ Delivery: ${form.deliveryMethod}
 
 We will confirm availability, payment instructions, and fulfilment next steps.`;
 
-  const paymentInstruction = `Payment instruction for ${orderCode}
+  const paymentInstruction = `Payment instruction preview
 
 Buyer: ${form.buyerName || "Not set"}
 Amount: ${estimatedTotal ? formatNaira(estimatedTotal) : "To be confirmed"}
 Payment status: ${form.paymentStatus}
 
-Admin note: generate Paystack/Flutterwave payment link later when gateway is connected.`;
+Admin note: generate Paystack payment link later when gateway is connected.`;
 
   function updateField(field: keyof typeof form, value: string) {
     setSaveMessage("");
@@ -98,16 +105,19 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
     };
 
     saveDraftOrder(draft);
-    setSaveMessage(`${orderCode} saved as a local draft order.`);
+    setSaveMessage(`${orderCode} saved as a local browser draft.`);
   }
 
   return (
     <section className="mt-10 grid gap-8 xl:grid-cols-[1.05fr_0.95fr]">
-      <form className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+      <form
+        action={createOrderAction}
+        className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"
+      >
         <h2 className="text-2xl font-bold">Order details</h2>
         <p className="mt-2 text-sm text-[#405348]">
-          Interactive frontend demo. Saved drafts are stored in this browser
-          only until a real database is connected.
+          Create a real database order from a WhatsApp, phone, or manual admin
+          request. Local draft remains available as a backup.
         </p>
 
         {saveMessage && (
@@ -120,6 +130,8 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Buyer name
             <input
+              name="buyerName"
+              required
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               placeholder="e.g. Mama T Foods"
               value={form.buyerName}
@@ -130,6 +142,8 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Phone number
             <input
+              name="phone"
+              required
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               placeholder="+234..."
               value={form.phone}
@@ -140,6 +154,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Buyer type
             <select
+              name="buyerType"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.buyerType}
               onChange={(event) => updateField("buyerType", event.target.value)}
@@ -153,6 +168,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Order type
             <select
+              name="orderType"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.orderType}
               onChange={(event) => updateField("orderType", event.target.value)}
@@ -166,6 +182,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Produce item
             <select
+              name="produceItem"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.produceItem}
               onChange={(event) => updateField("produceItem", event.target.value)}
@@ -179,6 +196,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Produce grade
             <select
+              name="produceGrade"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.produceGrade}
               onChange={(event) => updateField("produceGrade", event.target.value)}
@@ -192,6 +210,10 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Quantity
             <input
+              name="quantity"
+              required
+              type="number"
+              min="1"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               placeholder="e.g. 10"
               value={form.quantity}
@@ -202,6 +224,10 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Unit price
             <input
+              name="unitPrice"
+              required
+              type="number"
+              min="1"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               placeholder="e.g. 2200"
               value={form.unitPrice}
@@ -212,6 +238,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Payment status
             <select
+              name="paymentStatus"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.paymentStatus}
               onChange={(event) => updateField("paymentStatus", event.target.value)}
@@ -225,6 +252,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold">
             Fulfilment status
             <select
+              name="fulfilmentStatus"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.fulfilmentStatus}
               onChange={(event) =>
@@ -240,9 +268,12 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           <label className="grid gap-2 text-sm font-semibold md:col-span-2">
             Delivery method
             <select
+              name="deliveryMethod"
               className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               value={form.deliveryMethod}
-              onChange={(event) => updateField("deliveryMethod", event.target.value)}
+              onChange={(event) =>
+                updateField("deliveryMethod", event.target.value)
+              }
             >
               {deliveryMethods.map((method) => (
                 <option key={method}>{method}</option>
@@ -254,6 +285,7 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
         <label className="mt-4 grid gap-2 text-sm font-semibold">
           Delivery address / pickup note
           <textarea
+            name="deliveryNote"
             className="min-h-28 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
             placeholder="Add delivery address, pickup point, or special instructions"
             value={form.deliveryNote}
@@ -261,91 +293,100 @@ Admin note: generate Paystack/Flutterwave payment link later when gateway is con
           />
         </label>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <label className="mt-4 grid gap-2 text-sm font-semibold">
+          Internal admin note
+          <textarea
+            name="adminNote"
+            className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+            placeholder="Supplier preference, payment condition, quality note, or follow-up task"
+            value={form.adminNote}
+            onChange={(event) => updateField("adminNote", event.target.value)}
+          />
+        </label>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button
+            type="submit"
+            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
+          >
+            Save real database order
+          </button>
+
           <button
             type="button"
-            className="rounded-full bg-[#1f7a3f] px-6 py-4 font-semibold text-white"
             onClick={saveDraft}
+            className="rounded-full border border-[#1f7a3f]/25 px-5 py-3 text-sm font-bold text-[#1f7a3f] transition hover:bg-[#f2f8ed]"
           >
             Save local draft
           </button>
 
           <button
             type="button"
-            className="rounded-full border border-[#1f7a3f] px-6 py-4 font-semibold text-[#1f7a3f]"
-            onClick={() => navigator.clipboard.writeText(paymentInstruction)}
-          >
-            Copy payment instruction
-          </button>
-
-          <button
-            type="button"
-            className="rounded-full border border-gray-300 px-6 py-4 font-semibold text-[#405348]"
             onClick={resetForm}
+            className="rounded-full border border-gray-200 px-5 py-3 text-sm font-bold text-[#405348] transition hover:bg-gray-50"
           >
-            Reset
+            Reset form
           </button>
         </div>
       </form>
 
-      <aside className="grid gap-6">
-        <div className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-          <p className="text-sm font-semibold text-[#1f7a3f]">Live preview</p>
-          <h2 className="mt-2 text-2xl font-bold">{orderCode}</h2>
-
-          <div className="mt-6 grid gap-3 text-sm">
-            <div className="rounded-2xl bg-[#f7f5ec] p-4">
-              <p className="text-[#405348]">Buyer</p>
-              <p className="mt-1 font-bold">
-                {form.buyerName || "Not entered"} · {form.buyerType}
+      <aside className="grid gap-5">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/40">
+                Live preview
               </p>
+              <h2 className="mt-2 text-2xl font-bold">
+                {form.buyerName || "New order"}
+              </h2>
             </div>
+            <StatusBadge status={form.paymentStatus} />
+          </div>
 
-            <div className="rounded-2xl bg-[#f7f5ec] p-4">
-              <p className="text-[#405348]">Item</p>
-              <p className="mt-1 font-bold">
+          <div className="mt-6 grid gap-3 text-sm text-white/65">
+            <div className="flex justify-between gap-4">
+              <span>Item</span>
+              <strong className="text-right text-white">
                 {form.produceItem} · {form.produceGrade}
-              </p>
+              </strong>
             </div>
-
-            <div className="rounded-2xl bg-[#f7f5ec] p-4">
-              <p className="text-[#405348]">Estimated total</p>
-              <p className="mt-1 text-2xl font-bold">
-                {estimatedTotal ? formatNaira(estimatedTotal) : "₦0"}
-              </p>
+            <div className="flex justify-between gap-4">
+              <span>Quantity</span>
+              <strong className="text-right text-white">
+                {form.quantity || "Not set"}
+              </strong>
             </div>
-
-            <div className="rounded-2xl bg-[#f7f5ec] p-4">
-              <p className="text-[#405348]">Payment</p>
-              <div className="mt-2">
-                <StatusBadge status={form.paymentStatus} />
-              </div>
+            <div className="flex justify-between gap-4">
+              <span>Estimated total</span>
+              <strong className="text-right text-white">
+                {estimatedTotal ? formatNaira(estimatedTotal) : "To be confirmed"}
+              </strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Fulfilment</span>
+              <strong className="text-right text-white">
+                {form.fulfilmentStatus}
+              </strong>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[2rem] bg-white/10 p-6 text-white">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-2xl font-bold">WhatsApp preview</h2>
-            <button
-              type="button"
-              onClick={() => navigator.clipboard.writeText(whatsappPreview)}
-              className="rounded-full bg-white/10 px-4 py-2 text-xs font-semibold"
-            >
-              Copy
-            </button>
-          </div>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-black/20 p-4 text-sm leading-6 text-[#d8e8dc]">
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+          <h3 className="font-bold">WhatsApp preview</h3>
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-black/20 p-4 text-sm leading-6 text-white/70">
             {whatsappPreview}
           </pre>
         </div>
 
-        <div className="rounded-[2rem] bg-white/10 p-6 text-white">
-          <h2 className="text-2xl font-bold">Recent local drafts</h2>
-          <div className="mt-4">
-            <DraftOrdersPanel compact />
-          </div>
+        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+          <h3 className="font-bold">Payment instruction preview</h3>
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-black/20 p-4 text-sm leading-6 text-white/70">
+            {paymentInstruction}
+          </pre>
         </div>
+
+        <DraftOrdersPanel />
       </aside>
     </section>
   );

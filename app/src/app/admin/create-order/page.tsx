@@ -1,5 +1,6 @@
 import AdminShell from "@/components/admin/AdminShell";
 import CreateOrderClient from "@/components/admin/CreateOrderClient";
+import { createOrderAction } from "@/actions/createOrder";
 
 export default function CreateOrderPage() {
   return (
@@ -7,7 +8,7 @@ export default function CreateOrderPage() {
       title="Create order"
       description="Manual order entry for WhatsApp, phone, business, group-buy, recurring, and pre-harvest orders."
     >
-      <CreateOrderClient />
+      <CreateOrderClient createOrderAction={createOrderAction} />
     </AdminShell>
   );
 }
