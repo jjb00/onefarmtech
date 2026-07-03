@@ -8,6 +8,8 @@ import {
   getDbOrderCodes,
 } from "@/data/dbOrders";
 import { formatNaira } from "@/lib/format";
+import { updateOrderAction } from "@/actions/updateOrder";
+import { fulfilmentStatuses, paymentStatuses } from "@/constants/orderOptions";
 
 type OrderDetailPageProps = {
   params: Promise<{
@@ -40,7 +42,6 @@ type ComplaintRow = {
   status: string;
   resolution: string | null;
 };
-
 
 export async function generateStaticParams() {
   return getDbOrderCodes();
@@ -132,6 +133,77 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
               </div>
             )}
           </div>
+
+          <form
+            action={updateOrderAction}
+            className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"
+          >
+            <input type="hidden" name="code" value={order.code} />
+
+            <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Admin update</h2>
+                <p className="mt-2 text-sm text-[#405348]">
+                  Update payment, fulfilment, delivery notes, and internal admin notes.
+                </p>
+              </div>
+
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
+              >
+                Save order update
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-semibold">
+                Payment status
+                <select
+                  name="paymentStatus"
+                  defaultValue={order.paymentStatus}
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                >
+                  {paymentStatuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Fulfilment status
+                <select
+                  name="fulfilmentStatus"
+                  defaultValue={order.fulfilmentStatus}
+                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                >
+                  {fulfilmentStatuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold md:col-span-2">
+                Delivery note
+                <textarea
+                  name="deliveryNote"
+                  defaultValue={order.deliveryNote || ""}
+                  className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  placeholder="Update delivery address, pickup point, delivery route, or special instructions."
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold md:col-span-2">
+                Internal admin note
+                <textarea
+                  name="adminNote"
+                  defaultValue={order.adminNote || ""}
+                  className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  placeholder="Add sourcing notes, payment follow-up, supplier assignment, or quality check comments."
+                />
+              </label>
+            </div>
+          </form>
 
           <div className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
             <h2 className="text-2xl font-bold">Order items</h2>
