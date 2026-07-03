@@ -22,31 +22,60 @@ async function createNextOrderCode() {
 }
 
 export async function createOrderAction(formData: FormData) {
-  const buyerName = readText(formData, "buyerName");
-  const phone = readText(formData, "phone");
-  const buyerType = readText(formData, "buyerType", "Individual");
+  const customerId = readText(formData, "customerId");
+  const productId = readText(formData, "productId");
+  const buyerNameInput = readText(formData, "buyerName");
+  const phoneInput = readText(formData, "phone");
+  const buyerTypeInput = readText(formData, "buyerType", "Individual");
   const orderType = readText(formData, "orderType", "Direct");
-  const produceItem = readText(formData, "produceItem", "Tomatoes");
-  const produceGrade = readText(formData, "produceGrade", "Standard");
+  const produceItemInput = readText(formData, "produceItem", "Tomatoes");
+  const produceGradeInput = readText(formData, "produceGrade", "Standard");
   const quantity = readNumber(formData, "quantity");
-  const unitPrice = readNumber(formData, "unitPrice");
+  const unitPriceInput = readNumber(formData, "unitPrice");
   const paymentStatus = readText(formData, "paymentStatus", "Unpaid");
   const fulfilmentStatus = readText(formData, "fulfilmentStatus", "New order");
   const deliveryMethod = readText(formData, "deliveryMethod", "Platform delivery");
   const deliveryNote = readText(formData, "deliveryNote");
   const adminNote = readText(formData, "adminNote");
 
+  const [customer, selectedProduct] = await Promise.all([
+    customerId
+      ? prisma.customer.findUnique({
+          where: {
+            id: customerId,
+          },
+        })
+      : null,
+    productId
+      ? prisma.product.findUnique({
+          where: {
+            id: productId,
+          },
+        })
+      : null,
+  ]);
+
+  const fallbackProduct =
+    selectedProduct ||
+    (await prisma.product.findFirst({
+      where: {
+        name: produceItemInput,
+      },
+    }));
+
+  const buyerName = buyerNameInput || customer?.name || "";
+  const phone = phoneInput || customer?.phone || "";
+  const buyerType = customer?.buyerType || buyerTypeInput;
+  const produceItem = fallbackProduct?.name || produceItemInput;
+  const produceGrade = fallbackProduct?.grade || produceGradeInput;
+  const unitPrice = unitPriceInput || fallbackProduct?.basePrice || 0;
+  const unit = fallbackProduct?.unit || "unit";
+
   if (!buyerName || !phone || quantity <= 0 || unitPrice <= 0) {
     throw new Error("Buyer name, phone, quantity, and unit price are required.");
   }
 
   const lineTotal = quantity * unitPrice;
-  const product = await prisma.product.findFirst({
-    where: {
-      name: produceItem,
-    },
-  });
-
   let code = await createNextOrderCode();
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
@@ -66,6 +95,7 @@ export async function createOrderAction(formData: FormData) {
   const order = await prisma.order.create({
     data: {
       code,
+      customerId: customer?.id || null,
       buyerName,
       phone,
       buyerType,
@@ -79,11 +109,11 @@ export async function createOrderAction(formData: FormData) {
       items: {
         create: [
           {
-            productId: product?.id,
+            productId: fallbackProduct?.id,
             name: produceItem,
             grade: produceGrade,
             quantity,
-            unit: product?.unit || "unit",
+            unit,
             unitPrice,
             lineTotal,
           },
@@ -93,6 +123,8 @@ export async function createOrderAction(formData: FormData) {
   });
 
   revalidatePath("/admin/orders");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/products");
   revalidatePath(`/admin/orders/${order.code}`);
   redirect(`/admin/orders/${order.code}`);
 }

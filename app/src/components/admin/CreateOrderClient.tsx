@@ -16,11 +16,34 @@ import { saveDraftOrder } from "@/lib/draftOrders";
 import { createOrderCode, formatNaira } from "@/lib/format";
 import type { DraftOrder } from "@/types/draftOrder";
 
+type CustomerOption = {
+  id: string;
+  name: string;
+  phone: string;
+  buyerType: string;
+  location: string | null;
+  paymentTerms: string;
+};
+
+type ProductOption = {
+  id: string;
+  name: string;
+  category: string;
+  unit: string;
+  grade: string;
+  basePrice: number;
+  availability: string;
+};
+
 type CreateOrderClientProps = {
   createOrderAction: (formData: FormData) => void | Promise<void>;
+  customerOptions: CustomerOption[];
+  productOptions: ProductOption[];
 };
 
 const initialForm = {
+  customerId: "",
+  productId: "",
   buyerName: "",
   phone: "",
   buyerType: "Individual",
@@ -38,23 +61,33 @@ const initialForm = {
 
 export default function CreateOrderClient({
   createOrderAction,
+  customerOptions,
+  productOptions,
 }: CreateOrderClientProps) {
   const [form, setForm] = useState(initialForm);
   const [saveMessage, setSaveMessage] = useState("");
 
+  const selectedCustomer = customerOptions.find(
+    (customer) => customer.id === form.customerId
+  );
+
+  const selectedProduct = productOptions.find(
+    (product) => product.id === form.productId
+  );
+
   const quantityNumber = Number(form.quantity) || 0;
-  const unitPriceNumber = Number(form.unitPrice) || 0;
+  const unitPriceNumber = Number(form.unitPrice) || selectedProduct?.basePrice || 0;
   const estimatedTotal = quantityNumber * unitPriceNumber;
 
   const [orderCode, setOrderCode] = useState(() =>
     createOrderCode(Math.floor(Date.now() / 1000) % 10000)
   );
 
-  const whatsappPreview = `Hi ${form.buyerName || "Customer"}, your OneFarmTech order will be created once admin saves it.
+  const whatsappPreview = `Hi ${form.buyerName || selectedCustomer?.name || "Customer"}, your OneFarmTech order will be created once admin saves it.
 
-Item: ${form.produceItem}
-Grade: ${form.produceGrade}
-Quantity: ${form.quantity || "Not set"}
+Item: ${selectedProduct?.name || form.produceItem}
+Grade: ${selectedProduct?.grade || form.produceGrade}
+Quantity: ${form.quantity || "Not set"} ${selectedProduct?.unit || ""}
 Estimated total: ${estimatedTotal ? formatNaira(estimatedTotal) : "To be confirmed"}
 Delivery: ${form.deliveryMethod}
 
@@ -62,7 +95,7 @@ We will confirm availability, payment instructions, and fulfilment next steps.`;
 
   const paymentInstruction = `Payment instruction preview
 
-Buyer: ${form.buyerName || "Not set"}
+Buyer: ${form.buyerName || selectedCustomer?.name || "Not set"}
 Amount: ${estimatedTotal ? formatNaira(estimatedTotal) : "To be confirmed"}
 Payment status: ${form.paymentStatus}
 
@@ -73,6 +106,39 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
     setForm((current) => ({
       ...current,
       [field]: value,
+    }));
+  }
+
+  function selectCustomer(customerId: string) {
+    const customer = customerOptions.find((item) => item.id === customerId);
+
+    setSaveMessage("");
+    setForm((current) => ({
+      ...current,
+      customerId,
+      buyerName: customer?.name || current.buyerName,
+      phone: customer?.phone || current.phone,
+      buyerType: customer?.buyerType || current.buyerType,
+      deliveryNote:
+        customer?.location && !current.deliveryNote
+          ? `Customer location: ${customer.location}`
+          : current.deliveryNote,
+    }));
+  }
+
+  function selectProduct(productId: string) {
+    const product = productOptions.find((item) => item.id === productId);
+
+    setSaveMessage("");
+    setForm((current) => ({
+      ...current,
+      productId,
+      produceItem: product?.name || current.produceItem,
+      produceGrade: product?.grade || current.produceGrade,
+      unitPrice:
+        product && product.basePrice > 0
+          ? String(product.basePrice)
+          : current.unitPrice,
     }));
   }
 
@@ -90,10 +156,10 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
       phone: form.phone,
       buyerType: form.buyerType,
       orderType: form.orderType,
-      produceItem: form.produceItem,
-      produceGrade: form.produceGrade,
+      produceItem: selectedProduct?.name || form.produceItem,
+      produceGrade: selectedProduct?.grade || form.produceGrade,
       quantity: form.quantity,
-      unitPrice: form.unitPrice,
+      unitPrice: String(unitPriceNumber || ""),
       estimatedTotal,
       paymentStatus: form.paymentStatus,
       fulfilmentStatus: form.fulfilmentStatus,
@@ -116,8 +182,7 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
       >
         <h2 className="text-2xl font-bold">Order details</h2>
         <p className="mt-2 text-sm text-[#405348]">
-          Create a real database order from a WhatsApp, phone, or manual admin
-          request. Local draft remains available as a backup.
+          Create a real database order and optionally link it to an existing customer and product.
         </p>
 
         {saveMessage && (
@@ -127,6 +192,23 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
         )}
 
         <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <label className="grid gap-2 text-sm font-semibold md:col-span-2">
+            Existing customer
+            <select
+              name="customerId"
+              className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              value={form.customerId}
+              onChange={(event) => selectCustomer(event.target.value)}
+            >
+              <option value="">Manual buyer / no customer link</option>
+              {customerOptions.map((customer) => (
+                <option key={customer.id} value={customer.id}>
+                  {customer.name} · {customer.buyerType} · {customer.phone}
+                </option>
+              ))}
+            </select>
+          </label>
+
           <label className="grid gap-2 text-sm font-semibold">
             Buyer name
             <input
@@ -175,6 +257,23 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
             >
               {orderTypes.map((option) => (
                 <option key={option}>{option}</option>
+              ))}
+            </select>
+          </label>
+
+          <label className="grid gap-2 text-sm font-semibold md:col-span-2">
+            Existing product
+            <select
+              name="productId"
+              className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              value={form.productId}
+              onChange={(event) => selectProduct(event.target.value)}
+            >
+              <option value="">Manual produce item / no product link</option>
+              {productOptions.map((product) => (
+                <option key={product.id} value={product.id}>
+                  {product.name} · {product.grade} · {product.unit} · {formatNaira(product.basePrice)}
+                </option>
               ))}
             </select>
           </label>
@@ -338,7 +437,7 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
                 Live preview
               </p>
               <h2 className="mt-2 text-2xl font-bold">
-                {form.buyerName || "New order"}
+                {form.buyerName || selectedCustomer?.name || "New order"}
               </h2>
             </div>
             <StatusBadge status={form.paymentStatus} />
@@ -346,15 +445,27 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
 
           <div className="mt-6 grid gap-3 text-sm text-white/65">
             <div className="flex justify-between gap-4">
+              <span>Customer link</span>
+              <strong className="text-right text-white">
+                {selectedCustomer ? selectedCustomer.name : "Manual buyer"}
+              </strong>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Product link</span>
+              <strong className="text-right text-white">
+                {selectedProduct ? selectedProduct.name : "Manual item"}
+              </strong>
+            </div>
+            <div className="flex justify-between gap-4">
               <span>Item</span>
               <strong className="text-right text-white">
-                {form.produceItem} · {form.produceGrade}
+                {selectedProduct?.name || form.produceItem} · {selectedProduct?.grade || form.produceGrade}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Quantity</span>
               <strong className="text-right text-white">
-                {form.quantity || "Not set"}
+                {form.quantity || "Not set"} {selectedProduct?.unit || ""}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
