@@ -1,42 +1,34 @@
 import Link from "next/link";
-import { buildWhatsAppLink } from "@/lib/whatsapp";
+import BrandMark from "@/components/BrandMark";
 
-const navLinks = [
+const navItems = [
+  { href: "/", label: "Home" },
   { href: "/faq", label: "FAQ" },
-  { href: "/login", label: "Login" },
-  { href: "/dashboard", label: "Buyer Dashboard" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export default function SiteHeader() {
   return (
-    <header className="bg-[#f7f5ec] px-6 py-5 text-[#102015]">
-      <section className="mx-auto flex max-w-6xl flex-col gap-4">
-        <div className="flex items-center justify-between gap-4">
-          <Link href="/" className="text-2xl font-bold tracking-tight">
-            OneFarmTech
-          </Link>
+    <header className="border-b border-[#102015]/10 bg-[#f8f1e7]/90 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-6 px-6 py-4">
+        <Link href="/" aria-label="OneFarmTech home">
+          <BrandMark />
+        </Link>
 
-          <a
-            href={buildWhatsAppLink()}
-            className="rounded-full bg-[#1f7a3f] px-4 py-3 text-sm font-semibold text-white shadow-sm"
-          >
-            WhatsApp
-          </a>
-        </div>
-
-        <nav className="flex flex-wrap gap-3 text-sm font-medium">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="rounded-full bg-white px-4 py-2 shadow-sm"
-            >
-              {link.label}
+        <nav className="hidden items-center gap-6 text-sm font-semibold text-[#405348] md:flex">
+          {navItems.map((item) => (
+            <Link key={item.href} href={item.href} className="hover:text-[#102015]">
+              {item.label}
             </Link>
           ))}
         </nav>
-      </section>
+
+        <Link
+          href="/dashboard"
+          className="rounded-full bg-[#102015] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#1f2a20]"
+        >
+          Buyer portal
+        </Link>
+      </div>
     </header>
   );
 }

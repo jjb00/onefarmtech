@@ -1,9 +1,10 @@
 import Link from "next/link";
+import BrandMark from "@/components/BrandMark";
 import { adminNavigationGroups } from "@/data/adminNavigation";
 
 type AdminLayoutFrameProps = {
   title: string;
-  description?: string;
+  description: string;
   action?: React.ReactNode;
   children: React.ReactNode;
 };
@@ -15,83 +16,66 @@ export default function AdminLayoutFrame({
   children,
 }: AdminLayoutFrameProps) {
   return (
-    <main className="min-h-screen bg-[#102015] text-white">
-      <div className="mx-auto flex max-w-[1600px] flex-col lg:flex-row">
-        <aside className="border-b border-white/10 bg-[#0b1710] px-6 py-6 lg:min-h-screen lg:w-80 lg:border-b-0 lg:border-r">
-          <div className="flex items-center justify-between gap-4 lg:block">
-            <div>
-              <Link href="/" className="text-sm font-semibold text-[#9ee6ad]">
-                OneFarmTech
-              </Link>
-              <h2 className="mt-2 text-2xl font-bold">Admin</h2>
-            </div>
+    <main className="min-h-screen bg-[#07120c] text-white">
+      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
+        <aside className="border-r border-white/10 bg-[#07120c] px-6 py-6">
+          <Link href="/admin" className="block">
+            <BrandMark variant="light" />
+          </Link>
 
-            <Link
-              href="/admin/create-order"
-              className="rounded-full bg-[#9ee6ad] px-4 py-2 text-xs font-bold text-[#102015] lg:hidden"
-            >
-              New order
-            </Link>
-          </div>
-
-          <nav className="mt-8 grid gap-6">
+          <div className="mt-10 grid gap-8">
             {adminNavigationGroups.map((group) => (
-              <div key={group.title}>
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#9ee6ad]">
+              <section key={group.title}>
+                <p className="text-xs font-black uppercase tracking-[0.32em] text-[#9ee6ad]">
                   {group.title}
                 </p>
 
-                <div className="mt-3 grid gap-2">
-                  {group.links.map((link) => (
+                <div className="mt-4 grid gap-2">
+                  {group.links.map((item) => (
                     <Link
-                      key={link.href}
-                      href={link.href}
-                      className="rounded-2xl px-4 py-3 text-sm transition hover:bg-white/10"
+                      key={item.href}
+                      href={item.href}
+                      className="rounded-2xl px-4 py-3 transition hover:bg-white/[0.06]"
                     >
-                      <span className="block font-semibold text-white">
-                        {link.title}
-                      </span>
-                      <span className="mt-1 block text-xs leading-5 text-[#b8cabc]">
-                        {link.description}
-                      </span>
+                      <p className="font-bold text-white">{item.title}</p>
+                      <p className="mt-1 text-sm text-white/50">
+                        {item.description}
+                      </p>
                     </Link>
                   ))}
                 </div>
-              </div>
+              </section>
             ))}
-          </nav>
+          </div>
 
-          <div className="mt-8 rounded-2xl bg-white/10 p-4">
-            <p className="text-sm font-bold text-white">MVP mode</p>
-            <p className="mt-2 text-xs leading-5 text-[#b8cabc]">
-              This admin is currently frontend-first with mock data and local
-              browser drafts. Database, auth, payments, and WhatsApp automation
-              come next.
+          <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
+            <p className="text-sm font-bold text-[#9ee6ad]">Internal console</p>
+            <p className="mt-2 text-xs leading-5 text-white/50">
+              Admin-only workspace for orders, suppliers, payments, complaints,
+              group buys, pickup points, and WhatsApp operations.
             </p>
+            <Link
+              href="/admin/logout"
+              className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/70"
+            >
+              Sign out
+            </Link>
           </div>
         </aside>
 
-        <section className="min-w-0 flex-1 px-5 py-6 sm:px-8 lg:px-10">
-          <header className="rounded-[2rem] border border-white/10 bg-white/5 p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
+        <section className="min-w-0 px-5 py-6 md:px-8 lg:px-12">
+          <header className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:p-8">
+            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <div className="flex flex-wrap gap-2 text-xs font-semibold text-[#9ee6ad]">
-                  <Link href="/">Public site</Link>
-                  <span>/</span>
-                  <Link href="/dashboard">Buyer portal</Link>
-                  <span>/</span>
-                  <Link href="/admin">Admin</Link>
-                </div>
-
-                <h1 className="mt-4 text-3xl font-bold tracking-tight sm:text-4xl">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9ee6ad]">
+                  Operations desk
+                </p>
+                <h1 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
                   {title}
                 </h1>
-
-                {description && (
-                  <p className="mt-3 max-w-4xl text-sm leading-6 text-[#d8e8dc] sm:text-base">
-                    {description}
-                  </p>
-                )}
+                <p className="mt-4 max-w-4xl text-base leading-7 text-white/65 md:text-lg">
+                  {description}
+                </p>
               </div>
 
               {action && <div className="shrink-0">{action}</div>}
