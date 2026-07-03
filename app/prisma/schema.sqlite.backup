@@ -1,0 +1,172 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Customer {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  buyerType    String
+  location     String?
+  paymentTerms String   @default("Full payment before sourcing")
+  creditLimit  Int      @default(0)
+  status       String   @default("Active")
+  orders       Order[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  category    String
+  unit        String
+  grade       String      @default("Standard")
+  basePrice   Int         @default(0)
+  availability String     @default("Available")
+  status      String      @default("Active")
+  orderItems  OrderItem[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Supplier {
+  id             String   @id @default(cuid())
+  name           String
+  type           String
+  phone          String?
+  location       String
+  produceFocus   String
+  reliability    String   @default("Unrated")
+  paymentMethod  String   @default("Bank transfer")
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Order {
+  id                String      @id @default(cuid())
+  code              String      @unique
+  customerId        String?
+  customer          Customer?   @relation(fields: [customerId], references: [id])
+  buyerName         String
+  phone             String
+  buyerType         String
+  orderType         String
+  paymentStatus     String      @default("Unpaid")
+  fulfilmentStatus  String      @default("New order")
+  deliveryMethod    String
+  deliveryNote      String?
+  estimatedTotal    Int         @default(0)
+  adminNote         String?
+  items             OrderItem[]
+  payments          Payment[]
+  complaints        Complaint[]
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id])
+  name      String
+  grade     String
+  quantity  Int
+  unit      String
+  unitPrice Int
+  lineTotal Int
+}
+
+
+model GroupBuy {
+  id                String                @id @default(cuid())
+  code              String                @unique
+  title             String
+  description       String?
+  status            String                @default("Draft")
+  minQuantity       Int                   @default(0)
+  targetQuantity    Int                   @default(0)
+  reservedQuantity  Int                   @default(0)
+  unit              String                @default("unit")
+  closingDate       DateTime?
+  pickupWindow      String?
+  paymentStatus     String                @default("Collecting payments")
+  fulfilmentStatus  String                @default("Planning")
+  adminNote         String?
+  items             GroupBuyItem[]
+  reservations      GroupBuyReservation[]
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+}
+
+model GroupBuyItem {
+  id          String   @id @default(cuid())
+  groupBuyId  String
+  groupBuy    GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  productId   String?
+  name        String
+  grade       String
+  quantity    Int
+  unit        String
+  unitPrice   Int
+  lineTotal   Int
+}
+
+model GroupBuyReservation {
+  id            String   @id @default(cuid())
+  groupBuyId    String
+  groupBuy      GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  buyerName     String
+  phone         String
+  buyerType     String
+  quantity      Int
+  amount        Int
+  paymentStatus String   @default("Unpaid")
+  createdAt     DateTime @default(now())
+}
+
+model Payment {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id])
+  reference String   @unique
+  provider  String
+  amount    Int
+  status    String
+  paidAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Complaint {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  code        String   @unique
+  issue       String
+  priority    String
+  status      String   @default("Open")
+  resolution  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PickupLocation {
+  id        String   @id @default(cuid())
+  name      String
+  area      String
+  address   String
+  fee       Int      @default(0)
+  days      String
+  status    String   @default("Active")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
