@@ -118,6 +118,11 @@ export const adminNavigationGroups = [
         description: "Auth readiness",
       },
       {
+        title: "Deployment",
+        href: "/admin/deployment-readiness",
+        description: "Prelaunch checks",
+      },
+      {
         title: "Audit log",
         href: "/admin/audit-log",
         description: "Backend action history",
