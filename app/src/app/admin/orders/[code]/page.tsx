@@ -9,6 +9,10 @@ import {
 } from "@/data/dbOrders";
 import { formatNaira } from "@/lib/format";
 import { updateOrderAction } from "@/actions/updateOrder";
+import {
+  createComplaintAction,
+  createPaymentAction,
+} from "@/actions/orderOperations";
 import { fulfilmentStatuses, paymentStatuses } from "@/constants/orderOptions";
 
 type OrderDetailPageProps = {
@@ -39,6 +43,7 @@ type ComplaintRow = {
   id: string;
   code: string;
   issue: string;
+  priority: string;
   status: string;
   resolution: string | null;
 };
@@ -189,7 +194,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   name="deliveryNote"
                   defaultValue={order.deliveryNote || ""}
                   className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Update delivery address, pickup point, delivery route, or special instructions."
+                  placeholder="Update delivery address, pickup point, route, or special instructions."
                 />
               </label>
 
@@ -236,6 +241,71 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
         <aside className="grid gap-8">
           <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <h2 className="text-2xl font-bold">Record payment</h2>
+
+            <form action={createPaymentAction} className="mt-6 grid gap-4">
+              <input type="hidden" name="orderId" value={order.id} />
+              <input type="hidden" name="orderCode" value={order.code} />
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Amount
+                <input
+                  name="amount"
+                  required
+                  type="number"
+                  min="1"
+                  defaultValue={order.estimatedTotal || ""}
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Provider
+                <select
+                  name="provider"
+                  defaultValue="Manual transfer"
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                >
+                  <option>Manual transfer</option>
+                  <option>Cash</option>
+                  <option>Paystack</option>
+                  <option>Flutterwave</option>
+                  <option>Credit terms</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Reference
+                <input
+                  name="reference"
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  placeholder="Optional, auto-generated if blank"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Status
+                <select
+                  name="status"
+                  defaultValue="Fully paid"
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                >
+                  {paymentStatuses.map((status) => (
+                    <option key={status}>{status}</option>
+                  ))}
+                </select>
+              </label>
+
+              <button
+                type="submit"
+                className="rounded-full bg-[#9ee6ad] px-5 py-3 text-sm font-bold text-[#102015]"
+              >
+                Save payment
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
             <h2 className="text-2xl font-bold">Payments</h2>
 
             <div className="mt-6 grid gap-4">
@@ -267,6 +337,69 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
           </section>
 
           <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <h2 className="text-2xl font-bold">Log complaint</h2>
+
+            <form action={createComplaintAction} className="mt-6 grid gap-4">
+              <input type="hidden" name="orderId" value={order.id} />
+              <input type="hidden" name="orderCode" value={order.code} />
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Issue
+                <textarea
+                  name="issue"
+                  required
+                  className="min-h-24 rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  placeholder="e.g. Buyer reported damaged tomatoes"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Priority
+                <select
+                  name="priority"
+                  defaultValue="Medium"
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Status
+                <select
+                  name="status"
+                  defaultValue="Open"
+                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                >
+                  <option>Open</option>
+                  <option>Investigating</option>
+                  <option>Resolved</option>
+                  <option>Closed</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-semibold">
+                Resolution
+                <textarea
+                  name="resolution"
+                  className="min-h-20 rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  placeholder="Optional resolution note"
+                />
+              </label>
+
+              <button
+                type="submit"
+                className="rounded-full bg-[#9ee6ad] px-5 py-3 text-sm font-bold text-[#102015]"
+              >
+                Save complaint
+              </button>
+            </form>
+          </section>
+
+          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
             <h2 className="text-2xl font-bold">Complaints</h2>
 
             <div className="mt-6 grid gap-4">
@@ -285,6 +418,9 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         <p className="font-bold">{complaint.code}</p>
                         <p className="mt-1 text-sm text-[#d8e8dc]">
                           {complaint.issue}
+                        </p>
+                        <p className="mt-1 text-xs text-[#9ee6ad]">
+                          Priority: {complaint.priority}
                         </p>
                       </div>
 
