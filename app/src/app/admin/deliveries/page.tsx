@@ -1,60 +1,98 @@
 import Link from "next/link";
-import { mockDeliveries, badgeClass } from "@/data/mockAdmin";
+import AdminPageShell from "@/components/AdminPageShell";
+import StatusBadge from "@/components/admin/StatusBadge";
+import { getDbOrders, formatOrderTotal } from "@/data/dbOrders";
 
-export default function Page() {
+export default async function DeliveriesPage() {
+  const orders = await getDbOrders();
+
+  const deliveryOrders = orders.filter((order) =>
+    [
+      "Platform delivery",
+      "Scheduled delivery",
+      "Pickup from listed location",
+      "Pickup from office",
+      "Customer arranged delivery",
+    ].includes(order.deliveryMethod)
+  );
+
   return (
-    <main className="min-h-screen bg-[#102015] px-6 py-10 text-white">
-      <section className="mx-auto max-w-7xl">
-        <Link href="/admin" className="text-sm font-semibold text-[#9ee6ad]">
-          ← Back to admin
-        </Link>
-
-        <div className="mt-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold">Deliveries</h1>
-            <p className="mt-3 max-w-3xl text-[#d8e8dc]">
-              Manage pickup points, platform delivery, delivery fees, areas, and dispatch status.
+    <AdminPageShell
+      title="Deliveries"
+      description="Database-backed delivery and pickup board for active OneFarmTech orders."
+    >
+      <div className="grid gap-6">
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm text-white/50">Delivery orders</p>
+            <p className="mt-2 text-3xl font-black">{deliveryOrders.length}</p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm text-white/50">Out for delivery</p>
+            <p className="mt-2 text-3xl font-black">
+              {orders.filter((order) => order.fulfilmentStatus === "Out for delivery").length}
             </p>
           </div>
-
-          <button className="rounded-full bg-[#9ee6ad] px-6 py-4 font-semibold text-[#102015]">
-            Add new
-          </button>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm text-white/50">Ready for dispatch</p>
+            <p className="mt-2 text-3xl font-black">
+              {orders.filter((order) => order.fulfilmentStatus === "Ready for dispatch").length}
+            </p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm text-white/50">Delivered/completed</p>
+            <p className="mt-2 text-3xl font-black">
+              {
+                orders.filter((order) =>
+                  ["Delivered", "Completed"].includes(order.fulfilmentStatus)
+                ).length
+              }
+            </p>
+          </div>
         </div>
 
-        <section className="mt-10 rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Deliveries table</h2>
-              <p className="mt-2 text-sm text-[#405348]">
-                MVP mock data. Later this will connect to database records.
-              </p>
-            </div>
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03]">
+          <table className="min-w-full divide-y divide-white/10 text-sm">
+            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-[0.18em] text-white/45">
+              <tr>
+                <th className="px-5 py-4 font-semibold">Order</th>
+                <th className="px-5 py-4 font-semibold">Buyer</th>
+                <th className="px-5 py-4 font-semibold">Delivery method</th>
+                <th className="px-5 py-4 font-semibold">Delivery note</th>
+                <th className="px-5 py-4 font-semibold">Total</th>
+                <th className="px-5 py-4 font-semibold">Fulfilment</th>
+              </tr>
+            </thead>
 
-            <div className="rounded-full bg-[#f7f5ec] px-4 py-2 text-sm font-semibold text-[#405348]">
-              Mock admin module
-            </div>
-          </div>
-
-          <div className="mt-6 overflow-x-auto">
-            <table className="w-full min-w-[900px] border-separate border-spacing-y-3 text-left text-sm">
-              <thead>
-                <tr className="text-[#405348]">
-                  <th className="px-4 py-2">Order</th>\n                  <th className="px-4 py-2">Buyer</th>\n                  <th className="px-4 py-2">Method</th>\n                  <th className="px-4 py-2">Area</th>\n                  <th className="px-4 py-2">Fee</th>\n                  <th className="px-4 py-2">Status</th>
+            <tbody className="divide-y divide-white/10">
+              {deliveryOrders.map((order) => (
+                <tr key={order.id} className="text-white/75">
+                  <td className="px-5 py-4">
+                    <Link
+                      href={`/admin/orders/${order.code}`}
+                      className="font-semibold text-[#9ee6ad] hover:underline"
+                    >
+                      {order.code}
+                    </Link>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="font-semibold text-white">{order.buyerName}</div>
+                    <div className="text-xs text-white/45">{order.phone}</div>
+                  </td>
+                  <td className="px-5 py-4">{order.deliveryMethod}</td>
+                  <td className="px-5 py-4">
+                    {order.deliveryNote || "No delivery note"}
+                  </td>
+                  <td className="px-5 py-4">{formatOrderTotal(order.estimatedTotal)}</td>
+                  <td className="px-5 py-4">
+                    <StatusBadge status={order.fulfilmentStatus} />
+                  </td>
                 </tr>
-              </thead>
-
-              <tbody>
-                {mockDeliveries.map((item) => (
-                  <tr key={item.order} className="rounded-2xl bg-[#f7f5ec]">
-                    <td className="rounded-l-2xl px-4 py-4 font-bold">{item.order}</td>\n                    <td className="px-4 py-4">{item.buyer}</td>\n                    <td className="px-4 py-4">{item.method}</td>\n                    <td className="px-4 py-4">{item.area}</td>\n                    <td className="px-4 py-4">{item.fee}</td>\n                    <td className="rounded-r-2xl px-4 py-4"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(item.status)}`}>{item.status}</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      </section>
-    </main>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </AdminPageShell>
   );
 }

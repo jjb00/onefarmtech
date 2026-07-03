@@ -1,24 +1,38 @@
 import Link from "next/link";
-import AdminLayoutFrame from "@/components/admin/AdminLayoutFrame";
-import AdminModuleNav from "@/components/admin/AdminModuleNav";
-import AdminTableShell from "@/components/admin/AdminTableShell";
-import AdminHealthGrid from "@/components/admin/AdminHealthGrid";
-import OperationalTimeline from "@/components/admin/OperationalTimeline";
-import QuickActionsGrid from "@/components/admin/QuickActionsGrid";
-import StatCard from "@/components/admin/StatCard";
+import AdminShell from "@/components/admin/AdminShell";
 import StatusBadge from "@/components/admin/StatusBadge";
-import { mockOrders, mockStats } from "@/data/mockOrders";
+import { getDbOrders, getDbOrderStats, formatOrderTotal } from "@/data/dbOrders";
+import {
+  getDbComplaints,
+  getDbCustomers,
+  getDbPayments,
+  getDbProducts,
+  getDbSuppliers,
+} from "@/data/dbAdmin";
+import { formatNaira } from "@/lib/format";
 
-const dashboardMetrics = [
-  ...mockStats,
-  { label: "Draft workflow", value: "Local" },
-];
+export default async function AdminDashboardPage() {
+  const [orders, stats, customers, products, suppliers, payments, complaints] =
+    await Promise.all([
+      getDbOrders(),
+      getDbOrderStats(),
+      getDbCustomers(),
+      getDbProducts(),
+      getDbSuppliers(),
+      getDbPayments(),
+      getDbComplaints(),
+    ]);
 
-export default function AdminPage() {
+  const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const activeComplaints = complaints.filter(
+    (complaint) => !["Closed", "Resolved"].includes(complaint.status)
+  );
+  const recentOrders = orders.slice(0, 5);
+
   return (
-    <AdminLayoutFrame
-      title="OneFarmTech Admin"
-      description="Operations centre for managing orders, customers, sourcing, payments, group-buys, deliveries, pickup points, complaints, and workflow rules."
+    <AdminShell
+      title="Admin dashboard"
+      description="Database-backed operating view for orders, buyers, suppliers, payments, and issues."
       action={
         <Link
           href="/admin/create-order"
@@ -28,74 +42,134 @@ export default function AdminPage() {
         </Link>
       }
     >
-      <section className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-        {dashboardMetrics.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
-        ))}
-      </section>
+      <section className="mt-10 grid gap-8">
+        <div className="grid gap-4 md:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white"
+            >
+              <p className="text-sm text-white/50">{stat.label}</p>
+              <p className="mt-2 text-3xl font-black">{stat.value}</p>
+            </div>
+          ))}
+        </div>
 
-      <QuickActionsGrid />
+        <div className="grid gap-4 md:grid-cols-4">
+          <div className="rounded-3xl bg-white p-5 text-[#102015]">
+            <p className="text-sm text-[#405348]">Customers</p>
+            <p className="mt-2 text-3xl font-black">{customers.length}</p>
+          </div>
+          <div className="rounded-3xl bg-white p-5 text-[#102015]">
+            <p className="text-sm text-[#405348]">Products</p>
+            <p className="mt-2 text-3xl font-black">{products.length}</p>
+          </div>
+          <div className="rounded-3xl bg-white p-5 text-[#102015]">
+            <p className="text-sm text-[#405348]">Suppliers</p>
+            <p className="mt-2 text-3xl font-black">{suppliers.length}</p>
+          </div>
+          <div className="rounded-3xl bg-white p-5 text-[#102015]">
+            <p className="text-sm text-[#405348]">Payments recorded</p>
+            <p className="mt-2 text-3xl font-black">{formatNaira(paymentTotal)}</p>
+          </div>
+        </div>
 
-      <section className="mt-8 grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-        <AdminTableShell
-          title="Recent orders"
-          description="Latest mock order data for testing the admin workflow before database integration."
-          label="View all orders"
-        >
-          <table className="w-full min-w-[900px] border-separate border-spacing-y-3 text-left text-sm">
-            <thead>
-              <tr className="text-[#405348]">
-                <th className="px-4 py-2">Order</th>
-                <th className="px-4 py-2">Buyer</th>
-                <th className="px-4 py-2">Items</th>
-                <th className="px-4 py-2">Payment</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2">Delivery</th>
-              </tr>
-            </thead>
+        <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold">Recent orders</h2>
+                <p className="mt-1 text-sm text-[#405348]">
+                  Latest database orders requiring admin attention.
+                </p>
+              </div>
+              <Link
+                href="/admin/orders"
+                className="rounded-full border border-[#1f7a3f]/20 px-4 py-2 text-sm font-bold text-[#1f7a3f]"
+              >
+                View all
+              </Link>
+            </div>
 
-            <tbody>
-              {mockOrders.slice(0, 4).map((order) => (
-                <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
-                  <td className="rounded-l-2xl px-4 py-4 font-bold">
-                    <Link
-                      href={`/admin/orders/${order.code}`}
-                      className="underline decoration-[#1f7a3f] underline-offset-4"
-                    >
-                      {order.code}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="font-semibold">{order.buyer}</p>
-                    <p className="text-xs text-[#405348]">{order.buyerType}</p>
-                  </td>
-                  <td className="px-4 py-4">{order.items}</td>
-                  <td className="px-4 py-4">
-                    <StatusBadge status={order.paymentStatus} />
-                  </td>
-                  <td className="px-4 py-4 font-semibold">{order.total}</td>
-                  <td className="rounded-r-2xl px-4 py-4">{order.delivery}</td>
-                </tr>
+            <div className="mt-6 grid gap-4">
+              {recentOrders.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/admin/orders/${order.code}`}
+                  className="rounded-2xl bg-[#f7f5ec] p-5 transition hover:bg-[#eef1e4]"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-[#1f7a3f]">
+                        {order.code}
+                      </p>
+                      <h3 className="mt-1 text-xl font-black">{order.buyerName}</h3>
+                      <p className="mt-1 text-sm text-[#405348]">
+                        {order.deliveryMethod}
+                      </p>
+                    </div>
+                    <div className="grid gap-2 md:justify-items-end">
+                      <StatusBadge status={order.paymentStatus} />
+                      <p className="font-bold">{formatOrderTotal(order.estimatedTotal)}</p>
+                    </div>
+                  </div>
+                </Link>
               ))}
-            </tbody>
-          </table>
-        </AdminTableShell>
+            </div>
+          </section>
 
-        <AdminHealthGrid />
+          <aside className="grid gap-8">
+            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+              <h2 className="text-2xl font-bold">Issue watch</h2>
+              <p className="mt-2 text-sm text-white/55">
+                Active complaints and unresolved order issues.
+              </p>
+
+              <div className="mt-6 grid gap-4">
+                {activeComplaints.length === 0 ? (
+                  <p className="rounded-2xl bg-white/10 p-4 text-sm text-white/60">
+                    No active complaints.
+                  </p>
+                ) : (
+                  activeComplaints.slice(0, 4).map((complaint) => (
+                    <Link
+                      key={complaint.id}
+                      href={`/admin/orders/${complaint.order.code}`}
+                      className="rounded-2xl bg-white/10 p-4"
+                    >
+                      <p className="font-bold text-[#9ee6ad]">{complaint.code}</p>
+                      <p className="mt-1 text-sm text-white/70">{complaint.issue}</p>
+                      <p className="mt-2 text-xs text-white/45">
+                        Order {complaint.order.code} · {complaint.priority}
+                      </p>
+                    </Link>
+                  ))
+                )}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+              <h2 className="text-2xl font-bold">Quick actions</h2>
+              <div className="mt-6 grid gap-3">
+                {[
+                  ["Create order", "/admin/create-order"],
+                  ["Add customer", "/admin/customers"],
+                  ["Record pickup point", "/admin/pickup-locations"],
+                  ["View workflow board", "/admin/workflows"],
+                ].map(([label, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="rounded-2xl bg-white/10 px-4 py-3 font-semibold text-[#9ee6ad]"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+            </section>
+          </aside>
+        </div>
       </section>
-
-      <section className="mt-8 grid gap-8 xl:grid-cols-[0.9fr_1.1fr]">
-        <OperationalTimeline />
-
-        <section className="rounded-[2rem] bg-white/10 p-6">
-          <h2 className="text-2xl font-bold">Admin modules</h2>
-          <p className="mt-2 text-sm leading-6 text-[#d8e8dc]">
-            The admin area is now grouped into Orders, Supply, Operations, and
-            Commercial modules.
-          </p>
-          <AdminModuleNav />
-        </section>
-      </section>
-    </AdminLayoutFrame>
+    </AdminShell>
   );
 }
