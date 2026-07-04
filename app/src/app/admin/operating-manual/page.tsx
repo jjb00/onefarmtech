@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminPageShell from "@/components/AdminPageShell";
 
 const manuals = [
   {
@@ -65,58 +66,69 @@ const manuals = [
 
 export default function OperatingManualPage() {
   return (
-    <main className="space-y-8">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#C95F3D]">
-          Internal SOP
-        </p>
-        <h1 className="mt-2 text-3xl font-black text-[#101712]">
-          Operating manual
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#1E2420]/70">
-          Practical working guide for the WhatsApp-first procurement desk. This keeps staff aligned before automation, Paystack, Supabase Auth, and WhatsApp API are added.
-        </p>
+    <AdminPageShell
+      title="Operating manual"
+      description="Practical working guide for the WhatsApp-first operations desk. This keeps staff aligned before automation, Paystack, Supabase Auth, and WhatsApp API are added."
+    >
+      <div className="grid gap-6">
+        <section className="grid gap-5 lg:grid-cols-2">
+          {manuals.map((manual) => (
+            <article
+              key={manual.title}
+              className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <h2 className="text-xl font-black text-[#102015]">
+                  {manual.title}
+                </h2>
+
+                <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
+                  {manual.owner}
+                </span>
+              </div>
+
+              <ol className="mt-5 grid gap-3">
+                {manual.steps.map((step, index) => (
+                  <li
+                    key={step}
+                    className="rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-7 text-[#405348]"
+                  >
+                    <strong className="text-[#102015]">
+                      Step {index + 1}:
+                    </strong>{" "}
+                    {step}
+                  </li>
+                ))}
+              </ol>
+            </article>
+          ))}
+        </section>
+
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+          <h2 className="text-2xl font-black text-[#102015]">
+            Daily operating rhythm
+          </h2>
+
+          <div className="mt-5 grid gap-3 md:grid-cols-3">
+            <QuickLink href="/admin/workflows" title="Morning workflow review" />
+            <QuickLink href="/admin/payments" title="Finance/payment check" />
+            <QuickLink href="/admin/complaints" title="Issue watch" />
+            <QuickLink href="/admin/group-buys" title="Group-buy progress" />
+            <QuickLink href="/admin/receipts" title="Receipt issue queue" />
+            <QuickLink href="/admin/audit-log" title="Audit review" />
+          </div>
+        </section>
       </div>
-
-      <section className="grid gap-5 lg:grid-cols-2">
-        {manuals.map((manual) => (
-          <article key={manual.title} className="rounded-[1.5rem] bg-white p-6 shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <h2 className="text-xl font-black text-[#101712]">{manual.title}</h2>
-              <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
-                {manual.owner}
-              </span>
-            </div>
-
-            <ol className="mt-5 grid gap-3">
-              {manual.steps.map((step, index) => (
-                <li key={step} className="rounded-2xl bg-[#F8F1E7] p-4 text-sm leading-7 text-[#1E2420]/75">
-                  <strong className="text-[#101712]">Step {index + 1}:</strong> {step}
-                </li>
-              ))}
-            </ol>
-          </article>
-        ))}
-      </section>
-
-      <section className="rounded-[1.5rem] bg-[#101712] p-6 text-white shadow-sm">
-        <h2 className="text-2xl font-black">Daily operating rhythm</h2>
-        <div className="mt-5 grid gap-3 md:grid-cols-3">
-          <QuickLink href="/admin/workflows" title="Morning workflow review" />
-          <QuickLink href="/admin/payments" title="Finance/payment check" />
-          <QuickLink href="/admin/complaints" title="Issue watch" />
-          <QuickLink href="/admin/group-buys" title="Group-buy progress" />
-          <QuickLink href="/admin/receipts" title="Receipt issue queue" />
-          <QuickLink href="/admin/audit-log" title="Audit review" />
-        </div>
-      </section>
-    </main>
+    </AdminPageShell>
   );
 }
 
 function QuickLink({href, title}: {href: string; title: string}) {
   return (
-    <Link href={href} className="rounded-2xl bg-white/10 p-4 text-sm font-bold text-[#F2B84B]">
+    <Link
+      href={href}
+      className="rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] p-4 text-sm font-bold text-[#1f7a3f]"
+    >
       {title}
     </Link>
   );
