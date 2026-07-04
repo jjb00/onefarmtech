@@ -213,6 +213,7 @@ export default async function AdminDashboardPage() {
                   ["Audit log", "/admin/audit-log"],
                   ["Staff & roles", "/admin/staff"],
                   ["Deployment readiness", "/admin/deployment-readiness"],
+                  ["Operating manual", "/admin/operating-manual"],
                 ].map(([label, href]) => (
                   <Link
                     key={href}

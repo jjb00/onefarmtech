@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import AdminShell from "@/components/admin/AdminShell";
 import StatusBadge from "@/components/admin/StatusBadge";
+import OrderTraceabilityPanel from "@/components/admin/OrderTraceabilityPanel";
 import {
   formatOrderTotal,
   getDbOrderByCode,
@@ -81,7 +82,16 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             <div className="mt-6 grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl bg-[#f7f5ec] p-5">
                 <p className="text-sm text-[#405348]">Buyer</p>
-                <p className="mt-1 text-xl font-bold">{order.buyerName}</p>
+                {order.customerId ? (
+                  <Link
+                    href={`/admin/customers/${order.customerId}`}
+                    className="mt-1 block text-xl font-bold text-[#1f7a3f] underline-offset-4 hover:underline"
+                  >
+                    {order.buyerName}
+                  </Link>
+                ) : (
+                  <p className="mt-1 text-xl font-bold">{order.buyerName}</p>
+                )}
                 <p className="mt-1 text-sm text-[#405348]">{order.buyerType}</p>
               </div>
 
@@ -240,6 +250,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
         </div>
 
         <aside className="grid gap-8">
+          <OrderTraceabilityPanel order={order} />
           <section className="rounded-[2rem] bg-white/10 p-6 text-white">
             <h2 className="text-2xl font-bold">Record payment</h2>
 

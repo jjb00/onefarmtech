@@ -58,6 +58,43 @@ export default async function GroupBuysPage() {
       description="Create and manage admin-led group buys, buyer reservations, payment collection, and fulfilment."
     >
       <div className="grid gap-8">
+        <section className="grid gap-4 md:grid-cols-3">
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm font-bold text-[#9ee6ad]">City group buys</p>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              Public area-based group buys for buyers around a city, market, pickup point, or delivery route.
+            </p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm font-bold text-[#9ee6ad]">Private group buys</p>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              Friends, neighbours, offices, churches, restaurant clusters, or retailer groups can request private buying groups.
+            </p>
+          </div>
+          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
+            <p className="text-sm font-bold text-[#9ee6ad]">Admin-reviewed</p>
+            <p className="mt-2 text-sm leading-6 text-white/60">
+              MVP group buys should be reviewed by admin before activation, payment collection, and fulfilment.
+            </p>
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-white">
+          <h2 className="text-2xl font-bold">Group-buy operating rules</h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {[
+              "Confirm location and buyer group type.",
+              "Set minimum quantity and payment rule.",
+              "Track reservations against target quantity.",
+              "Move to fulfilment only when admin approves allocation.",
+            ].map((rule) => (
+              <div key={rule} className="rounded-2xl bg-white/[0.05] p-4 text-sm leading-6 text-white/70">
+                {rule}
+              </div>
+            ))}
+          </div>
+        </section>
+
         <form
           action={createGroupBuyAction}
           className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"

@@ -93,6 +93,11 @@ export const adminNavigationGroups = [
         description: "SOPs and rules",
       },
       {
+        title: "Operating manual",
+        href: "/admin/operating-manual",
+        description: "Staff SOP guide",
+      },
+      {
         title: "WhatsApp ops",
         href: "/admin/whatsapp",
         description: "Manual message centre",
