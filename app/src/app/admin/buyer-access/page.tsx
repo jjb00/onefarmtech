@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
 import {
   createBuyerAccountInviteAction,
@@ -41,19 +42,11 @@ export default async function BuyerAccessPage() {
   ]);
 
   return (
-    <main className="space-y-8">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#C95F3D]">
-          Buyer access
-        </p>
-        <h1 className="mt-2 text-3xl font-black text-[#101712]">
-          Buyer contacts and account invites
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#1E2420]/70">
-          Prepare approved recurring buyers for real login without exposing fake access.
-          Track who is allowed to place orders, view receipts, see credit, and receive future account invitations.
-        </p>
-      </div>
+    <AdminPageShell
+      title="Buyer contacts and account invites"
+      description="Prepare approved recurring buyers for real login without exposing fake access. Track who is allowed to place orders, view receipts, see credit, and receive future account invitations."
+    >
+      <div className="grid gap-6">
 
       <section className="grid gap-4 md:grid-cols-4">
         <Metric label="Buyer contacts" value={String(contacts.length)} />
@@ -70,8 +63,8 @@ export default async function BuyerAccessPage() {
 
       <section className="grid gap-8 xl:grid-cols-2">
         <form action={createBuyerContactAction} className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-[#101712]">Add authorised buyer contact</h2>
-          <p className="mt-2 text-sm leading-7 text-[#1E2420]/65">
+          <h2 className="text-2xl font-black text-[#102015]">Add authorised buyer contact</h2>
+          <p className="mt-2 text-sm leading-7 text-[#405348]">
             Use this for restaurant owners, procurement leads, finance contacts,
             store managers, or authorised staff who will eventually access the buyer portal.
           </p>
@@ -82,7 +75,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="customerId"
                 required
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 <option value="">Select buyer</option>
                 {customers.map((customer) => (
@@ -98,7 +91,7 @@ export default async function BuyerAccessPage() {
               <input
                 name="name"
                 required
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
                 placeholder="e.g. Procurement lead"
               />
             </label>
@@ -108,7 +101,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="role"
                 defaultValue="Buyer user"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 {buyerContactRoles.map((role) => (
                   <option key={role}>{role}</option>
@@ -121,7 +114,7 @@ export default async function BuyerAccessPage() {
               <input
                 name="email"
                 type="email"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
                 placeholder="optional"
               />
             </label>
@@ -130,7 +123,7 @@ export default async function BuyerAccessPage() {
               Phone
               <input
                 name="phone"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
                 placeholder="+234..."
               />
             </label>
@@ -140,7 +133,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="status"
                 defaultValue="Active"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 <option>Active</option>
                 <option>Pending verification</option>
@@ -148,7 +141,7 @@ export default async function BuyerAccessPage() {
               </select>
             </label>
 
-            <div className="grid gap-3 rounded-2xl bg-[#F8F1E7] p-4 md:col-span-2">
+            <div className="grid gap-3 rounded-2xl bg-[#f3f8ef] p-4 md:col-span-2">
               <label className="flex items-center gap-3 text-sm font-semibold">
                 <input name="canPlaceOrders" type="checkbox" defaultChecked />
                 Can place orders
@@ -173,8 +166,8 @@ export default async function BuyerAccessPage() {
         </form>
 
         <form action={createBuyerAccountInviteAction} className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-[#101712]">Prepare account invite</h2>
-          <p className="mt-2 text-sm leading-7 text-[#1E2420]/65">
+          <h2 className="text-2xl font-black text-[#102015]">Prepare account invite</h2>
+          <p className="mt-2 text-sm leading-7 text-[#405348]">
             This creates an invite record only. It does not send email, SMS, or open real login access yet.
           </p>
 
@@ -184,7 +177,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="customerId"
                 required
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 <option value="">Select buyer</option>
                 {customers.map((customer) => (
@@ -200,7 +193,7 @@ export default async function BuyerAccessPage() {
               <input
                 name="email"
                 type="email"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
                 placeholder="optional"
               />
             </label>
@@ -209,7 +202,7 @@ export default async function BuyerAccessPage() {
               Invite phone
               <input
                 name="phone"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
                 placeholder="+234..."
               />
             </label>
@@ -219,7 +212,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="role"
                 defaultValue="Buyer user"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 {buyerContactRoles.map((role) => (
                   <option key={role}>{role}</option>
@@ -232,7 +225,7 @@ export default async function BuyerAccessPage() {
               <select
                 name="status"
                 defaultValue="Draft"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 <option>Draft</option>
                 <option>Ready to send</option>
@@ -253,11 +246,11 @@ export default async function BuyerAccessPage() {
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-black text-[#101712]">Authorised buyer contacts</h2>
+        <h2 className="text-2xl font-black text-[#102015]">Authorised buyer contacts</h2>
         <div className="mt-6 overflow-x-auto">
           <table className="min-w-[1000px] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b border-[#101712]/10 text-xs uppercase tracking-[0.18em] text-[#1E2420]/50">
+              <tr className="border-b border-[#102015]/10 text-xs uppercase tracking-[0.18em] text-[#587063]">
                 <th className="py-3 pr-4">Contact</th>
                 <th className="py-3 pr-4">Buyer</th>
                 <th className="py-3 pr-4">Role</th>
@@ -267,10 +260,10 @@ export default async function BuyerAccessPage() {
             </thead>
             <tbody>
               {contacts.map((contact) => (
-                <tr key={contact.id} className="border-b border-[#101712]/10">
+                <tr key={contact.id} className="border-b border-[#102015]/10">
                   <td className="py-4 pr-4">
                     <div className="font-black">{contact.name}</div>
-                    <div className="text-xs text-[#1E2420]/55">
+                    <div className="text-xs text-[#587063]">
                       {contact.email || "No email"} · {contact.phone || "No phone"}
                     </div>
                   </td>
@@ -296,7 +289,7 @@ export default async function BuyerAccessPage() {
 
               {!contacts.length ? (
                 <tr>
-                  <td className="py-8 text-center text-[#1E2420]/55" colSpan={5}>
+                  <td className="py-8 text-center text-[#587063]" colSpan={5}>
                     No authorised buyer contacts yet.
                   </td>
                 </tr>
@@ -307,15 +300,15 @@ export default async function BuyerAccessPage() {
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-black text-[#101712]">Account invite records</h2>
+        <h2 className="text-2xl font-black text-[#102015]">Account invite records</h2>
         <div className="mt-6 grid gap-4">
           {invites.map((invite) => (
-            <article key={invite.id} className="rounded-2xl bg-[#F8F1E7] p-5">
+            <article key={invite.id} className="rounded-2xl bg-[#f3f8ef] p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-sm font-black text-[#C95F3D]">{invite.inviteCode}</p>
                   <h3 className="mt-1 text-xl font-black">{invite.customer.name}</h3>
-                  <p className="mt-1 text-sm text-[#1E2420]/60">
+                  <p className="mt-1 text-sm text-[#587063]">
                     {invite.email || "No email"} · {invite.phone || "No phone"} · {invite.role}
                   </p>
                 </div>
@@ -327,13 +320,14 @@ export default async function BuyerAccessPage() {
           ))}
 
           {!invites.length ? (
-            <p className="rounded-2xl bg-[#F8F1E7] p-5 text-sm text-[#1E2420]/60">
+            <p className="rounded-2xl bg-[#f3f8ef] p-5 text-sm text-[#587063]">
               No buyer invite records yet.
             </p>
           ) : null}
         </div>
       </section>
-    </main>
+      </div>
+    </AdminPageShell>
   );
 }
 

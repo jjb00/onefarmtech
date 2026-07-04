@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
 
 function money(value: number) {
@@ -35,20 +36,11 @@ export default async function BuyerAccountsPage() {
   );
 
   return (
-    <main className="space-y-6">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-[0.22em] text-[#C95F3D]">
-          Buyer control
-        </p>
-        <h1 className="mt-2 text-3xl font-black text-[#101712]">
-          Recurring buyer accounts
-        </h1>
-        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#1E2420]/70">
-          Internal account-readiness view for restaurants, hotels, caterers, food
-          vendors, retailers, large households, and buying groups. This prepares
-          the platform for receipts, credit limits, balances, and approved buyer login.
-        </p>
-      </div>
+    <AdminPageShell
+      title="Recurring buyer accounts"
+      description="Internal account-readiness view for restaurants, hotels, caterers, food vendors, retailers, large households, and buying groups. This prepares the platform for receipts, credit limits, balances, and approved buyer login."
+    >
+      <div className="grid gap-6">
 
       <section className="grid gap-4 md:grid-cols-3">
         <Metric label="Account-login ready" value={String(accountReady)} />
@@ -70,12 +62,12 @@ export default async function BuyerAccountsPage() {
           return (
             <Link href={`/admin/customers/${customer.id}`}
               key={customer.id}
-              className="rounded-[1.5rem] border border-[#101712]/10 bg-white p-5 shadow-sm"
+              className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-5 shadow-sm"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <h2 className="text-xl font-black text-[#101712]">{customer.name}</h2>
-                  <p className="mt-1 text-sm text-[#1E2420]/60">
+                  <h2 className="text-xl font-black text-[#102015]">{customer.name}</h2>
+                  <p className="mt-1 text-sm text-[#587063]">
                     {customer.buyerType} · {customer.location || "Location not set"} ·{" "}
                     {customer.phone}
                   </p>
@@ -85,7 +77,7 @@ export default async function BuyerAccountsPage() {
                   <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
                     {customer.accountStatus}
                   </span>
-                  <span className="rounded-full bg-[#F2B84B]/20 px-3 py-1 text-xs font-black text-[#101712]">
+                  <span className="rounded-full bg-[#F2B84B]/20 px-3 py-1 text-xs font-black text-[#102015]">
                     {customer.accountLoginReady ? "Login ready" : "Manual account"}
                   </span>
                 </div>
@@ -101,7 +93,7 @@ export default async function BuyerAccountsPage() {
                 <SmallMetric label="Receipts issued" value={money(receiptTotal)} />
               </div>
 
-              <div className="mt-4 rounded-2xl bg-[#F8F1E7] p-4 text-sm leading-7 text-[#1E2420]/75">
+              <div className="mt-4 rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-7 text-[#405348]">
                 <strong>Payment terms:</strong> {customer.paymentTerms}
                 <br />
                 <strong>Receipt email:</strong>{" "}
@@ -112,12 +104,13 @@ export default async function BuyerAccountsPage() {
         })}
 
         {!customers.length ? (
-          <div className="rounded-[1.5rem] bg-white p-8 text-center text-[#1E2420]/60">
+          <div className="rounded-[1.5rem] bg-white p-8 text-center text-[#587063]">
             No buyers have been created yet.
           </div>
         ) : null}
       </section>
-    </main>
+      </div>
+    </AdminPageShell>
   );
 }
 
@@ -132,9 +125,9 @@ function Metric({label, value}: {label: string; value: string}) {
 
 function SmallMetric({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-2xl border border-[#101712]/10 bg-[#F8F1E7] p-4">
+    <div className="rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] p-4">
       <p className="text-lg font-black">{value}</p>
-      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#1E2420]/50">
+      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-[#587063]">
         {label}
       </p>
     </div>
