@@ -275,3 +275,24 @@ model ContactEnquiry {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }
+
+
+model BuyerAccountRequest {
+  id                  String   @id @default(cuid())
+  contactName         String
+  organisationName    String?
+  buyerType           String   @default("Business buyer")
+  phone               String
+  email               String?
+  location            String?
+  usualProduceNeeds   String?
+  orderFrequency      String?
+  estimatedSpend      String?
+  interestedInCredit  Boolean  @default(false)
+  message             String?
+  status              String   @default("New")
+  source              String   @default("Buyer account request page")
+  adminNote           String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

@@ -413,3 +413,52 @@ export async function createContactEnquiryAction(formData: FormData) {
   revalidatePath("/admin/audit-log");
   redirect("/contact?submitted=1");
 }
+
+export async function createBuyerAccountRequestAction(formData: FormData) {
+  const contactName = readText(formData, "contactName");
+  const organisationName = readText(formData, "organisationName");
+  const buyerType = readText(formData, "buyerType", "Business buyer");
+  const phone = readText(formData, "phone");
+  const email = readText(formData, "email");
+  const location = readText(formData, "location");
+  const usualProduceNeeds = readText(formData, "usualProduceNeeds");
+  const orderFrequency = readText(formData, "orderFrequency");
+  const estimatedSpend = readText(formData, "estimatedSpend");
+  const interestedInCredit = readBoolean(formData, "interestedInCredit");
+  const message = readText(formData, "message");
+
+  if (!contactName || !phone) {
+    throw new Error("Contact name and phone are required.");
+  }
+
+  const request = await prisma.buyerAccountRequest.create({
+    data: {
+      contactName,
+      organisationName: organisationName || null,
+      buyerType,
+      phone,
+      email: email || null,
+      location: location || null,
+      usualProduceNeeds: usualProduceNeeds || null,
+      orderFrequency: orderFrequency || null,
+      estimatedSpend: estimatedSpend || null,
+      interestedInCredit,
+      message: message || null,
+      status: "New",
+      source: "Buyer account request page",
+    },
+  });
+
+  await createAuditLog({
+    action: "Created buyer account request",
+    entityType: "BuyerAccountRequest",
+    entityId: request.id,
+    entityLabel: `${request.buyerType} · ${request.contactName}`,
+    newValue: request,
+  });
+
+  revalidatePath("/buyer-account-request");
+  revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/audit-log");
+  redirect("/buyer-account-request?submitted=1");
+}

@@ -64,12 +64,12 @@ export default function BuyerLoginPage() {
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20would%20like%20to%20create%20a%20buyer%20account.%20Business%20name%3A%20___%20Location%3A%20___%20Buyer%20type%3A%20___"
+            <Link
+              href="/buyer-account-request"
               className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
             >
               Request account setup
-            </a>
+            </Link>
             <Link
               href="/order"
               className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712]"
