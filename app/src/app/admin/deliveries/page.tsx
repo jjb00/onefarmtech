@@ -57,9 +57,9 @@ export default async function DeliveriesPage() {
           <Bucket title="Exceptions" orders={exceptionOrders} />
         </section>
 
-        <div className="overflow-x-auto rounded-3xl border border-white/10 bg-white/[0.03]">
-          <table className="min-w-[1000px] divide-y divide-white/10 text-sm">
-            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-[0.18em] text-white/45">
+        <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
+          <table className="min-w-[1000px] divide-y divide-[#102015]/10 text-sm">
+            <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
               <tr>
                 <th className="px-5 py-4 font-semibold">Order</th>
                 <th className="px-5 py-4 font-semibold">Buyer</th>
@@ -70,20 +70,20 @@ export default async function DeliveriesPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-[#102015]/10">
               {deliveryOrders.map((order) => (
-                <tr key={order.id} className="text-white/75">
+                <tr key={order.id} className="text-[#405348]">
                   <td className="px-5 py-4">
                     <Link
                       href={`/admin/orders/${order.code}`}
-                      className="font-semibold text-[#9ee6ad] hover:underline"
+                      className="font-semibold text-[#1f7a3f] hover:underline"
                     >
                       {order.code}
                     </Link>
                   </td>
                   <td className="px-5 py-4">
-                    <div className="font-semibold text-white">{order.buyerName}</div>
-                    <div className="text-xs text-white/45">{order.phone}</div>
+                    <div className="font-semibold text-[#102015]">{order.buyerName}</div>
+                    <div className="text-xs text-[#587063]">{order.phone}</div>
                   </td>
                   <td className="px-5 py-4">{order.deliveryMethod}</td>
                   <td className="px-5 py-4">
@@ -98,7 +98,7 @@ export default async function DeliveriesPage() {
 
               {!deliveryOrders.length ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-white/50">
+                  <td colSpan={6} className="px-5 py-8 text-center text-[#587063]">
                     No delivery or pickup orders yet.
                   </td>
                 </tr>
@@ -113,8 +113,8 @@ export default async function DeliveriesPage() {
 
 function Metric({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
-      <p className="text-sm text-white/50">{label}</p>
+    <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
+      <p className="text-sm text-[#587063]">{label}</p>
       <p className="mt-2 text-3xl font-black">{value}</p>
     </div>
   );
@@ -134,25 +134,25 @@ function Bucket({
   }[];
 }) {
   return (
-    <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-5 text-white">
+    <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015]">
       <h2 className="text-lg font-black">{title}</h2>
       <div className="mt-4 grid gap-3">
         {orders.map((order) => (
           <Link
             key={order.id}
             href={`/admin/orders/${order.code}`}
-            className="rounded-2xl bg-white/[0.06] p-4 hover:bg-white/[0.1]"
+            className="rounded-2xl bg-[#f3f8ef] p-4 hover:bg-[#f3f8ef]"
           >
-            <p className="font-bold text-[#9ee6ad]">{order.code}</p>
-            <p className="mt-1 text-sm text-white/70">{order.buyerName}</p>
-            <p className="mt-2 text-xs text-white/45">
+            <p className="font-bold text-[#1f7a3f]">{order.code}</p>
+            <p className="mt-1 text-sm text-[#405348]">{order.buyerName}</p>
+            <p className="mt-2 text-xs text-[#587063]">
               {order.fulfilmentStatus} · {order.deliveryMethod}
             </p>
           </Link>
         ))}
 
         {!orders.length ? (
-          <p className="rounded-2xl bg-white/[0.04] p-4 text-sm text-white/45">
+          <p className="rounded-2xl bg-white p-4 text-sm text-[#587063]">
             No orders in this bucket.
           </p>
         ) : null}

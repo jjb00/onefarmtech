@@ -50,13 +50,13 @@ export default async function WorkflowsPage() {
           </Link>
           <Link
             href="/admin/deliveries"
-            className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold text-white/75"
+            className="rounded-full border border-[#102015]/15 px-5 py-3 text-sm font-bold text-[#405348]"
           >
             Delivery board
           </Link>
           <Link
             href="/admin/receipts"
-            className="rounded-full border border-white/15 px-5 py-3 text-sm font-bold text-white/75"
+            className="rounded-full border border-[#102015]/15 px-5 py-3 text-sm font-bold text-[#405348]"
           >
             Receipts
           </Link>
@@ -71,9 +71,9 @@ export default async function WorkflowsPage() {
             return (
               <div
                 key={group.title}
-                className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white"
+                className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]"
               >
-                <p className="text-sm text-white/50">{group.title}</p>
+                <p className="text-sm text-[#587063]">{group.title}</p>
                 <p className="mt-2 text-3xl font-black">{count}</p>
               </div>
             );
@@ -89,16 +89,16 @@ export default async function WorkflowsPage() {
             return (
               <div
                 key={group.title}
-                className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-4 text-white"
+                className="rounded-[2rem] border border-[#102015]/10 bg-white p-4 text-[#102015]"
               >
                 <h2 className="text-lg font-bold">{group.title}</h2>
-                <p className="mt-2 rounded-2xl bg-white/[0.04] p-3 text-xs leading-5 text-white/55">
+                <p className="mt-2 rounded-2xl bg-white p-3 text-xs leading-5 text-[#587063]">
                   {group.instruction}
                 </p>
 
                 <div className="mt-5 grid gap-3">
                   {groupOrders.length === 0 ? (
-                    <p className="rounded-2xl bg-white/[0.04] p-4 text-sm text-white/45">
+                    <p className="rounded-2xl bg-white p-4 text-sm text-[#587063]">
                       No orders here.
                     </p>
                   ) : (
@@ -106,22 +106,22 @@ export default async function WorkflowsPage() {
                       <Link
                         key={order.id}
                         href={`/admin/orders/${order.code}`}
-                        className="rounded-2xl bg-white/[0.06] p-4 transition hover:bg-white/[0.1]"
+                        className="rounded-2xl bg-[#f3f8ef] p-4 transition hover:bg-[#f3f8ef]"
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-bold text-[#9ee6ad]">{order.code}</p>
-                            <p className="mt-1 text-sm text-white/70">
+                            <p className="font-bold text-[#1f7a3f]">{order.code}</p>
+                            <p className="mt-1 text-sm text-[#405348]">
                               {order.buyerName}
                             </p>
                           </div>
                           <StatusBadge status={order.paymentStatus} />
                         </div>
 
-                        <p className="mt-3 text-sm text-white/50">
+                        <p className="mt-3 text-sm text-[#587063]">
                           {formatOrderTotal(order.estimatedTotal)}
                         </p>
-                        <p className="mt-2 text-xs text-white/45">
+                        <p className="mt-2 text-xs text-[#587063]">
                           {order.deliveryMethod} · {order.fulfilmentStatus}
                         </p>
                       </Link>
@@ -133,15 +133,15 @@ export default async function WorkflowsPage() {
           })}
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-white">
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <h2 className="text-2xl font-bold">Operating workflow checklist</h2>
           <div className="mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {orderWorkflowSteps.map((step, index) => (
-              <div key={step} className="rounded-2xl bg-white/[0.05] p-4">
-                <p className="text-sm font-bold text-[#9ee6ad]">
+              <div key={step} className="rounded-2xl bg-[#f3f8ef] p-4">
+                <p className="text-sm font-bold text-[#1f7a3f]">
                   Step {index + 1}
                 </p>
-                <p className="mt-2 text-sm text-white/70">{step}</p>
+                <p className="mt-2 text-sm text-[#405348]">{step}</p>
               </div>
             ))}
           </div>

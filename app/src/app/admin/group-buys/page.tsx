@@ -59,27 +59,27 @@ export default async function GroupBuysPage() {
     >
       <div className="grid gap-8">
         <section className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
-            <p className="text-sm font-bold text-[#9ee6ad]">City group buys</p>
-            <p className="mt-2 text-sm leading-6 text-white/60">
+          <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
+            <p className="text-sm font-bold text-[#1f7a3f]">City group buys</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
               Public area-based group buys for buyers around a city, market, pickup point, or delivery route.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
-            <p className="text-sm font-bold text-[#9ee6ad]">Private group buys</p>
-            <p className="mt-2 text-sm leading-6 text-white/60">
+          <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
+            <p className="text-sm font-bold text-[#1f7a3f]">Private group buys</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
               Friends, neighbours, offices, churches, restaurant clusters, or retailer groups can request private buying groups.
             </p>
           </div>
-          <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
-            <p className="text-sm font-bold text-[#9ee6ad]">Admin-reviewed</p>
-            <p className="mt-2 text-sm leading-6 text-white/60">
-              MVP group buys should be reviewed by admin before activation, payment collection, and fulfilment.
+          <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
+            <p className="text-sm font-bold text-[#1f7a3f]">Admin-reviewed</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
+              Group buys should be reviewed by admin before activation, payment collection, and fulfilment.
             </p>
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.03] p-6 text-white">
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <h2 className="text-2xl font-bold">Group-buy operating rules</h2>
           <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[
@@ -88,7 +88,7 @@ export default async function GroupBuysPage() {
               "Track reservations against target quantity.",
               "Move to fulfilment only when admin approves allocation.",
             ].map((rule) => (
-              <div key={rule} className="rounded-2xl bg-white/[0.05] p-4 text-sm leading-6 text-white/70">
+              <div key={rule} className="rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
                 {rule}
               </div>
             ))}
@@ -241,9 +241,9 @@ export default async function GroupBuysPage() {
 
         <section className="grid gap-6">
           {groupBuys.length === 0 ? (
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+            <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">No group buys yet</h2>
-              <p className="mt-2 text-white/60">
+              <p className="mt-2 text-[#405348]">
                 Create the first admin-led group buy above.
               </p>
             </div>
@@ -268,15 +268,15 @@ export default async function GroupBuysPage() {
               return (
                 <article
                   key={groupBuy.id}
-                  className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white"
+                  className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]"
                 >
                   <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                     <div>
-                      <p className="text-sm font-bold text-[#9ee6ad]">
+                      <p className="text-sm font-bold text-[#1f7a3f]">
                         {groupBuy.code}
                       </p>
                       <h2 className="mt-2 text-3xl font-black">{groupBuy.title}</h2>
-                      <p className="mt-2 max-w-3xl text-sm leading-6 text-white/60">
+                      <p className="mt-2 max-w-3xl text-sm leading-6 text-[#405348]">
                         {groupBuy.description || "No description added."}
                       </p>
                     </div>
@@ -289,38 +289,38 @@ export default async function GroupBuysPage() {
                   </div>
 
                   <div className="mt-6 grid gap-4 md:grid-cols-5">
-                    <div className="rounded-2xl bg-white/[0.06] p-4">
-                      <p className="text-sm text-white/45">Item</p>
+                    <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                      <p className="text-sm text-[#587063]">Item</p>
                       <p className="mt-1 font-bold">
                         {firstItem?.name || "No item"} · {firstItem?.grade || "N/A"}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.06] p-4">
-                      <p className="text-sm text-white/45">Reserved</p>
+                    <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                      <p className="text-sm text-[#587063]">Reserved</p>
                       <p className="mt-1 font-bold">
                         {groupBuy.reservedQuantity} / {groupBuy.targetQuantity} {groupBuy.unit}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.06] p-4">
-                      <p className="text-sm text-white/45">Minimum</p>
+                    <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                      <p className="text-sm text-[#587063]">Minimum</p>
                       <p className="mt-1 font-bold">
                         {groupBuy.minQuantity} {groupBuy.unit}
                       </p>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.06] p-4">
-                      <p className="text-sm text-white/45">Reserved value</p>
+                    <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                      <p className="text-sm text-[#587063]">Reserved value</p>
                       <p className="mt-1 font-bold">{formatNaira(reservedValue)}</p>
                     </div>
-                    <div className="rounded-2xl bg-white/[0.06] p-4">
-                      <p className="text-sm text-white/45">Close / pickup</p>
+                    <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                      <p className="text-sm text-[#587063]">Close / pickup</p>
                       <p className="mt-1 font-bold">{formatDate(groupBuy.closingDate)}</p>
-                      <p className="mt-1 text-xs text-white/45">
+                      <p className="mt-1 text-xs text-[#587063]">
                         {groupBuy.pickupWindow || "No pickup window"}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-5 h-3 overflow-hidden rounded-full bg-white/10">
+                  <div className="mt-5 h-3 overflow-hidden rounded-full bg-white">
                     <div
                       className="h-full rounded-full bg-[#9ee6ad]"
                       style={{ width: `${progress}%` }}
@@ -444,29 +444,29 @@ export default async function GroupBuysPage() {
                       </button>
                     </form>
 
-                    <div className="rounded-2xl bg-white/[0.06] p-5">
+                    <div className="rounded-2xl bg-[#f3f8ef] p-5">
                       <h3 className="text-xl font-bold">Reservations</h3>
                       <div className="mt-4 grid max-h-80 gap-3 overflow-y-auto pr-1">
                         {groupBuy.reservations.length === 0 ? (
-                          <p className="rounded-2xl bg-white/[0.06] p-4 text-sm text-white/50">
+                          <p className="rounded-2xl bg-[#f3f8ef] p-4 text-sm text-[#587063]">
                             No reservations yet.
                           </p>
                         ) : (
                           groupBuy.reservations.map((reservation) => (
                             <div
                               key={reservation.id}
-                              className="rounded-2xl bg-white/[0.06] p-4"
+                              className="rounded-2xl bg-[#f3f8ef] p-4"
                             >
                               <div className="flex items-start justify-between gap-3">
                                 <div>
                                   <p className="font-bold">{reservation.buyerName}</p>
-                                  <p className="text-xs text-white/45">
+                                  <p className="text-xs text-[#587063]">
                                     {reservation.phone} · {reservation.buyerType}
                                   </p>
                                 </div>
                                 <StatusBadge status={reservation.paymentStatus} />
                               </div>
-                              <p className="mt-2 text-sm text-white/60">
+                              <p className="mt-2 text-sm text-[#405348]">
                                 {reservation.quantity} {groupBuy.unit} · {formatNaira(reservation.amount)}
                               </p>
                             </div>

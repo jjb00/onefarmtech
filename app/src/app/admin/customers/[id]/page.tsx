@@ -82,19 +82,19 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
         <div className="flex flex-wrap gap-3">
           <Link
             href="/admin/customers"
-            className="rounded-full border border-white/15 px-4 py-2 text-sm font-bold text-white/75"
+            className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
           >
             Back to customers
           </Link>
           <Link
             href="/admin/buyer-accounts"
-            className="rounded-full border border-white/15 px-4 py-2 text-sm font-bold text-white/75"
+            className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
           >
             Buyer accounts
           </Link>
           <Link
             href="/admin/receipts"
-            className="rounded-full border border-white/15 px-4 py-2 text-sm font-bold text-white/75"
+            className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
           >
             Issue receipt
           </Link>
@@ -316,7 +316,7 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
                   </div>
                   <div className="grid gap-2 md:justify-items-end">
                     <StatusBadge status={order.paymentStatus} />
-                    <span className="rounded-full bg-[#102015]/10 px-3 py-1 text-xs font-bold text-[#102015]">
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-bold text-[#102015]">
                       {order.fulfilmentStatus}
                     </span>
                     <span className="text-xs text-[#405348]">
@@ -386,8 +386,8 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
 
 function Metric({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white">
-      <p className="text-sm text-white/50">{label}</p>
+    <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
+      <p className="text-sm text-[#587063]">{label}</p>
       <p className="mt-2 text-2xl font-black">{value}</p>
     </div>
   );

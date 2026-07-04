@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {BrandMark} from "@/components/BrandMark";
+import PublicImageCollage from "@/components/PublicImageCollage";
 
 const requestSteps = [
   {
@@ -44,32 +45,64 @@ export default function BuyerRequestPage() {
   );
 
   return (
-    <main className="min-h-screen bg-[#F8F1E7] text-[#101712]">
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/brand/portal-pattern.svg')] bg-cover bg-center opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#F8F1E7]/96 via-[#F8F1E7]/90 to-[#F2B84B]/20" />
+    <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] text-[#101712]">
+      <PublicImageCollage
+        images={[
+          {
+            src: "/backgrounds/trolley.png",
+            alt: "Fresh produce trolley for ordering",
+            className:
+              "left-[-190px] top-56 h-80 w-80 opacity-[0.4] md:h-[32rem] md:w-[32rem]",
+          },
+          {
+            src: "/backgrounds/delivery.png",
+            alt: "Fresh produce delivery and fulfilment",
+            className:
+              "right-[-150px] top-32 h-80 w-80 opacity-[0.38] md:h-[31rem] md:w-[31rem]",
+          },
+          {
+            src: "/backgrounds/support.png",
+            alt: "WhatsApp fresh produce ordering support",
+            className:
+              "bottom-[-120px] left-[28%] hidden h-[26rem] w-[26rem] opacity-[0.28] lg:block",
+          },
+          {
+            src: "/backgrounds/produce.png",
+            alt: "Fresh produce baskets",
+            className:
+              "bottom-[-150px] right-[18%] hidden h-[24rem] w-[24rem] opacity-[0.28] xl:block",
+          },
+        ]}
+      />
 
+      <div className="pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
+      <div className="pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/25 blur-3xl" />
+
+      <section className="relative overflow-hidden">
         <div className="relative mx-auto max-w-6xl px-6 py-10 lg:px-10 lg:py-14">
           <div className="mb-10 flex items-center justify-between">
-            <BrandMark />
+            <Link href="/" aria-label="Go to OneFarmTech homepage">
+              <BrandMark />
+            </Link>
+
             <Link
               href="/"
-              className="rounded-full border border-[#101712]/10 bg-white/70 px-4 py-2 text-sm font-bold text-[#101712] shadow-sm hover:bg-white"
+              className="rounded-full border border-[#101712]/10 bg-white/80 px-4 py-2 text-sm font-bold text-[#101712] shadow-sm hover:bg-white"
             >
               Back home
             </Link>
           </div>
 
-          <p className="inline-flex rounded-full bg-white/75 px-4 py-2 text-sm font-black text-[#C95F3D] shadow-sm">
-            Buyer portal
+          <p className="inline-flex rounded-full bg-white/80 px-4 py-2 text-sm font-black text-[#C95F3D] shadow-sm backdrop-blur">
+            Order
           </p>
-          <h1 className="mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
-            Request produce, join group buys, or manage recurring buyer access.
+          <h1 className="oft-fade-up mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
+            Order fresh produce or start a group buy.
           </h1>
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-[#1E2420]/75">
+          <p className="oft-fade-up-delay-1 mt-5 max-w-3xl text-lg leading-8 text-[#1E2420]/75">
             Restaurants, caterers, hotels, food vendors, retailers, large households,
             families, friends and community buying groups can use OneFarmTech for
-            coordinated farm-to-city procurement.
+            coordinated fresh food supply.
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
@@ -83,13 +116,13 @@ export default function BuyerRequestPage() {
               href={`https://wa.me/?text=${encodeURIComponent(
                 "Hello OneFarmTech, I want to request a city or private group buy. Location: ___ Items: ___ Estimated buyers/quantity: ___",
               )}`}
-              className="rounded-full border border-[#101712]/10 bg-white/70 px-6 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white"
+              className="rounded-full border border-[#101712]/10 bg-white/80 px-6 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white"
             >
               Request group buy
             </a>
             <Link
               href="/buyer-login"
-              className="rounded-full border border-[#101712]/10 bg-white/70 px-6 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white"
+              className="rounded-full border border-[#101712]/10 bg-white/80 px-6 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white"
             >
               Approved buyer login
             </Link>
@@ -97,18 +130,26 @@ export default function BuyerRequestPage() {
         </div>
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-5 px-6 py-12 md:grid-cols-2 lg:px-10">
+      <section className="relative mx-auto grid max-w-6xl gap-5 px-6 py-12 md:grid-cols-2 lg:px-10">
         {portalCards.map((card) => (
-          <div key={card.title} className="rounded-[1.5rem] bg-white p-6 shadow-sm">
+          <div
+            key={card.title}
+            className="oft-card-lift rounded-[1.5rem] border border-[#101712]/10 bg-white/90 p-6 shadow-sm backdrop-blur"
+          >
             <h2 className="text-xl font-black">{card.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">{card.description}</p>
+            <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">
+              {card.description}
+            </p>
           </div>
         ))}
       </section>
 
-      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-14 lg:grid-cols-3 lg:px-10">
+      <section className="relative mx-auto grid max-w-6xl gap-6 px-6 pb-14 lg:grid-cols-3 lg:px-10">
         {requestSteps.map((step, index) => (
-          <div key={step.title} className="rounded-[1.5rem] bg-white p-6 shadow-sm">
+          <div
+            key={step.title}
+            className="oft-card-lift rounded-[1.5rem] border border-[#101712]/10 bg-white/90 p-6 shadow-sm backdrop-blur"
+          >
             <p className="text-sm font-black text-[#C95F3D]">Step {index + 1}</p>
             <h2 className="mt-2 text-xl font-black">{step.title}</h2>
             <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">

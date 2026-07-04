@@ -123,9 +123,9 @@ export default async function BuyerAccountsPage() {
 
 function Metric({label, value}: {label: string; value: string}) {
   return (
-    <div className="rounded-[1.5rem] bg-[#101712] p-5 text-white shadow-sm">
-      <p className="text-2xl font-black text-[#F2B84B]">{value}</p>
-      <p className="mt-1 text-sm font-semibold text-white/70">{label}</p>
+    <div className="rounded-[1.5rem] bg-white p-5 text-[#102015] shadow-sm">
+      <p className="text-2xl font-black text-[#1f7a3f]">{value}</p>
+      <p className="mt-1 text-sm font-semibold text-[#405348]">{label}</p>
     </div>
   );
 }

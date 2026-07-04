@@ -31,7 +31,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
 
             <div className="mt-6 rounded-2xl border border-[#c95f3d]/20 bg-[#c95f3d]/10 p-4">
               <p className="text-sm font-black text-[#7a321f]">
-                Temporary MVP gate
+                Temporary staff gate
               </p>
               <p className="mt-2 text-xs leading-5 text-[#405348]">
                 This is not production authentication. Use it only for local/internal
@@ -51,7 +51,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
             </p>
             <h2 className="mt-3 text-3xl font-black">Sign in</h2>
             <p className="mt-2 text-sm text-[#405348]">
-              Enter the temporary MVP admin password and identify your staff role
+              Enter the temporary admin password and identify your staff role
               so audit logs can attribute local actions more clearly.
             </p>
 

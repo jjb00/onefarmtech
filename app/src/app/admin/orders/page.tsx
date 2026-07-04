@@ -34,7 +34,7 @@ export default function AdminOrdersPage() {
 
       <AdminTableShell
         title="Order queue"
-        description="MVP mock table. Later this will connect to database records."
+        description="Database-backed order queue for active buyer orders."
         label="Manual order management"
       >
         <table className="w-full min-w-[1000px] border-separate border-spacing-y-3 text-left text-sm">

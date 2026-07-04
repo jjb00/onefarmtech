@@ -251,7 +251,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
 
         <aside className="grid gap-8">
           <OrderTraceabilityPanel order={order} />
-          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
             <h2 className="text-2xl font-bold">Record payment</h2>
 
             <form action={createPaymentAction} className="mt-6 grid gap-4">
@@ -266,7 +266,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                   type="number"
                   min="1"
                   defaultValue={order.estimatedTotal || ""}
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                 />
               </label>
 
@@ -275,7 +275,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <select
                   name="provider"
                   defaultValue="Manual transfer"
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                 >
                   <option>Manual transfer</option>
                   <option>Cash</option>
@@ -289,7 +289,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 Reference
                 <input
                   name="reference"
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                   placeholder="Optional, auto-generated if blank"
                 />
               </label>
@@ -299,7 +299,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <select
                   name="status"
                   defaultValue="Fully paid"
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                 >
                   {paymentStatuses.map((status) => (
                     <option key={status}>{status}</option>
@@ -316,17 +316,17 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </form>
           </section>
 
-          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
             <h2 className="text-2xl font-bold">Payments</h2>
 
             <div className="mt-6 grid gap-4">
               {order.payments.length === 0 ? (
-                <p className="rounded-2xl bg-white/10 p-4 text-sm text-[#d8e8dc]">
+                <p className="rounded-2xl bg-white p-4 text-sm text-[#d8e8dc]">
                   No payment records yet.
                 </p>
               ) : (
                 order.payments.map((payment: PaymentRow) => (
-                  <article key={payment.id} className="rounded-2xl bg-white/10 p-4">
+                  <article key={payment.id} className="rounded-2xl bg-white p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="font-bold">{payment.reference}</p>
@@ -347,7 +347,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </div>
           </section>
 
-          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
             <h2 className="text-2xl font-bold">Log complaint</h2>
 
             <form action={createComplaintAction} className="mt-6 grid gap-4">
@@ -359,7 +359,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <textarea
                   name="issue"
                   required
-                  className="min-h-24 rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="min-h-24 rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                   placeholder="e.g. Buyer reported damaged tomatoes"
                 />
               </label>
@@ -369,7 +369,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <select
                   name="priority"
                   defaultValue="Medium"
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                 >
                   <option>Low</option>
                   <option>Medium</option>
@@ -383,7 +383,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 <select
                   name="status"
                   defaultValue="Open"
-                  className="rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                 >
                   <option>Open</option>
                   <option>Investigating</option>
@@ -396,7 +396,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 Resolution
                 <textarea
                   name="resolution"
-                  className="min-h-20 rounded-xl border border-white/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
+                  className="min-h-20 rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal text-[#102015] outline-none"
                   placeholder="Optional resolution note"
                 />
               </label>
@@ -410,19 +410,19 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </form>
           </section>
 
-          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
             <h2 className="text-2xl font-bold">Complaints</h2>
 
             <div className="mt-6 grid gap-4">
               {order.complaints.length === 0 ? (
-                <p className="rounded-2xl bg-white/10 p-4 text-sm text-[#d8e8dc]">
+                <p className="rounded-2xl bg-white p-4 text-sm text-[#d8e8dc]">
                   No complaints recorded.
                 </p>
               ) : (
                 order.complaints.map((complaint: ComplaintRow) => (
                   <article
                     key={complaint.id}
-                    className="rounded-2xl bg-white/10 p-4"
+                    className="rounded-2xl bg-white p-4"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div>
@@ -430,7 +430,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                         <p className="mt-1 text-sm text-[#d8e8dc]">
                           {complaint.issue}
                         </p>
-                        <p className="mt-1 text-xs text-[#9ee6ad]">
+                        <p className="mt-1 text-xs text-[#1f7a3f]">
                           Priority: {complaint.priority}
                         </p>
                       </div>
@@ -447,7 +447,7 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
             </div>
           </section>
 
-          <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+          <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
             <h2 className="text-2xl font-bold">Admin checklist</h2>
             <div className="mt-6 grid gap-4">
               {[
@@ -459,8 +459,8 @@ export default async function OrderDetailPage({ params }: OrderDetailPageProps) 
                 "Send buyer update on WhatsApp",
                 "Mark order completed or issue reported",
               ].map((step, index) => (
-                <div key={step} className="rounded-2xl bg-white/10 p-4">
-                  <p className="text-sm text-[#9ee6ad]">Step {index + 1}</p>
+                <div key={step} className="rounded-2xl bg-white p-4">
+                  <p className="text-sm text-[#1f7a3f]">Step {index + 1}</p>
                   <p className="mt-1 font-semibold">{step}</p>
                 </div>
               ))}

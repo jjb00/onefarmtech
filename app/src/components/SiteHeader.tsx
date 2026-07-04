@@ -23,10 +23,10 @@ export default function SiteHeader() {
         </nav>
 
         <Link
-          href="/dashboard"
+          href="/order"
           className="rounded-full bg-[#102015] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#1f2a20]"
         >
-          Buyer portal
+          Order
         </Link>
       </div>
     </header>

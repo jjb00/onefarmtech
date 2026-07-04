@@ -5,7 +5,7 @@ export default function SiteFooter() {
         <div>
           <h2 className="text-xl font-bold">OneFarmTech</h2>
           <p className="mt-2 text-sm text-[#d8e8dc]">
-            WhatsApp-first farm-to-city procurement for Nigerian bulk buyers.
+            Fresh food supply for Nigerian bulk buyers.
           </p>
         </div>
 

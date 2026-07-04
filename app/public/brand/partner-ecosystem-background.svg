@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000">
+  <rect width="1600" height="1000" fill="#fbfff8"/>
+  <g fill="none" stroke="#1f7a3f" stroke-width="7" stroke-linecap="round" stroke-linejoin="round" opacity="0.55">
+    <rect x="150" y="190" width="300" height="190" rx="40"/>
+    <path d="M205 275h190M205 325h120"/>
+    <path d="M190 190l55-75h160l45 75"/>
+    <rect x="620" y="145" width="330" height="230" rx="44"/>
+    <path d="M690 240h190M690 305h130"/>
+    <circle cx="785" cy="420" r="48"/>
+    <path d="M700 550c35-95 135-95 170 0"/>
+    <rect x="1110" y="185" width="310" height="210" rx="42"/>
+    <path d="M1170 280h190M1170 340h115"/>
+    <path d="M1265 395v105"/>
+    <rect x="215" y="640" width="300" height="180" rx="38"/>
+    <path d="M270 720h180M270 770h110"/>
+    <rect x="665" y="650" width="300" height="180" rx="38"/>
+    <path d="M720 730h180M720 780h120"/>
+    <rect x="1115" y="640" width="300" height="180" rx="38"/>
+    <path d="M1170 720h180M1170 770h110"/>
+    <path d="M480 285h110M975 285h105"/>
+    <path d="M815 575v50"/>
+    <path d="M515 730h120M965 730h120"/>
+  </g>
+  <g fill="#F2B84B" opacity="0.45">
+    <circle cx="520" cy="500" r="34"/>
+    <circle cx="575" cy="550" r="24"/>
+    <circle cx="1020" cy="505" r="34"/>
+    <circle cx="1075" cy="555" r="24"/>
+    <circle cx="1420" cy="500" r="32"/>
+  </g>
+  <g fill="none" stroke="#C95F3D" stroke-width="7" stroke-linecap="round" opacity="0.45">
+    <path d="M500 475c45-65 120-65 165 0"/>
+    <path d="M1000 480c45-65 120-65 165 0"/>
+    <path d="M250 875c90 45 220 45 310 0"/>
+    <path d="M1040 875c90 45 220 45 310 0"/>
+  </g>
+</svg>

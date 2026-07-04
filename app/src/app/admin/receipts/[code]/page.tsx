@@ -77,7 +77,7 @@ export default async function ReceiptDetailPage({params}: ReceiptDetailPageProps
         </div>
 
         <section className="mt-8 rounded-[1.5rem] border border-[#101712]/10">
-          <div className="grid grid-cols-[1.4fr_0.5fr_0.5fr_0.7fr] gap-3 border-b border-[#101712]/10 bg-[#101712] px-4 py-3 text-xs font-black uppercase tracking-wide text-white">
+          <div className="grid grid-cols-[1.4fr_0.5fr_0.5fr_0.7fr] gap-3 border-b border-[#101712]/10 bg-white px-4 py-3 text-xs font-black uppercase tracking-wide text-[#102015]">
             <span>Item</span>
             <span>Qty</span>
             <span>Unit</span>

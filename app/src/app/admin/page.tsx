@@ -68,9 +68,9 @@ export default async function AdminDashboardPage() {
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="rounded-3xl border border-white/10 bg-white/[0.04] p-5 text-white"
+              className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]"
             >
-              <p className="text-sm text-white/50">{stat.label}</p>
+              <p className="text-sm text-[#587063]">{stat.label}</p>
               <p className="mt-2 text-3xl font-black">{stat.value}</p>
             </div>
           ))}
@@ -138,15 +138,15 @@ export default async function AdminDashboardPage() {
           </section>
 
           <aside className="grid gap-8">
-            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">Issue watch</h2>
-              <p className="mt-2 text-sm text-white/55">
+              <p className="mt-2 text-sm text-[#587063]">
                 Active complaints and unresolved order issues.
               </p>
 
               <div className="mt-6 grid gap-4">
                 {activeComplaints.length === 0 ? (
-                  <p className="rounded-2xl bg-white/10 p-4 text-sm text-white/60">
+                  <p className="rounded-2xl bg-white p-4 text-sm text-[#405348]">
                     No active complaints.
                   </p>
                 ) : (
@@ -154,11 +154,11 @@ export default async function AdminDashboardPage() {
                     <Link
                       key={complaint.id}
                       href={`/admin/orders/${complaint.order.code}`}
-                      className="rounded-2xl bg-white/10 p-4"
+                      className="rounded-2xl bg-white p-4"
                     >
-                      <p className="font-bold text-[#9ee6ad]">{complaint.code}</p>
-                      <p className="mt-1 text-sm text-white/70">{complaint.issue}</p>
-                      <p className="mt-2 text-xs text-white/45">
+                      <p className="font-bold text-[#1f7a3f]">{complaint.code}</p>
+                      <p className="mt-1 text-sm text-[#405348]">{complaint.issue}</p>
+                      <p className="mt-2 text-xs text-[#587063]">
                         Order {complaint.order.code} · {complaint.priority}
                       </p>
                     </Link>
@@ -167,17 +167,17 @@ export default async function AdminDashboardPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">Recent audit activity</h2>
               <div className="mt-6 grid gap-3">
                 {auditLogs.map((log) => (
                   <Link
                     key={log.id}
                     href="/admin/audit-log"
-                    className="rounded-2xl bg-white/10 p-4"
+                    className="rounded-2xl bg-white p-4"
                   >
-                    <p className="font-bold text-[#9ee6ad]">{log.action}</p>
-                    <p className="mt-1 text-xs text-white/50">
+                    <p className="font-bold text-[#1f7a3f]">{log.action}</p>
+                    <p className="mt-1 text-xs text-[#587063]">
                       {log.entityType}
                       {log.entityLabel ? ` · ${log.entityLabel}` : ""} ·{" "}
                       {log.createdAt.toLocaleString()}
@@ -186,14 +186,14 @@ export default async function AdminDashboardPage() {
                 ))}
 
                 {!auditLogs.length ? (
-                  <p className="rounded-2xl bg-white/10 p-4 text-sm text-white/60">
+                  <p className="rounded-2xl bg-white p-4 text-sm text-[#405348]">
                     No audit activity yet.
                   </p>
                 ) : null}
               </div>
             </section>
 
-            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">Control readiness</h2>
               <div className="mt-6 grid gap-3 text-sm">
                 <ControlRow label="Staff records" value={String(staffUsers.length)} href="/admin/staff" />
@@ -202,7 +202,7 @@ export default async function AdminDashboardPage() {
               </div>
             </section>
 
-            <section className="rounded-[2rem] bg-white/10 p-6 text-white">
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">Quick actions</h2>
               <div className="mt-6 grid gap-3">
                 {[
@@ -219,7 +219,7 @@ export default async function AdminDashboardPage() {
                   <Link
                     key={href}
                     href={href}
-                    className="rounded-2xl bg-white/10 px-4 py-3 font-semibold text-[#9ee6ad]"
+                    className="rounded-2xl bg-white px-4 py-3 font-semibold text-[#1f7a3f]"
                   >
                     {label}
                   </Link>
@@ -244,9 +244,9 @@ function MetricCard({label, value, href}: {label: string; value: string; href: s
 
 function ControlRow({label, value, href}: {label: string; value: string; href: string}) {
   return (
-    <Link href={href} className="flex items-center justify-between rounded-2xl bg-white/10 px-4 py-3">
-      <span className="font-semibold text-white/75">{label}</span>
-      <span className="font-black text-[#F2B84B]">{value}</span>
+    <Link href={href} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3">
+      <span className="font-semibold text-[#405348]">{label}</span>
+      <span className="font-black text-[#1f7a3f]">{value}</span>
     </Link>
   );
 }

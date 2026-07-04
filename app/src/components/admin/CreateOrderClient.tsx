@@ -430,10 +430,10 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
       </form>
 
       <aside className="grid gap-5">
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-white/40">
+              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#587063]">
                 Live preview
               </p>
               <h2 className="mt-2 text-2xl font-bold">
@@ -443,56 +443,56 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
             <StatusBadge status={form.paymentStatus} />
           </div>
 
-          <div className="mt-6 grid gap-3 text-sm text-white/65">
+          <div className="mt-6 grid gap-3 text-sm text-[#405348]">
             <div className="flex justify-between gap-4">
               <span>Customer link</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {selectedCustomer ? selectedCustomer.name : "Manual buyer"}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Product link</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {selectedProduct ? selectedProduct.name : "Manual item"}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Item</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {selectedProduct?.name || form.produceItem} · {selectedProduct?.grade || form.produceGrade}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Quantity</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {form.quantity || "Not set"} {selectedProduct?.unit || ""}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Estimated total</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {estimatedTotal ? formatNaira(estimatedTotal) : "To be confirmed"}
               </strong>
             </div>
             <div className="flex justify-between gap-4">
               <span>Fulfilment</span>
-              <strong className="text-right text-white">
+              <strong className="text-right text-[#102015]">
                 {form.fulfilmentStatus}
               </strong>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <h3 className="font-bold">WhatsApp preview</h3>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-black/20 p-4 text-sm leading-6 text-white/70">
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
             {whatsappPreview}
           </pre>
         </div>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <h3 className="font-bold">Payment instruction preview</h3>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-black/20 p-4 text-sm leading-6 text-white/70">
+          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
             {paymentInstruction}
           </pre>
         </div>

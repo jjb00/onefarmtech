@@ -2,7 +2,7 @@ import { logoutAction } from "@/actions/auth";
 
 export default function LogoutPage() {
   return (
-    <main className="min-h-screen bg-[#102015] px-6 py-10 text-white">
+    <main className="min-h-screen bg-white px-6 py-10 text-[#102015]">
       <section className="mx-auto flex min-h-[80vh] max-w-xl items-center justify-center">
         <form
           action={logoutAction}

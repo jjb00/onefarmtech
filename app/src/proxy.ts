@@ -1,10 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
-import {STAFF_SESSION_COOKIE} from "@/lib/currentStaff";
+
+const STAFF_SESSION_COOKIE = "oft_admin_session";
 
 export function proxy(request: NextRequest) {
   const {pathname, search} = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
-  const isStaffLoginRoute = pathname === "/staff-login" || pathname === "/login";
+  const isLoginRoute = pathname === "/login" || pathname === "/staff-login";
   const isAuthenticated =
     request.cookies.get(STAFF_SESSION_COOKIE)?.value === "authenticated";
 
@@ -15,7 +16,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isStaffLoginRoute && isAuthenticated) {
+  if (isLoginRoute && isAuthenticated) {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     adminUrl.search = "";

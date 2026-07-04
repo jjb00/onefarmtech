@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "OneFarmTech | Farm-to-city procurement",
+  title: "OneFarmTech | Fresh food supply",
   description:
-    "OneFarmTech is a WhatsApp-first farm-to-city procurement platform for Nigerian bulk buyers, restaurants, retailers, caterers, and large households.",
+    "OneFarmTech is a Fresh food supply platform for Nigerian bulk buyers, restaurants, retailers, caterers, and large households.",
 };
 
 export default function RootLayout({

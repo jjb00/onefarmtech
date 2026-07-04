@@ -19,20 +19,17 @@ export default async function AdminLayoutFrame({
   const staff = await getCurrentStaffActor();
 
   return (
-    <main className="min-h-screen bg-[#07120c] text-white">
+    <main className="min-h-screen bg-[#f4f8ef] text-[#102015]">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-r border-white/10 bg-[#07120c] px-6 py-6">
+        <aside className="border-r border-[#102015]/10 bg-[#07120c] px-6 py-6 text-white">
           <Link href="/admin" className="block">
             <BrandMark variant="light" />
           </Link>
 
           <div className="mt-6 rounded-3xl border border-[#F2B84B]/20 bg-[#F2B84B]/10 p-4">
-            <p className="text-sm font-black text-[#F2B84B]">
-              Temporary staff gate
-            </p>
-            <p className="mt-2 text-xs leading-5 text-white/60">
-              Signed in as <strong>{staff.name}</strong> · {staff.role}. Proper
-              staff and buyer auth is required before Vercel team testing.
+            <p className="text-sm font-black text-[#F2B84B]">Staff session</p>
+            <p className="mt-2 text-xs leading-5 text-white/70">
+              Signed in as <strong>{staff.name}</strong> · {staff.role}.
             </p>
             <Link
               href="/admin/security"
@@ -54,10 +51,10 @@ export default async function AdminLayoutFrame({
                     <Link
                       key={item.href}
                       href={item.href}
-                      className="rounded-2xl px-4 py-3 transition hover:bg-white/[0.06]"
+                      className="rounded-2xl px-4 py-3 transition hover:bg-white/[0.08]"
                     >
                       <p className="font-bold text-white">{item.title}</p>
-                      <p className="mt-1 text-sm text-white/50">
+                      <p className="mt-1 text-sm text-white/60">
                         {item.description}
                       </p>
                     </Link>
@@ -69,30 +66,30 @@ export default async function AdminLayoutFrame({
 
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
             <p className="text-sm font-bold text-[#9ee6ad]">Internal console</p>
-            <p className="mt-2 text-xs leading-5 text-white/50">
-              Admin-only workspace for orders, suppliers, payments, receipts,
-              complaints, group buys, pickup points, and WhatsApp operations.
+            <p className="mt-2 text-xs leading-5 text-white/60">
+              Orders, suppliers, payments, receipts, complaints, group buys,
+              pickup points and WhatsApp operations.
             </p>
             <Link
               href="/admin/logout"
-              className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/70"
+              className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/80"
             >
               Sign out
             </Link>
           </div>
         </aside>
 
-        <section className="min-w-0 px-5 py-6 md:px-8 lg:px-12">
-          <header className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 md:p-8">
+        <section className="min-w-0 bg-[#f4f8ef] px-5 py-6 text-[#102015] md:px-8 lg:px-12">
+          <header className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm md:p-8">
             <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9ee6ad]">
+                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#1f7a3f]">
                   Operations desk
                 </p>
-                <h1 className="mt-4 text-4xl font-black tracking-tight md:text-5xl">
+                <h1 className="mt-4 text-4xl font-black tracking-tight text-[#102015] md:text-5xl">
                   {title}
                 </h1>
-                <p className="mt-4 max-w-4xl text-base leading-7 text-white/65 md:text-lg">
+                <p className="mt-4 max-w-4xl text-base leading-7 text-[#405348] md:text-lg">
                   {description}
                 </p>
               </div>
@@ -101,7 +98,7 @@ export default async function AdminLayoutFrame({
             </div>
           </header>
 
-          {children}
+          <section className="mt-8 text-[#102015]">{children}</section>
         </section>
       </div>
     </main>

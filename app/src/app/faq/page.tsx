@@ -1,3 +1,4 @@
+import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicPageShell from "@/components/PublicPageShell";
 
 const faqs = [
@@ -36,23 +37,43 @@ const faqs = [
 export default function FAQPage() {
   return (
     <PublicPageShell>
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <p className="text-sm font-semibold text-[#1f7a3f]">FAQ</p>
-        <h1 className="mt-3 text-4xl font-bold md:text-5xl">
-          Frequently Asked Questions
-        </h1>
-        <p className="mt-4 max-w-2xl text-lg leading-8 text-[#405348]">
-          Simple answers about ordering, group-buys, business supply, payments,
-          delivery, and how OneFarmTech works.
-        </p>
+      <section className="relative overflow-hidden">
+        <PublicImageCollage
+          images={[
+            {
+              src: "/backgrounds/support.png",
+              alt: "Fresh produce ordering support",
+              className: "right-[-130px] top-16 h-80 w-80 opacity-[0.37] md:h-[30rem] md:w-[30rem]",
+            },
+            {
+              src: "/backgrounds/produce.png",
+              alt: "Fresh produce baskets",
+              className: "left-[-150px] bottom-[-120px] h-80 w-80 opacity-[0.32] md:h-[28rem] md:w-[28rem]",
+            },
+          ]}
+        />
 
-        <div className="mt-10 grid gap-4">
-          {faqs.map((faq) => (
-            <div key={faq.question} className="rounded-2xl bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold">{faq.question}</h2>
-              <p className="mt-3 leading-7 text-[#405348]">{faq.answer}</p>
-            </div>
-          ))}
+        <div className="relative mx-auto max-w-4xl px-6 py-16">
+          <p className="text-sm font-semibold text-[#1f7a3f]">FAQ</p>
+          <h1 className="mt-3 text-4xl font-bold md:text-5xl">
+            Frequently Asked Questions
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg leading-8 text-[#405348]">
+            Simple answers about ordering, group-buys, business supply, payments,
+            delivery, and how OneFarmTech works.
+          </p>
+
+          <div className="mt-10 grid gap-4">
+            {faqs.map((faq) => (
+              <div
+                key={faq.question}
+                className="rounded-2xl border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur"
+              >
+                <h2 className="text-xl font-bold text-[#101712]">{faq.question}</h2>
+                <p className="mt-3 leading-7 text-[#405348]">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </PublicPageShell>

@@ -17,12 +17,12 @@ export default function AdminModuleNav() {
           <Link
             key={module.href}
             href={module.href}
-            className="rounded-2xl bg-white/10 p-6 transition hover:bg-white/15"
+            className="rounded-2xl bg-white p-6 transition hover:bg-white/15"
           >
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#9ee6ad]">
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#1f7a3f]">
               {module.group}
             </p>
-            <h2 className="mt-3 text-xl font-bold text-white">{module.title}</h2>
+            <h2 className="mt-3 text-xl font-bold text-[#102015]">{module.title}</h2>
             <p className="mt-3 text-sm leading-6 text-[#d8e8dc]">
               {module.description}
             </p>

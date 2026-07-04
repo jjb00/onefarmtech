@@ -182,9 +182,9 @@ export default async function CustomersPage() {
           </button>
         </form>
 
-        <div className="overflow-x-auto rounded-3xl border border-white/10 bg-white/[0.03]">
-          <table className="min-w-[1100px] divide-y divide-white/10 text-sm">
-            <thead className="bg-white/[0.04] text-left text-xs uppercase tracking-[0.18em] text-white/45">
+        <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
+          <table className="min-w-[1100px] divide-y divide-[#102015]/10 text-sm">
+            <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
               <tr>
                 <th className="px-5 py-4 font-semibold">Customer</th>
                 <th className="px-5 py-4 font-semibold">Buyer type</th>
@@ -198,7 +198,7 @@ export default async function CustomersPage() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-white/10">
+            <tbody className="divide-y divide-[#102015]/10">
               {customers.map((customer) => {
                 const receiptTotal = customer.receipts.reduce(
                   (sum, receipt) => sum + receipt.amount,
@@ -206,16 +206,16 @@ export default async function CustomersPage() {
                 );
 
                 return (
-                  <tr key={customer.id} className="text-white/75">
+                  <tr key={customer.id} className="text-[#405348]">
                     <td className="px-5 py-4">
                       <Link
                         href={`/admin/customers/${customer.id}`}
-                        className="font-semibold text-white underline-offset-4 hover:underline"
+                        className="font-semibold text-[#102015] underline-offset-4 hover:underline"
                       >
                         {customer.name}
                       </Link>
-                      <div className="text-xs text-white/45">{customer.phone}</div>
-                      <div className="text-xs text-white/45">
+                      <div className="text-xs text-[#587063]">{customer.phone}</div>
+                      <div className="text-xs text-[#587063]">
                         {customer.receiptEmail || customer.email || "No receipt email"}
                       </div>
                     </td>
@@ -223,7 +223,7 @@ export default async function CustomersPage() {
                     <td className="px-5 py-4">{customer.location || "Not set"}</td>
                     <td className="px-5 py-4">
                       <div className="font-semibold">{customer.accountStatus}</div>
-                      <div className="text-xs text-white/45">
+                      <div className="text-xs text-[#587063]">
                         {customer.accountLoginReady ? "Login ready" : "Manual account"}
                       </div>
                     </td>
@@ -232,7 +232,7 @@ export default async function CustomersPage() {
                     <td className="px-5 py-4">{money(receiptTotal)}</td>
                     <td className="px-5 py-4">{customer.orders.length}</td>
                     <td className="px-5 py-4">
-                      <span className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-semibold text-white/70">
+                      <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
                         {customer.status}
                       </span>
                     </td>
@@ -242,7 +242,7 @@ export default async function CustomersPage() {
 
               {!customers.length ? (
                 <tr>
-                  <td className="px-5 py-8 text-center text-white/50" colSpan={9}>
+                  <td className="px-5 py-8 text-center text-[#587063]" colSpan={9}>
                     No customers yet.
                   </td>
                 </tr>

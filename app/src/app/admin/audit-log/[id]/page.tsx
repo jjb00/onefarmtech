@@ -104,9 +104,9 @@ function InfoCard({title, rows}: {title: string; rows: [string, string][]}) {
 
 function JsonPanel({title, value}: {title: string; value: string}) {
   return (
-    <section className="rounded-[1.5rem] bg-[#101712] p-5 text-white shadow-sm">
-      <h2 className="text-lg font-black text-[#F2B84B]">{title}</h2>
-      <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-2xl bg-black/25 p-4 text-xs leading-6 text-white/75">
+    <section className="rounded-[1.5rem] bg-white p-5 text-[#102015] shadow-sm">
+      <h2 className="text-lg font-black text-[#1f7a3f]">{title}</h2>
+      <pre className="mt-4 max-h-[420px] overflow-auto whitespace-pre-wrap rounded-2xl bg-[#102015] p-4 text-xs leading-6 text-white/80">
         {value}
       </pre>
     </section>

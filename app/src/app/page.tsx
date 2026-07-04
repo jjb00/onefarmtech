@@ -1,219 +1,237 @@
 import Link from "next/link";
-import {getDailyActivitySnapshot} from "@/lib/dailyActivity";
-import {BrandMark} from "@/components/BrandMark";
+import BrandMark from "@/components/BrandMark";
+import PublicImageCollage from "@/components/PublicImageCollage";
+import {prisma} from "@/lib/prisma";
 
-const buyerTypes = [
-  "Restaurants",
-  "Hotels",
-  "Caterers",
-  "Food vendors",
-  "Retailers",
-  "Large households",
-  "Buying groups",
-];
+async function getHomepageActivity() {
+  const activeGroupBuy = await prisma.groupBuy.findFirst({
+    where: {
+      status: {
+        in: ["Open", "Minimum met"],
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      items: true,
+      reservations: true,
+    },
+  });
 
-const homepageCards = [
-  {
-    title: "Request produce",
-    description: "Send your items, quantities, location and preferred fulfilment option.",
-    href: "/dashboard",
-  },
-  {
-    title: "Join city group buys",
-    description: "Participate in area-based group buys around pickup points and delivery routes.",
-    href: "/dashboard?flow=group-buy",
-  },
-  {
-    title: "Create a private group",
-    description: "Set up a buying group for family, friends, neighbours, offices, churches or food businesses.",
-    href: "/dashboard?flow=private-group",
-  },
-  {
-    title: "Recurring buyer login",
-    description: "For approved restaurants, hotels, caterers, retailers and high-volume buyers.",
-    href: "/buyer-login",
-  },
-];
+  const [activeGroupBuyCount, todayOrderCount] = await Promise.all([
+    prisma.groupBuy.count({
+      where: {
+        status: {
+          in: ["Open", "Minimum met"],
+        },
+      },
+    }),
+    prisma.order.count(),
+  ]);
 
-export default function HomePage() {
-  const activity = getDailyActivitySnapshot();
+  const reservedQuantity = activeGroupBuy?.reservedQuantity || 0;
+  const targetQuantity = activeGroupBuy?.targetQuantity || 0;
+  const progress =
+    targetQuantity > 0
+      ? Math.min(100, Math.round((reservedQuantity / targetQuantity) * 100))
+      : 0;
+
+  return {
+    activeGroupBuy,
+    activeGroupBuyCount,
+    todayOrderCount,
+    reservedQuantity,
+    targetQuantity,
+    progress,
+    reservationCount: activeGroupBuy?.reservations.length || 0,
+    item: activeGroupBuy?.items[0],
+  };
+}
+
+export default async function HomePage() {
+  const activity = await getHomepageActivity();
 
   return (
-    <main className="min-h-screen bg-[#F8F1E7] text-[#101712]">
+    <main className="min-h-screen bg-[#fbfff8] text-[#101712]">
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('/brand/market-pattern.svg')] bg-cover bg-center opacity-90" />
-        <div className="absolute inset-0 bg-gradient-to-br from-[#F8F1E7]/95 via-[#F8F1E7]/88 to-[#F2B84B]/25" />
+        <PublicImageCollage
+          images={[
+            {
+              src: "/backgrounds/farmer.png",
+              alt: "Nigerian farmer holding fresh produce",
+              className: "left-[-180px] top-52 h-80 w-80 opacity-[0.36] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
+            },
+            {
+              src: "/backgrounds/trolley.png",
+              alt: "Fresh produce trolley",
+              className: "right-[-150px] top-28 h-80 w-80 opacity-[0.38] md:h-[30rem] md:w-[30rem]",
+            },
+            {
+              src: "/backgrounds/buyers.png",
+              alt: "Nigerian fresh food buyer categories",
+              className: "bottom-[-120px] left-[32%] hidden h-[28rem] w-[28rem] opacity-[0.38] lg:block",
+            },
+            {
+              src: "/backgrounds/delivery.png",
+              alt: "Fresh produce delivery and fulfilment",
+              className: "bottom-[-130px] right-[8%] hidden h-[24rem] w-[24rem] opacity-[0.37] xl:block",
+            },
+          ]}
+        />
+        <div className="absolute inset-x-0 top-0 h-2 bg-[#1f7a3f]" />
+        <div className="absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
+        <div className="absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/25 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12">
           <header className="flex items-center justify-between gap-6">
-            <BrandMark />
-            <div className="flex items-center gap-3">
+            <Link href="/" aria-label="Go to OneFarmTech homepage">
+              <BrandMark />
+            </Link>
+            <nav className="flex items-center gap-3">
+              <Link
+                href="/faq"
+                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white md:inline-flex"
+              >
+                FAQ
+              </Link>
               <Link
                 href="/buyer-login"
-                className="hidden rounded-full border border-[#101712]/10 bg-white/70 px-5 py-3 text-sm font-black text-[#101712] shadow-sm transition hover:bg-white md:inline-flex"
+                className="hidden rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef] md:inline-flex"
               >
-                Buyer login
+                Create buyer account
               </Link>
               <Link
-                href="/dashboard"
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+                href="/contact"
+                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white lg:inline-flex"
               >
-                Buyer portal
+                Contact
               </Link>
-            </div>
+              <a
+                href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Start an order
+              </a>
+            </nav>
           </header>
 
-          <div className="grid gap-10 py-14 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:py-20">
-            <div>
-              <p className="inline-flex rounded-full bg-white/75 px-4 py-2 text-sm font-black text-[#C95F3D] shadow-sm">
-                WhatsApp-first farm-to-city procurement
-              </p>
-
-              <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
-                Fresh food procurement for Nigerian buyers who need reliability.
+          <div className="grid gap-10 py-14 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-20">
+            <section>
+              <h1 className="oft-fade-up max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
+                Fresh food supply for buyers who need better prices, quality and reliability.
               </h1>
 
-              <p className="mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
-                OneFarmTech coordinates produce requests, group buys, payment records,
-                pickup, delivery, receipts and buyer communication through a managed
-                operations desk built around WhatsApp.
+              <p className="oft-fade-up-delay-1 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
+                OneFarmTech helps restaurants, retailers, caterers, households and buying
+                groups order fresh produce, join bulk buys, track payments and receive receipts.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-3">
-                <Link
-                  href="/dashboard"
-                  className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+                <a
+                  href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
+                  className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
                 >
-                  Start a request
-                </Link>
-                <Link
-                  href="/dashboard?flow=group-buy"
-                  className="rounded-full border border-[#101712]/10 bg-white/70 px-6 py-3 text-sm font-black text-[#101712] shadow-sm transition hover:bg-white"
+                  Order fresh produce
+                </a>
+                <a
+                  href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20join%20or%20create%20a%20group%20buy.%20Group%20type%3A%20family%2Ffriends%2Fcity%2Fbusiness.%20Location%3A%20___%20Items%3A%20___"
+                  className="rounded-full border border-[#101712]/10 bg-white px-6 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef]"
                 >
-                  Join a group buy
-                </Link>
+                  Join or create group buy
+                </a>
               </div>
 
-              <div className="mt-10 flex flex-wrap gap-3">
-                {buyerTypes.map((type) => (
-                  <span
-                    key={type}
-                    className="rounded-full border border-[#101712]/10 bg-white/70 px-4 py-2 text-sm font-bold text-[#1E2420]/75 shadow-sm"
+              <div className="mt-10 grid max-w-2xl gap-3 sm:grid-cols-2">
+                {[
+                  "Restaurants, hotels and caterers",
+                  "Food vendors and retailers",
+                  "Homes and large households",
+                  "Families, friends and neighbourhood groups",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="oft-card-lift rounded-2xl border border-[#101712]/10 bg-white px-4 py-3 text-sm font-bold shadow-sm"
                   >
-                    {type}
-                  </span>
+                    {item}
+                  </div>
                 ))}
               </div>
-            </div>
+            </section>
 
-            <div className="rounded-[2rem] border border-[#101712]/10 bg-white/88 p-5 shadow-2xl backdrop-blur">
+            <section className="oft-fade-up-delay-2 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-2xl backdrop-blur">
               <div className="rounded-[1.5rem] bg-[#101712] p-5 text-white">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F2B84B]">
-                      Active group-buy activity
+                      Live group-buy progress
                     </p>
-                    <h2 className="mt-2 text-3xl font-black">Live buying routes</h2>
+                    <h2 className="mt-2 text-3xl font-black">
+                      {activity.activeGroupBuy?.title || "Next bulk buy opening soon"}
+                    </h2>
+                    <p className="mt-2 text-sm leading-6 text-white/60">
+                      {activity.item
+                        ? `${activity.item.name} · ${activity.item.grade} · ${activity.item.unit}`
+                        : "City, family, friends and business group buying."}
+                    </p>
                   </div>
-                  <span className="rounded-full bg-[#3E7A4C] px-3 py-1 text-xs font-black text-white">
-                    Open
+                  <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
+                    {activity.activeGroupBuy?.status || "Open"}
                   </span>
                 </div>
 
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <Metric label="city group buys" value={activity.activeGroupBuys} />
-                  <Metric label="buyer requests today" value={activity.buyerRequests} />
-                  <Metric label="pickup / delivery windows" value={activity.pickupWindows} />
-                  <Metric label="private group requests" value={activity.privateGroupRequests} />
+                <div className="mt-7">
+                  <div className="flex items-center justify-between text-sm font-bold text-white/70">
+                    <span>Reserved</span>
+                    <span>{activity.progress}%</span>
+                  </div>
+                  <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
+                      style={{width: `${activity.progress}%`}}
+                    />
+                  </div>
+                  <p className="mt-3 text-sm font-semibold text-white/65">
+                    {activity.targetQuantity > 0
+                      ? `${activity.reservedQuantity} of ${activity.targetQuantity} reserved`
+                      : "Reservations will show here once a group buy is active."}
+                  </p>
+                </div>
+
+                <div className="mt-6 grid grid-cols-3 gap-3">
+                  <LiveMetric label="buyers joined" value={String(activity.reservationCount)} />
+                  <LiveMetric label="active group buys" value={String(activity.activeGroupBuyCount)} />
+                  <LiveMetric label="orders in system" value={String(activity.todayOrderCount)} />
                 </div>
               </div>
 
-              <div className="mt-5 grid gap-3">
-                <GroupBuyRow
-                  title="City group buy"
-                  detail="Join buyers around your city, area, pickup point or delivery route."
-                />
-                <GroupBuyRow
-                  title="Private family & friends group"
-                  detail="Create a private buying group for family, friends, neighbours or communities."
-                />
-                <GroupBuyRow
-                  title="Business buying group"
-                  detail="Useful for restaurants, offices, caterers, retailers and food vendors buying together."
-                />
+              <div className="mt-5 rounded-[1.5rem] bg-[#f3f8ef] p-5">
+                <h3 className="text-xl font-black">Group buying works for more than businesses.</h3>
+                <p className="mt-2 text-sm leading-7 text-[#1E2420]/70">
+                  Families, friends, neighbours, offices, communities and food businesses
+                  can combine demand for better bulk buying.
+                </p>
               </div>
 
-              <Link
-                href="/dashboard?flow=group-buy"
-                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#F2B84B] px-5 py-3 text-sm font-black text-[#101712] transition hover:brightness-95"
+              <a
+                href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20join%20or%20create%20a%20group%20buy."
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-[#F2B84B] px-5 py-3 text-sm font-black text-[#101712] hover:brightness-95"
               >
-                Start group-buy request
-              </Link>
-            </div>
+                Join or create group buy
+              </a>
+            </section>
           </div>
-        </div>
-      </section>
-
-      <section className="px-6 py-14 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 xl:grid-cols-4">
-          {homepageCards.map((card) => (
-            <Link
-              key={card.title}
-              href={card.href}
-              className="rounded-[1.5rem] border border-[#101712]/10 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
-            >
-              <h2 className="text-xl font-black">{card.title}</h2>
-              <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">
-                {card.description}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </section>
-
-      <section className="px-6 pb-16 lg:px-10">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-3">
-          <InfoCard
-            title="Managed procurement, not an open marketplace"
-            description="Buyers submit requests and OneFarmTech coordinates fulfilment, payment records, pickup, delivery and issue handling."
-          />
-          <InfoCard
-            title="Built around WhatsApp"
-            description="Ordering stays familiar while the operations desk manages records, receipts, group buys and buyer follow-up."
-          />
-          <InfoCard
-            title="Designed for recurring buyers"
-            description="Approved business buyers can be prepared for accounts, receipt history, payment tracking, credit limits and repeat ordering."
-          />
         </div>
       </section>
     </main>
   );
 }
 
-function Metric({label, value}: {label: string; value: number}) {
+function LiveMetric({label, value}: {label: string; value: string}) {
   return (
     <div className="rounded-2xl bg-white/10 p-4">
-      <p className="text-3xl font-black text-[#F2B84B]">{value}</p>
-      <p className="mt-1 text-xs font-bold leading-5 text-white/70">{label}</p>
-    </div>
-  );
-}
-
-function GroupBuyRow({title, detail}: {title: string; detail: string}) {
-  return (
-    <div className="rounded-2xl border border-[#101712]/10 bg-[#F8F1E7] p-4">
-      <h3 className="font-black">{title}</h3>
-      <p className="mt-1 text-sm leading-6 text-[#1E2420]/70">{detail}</p>
-    </div>
-  );
-}
-
-function InfoCard({title, description}: {title: string; description: string}) {
-  return (
-    <div className="rounded-[1.5rem] border border-[#101712]/10 bg-white p-6 shadow-sm">
-      <h2 className="text-xl font-black">{title}</h2>
-      <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">{description}</p>
+      <p className="text-2xl font-black text-[#F2B84B]">{value}</p>
+      <p className="mt-1 text-xs font-bold leading-5 text-white/65">{label}</p>
     </div>
   );
 }

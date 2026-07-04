@@ -77,7 +77,7 @@ export default async function WhatsappOpsPage() {
                       href={createWhatsappUrl(order.phone, paymentMessage)}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-full bg-[#102015] px-4 py-3 text-center text-sm font-bold text-white"
+                      className="rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-[#102015]"
                     >
                       Send payment reminder
                     </a>
@@ -105,15 +105,15 @@ export default async function WhatsappOpsPage() {
           </div>
         </section>
 
-        <section className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 text-white">
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
           <h2 className="text-2xl font-bold">Group-buy WhatsApp broadcasts</h2>
-          <p className="mt-2 text-sm text-white/55">
+          <p className="mt-2 text-sm text-[#587063]">
             Broadcast group-buy offers and follow up with buyers who reserved slots.
           </p>
 
           <div className="mt-6 grid gap-6">
             {activeGroupBuys.length === 0 ? (
-              <p className="rounded-2xl bg-white/[0.06] p-4 text-sm text-white/55">
+              <p className="rounded-2xl bg-[#f3f8ef] p-4 text-sm text-[#587063]">
                 No group buys yet.
               </p>
             ) : (
@@ -123,15 +123,15 @@ export default async function WhatsappOpsPage() {
                 return (
                   <article
                     key={groupBuy.id}
-                    className="rounded-2xl bg-white/[0.06] p-5"
+                    className="rounded-2xl bg-[#f3f8ef] p-5"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                       <div>
-                        <p className="text-sm font-bold text-[#9ee6ad]">
+                        <p className="text-sm font-bold text-[#1f7a3f]">
                           {groupBuy.code}
                         </p>
                         <h3 className="mt-1 text-xl font-black">{groupBuy.title}</h3>
-                        <p className="mt-1 text-sm text-white/55">
+                        <p className="mt-1 text-sm text-[#587063]">
                           Reserved {groupBuy.reservedQuantity}/{groupBuy.targetQuantity} {groupBuy.unit}
                         </p>
                       </div>
@@ -154,24 +154,24 @@ export default async function WhatsappOpsPage() {
 
                       <Link
                         href="/admin/group-buys"
-                        className="rounded-full border border-white/10 px-4 py-3 text-center text-sm font-bold text-[#9ee6ad]"
+                        className="rounded-full border border-[#102015]/10 px-4 py-3 text-center text-sm font-bold text-[#1f7a3f]"
                       >
                         Manage group buy
                       </Link>
                     </div>
 
-                    <details className="mt-4 rounded-2xl bg-black/20 p-4">
-                      <summary className="cursor-pointer text-sm font-bold text-[#9ee6ad]">
+                    <details className="mt-4 rounded-2xl bg-[#f3f8ef] p-4">
+                      <summary className="cursor-pointer text-sm font-bold text-[#1f7a3f]">
                         Preview broadcast message
                       </summary>
-                      <pre className="mt-4 whitespace-pre-wrap text-sm leading-6 text-white/70">
+                      <pre className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[#405348]">
                         {broadcastMessage}
                       </pre>
                     </details>
 
                     <div className="mt-5 grid gap-3">
                       {groupBuy.reservations.length === 0 ? (
-                        <p className="rounded-2xl bg-white/[0.05] p-4 text-sm text-white/50">
+                        <p className="rounded-2xl bg-[#f3f8ef] p-4 text-sm text-[#587063]">
                           No reservations to follow up yet.
                         </p>
                       ) : (
@@ -184,12 +184,12 @@ export default async function WhatsappOpsPage() {
                           return (
                             <div
                               key={reservation.id}
-                              className="rounded-2xl bg-white/[0.05] p-4"
+                              className="rounded-2xl bg-[#f3f8ef] p-4"
                             >
                               <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                                 <div>
                                   <p className="font-bold">{reservation.buyerName}</p>
-                                  <p className="mt-1 text-sm text-white/50">
+                                  <p className="mt-1 text-sm text-[#587063]">
                                     {reservation.phone} · {reservation.quantity} {groupBuy.unit}
                                   </p>
                                 </div>
