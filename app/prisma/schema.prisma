@@ -25,6 +25,8 @@ model Customer {
   status             String    @default("Active")
   orders             Order[]
   receipts           Receipt[]
+  buyerContacts      BuyerContact[]
+  buyerInvites       BuyerAccountInvite[]
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 }
@@ -222,4 +224,38 @@ model Receipt {
   issuedBy      String    @default("Local admin")
   issuedAt      DateTime  @default(now())
   createdAt     DateTime  @default(now())
+}
+
+
+model BuyerContact {
+  id             String   @id @default(cuid())
+  customerId     String
+  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name           String
+  email          String?
+  phone          String?
+  role           String   @default("Buyer user")
+  canPlaceOrders Boolean  @default(true)
+  canViewReceipts Boolean @default(true)
+  canViewCredit  Boolean  @default(false)
+  status         String   @default("Active")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model BuyerAccountInvite {
+  id          String    @id @default(cuid())
+  customerId  String
+  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  inviteCode  String    @unique
+  email       String?
+  phone       String?
+  role        String    @default("Buyer user")
+  status      String    @default("Draft")
+  expiresAt   DateTime?
+  sentAt      DateTime?
+  acceptedAt  DateTime?
+  createdBy   String    @default("Local staff user")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }

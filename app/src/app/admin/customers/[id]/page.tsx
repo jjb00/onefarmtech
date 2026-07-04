@@ -45,6 +45,12 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
           payment: true,
         },
       },
+      buyerContacts: {
+        orderBy: {createdAt: "desc"},
+      },
+      buyerInvites: {
+        orderBy: {createdAt: "desc"},
+      },
     },
   });
 
@@ -229,6 +235,51 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
                 ["Receipts issued", formatNaira(receiptValue)],
               ]}
             />
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-black">Buyer access controls</h2>
+              <p className="mt-1 text-sm text-[#405348]">
+                Authorised contacts and invite records prepared for future buyer login.
+              </p>
+            </div>
+            <Link
+              href="/admin/buyer-access"
+              className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-bold text-white"
+            >
+              Manage access
+            </Link>
+          </div>
+
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
+            <div className="rounded-2xl bg-[#f7f5ec] p-5">
+              <p className="text-sm text-[#405348]">Authorised contacts</p>
+              <p className="mt-2 text-3xl font-black">{customer.buyerContacts.length}</p>
+            </div>
+            <div className="rounded-2xl bg-[#f7f5ec] p-5">
+              <p className="text-sm text-[#405348]">Invite records</p>
+              <p className="mt-2 text-3xl font-black">{customer.buyerInvites.length}</p>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-3">
+            {customer.buyerContacts.map((contact) => (
+              <div key={contact.id} className="rounded-2xl bg-[#f7f5ec] p-4">
+                <p className="font-black">{contact.name}</p>
+                <p className="mt-1 text-sm text-[#405348]">
+                  {contact.role} · {contact.email || "No email"} · {contact.phone || "No phone"}
+                </p>
+              </div>
+            ))}
+
+            {!customer.buyerContacts.length ? (
+              <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm text-[#405348]">
+                No authorised buyer contacts yet.
+              </p>
+            ) : null}
           </div>
         </section>
 

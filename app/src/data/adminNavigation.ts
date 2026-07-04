@@ -38,6 +38,11 @@ export const adminNavigationGroups = [
         description: "Credit, balances, receipts",
       },
       {
+        title: "Buyer access",
+        href: "/admin/buyer-access",
+        description: "Contacts and invites",
+      },
+      {
         title: "Payments",
         href: "/admin/payments",
         description: "References and status",

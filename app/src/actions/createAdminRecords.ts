@@ -257,3 +257,116 @@ export async function updateCustomerAccountAction(formData: FormData) {
   revalidatePath(`/admin/customers/${customerId}`);
   redirect(`/admin/customers/${customerId}`);
 }
+
+function makeInviteCode(customerName: string) {
+  const cleanName = customerName
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "")
+    .slice(0, 6) || "BUYER";
+
+  return `INV-${cleanName}-${String(Date.now()).slice(-6)}`;
+}
+
+export async function createBuyerContactAction(formData: FormData) {
+  const customerId = readText(formData, "customerId");
+  const name = readText(formData, "name");
+  const email = readText(formData, "email");
+  const phone = readText(formData, "phone");
+  const role = readText(formData, "role", "Buyer user");
+  const canPlaceOrders = readBoolean(formData, "canPlaceOrders");
+  const canViewReceipts = readBoolean(formData, "canViewReceipts");
+  const canViewCredit = readBoolean(formData, "canViewCredit");
+  const status = readText(formData, "status", "Active");
+
+  if (!customerId || !name) {
+    throw new Error("Customer and contact name are required.");
+  }
+
+  const customer = await prisma.customer.findUnique({
+    where: {id: customerId},
+  });
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  const contact = await prisma.buyerContact.create({
+    data: {
+      customerId,
+      name,
+      email: email || null,
+      phone: phone || null,
+      role,
+      canPlaceOrders,
+      canViewReceipts,
+      canViewCredit,
+      status,
+    },
+  });
+
+  await createAuditLog({
+    action: "Created buyer contact",
+    entityType: "BuyerContact",
+    entityId: contact.id,
+    entityLabel: `${customer.name} · ${contact.name}`,
+    newValue: contact,
+    actorRole: "Buyer account manager",
+  });
+
+  revalidatePath("/admin/buyer-access");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/buyer-access");
+}
+
+export async function createBuyerAccountInviteAction(formData: FormData) {
+  const customerId = readText(formData, "customerId");
+  const email = readText(formData, "email");
+  const phone = readText(formData, "phone");
+  const role = readText(formData, "role", "Buyer user");
+  const status = readText(formData, "status", "Draft");
+
+  if (!customerId) {
+    throw new Error("Customer is required.");
+  }
+
+  const customer = await prisma.customer.findUnique({
+    where: {id: customerId},
+  });
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  if (!email && !phone) {
+    throw new Error("Invite email or phone is required.");
+  }
+
+  const invite = await prisma.buyerAccountInvite.create({
+    data: {
+      customerId,
+      inviteCode: makeInviteCode(customer.name),
+      email: email || null,
+      phone: phone || null,
+      role,
+      status,
+      createdBy: "Local staff user",
+    },
+  });
+
+  await createAuditLog({
+    action: "Created buyer account invite",
+    entityType: "BuyerAccountInvite",
+    entityId: invite.id,
+    entityLabel: `${customer.name} · ${invite.inviteCode}`,
+    newValue: invite,
+    actorRole: "Buyer account manager",
+  });
+
+  revalidatePath("/admin/buyer-access");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath(`/admin/customers/${customerId}`);
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/buyer-access");
+}

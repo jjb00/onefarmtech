@@ -209,6 +209,7 @@ export default async function AdminDashboardPage() {
                   ["Create order", "/admin/create-order"],
                   ["Add customer", "/admin/customers"],
                   ["Buyer accounts", "/admin/buyer-accounts"],
+                  ["Buyer access", "/admin/buyer-access"],
                   ["Issue receipt", "/admin/receipts"],
                   ["Audit log", "/admin/audit-log"],
                   ["Staff & roles", "/admin/staff"],
