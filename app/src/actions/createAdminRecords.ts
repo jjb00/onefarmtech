@@ -370,3 +370,46 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
   revalidatePath("/admin/audit-log");
   redirect("/admin/buyer-access");
 }
+
+export async function createContactEnquiryAction(formData: FormData) {
+  const name = readText(formData, "name");
+  const organisation = readText(formData, "organisation");
+  const email = readText(formData, "email");
+  const phone = readText(formData, "phone");
+  const enquiryType = readText(formData, "enquiryType", "General enquiry");
+  const message = readText(formData, "message");
+
+  if (!name || !message) {
+    throw new Error("Name and message are required.");
+  }
+
+  if (!email && !phone) {
+    throw new Error("Please provide an email or phone number.");
+  }
+
+  const enquiry = await prisma.contactEnquiry.create({
+    data: {
+      name,
+      organisation: organisation || null,
+      email: email || null,
+      phone: phone || null,
+      enquiryType,
+      message,
+      status: "New",
+      source: "Contact page",
+    },
+  });
+
+  await createAuditLog({
+    action: "Created contact enquiry",
+    entityType: "ContactEnquiry",
+    entityId: enquiry.id,
+    entityLabel: `${enquiry.enquiryType} · ${enquiry.name}`,
+    newValue: enquiry,
+  });
+
+  revalidatePath("/contact");
+  revalidatePath("/admin/contact-enquiries");
+  revalidatePath("/admin/audit-log");
+  redirect("/contact?submitted=1");
+}

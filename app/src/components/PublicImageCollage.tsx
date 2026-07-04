@@ -2,7 +2,7 @@ import Image from "next/image";
 
 type CollageImage = {
   src: string;
-  alt: string;
+  alt?: string;
   className: string;
 };
 
@@ -12,7 +12,7 @@ type PublicImageCollageProps = {
 
 export default function PublicImageCollage({images}: PublicImageCollageProps) {
   return (
-    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
       {images.map((image) => (
         <div
           key={`${image.src}-${image.alt}`}
@@ -20,11 +20,12 @@ export default function PublicImageCollage({images}: PublicImageCollageProps) {
         >
           <Image
             src={image.src}
-            alt={image.alt}
+            alt=""
             fill
             sizes="(max-width: 768px) 180px, 360px"
             className="object-contain"
             priority={false}
+            aria-hidden="true"
           />
         </div>
       ))}

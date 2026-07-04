@@ -33,6 +33,11 @@ export const adminNavigationGroups = [
         description: "Buyer records",
       },
       {
+        title: "Contact enquiries",
+        href: "/admin/contact-enquiries",
+        description: "Public forms and partnerships",
+      },
+      {
         title: "Buyer accounts",
         href: "/admin/buyer-accounts",
         description: "Credit, balances, receipts",

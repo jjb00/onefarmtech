@@ -259,3 +259,19 @@ model BuyerAccountInvite {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
+
+
+model ContactEnquiry {
+  id           String   @id @default(cuid())
+  name         String
+  organisation String?
+  email        String?
+  phone        String?
+  enquiryType  String   @default("General enquiry")
+  message      String
+  status       String   @default("New")
+  source       String   @default("Contact page")
+  adminNote    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

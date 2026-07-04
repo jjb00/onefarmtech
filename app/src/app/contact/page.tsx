@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import {createContactEnquiryAction} from "@/actions/createAdminRecords";
 
 const partnerTypes = [
   {
@@ -67,12 +68,12 @@ export default function ContactPage() {
           {
             src: "/backgrounds/banking.png",
             alt: "Banking and fintech partner services",
-            className: "right-[-160px] top-56 h-80 w-80 opacity-[0.32] md:h-[31rem] md:w-[31rem]",
+            className: "right-[-160px] top-20 h-80 w-80 opacity-[0.38] md:h-[31rem] md:w-[31rem]",
           },
           {
             src: "/backgrounds/delivery.png",
             alt: "Logistics and fulfilment partner",
-            className: "left-[-210px] top-[38rem] h-80 w-80 opacity-[0.32] md:h-[30rem] md:w-[30rem]",
+            className: "left-[-170px] top-[34rem] h-80 w-80 opacity-[0.32] md:h-[30rem] md:w-[30rem]",
           },
           {
             src: "/backgrounds/support.png",
@@ -146,7 +147,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <form className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur">
+          <form action={createContactEnquiryAction} className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur">
             <h2 className="text-2xl font-black">Send an enquiry</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
               Tell us what you are interested in and the team will review it.
@@ -159,6 +160,7 @@ export default function ContactPage() {
                   name="name"
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   placeholder="Your name"
+                  required
                 />
               </label>
 
@@ -212,19 +214,20 @@ export default function ContactPage() {
                   rows={6}
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   placeholder="Briefly tell us how you would like to work with OneFarmTech."
+                  required
                 />
               </label>
 
               <button
-                type="button"
+                type="submit"
                 className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
                 Submit enquiry
               </button>
 
               <p className="text-xs leading-6 text-[#587063]">
-                Form submission will be connected in the next backend step. For
-                urgent buyer support, use the WhatsApp order route.
+                Enquiries are reviewed manually. For urgent buyer support, use the
+                WhatsApp order route.
               </p>
             </div>
           </form>

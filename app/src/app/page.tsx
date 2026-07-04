@@ -60,7 +60,7 @@ export default async function HomePage() {
             {
               src: "/backgrounds/farmer.png",
               alt: "Nigerian farmer holding fresh produce",
-              className: "left-[-180px] top-52 h-80 w-80 opacity-[0.36] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
+              className: "left-[-120px] top-24 h-80 w-80 opacity-[0.36] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
             },
             {
               src: "/backgrounds/trolley.png",

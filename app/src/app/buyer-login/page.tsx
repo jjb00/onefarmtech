@@ -10,7 +10,7 @@ export default function BuyerLoginPage() {
           {
             src: "/backgrounds/buyers.png",
             alt: "Nigerian recurring fresh food buyers",
-            className: "right-[-180px] top-56 h-80 w-80 opacity-[0.32] md:h-[32rem] md:w-[32rem]",
+            className: "right-[-180px] top-20 h-80 w-80 opacity-[0.38] md:h-[32rem] md:w-[32rem]",
           },
           {
             src: "/backgrounds/banking.png",

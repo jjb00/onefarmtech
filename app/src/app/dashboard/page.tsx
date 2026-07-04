@@ -52,7 +52,7 @@ export default function BuyerRequestPage() {
             src: "/backgrounds/trolley.png",
             alt: "Fresh produce trolley for ordering",
             className:
-              "left-[-190px] top-56 h-80 w-80 opacity-[0.4] md:h-[32rem] md:w-[32rem]",
+              "left-[-150px] top-20 h-80 w-80 opacity-[0.4] md:h-[32rem] md:w-[32rem]",
           },
           {
             src: "/backgrounds/delivery.png",
