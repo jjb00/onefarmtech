@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 type BrandMarkVariant = "light" | "dark";
 
 type BrandMarkProps = {
@@ -10,26 +8,19 @@ type BrandMarkProps = {
 
 function BrandMark({compact = false, variant = "dark", size = "md"}: BrandMarkProps) {
   const isLight = variant === "light";
-  const logoSize = size === "sm" ? "h-10 w-10 rounded-xl" : "h-12 w-12 rounded-2xl";
+  const markSize = size === "sm" ? "h-10 w-10 rounded-xl text-sm" : "h-12 w-12 rounded-2xl text-base";
   const titleSize = size === "sm" ? "text-sm" : "text-base";
 
   return (
     <div className="flex items-center gap-3">
       <div
-        className={`relative flex ${logoSize} items-center justify-center overflow-hidden border shadow-sm ${
+        className={`flex ${markSize} items-center justify-center border font-black shadow-sm ${
           isLight
-            ? "border-[#F2B84B]/30 bg-[#101712]"
-            : "border-[#101712]/10 bg-[#101712]"
+            ? "border-[#F2B84B]/40 bg-[#F2B84B] text-[#101712]"
+            : "border-[#101712]/10 bg-[#101712] text-[#F2B84B]"
         }`}
       >
-        <Image
-          src="/onefarm-logo.jpeg"
-          alt="OneFarmTech"
-          fill
-          sizes={size === "sm" ? "40px" : "48px"}
-          className="object-cover"
-          priority
-        />
+        OF
       </div>
 
       {!compact && (
@@ -43,7 +34,7 @@ function BrandMark({compact = false, variant = "dark", size = "md"}: BrandMarkPr
           </p>
           <p
             className={`mt-1 text-xs font-semibold leading-none ${
-              isLight ? "text-white/60" : "text-[#1E2420]/60"
+              isLight ? "text-white/65" : "text-[#1E2420]/60"
             }`}
           >
             Farm-to-city procurement
