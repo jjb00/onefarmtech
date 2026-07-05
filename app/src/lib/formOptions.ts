@@ -73,3 +73,87 @@ export const staffStatusOptions = [
   "Active",
   "Suspended",
 ];
+
+export const productCategoryOptions = [
+  "Vegetables",
+  "Fruits",
+  "Poultry",
+  "Meat",
+  "Fish / seafood",
+  "Grains",
+  "Seeds",
+  "Tubers",
+  "Spices / herbs",
+  "Fresh produce",
+  "Seasonal produce",
+  "Other",
+];
+
+export const productUnitOptions = [
+  "kg",
+  "bag",
+  "basket",
+  "crate",
+  "box",
+  "bunch",
+  "piece",
+  "tray",
+  "carton",
+  "litre",
+  "unit",
+];
+
+export const productAvailabilityOptions = [
+  "Available",
+  "Limited",
+  "Seasonal",
+  "Unavailable",
+];
+
+export const productStatusOptions = [
+  "Active",
+  "Paused",
+  "Archived",
+];
+
+export const productCategoryOptions = [
+  "Vegetables",
+  "Fruits",
+  "Poultry",
+  "Meat",
+  "Fish / seafood",
+  "Grains",
+  "Seeds",
+  "Tubers",
+  "Spices / herbs",
+  "Fresh produce",
+  "Seasonal produce",
+  "Other",
+];
+
+export const productUnitOptions = [
+  "kg",
+  "bag",
+  "basket",
+  "crate",
+  "box",
+  "bunch",
+  "piece",
+  "tray",
+  "carton",
+  "litre",
+  "unit",
+];
+
+export const productAvailabilityOptions = [
+  "Available",
+  "Limited",
+  "Seasonal",
+  "Unavailable",
+];
+
+export const productStatusOptions = [
+  "Active",
+  "Paused",
+  "Archived",
+];
