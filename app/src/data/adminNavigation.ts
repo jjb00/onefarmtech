@@ -188,7 +188,7 @@ export const adminOperationalTimeline = [
   {
     stage: "Order capture",
     owner: "Admin / WhatsApp operator",
-    status: "Live locally",
+    status: "Live",
     note: "Create order form captures buyer, produce, payment, fulfilment, and delivery details.",
   },
   {
@@ -231,14 +231,14 @@ export const adminOperationalTimeline = [
 
 export const adminHealthCards = [
   {
-    title: "Local SQLite database",
+    title: "Production database",
     status: "Healthy",
-    description: "Orders, customers, products, suppliers, payments, complaints, group-buys, receipts, and audit logs are local database-backed.",
+    description: "Orders, customers, products, suppliers, payments, complaints, group-buys, receipts, and audit logs are database-backed.",
   },
   {
     title: "Order workflow",
-    status: "Operational locally",
-    description: "Create-order, order details, payment recording, complaints, and fulfilment status changes are connected to local SQLite.",
+    status: "Operational",
+    description: "Create-order, order details, payment recording, complaints, and fulfilment status changes are connected to the database.",
   },
   {
     title: "Buyer accounts",
