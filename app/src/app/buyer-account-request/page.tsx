@@ -2,25 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
-
-const buyerTypes = [
-  "Restaurant / hotel / caterer",
-  "Food vendor",
-  "Retailer / shop",
-  "Office / corporate buyer",
-  "Household / family bulk buyer",
-  "Community / neighbourhood group",
-  "Other recurring buyer",
-];
-
-const frequencies = [
-  "Daily",
-  "Several times a week",
-  "Weekly",
-  "Fortnightly",
-  "Monthly",
-  "Occasional bulk orders",
-];
+import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 
 export default async function BuyerAccountRequestPage({
   searchParams,
@@ -153,7 +135,7 @@ Your account request has been received. We’ll review your details and get back
                     defaultValue="Restaurant / hotel / caterer"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
-                    {buyerTypes.map((type) => (
+                    {buyerAccountTypeOptions.map((type) => (
                       <option key={type}>{type}</option>
                     ))}
                   </select>
@@ -250,7 +232,7 @@ Your account request has been received. We’ll review your details and get back
                     defaultValue="Weekly"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
-                    {frequencies.map((frequency) => (
+                    {orderFrequencyOptions.map((frequency) => (
                       <option key={frequency}>{frequency}</option>
                     ))}
                   </select>
@@ -258,11 +240,15 @@ Your account request has been received. We’ll review your details and get back
 
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
                   Estimated spend
-                  <input
+                  <select
                     name="estimatedSpend"
+                    defaultValue="Not sure yet"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    placeholder="e.g. ₦100k weekly"
-                  />
+                  >
+                    {estimatedSpendOptions.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
                 </label>
               </div>
 

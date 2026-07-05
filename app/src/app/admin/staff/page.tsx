@@ -5,6 +5,7 @@ import AdminPageShell from "@/components/AdminPageShell";
 import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
 import {staffRoles} from "@/lib/permissions";
+import {staffStatusOptions} from "@/lib/formOptions";
 import {createStaffUserAction} from "@/actions/createAdminRecords";
 
 function formatDate(value?: Date | string | null) {
@@ -109,9 +110,11 @@ export default async function StaffPage() {
                 defaultValue="Active"
                 className="rounded-2xl border border-[#102015]/10 bg-[#f8fbf5] px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               >
-                <option value="Invited">Invited</option>
-                <option value="Active">Active</option>
-                <option value="Suspended">Suspended</option>
+                {staffStatusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
               </select>
             </label>
 

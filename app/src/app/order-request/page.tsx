@@ -2,24 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import {createOrderRequestAction} from "@/actions/createAdminRecords";
-
-const buyerTypes = [
-  "Household / individual",
-  "Family bulk buyer",
-  "Restaurant / hotel / caterer",
-  "Food vendor",
-  "Retailer / shop",
-  "Office / corporate buyer",
-  "Community / neighbourhood group",
-  "Other buyer",
-];
-
-const deliveryOptions = [
-  "Delivery",
-  "Pickup",
-  "Either delivery or pickup",
-  "Group-buy collection point",
-];
+import {deliveryPreferenceOptions, orderBuyerTypeOptions, timingOptions} from "@/lib/formOptions";
 
 export default async function OrderRequestPage({
   searchParams,
@@ -134,7 +117,7 @@ export default async function OrderRequestPage({
                     defaultValue="Household / individual"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
-                    {buyerTypes.map((type) => (
+                    {orderBuyerTypeOptions.map((type) => (
                       <option key={type}>{type}</option>
                     ))}
                   </select>
@@ -191,7 +174,7 @@ export default async function OrderRequestPage({
                     defaultValue="Delivery"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
-                    {deliveryOptions.map((option) => (
+                    {deliveryPreferenceOptions.map((option) => (
                       <option key={option}>{option}</option>
                     ))}
                   </select>
@@ -199,11 +182,15 @@ export default async function OrderRequestPage({
 
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
                   Timing
-                  <input
+                  <select
                     name="timing"
+                    defaultValue="This week"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    placeholder="e.g. tomorrow morning, Friday, weekly"
-                  />
+                  >
+                    {timingOptions.map((option) => (
+                      <option key={option}>{option}</option>
+                    ))}
+                  </select>
                 </label>
               </div>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import {createContactEnquiryAction} from "@/actions/createAdminRecords";
+import {enquiryTypeOptions} from "@/lib/formOptions";
 
 const partnerTypes = [
   {
@@ -44,20 +45,6 @@ const partnerTypes = [
     body:
       "Collaborate on food supply, informal commerce, digital trade, market access, African SME infrastructure, and food-system research.",
   },
-];
-
-const enquiryTypes = [
-  "General enquiry",
-  "Buyer support",
-  "Bank / fintech partnership",
-  "Logistics / fulfilment partnership",
-  "NGO / development partnership",
-  "Impact / development finance partnership",
-  "Insurance / risk partnership",
-  "Technology / API partnership",
-  "Corporate / institutional partnership",
-  "Media / ecosystem enquiry",
-  "Other",
 ];
 
 export default function ContactPage() {
@@ -201,7 +188,7 @@ export default function ContactPage() {
                   defaultValue="General enquiry"
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                 >
-                  {enquiryTypes.map((type) => (
+                  {enquiryTypeOptions.map((type) => (
                     <option key={type}>{type}</option>
                   ))}
                 </select>
