@@ -19,3 +19,15 @@ app/.next/
 app/.turbo/
 tsconfig.tsbuildinfo
 app/tsconfig.tsbuildinfo
+
+# Local Mac/system files
+.DS_Store
+**/.DS_Store
+
+# Local databases and backups
+*.db
+app/dev.db
+*.sqlite
+*.sqlite.backup
+app/prisma/*.backup
+app/src/lib/*.backup
