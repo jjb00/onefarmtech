@@ -1,0 +1,21 @@
+
+# OneFarmTech local/generated files
+.env
+.env.local
+.env.*.local
+app/.env
+app/.env.local
+app/.env.sqlite.backup
+dev.db
+*.db
+.DS_Store
+app/.DS_Store
+app/public/.DS_Store
+node_modules/
+app/node_modules/
+.next/
+app/.next/
+.turbo/
+app/.turbo/
+tsconfig.tsbuildinfo
+app/tsconfig.tsbuildinfo
