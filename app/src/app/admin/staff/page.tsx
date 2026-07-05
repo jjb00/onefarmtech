@@ -2,8 +2,9 @@
 // @ts-nocheck -- Staff account fields may evolve during the launch auth phase.
 
 import AdminPageShell from "@/components/AdminPageShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
-import {staffRoles, rolePermissions} from "@/lib/permissions";
+import {staffRoles} from "@/lib/permissions";
 import {createStaffUserAction} from "@/actions/createAdminRecords";
 
 function formatDate(value?: Date | string | null) {
@@ -125,40 +126,12 @@ export default async function StaffPage() {
           </form>
         </section>
 
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-          <h2 className="text-2xl font-black">Role permissions</h2>
-          <p className="mt-2 text-sm leading-7 text-[#405348]">
-            These are the operational roles currently available on the staff login screen.
-          </p>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {staffRoles.map((role) => (
-              <article
-                key={role}
-                className="rounded-[1.5rem] border border-[#102015]/10 bg-[#f8fbf5] p-5"
-              >
-                <h3 className="text-lg font-black text-[#102015]">{role}</h3>
-                <ul className="mt-4 grid gap-2 text-sm leading-6 text-[#405348]">
-                  {(rolePermissions[role] || []).map((permission) => (
-                    <li key={permission} className="flex gap-2">
-                      <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#1f7a3f]" />
-                      <span>{permission}</span>
-                    </li>
-                  ))}
-                </ul>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-          <h2 className="text-2xl font-black">Staff records</h2>
-          <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Existing database records are shown here for readiness review. Account creation and password
-            invite flow should be added in the next staff-auth build.
-          </p>
-
-          <div className="mt-6 grid gap-3">
+        <AdminDisclosure
+          title="Staff records"
+          description="Existing database records are shown here for readiness review. Account creation and password invite flow should be added in the next staff-auth build."
+          defaultOpen={staffUsers.length > 0}
+        >
+          <div className="grid gap-3">
             {staffUsers.length ? (
               staffUsers.map((staff) => (
                 <article
@@ -193,7 +166,7 @@ export default async function StaffPage() {
               </div>
             )}
           </div>
-        </section>
+        </AdminDisclosure>
       </div>
     </AdminPageShell>
   );
