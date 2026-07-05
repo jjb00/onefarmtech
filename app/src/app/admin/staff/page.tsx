@@ -4,6 +4,7 @@
 import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
 import {staffRoles, rolePermissions} from "@/lib/permissions";
+import {createStaffUserAction} from "@/actions/createAdminRecords";
 
 function formatDate(value?: Date | string | null) {
   if (!value) return "Not recorded";
@@ -47,6 +48,81 @@ export default async function StaffPage() {
               <p className="mt-1 text-[#405348]">staff records in database</p>
             </div>
           </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+                Super admin / Admin
+              </p>
+              <h2 className="mt-3 text-2xl font-black">Create staff record</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+                Add staff members and assign their launch role. This creates the staff register
+                foundation now; individual password invites and named staff login come in the next auth phase.
+              </p>
+            </div>
+          </div>
+
+          <form action={createStaffUserAction} className="mt-6 grid gap-4 lg:grid-cols-4">
+            <label className="grid gap-2 text-sm font-bold text-[#102015]">
+              Staff name
+              <input
+                name="name"
+                required
+                className="rounded-2xl border border-[#102015]/10 bg-[#f8fbf5] px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                placeholder="e.g. Operations lead"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-bold text-[#102015]">
+              Staff email
+              <input
+                name="email"
+                type="email"
+                required
+                className="rounded-2xl border border-[#102015]/10 bg-[#f8fbf5] px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                placeholder="name@example.com"
+              />
+            </label>
+
+            <label className="grid gap-2 text-sm font-bold text-[#102015]">
+              Role
+              <select
+                name="role"
+                defaultValue="Operations"
+                className="rounded-2xl border border-[#102015]/10 bg-[#f8fbf5] px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              >
+                {staffRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-bold text-[#102015]">
+              Status
+              <select
+                name="status"
+                defaultValue="Active"
+                className="rounded-2xl border border-[#102015]/10 bg-[#f8fbf5] px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+              >
+                <option value="Invited">Invited</option>
+                <option value="Active">Active</option>
+                <option value="Suspended">Suspended</option>
+              </select>
+            </label>
+
+            <div className="lg:col-span-4">
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Create staff record
+              </button>
+            </div>
+          </form>
         </section>
 
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
