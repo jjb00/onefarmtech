@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
 
 function money(value: number) {
