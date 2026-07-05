@@ -23,6 +23,31 @@ function isOpenStatus(status: string) {
   return !["Closed", "Rejected", "Converted to customer", "Converted to order"].includes(status);
 }
 
+function statusBucket(status: string) {
+  if (["Closed", "Rejected", "Converted to customer", "Converted to order"].includes(status)) {
+    return "Converted / closed";
+  }
+
+  if (status.toLowerCase().includes("followed")) {
+    return "Followed up";
+  }
+
+  if (status === "Reviewing") {
+    return "Reviewing";
+  }
+
+  return "New";
+}
+
+function formatSubmittedAt(date: Date) {
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export default async function LaunchInboxPage() {
   const [buyerRequests, orderRequests, contactEnquiries] = await Promise.all([
     prisma.buyerAccountRequest.findMany({
@@ -46,6 +71,17 @@ export default async function LaunchInboxPage() {
   const totalOpen =
     openBuyerRequests.length + openOrderRequests.length + openContactEnquiries.length;
 
+  const allItems = [
+    ...buyerRequests.map((item) => ({status: item.status})),
+    ...orderRequests.map((item) => ({status: item.status})),
+    ...contactEnquiries.map((item) => ({status: item.status})),
+  ];
+
+  const statusSummary = ["New", "Reviewing", "Followed up", "Converted / closed"].map((label) => ({
+    label,
+    count: allItems.filter((item) => statusBucket(item.status) === label).length,
+  }));
+
   return (
     <AdminPageShell
       title="Launch inbox"
@@ -57,6 +93,20 @@ export default async function LaunchInboxPage() {
           <Metric label="Buyer requests" value={String(openBuyerRequests.length)} />
           <Metric label="Order requests" value={String(openOrderRequests.length)} />
           <Metric label="Contact enquiries" value={String(openContactEnquiries.length)} />
+        </section>
+
+        <section className="grid gap-3 md:grid-cols-4">
+          {statusSummary.map((item) => (
+            <div
+              key={item.label}
+              className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-4 shadow-sm"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#587063]">
+                {item.label}
+              </p>
+              <p className="mt-2 text-2xl font-black text-[#102015]">{item.count}</p>
+            </div>
+          ))}
         </section>
 
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-sm">
@@ -115,7 +165,7 @@ export default async function LaunchInboxPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">
-                      {request.buyerType}
+                      Buyer account request · {request.buyerType}
                     </p>
                     <h3 className="mt-2 text-xl font-black text-[#102015]">
                       {request.organisationName || request.contactName}
@@ -130,7 +180,8 @@ export default async function LaunchInboxPage() {
                   <StatusPill status={request.status} />
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="mt-4 grid gap-3 md:grid-cols-4">
+                  <SmallMetric label="Submitted" value={formatSubmittedAt(request.createdAt)} />
                   <SmallMetric label="Frequency" value={request.orderFrequency || "Not provided"} />
                   <SmallMetric label="Spend" value={request.estimatedSpend || "Not provided"} />
                   <SmallMetric label="Credit interest" value={request.interestedInCredit ? "Yes" : "No"} />
@@ -146,6 +197,7 @@ export default async function LaunchInboxPage() {
                   {email ? <ExternalButton href={email} label="Email buyer" /> : null}
 
                   <BuyerStatusButton requestId={request.id} status="Reviewing" label="Set reviewing" />
+                  <BuyerStatusButton requestId={request.id} status="Followed up" label="Followed up" />
                   <BuyerStatusButton requestId={request.id} status="Rejected" label="Reject" danger />
                   <form action={convertBuyerAccountRequestToCustomerAction}>
                     <input type="hidden" name="requestId" value={request.id} />
@@ -185,7 +237,7 @@ export default async function LaunchInboxPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">
-                      {request.buyerType}
+                      Order request · {request.buyerType}
                     </p>
                     <h3 className="mt-2 text-xl font-black text-[#102015]">
                       {request.buyerName}
@@ -200,7 +252,8 @@ export default async function LaunchInboxPage() {
                   <StatusPill status={request.status} />
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-3">
+                <div className="mt-4 grid gap-3 md:grid-cols-4">
+                  <SmallMetric label="Submitted" value={formatSubmittedAt(request.createdAt)} />
                   <SmallMetric label="Fulfilment" value={request.deliveryPreference} />
                   <SmallMetric label="Timing" value={request.timing || "Not provided"} />
                   <SmallMetric label="Group-buy" value={request.groupBuyInterest ? "Interested" : "No"} />
@@ -247,7 +300,7 @@ export default async function LaunchInboxPage() {
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">
-                      {enquiry.enquiryType}
+                      Contact enquiry · {enquiry.enquiryType}
                     </p>
                     <h3 className="mt-2 text-xl font-black text-[#102015]">
                       {enquiry.organisation || enquiry.name}
@@ -260,6 +313,11 @@ export default async function LaunchInboxPage() {
                   </div>
 
                   <StatusPill status={enquiry.status} />
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <SmallMetric label="Submitted" value={formatSubmittedAt(enquiry.createdAt)} />
+                  <SmallMetric label="Status bucket" value={statusBucket(enquiry.status)} />
                 </div>
 
                 <p className="mt-4 rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-7 text-[#405348]">
