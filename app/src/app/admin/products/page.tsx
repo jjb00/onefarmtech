@@ -15,6 +15,12 @@ function formatNaira(amount: number) {
 
 export default async function ProductsPage() {
   const products = await getDbProducts();
+  const groupedProducts = products.reduce<Record<string, typeof products>>((groups, product) => {
+    const category = product.category || "Uncategorised";
+    groups[category] = groups[category] || [];
+    groups[category].push(product);
+    return groups;
+  }, {});
 
   return (
     <AdminPageShell
@@ -226,6 +232,75 @@ export default async function ProductsPage() {
               </table>
             )}
           </div>
+        </AdminDisclosure>
+
+        <AdminDisclosure
+          title={`Grouped by category (${Object.keys(groupedProducts).length})`}
+          defaultOpen={false}
+        >
+          <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-black">Products by category</h2>
+                <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+                  Use this view when scanning seasonal availability, paused items, and produce coverage by category.
+                </p>
+              </div>
+              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#1f7a3f]">
+                {products.length} products
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
+                <div
+                  key={category}
+                  className="rounded-3xl border border-[#102015]/10 bg-[#f7f5ec] p-5"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-lg font-black">{category}</h3>
+                      <p className="mt-1 text-sm text-[#405348]">
+                        {categoryProducts.length} product{categoryProducts.length === 1 ? "" : "s"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2">
+                    {categoryProducts.map((product) => (
+                      <div
+                        key={product.id}
+                        className="rounded-2xl bg-white p-4 text-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-black text-[#102015]">{product.name}</p>
+                            <p className="mt-1 text-xs font-semibold text-[#405348]">
+                              {product.unit} · {product.grade}
+                            </p>
+                          </div>
+                          <span className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
+                            {product.availability}
+                          </span>
+                        </div>
+                        {product.status !== "Active" ? (
+                          <p className="mt-2 text-xs font-bold text-[#C95F3D]">
+                            {product.status}
+                          </p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+
+              {products.length === 0 ? (
+                <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm font-semibold text-[#405348]">
+                  No products yet. Seed the baseline catalogue or create products manually.
+                </p>
+              ) : null}
+            </div>
+          </section>
         </AdminDisclosure>
       </div>
     </AdminPageShell>
