@@ -3,6 +3,7 @@
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
+import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
 
 function readText(formData: FormData, key: string, fallback = "") {
@@ -104,6 +105,89 @@ export async function createProductAction(formData: FormData) {
   });
 
   revalidatePath("/admin/products");
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/products");
+}
+
+
+
+export async function seedBaselineProductsAction() {
+  const createdProducts = [];
+  const skippedProducts = [];
+
+  for (const product of baselineProducts) {
+    const existingProduct = await prisma.product.findFirst({
+      where: {
+        name: product.name,
+        category: product.category,
+        grade: product.grade,
+      },
+    });
+
+    if (existingProduct) {
+      skippedProducts.push(existingProduct);
+      continue;
+    }
+
+    const createdProduct = await prisma.product.create({
+      data: product,
+    });
+
+    createdProducts.push(createdProduct);
+  }
+
+  await createAuditLog({
+    action: "Seeded baseline product catalogue",
+    entityType: "Product",
+    entityLabel: "Baseline catalogue",
+    newValue: {
+      created: createdProducts.length,
+      skipped: skippedProducts.length,
+    },
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/admin/create-order");
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/products");
+}
+
+export async function updateProductCatalogueStatusAction(formData: FormData) {
+  const productId = readText(formData, "productId");
+  const availability = readText(formData, "availability", "Available");
+  const status = readText(formData, "status", "Active");
+
+  if (!productId) {
+    throw new Error("Product ID is required.");
+  }
+
+  const previousProduct = await prisma.product.findUnique({
+    where: {
+      id: productId,
+    },
+  });
+
+  const product = await prisma.product.update({
+    where: {
+      id: productId,
+    },
+    data: {
+      availability,
+      status,
+    },
+  });
+
+  await createAuditLog({
+    action: "Updated product catalogue status",
+    entityType: "Product",
+    entityId: product.id,
+    entityLabel: product.name,
+    previousValue: previousProduct,
+    newValue: product,
+  });
+
+  revalidatePath("/admin/products");
+  revalidatePath("/admin/create-order");
   revalidatePath("/admin/audit-log");
   redirect("/admin/products");
 }

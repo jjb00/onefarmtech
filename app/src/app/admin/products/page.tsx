@@ -1,7 +1,8 @@
 import AdminPageShell from "@/components/AdminPageShell";
 import { getDbProducts } from "@/data/dbAdmin";
-import { createProductAction } from "@/actions/createAdminRecords";
+import { createProductAction, seedBaselineProductsAction, updateProductCatalogueStatusAction } from "@/actions/createAdminRecords";
 import { produceGrades } from "@/constants/orderOptions";
+import {productAvailabilityOptions, productCategoryOptions, productStatusOptions, productUnitOptions} from "@/lib/formOptions";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -20,13 +21,37 @@ export default async function ProductsPage() {
       description="Manage produce, pricing, grades, availability, and internal procurement catalogue."
     >
       <div className="grid gap-8">
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+                Product catalogue
+              </p>
+              <h2 className="mt-3 text-2xl font-black">Baseline product list</h2>
+              <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
+                Seed regular and seasonal products across vegetables, fruits, poultry, meat, fish, grains, seeds, tubers and spices.
+                Existing matching products are skipped, so the action is safe to run more than once.
+              </p>
+            </div>
+
+            <form action={seedBaselineProductsAction}>
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Seed baseline catalogue
+              </button>
+            </form>
+          </div>
+        </section>
+
         <form
           action={createProductAction}
           className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"
         >
           <h2 className="text-2xl font-bold">Create product</h2>
           <p className="mt-2 text-sm text-[#405348]">
-            Add produce items that admins can use when creating orders.
+            Add produce items that admins can use when creating orders. Items marked unavailable or paused should be hidden from future client-facing product lists.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -42,20 +67,28 @@ export default async function ProductsPage() {
 
             <label className="grid gap-2 text-sm font-semibold">
               Category
-              <input
+              <select
                 name="category"
-                defaultValue="Fresh produce"
+                defaultValue="Vegetables"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              />
+              >
+                {productCategoryOptions.map((category) => (
+                  <option key={category}>{category}</option>
+                ))}
+              </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Unit
-              <input
+              <select
                 name="unit"
                 defaultValue="kg"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              />
+              >
+                {productUnitOptions.map((unit) => (
+                  <option key={unit}>{unit}</option>
+                ))}
+              </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
@@ -89,10 +122,9 @@ export default async function ProductsPage() {
                 defaultValue="Available"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               >
-                <option>Available</option>
-                <option>Limited</option>
-                <option>Seasonal</option>
-                <option>Unavailable</option>
+                {productAvailabilityOptions.map((availability) => (
+                  <option key={availability}>{availability}</option>
+                ))}
               </select>
             </label>
 
@@ -103,9 +135,9 @@ export default async function ProductsPage() {
                 defaultValue="Active"
                 className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
               >
-                <option>Active</option>
-                <option>Paused</option>
-                <option>Archived</option>
+                {productStatusOptions.map((status) => (
+                  <option key={status}>{status}</option>
+                ))}
               </select>
             </label>
           </div>
@@ -143,7 +175,35 @@ export default async function ProductsPage() {
                   <td className="px-5 py-4">{product.unit}</td>
                   <td className="px-5 py-4">{product.grade}</td>
                   <td className="px-5 py-4">{formatNaira(product.basePrice)}</td>
-                  <td className="px-5 py-4">{product.availability}</td>
+                  <td className="px-5 py-4">
+                    <form action={updateProductCatalogueStatusAction} className="grid gap-2">
+                      <input type="hidden" name="productId" value={product.id} />
+                      <select
+                        name="availability"
+                        defaultValue={product.availability}
+                        className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
+                      >
+                        {productAvailabilityOptions.map((availability) => (
+                          <option key={availability}>{availability}</option>
+                        ))}
+                      </select>
+                      <select
+                        name="status"
+                        defaultValue={product.status}
+                        className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
+                      >
+                        {productStatusOptions.map((status) => (
+                          <option key={status}>{status}</option>
+                        ))}
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white"
+                      >
+                        Update
+                      </button>
+                    </form>
+                  </td>
                   <td className="px-5 py-4">{product.orderItems.length}</td>
                   <td className="px-5 py-4">
                     <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
