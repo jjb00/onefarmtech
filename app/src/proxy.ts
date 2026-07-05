@@ -1,4 +1,6 @@
 import {NextRequest, NextResponse} from "next/server";
+import {canAccessAdminPath} from "@/lib/adminAccess";
+import {isStaffRole} from "@/lib/permissions";
 
 const STAFF_SESSION_COOKIE = "oft_admin_session";
 
@@ -8,12 +10,22 @@ export function proxy(request: NextRequest) {
   const isLoginRoute = pathname === "/login" || pathname === "/staff-login";
   const isAuthenticated =
     request.cookies.get(STAFF_SESSION_COOKIE)?.value === "authenticated";
+  const roleCookie = request.cookies.get("oft_staff_role")?.value || "Admin";
+  const staffRole = isStaffRole(roleCookie) ? roleCookie : "Admin";
 
   if (isAdminRoute && !isAuthenticated) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/staff-login";
     loginUrl.searchParams.set("next", `${pathname}${search}`);
     return NextResponse.redirect(loginUrl);
+  }
+
+  if (isAdminRoute && isAuthenticated && !canAccessAdminPath(staffRole, pathname)) {
+    const adminUrl = request.nextUrl.clone();
+    adminUrl.pathname = "/admin";
+    adminUrl.searchParams.set("access", "denied");
+    adminUrl.searchParams.set("blocked", pathname);
+    return NextResponse.redirect(adminUrl);
   }
 
   if (isLoginRoute && isAuthenticated) {

@@ -31,11 +31,11 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
 
             <div className="mt-6 rounded-2xl border border-[#c95f3d]/20 bg-[#c95f3d]/10 p-4">
               <p className="text-sm font-black text-[#7a321f]">
-                Temporary staff gate
+                Controlled staff access
               </p>
               <p className="mt-2 text-xs leading-5 text-[#405348]">
-                This is not production authentication. Use it only for local/internal
-                testing until proper staff and buyer auth is connected.
+                This shared staff gate protects the launch admin area. The selected
+                role now controls which admin pages are visible during this session.
               </p>
             </div>
           </div>
@@ -51,8 +51,8 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
             </p>
             <h2 className="mt-3 text-3xl font-black">Sign in</h2>
             <p className="mt-2 text-sm text-[#405348]">
-              Enter the temporary admin password and identify your staff role
-              so audit logs can attribute local actions more clearly.
+              Enter the staff access password and select the role for this session.
+              The role controls which admin pages are visible.
             </p>
 
             {hasError && (
@@ -103,7 +103,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
                   required
                   autoFocus
                   className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Enter admin password"
+                  placeholder="Enter staff access password"
                 />
               </label>
             </div>

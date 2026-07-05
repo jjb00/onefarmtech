@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import {adminNavigationGroups} from "@/data/adminNavigation";
 import {getCurrentStaffActor} from "@/lib/currentStaff";
+import {canAccessAdminPath, filterAdminLinksForRole, getRoleAccessSummary} from "@/lib/adminAccess";
 
 type AdminLayoutFrameProps = {
   title: string;
@@ -17,6 +18,15 @@ export default async function AdminLayoutFrame({
   children,
 }: AdminLayoutFrameProps) {
   const staff = await getCurrentStaffActor();
+  const visibleNavigationGroups = adminNavigationGroups
+    .map((group) => ({
+      ...group,
+      links: filterAdminLinksForRole(staff.role, group.links),
+    }))
+    .filter((group) => group.links.length > 0);
+  const securityHref = canAccessAdminPath(staff.role, "/admin/security")
+    ? "/admin/security"
+    : "/admin/deployment-readiness";
 
   return (
     <main className="min-h-screen bg-[#f4f8ef] text-[#102015]">
@@ -31,22 +41,37 @@ export default async function AdminLayoutFrame({
             <p className="mt-2 text-xs leading-5 text-white/70">
               Signed in as <strong>{staff.name}</strong> · {staff.role}.
             </p>
+            <p className="mt-2 text-xs leading-5 text-white/60">
+              {getRoleAccessSummary(staff.role)}
+            </p>
             <Link
-              href="/admin/security"
+              href={securityHref}
               className="mt-3 inline-flex rounded-full border border-[#F2B84B]/30 px-3 py-2 text-xs font-bold text-[#F2B84B]"
             >
-              Security status
+              Access status
             </Link>
           </div>
 
-          <div className="mt-10 grid gap-8">
-            {adminNavigationGroups.map((group) => (
-              <section key={group.title}>
-                <p className="text-xs font-black uppercase tracking-[0.32em] text-[#9ee6ad]">
-                  {group.title}
-                </p>
+          <div className="mt-10 grid gap-3">
+            {visibleNavigationGroups.map((group, index) => (
+              <details
+                key={group.title}
+                open={index < 2}
+                className="group rounded-3xl border border-white/10 bg-white/[0.03] p-3"
+              >
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-2 py-2">
+                  <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9ee6ad]">
+                    {group.title}
+                  </p>
+                  <span
+                    aria-hidden="true"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-lg font-black text-white/80 transition group-open:rotate-90"
+                  >
+                    ›
+                  </span>
+                </summary>
 
-                <div className="mt-4 grid gap-2">
+                <div className="mt-2 grid gap-2">
                   {group.links.map((item) => (
                     <Link
                       key={item.href}
@@ -60,7 +85,7 @@ export default async function AdminLayoutFrame({
                     </Link>
                   ))}
                 </div>
-              </section>
+              </details>
             ))}
           </div>
 

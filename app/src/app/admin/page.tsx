@@ -11,8 +11,21 @@ import {
 } from "@/data/dbAdmin";
 import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
+import {getCurrentStaffActor} from "@/lib/currentStaff";
+import {canAccessAdminPath} from "@/lib/adminAccess";
 
-export default async function AdminDashboardPage() {
+type AdminDashboardPageProps = {
+  searchParams?: Promise<{
+    access?: string;
+    blocked?: string;
+  }>;
+};
+
+export default async function AdminDashboardPage({searchParams}: AdminDashboardPageProps) {
+  const params = await searchParams;
+  const staff = await getCurrentStaffActor();
+  const accessDenied = params?.access === "denied";
+
   const [
     orders,
     stats,
@@ -50,6 +63,18 @@ export default async function AdminDashboardPage() {
     0,
   );
 
+  const quickActions = [
+    ["Create order", "/admin/create-order"],
+    ["Add customer", "/admin/customers"],
+    ["Buyer accounts", "/admin/buyer-accounts"],
+    ["Buyer access", "/admin/buyer-access"],
+    ["Issue receipt", "/admin/receipts"],
+    ["Audit log", "/admin/audit-log"],
+    ["Staff & roles", "/admin/staff"],
+    ["Deployment readiness", "/admin/deployment-readiness"],
+    ["Operating manual", "/admin/operating-manual"],
+  ].filter(([, href]) => canAccessAdminPath(staff.role, href));
+
   return (
     <AdminShell
       title="Admin dashboard"
@@ -64,6 +89,16 @@ export default async function AdminDashboardPage() {
       }
     >
       <section className="mt-10 grid gap-8">
+        {accessDenied ? (
+          <div className="rounded-[2rem] border border-[#C95F3D]/20 bg-[#C95F3D]/10 p-5 text-[#102015]">
+            <p className="text-lg font-black">Access not available for this role</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
+              Your current session role is <strong>{staff.role}</strong>. That role does not have access to the page you tried to open.
+              Use the visible navigation links for the areas available to this role, or sign out and use the correct staff role.
+            </p>
+          </div>
+        ) : null}
+
         <div className="grid gap-4 md:grid-cols-4">
           {stats.map((stat) => (
             <div
@@ -205,17 +240,7 @@ export default async function AdminDashboardPage() {
             <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
               <h2 className="text-2xl font-bold">Quick actions</h2>
               <div className="mt-6 grid gap-3">
-                {[
-                  ["Create order", "/admin/create-order"],
-                  ["Add customer", "/admin/customers"],
-                  ["Buyer accounts", "/admin/buyer-accounts"],
-                  ["Buyer access", "/admin/buyer-access"],
-                  ["Issue receipt", "/admin/receipts"],
-                  ["Audit log", "/admin/audit-log"],
-                  ["Staff & roles", "/admin/staff"],
-                  ["Deployment readiness", "/admin/deployment-readiness"],
-                  ["Operating manual", "/admin/operating-manual"],
-                ].map(([label, href]) => (
+                {quickActions.map(([label, href]) => (
                   <Link
                     key={href}
                     href={href}
