@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import DraftOrdersPanel from "@/components/admin/DraftOrdersPanel";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {
   buyerTypes,
@@ -483,21 +484,30 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
-          <h3 className="font-bold">WhatsApp preview</h3>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
+        <AdminDisclosure
+          title="WhatsApp preview"
+          description="Copy this message into WhatsApp after confirming availability and pricing."
+        >
+          <pre className="whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
             {whatsappPreview}
           </pre>
-        </div>
+        </AdminDisclosure>
 
-        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
-          <h3 className="font-bold">Payment instruction preview</h3>
-          <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
+        <AdminDisclosure
+          title="Payment instruction preview"
+          description="Internal payment guidance before automated payment links are connected."
+        >
+          <pre className="whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-6 text-[#405348]">
             {paymentInstruction}
           </pre>
-        </div>
+        </AdminDisclosure>
 
-        <DraftOrdersPanel />
+        <AdminDisclosure
+          title="Local draft orders"
+          description="Browser-saved drafts for orders that are not ready to submit to the database."
+        >
+          <DraftOrdersPanel />
+        </AdminDisclosure>
       </aside>
     </section>
   );
