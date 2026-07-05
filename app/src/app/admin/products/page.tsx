@@ -1,4 +1,5 @@
 import AdminPageShell from "@/components/AdminPageShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import { getDbProducts } from "@/data/dbAdmin";
 import { createProductAction, seedBaselineProductsAction, updateProductCatalogueStatusAction } from "@/actions/createAdminRecords";
 import { produceGrades } from "@/constants/orderOptions";
@@ -150,71 +151,82 @@ export default async function ProductsPage() {
           </button>
         </form>
 
-        <div className="overflow-hidden rounded-3xl border border-[#102015]/10 bg-white">
-          <table className="min-w-full divide-y divide-[#102015]/10 text-sm">
-            <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
-              <tr>
-                <th className="px-5 py-4 font-semibold">Product</th>
-                <th className="px-5 py-4 font-semibold">Category</th>
-                <th className="px-5 py-4 font-semibold">Unit</th>
-                <th className="px-5 py-4 font-semibold">Grade</th>
-                <th className="px-5 py-4 font-semibold">Base price</th>
-                <th className="px-5 py-4 font-semibold">Availability</th>
-                <th className="px-5 py-4 font-semibold">Orders</th>
-                <th className="px-5 py-4 font-semibold">Status</th>
-              </tr>
-            </thead>
+        <AdminDisclosure
+          title={`Product list (${products.length})`}
+          defaultOpen={false}
+        >
+          <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
+            {products.length === 0 ? (
+              <div className="p-6 text-sm font-semibold text-[#405348]">
+                No products yet. Click Seed baseline catalogue to create the starter catalogue.
+              </div>
+            ) : (
+              <table className="min-w-full divide-y divide-[#102015]/10 text-sm">
+                <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
+                  <tr>
+                    <th className="px-5 py-4 font-semibold">Product</th>
+                    <th className="px-5 py-4 font-semibold">Category</th>
+                    <th className="px-5 py-4 font-semibold">Unit</th>
+                    <th className="px-5 py-4 font-semibold">Grade</th>
+                    <th className="px-5 py-4 font-semibold">Base price</th>
+                    <th className="px-5 py-4 font-semibold">Availability</th>
+                    <th className="px-5 py-4 font-semibold">Orders</th>
+                    <th className="px-5 py-4 font-semibold">Status</th>
+                  </tr>
+                </thead>
 
-            <tbody className="divide-y divide-[#102015]/10">
-              {products.map((product) => (
-                <tr key={product.id} className="text-[#405348]">
-                  <td className="px-5 py-4 font-semibold text-[#102015]">
-                    {product.name}
-                  </td>
-                  <td className="px-5 py-4">{product.category}</td>
-                  <td className="px-5 py-4">{product.unit}</td>
-                  <td className="px-5 py-4">{product.grade}</td>
-                  <td className="px-5 py-4">{formatNaira(product.basePrice)}</td>
-                  <td className="px-5 py-4">
-                    <form action={updateProductCatalogueStatusAction} className="grid gap-2">
-                      <input type="hidden" name="productId" value={product.id} />
-                      <select
-                        name="availability"
-                        defaultValue={product.availability}
-                        className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
-                      >
-                        {productAvailabilityOptions.map((availability) => (
-                          <option key={availability}>{availability}</option>
-                        ))}
-                      </select>
-                      <select
-                        name="status"
-                        defaultValue={product.status}
-                        className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
-                      >
-                        {productStatusOptions.map((status) => (
-                          <option key={status}>{status}</option>
-                        ))}
-                      </select>
-                      <button
-                        type="submit"
-                        className="rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white"
-                      >
-                        Update
-                      </button>
-                    </form>
-                  </td>
-                  <td className="px-5 py-4">{product.orderItems.length}</td>
-                  <td className="px-5 py-4">
-                    <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
-                      {product.status}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                <tbody className="divide-y divide-[#102015]/10">
+                  {products.map((product) => (
+                    <tr key={product.id} className="text-[#405348]">
+                      <td className="px-5 py-4 font-semibold text-[#102015]">
+                        {product.name}
+                      </td>
+                      <td className="px-5 py-4">{product.category}</td>
+                      <td className="px-5 py-4">{product.unit}</td>
+                      <td className="px-5 py-4">{product.grade}</td>
+                      <td className="px-5 py-4">{formatNaira(product.basePrice)}</td>
+                      <td className="px-5 py-4">
+                        <form action={updateProductCatalogueStatusAction} className="grid gap-2">
+                          <input type="hidden" name="productId" value={product.id} />
+                          <select
+                            name="availability"
+                            defaultValue={product.availability}
+                            className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
+                          >
+                            {productAvailabilityOptions.map((availability) => (
+                              <option key={availability}>{availability}</option>
+                            ))}
+                          </select>
+                          <select
+                            name="status"
+                            defaultValue={product.status}
+                            className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
+                          >
+                            {productStatusOptions.map((status) => (
+                              <option key={status}>{status}</option>
+                            ))}
+                          </select>
+                          <button
+                            type="submit"
+                            className="rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white"
+                          >
+                            Update
+                          </button>
+                        </form>
+                      </td>
+                      <td className="px-5 py-4">{product.orderItems.length}</td>
+                      <td className="px-5 py-4">
+                        <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
+                          {product.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </AdminDisclosure>
       </div>
     </AdminPageShell>
   );
