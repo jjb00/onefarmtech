@@ -96,7 +96,7 @@ export default async function HomePage() {
                 FAQ
               </Link>
               <Link
-                href="/buyer-login"
+                href="/buyer-account-request"
                 className="hidden rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef] md:inline-flex"
               >
                 Create buyer account
@@ -115,6 +115,20 @@ export default async function HomePage() {
               </a>
             </nav>
           </header>
+          <div data-testid="mobile-launch-cta-row" className="mt-5 grid grid-cols-2 gap-3 md:hidden">
+            <Link
+              href="/order-request"
+              className="rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white shadow-sm"
+            >
+              Order
+            </Link>
+            <Link
+              href="/buyer-account-request"
+              className="rounded-full border border-[#101712]/10 bg-white/85 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+            >
+              Buyer account
+            </Link>
+          </div>
 
           <div className="grid gap-10 py-14 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-20">
             <section>

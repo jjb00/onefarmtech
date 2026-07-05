@@ -106,12 +106,12 @@ export default function BuyerRequestPage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <a
-              href={`https://wa.me/?text=${whatsappText}`}
+            <Link
+              href="/order-request"
               className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm"
             >
-              Start WhatsApp request
-            </a>
+              Start order request
+            </Link>
             <a
               href={`https://wa.me/?text=${encodeURIComponent(
                 "Hello OneFarmTech, I want to request a city or private group buy. Location: ___ Items: ___ Estimated buyers/quantity: ___",

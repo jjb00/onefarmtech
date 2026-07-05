@@ -100,13 +100,13 @@ export default function ContactPage() {
               FAQ
             </Link>
             <Link
-              href="/buyer-login"
+              href="/buyer-account-request"
               className="hidden rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef] md:inline-flex"
             >
               Create buyer account
             </Link>
             <Link
-              href="/order"
+              href="/order-request"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
             >
               Order

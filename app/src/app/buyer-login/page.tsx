@@ -71,7 +71,7 @@ export default function BuyerLoginPage() {
               Request account setup
             </Link>
             <Link
-              href="/order"
+              href="/order-request"
               className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712]"
             >
               Order

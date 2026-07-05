@@ -1,5 +1,9 @@
 import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
+import {
+  convertBuyerAccountRequestToCustomerAction,
+  updateBuyerAccountRequestStatusAction,
+} from "@/actions/createAdminRecords";
 
 export default async function BuyerAccountRequestsPage() {
   const requests = await prisma.buyerAccountRequest.findMany({
@@ -53,6 +57,8 @@ export default async function BuyerAccountRequestsPage() {
                 <SmallMetric label="Location" value={request.location || "Not provided"} />
                 <SmallMetric label="Frequency" value={request.orderFrequency || "Not provided"} />
                 <SmallMetric label="Estimated spend" value={request.estimatedSpend || "Not provided"} />
+                <SmallMetric label="Payment method" value={request.preferredPaymentMethod || "Not provided"} />
+                <SmallMetric label="Receipts needed" value={request.needsReceipts ? "Yes" : "No"} />
               </div>
 
               <div className="mt-4 grid gap-3 lg:grid-cols-2">
@@ -72,6 +78,62 @@ export default async function BuyerAccountRequestsPage() {
                     </>
                   ) : null}
                 </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <form action={updateBuyerAccountRequestStatusAction}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <input type="hidden" name="status" value="Reviewing" />
+                  <button
+                    type="submit"
+                    className="rounded-full border border-[#102015]/10 bg-white px-4 py-2 text-xs font-black text-[#102015] shadow-sm"
+                  >
+                    Set reviewing
+                  </button>
+                </form>
+
+                <form action={updateBuyerAccountRequestStatusAction}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <input type="hidden" name="status" value="Approved" />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white shadow-sm"
+                  >
+                    Approve
+                  </button>
+                </form>
+
+                <form action={updateBuyerAccountRequestStatusAction}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <input type="hidden" name="status" value="Rejected" />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#C95F3D] px-4 py-2 text-xs font-black text-white shadow-sm"
+                  >
+                    Reject
+                  </button>
+                </form>
+
+                <form action={convertBuyerAccountRequestToCustomerAction}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <button
+                    type="submit"
+                    className="rounded-full bg-[#102015] px-4 py-2 text-xs font-black text-white shadow-sm"
+                  >
+                    Approve + create buyer profile
+                  </button>
+                </form>
+
+                <form action={updateBuyerAccountRequestStatusAction}>
+                  <input type="hidden" name="requestId" value={request.id} />
+                  <input type="hidden" name="status" value="Closed" />
+                  <button
+                    type="submit"
+                    className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-4 py-2 text-xs font-black text-[#102015]"
+                  >
+                    Close
+                  </button>
+                </form>
               </div>
 
               <p className="mt-4 text-xs font-semibold text-[#587063]">

@@ -288,6 +288,9 @@ model BuyerAccountRequest {
   usualProduceNeeds   String?
   orderFrequency      String?
   estimatedSpend      String?
+  businessRegNumber    String?
+  preferredPaymentMethod String?
+  needsReceipts        Boolean  @default(true)
   interestedInCredit  Boolean  @default(false)
   message             String?
   status              String   @default("New")
@@ -295,4 +298,24 @@ model BuyerAccountRequest {
   adminNote           String?
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+}
+
+
+model OrderRequest {
+  id                String   @id @default(cuid())
+  buyerName         String
+  buyerType         String   @default("Household / individual")
+  phone             String
+  email             String?
+  location          String?
+  deliveryPreference String  @default("Delivery")
+  items             String
+  timing            String?
+  groupBuyInterest  Boolean  @default(false)
+  message           String?
+  status            String   @default("New")
+  source            String   @default("Order request page")
+  adminNote         String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }

@@ -424,6 +424,9 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   const usualProduceNeeds = readText(formData, "usualProduceNeeds");
   const orderFrequency = readText(formData, "orderFrequency");
   const estimatedSpend = readText(formData, "estimatedSpend");
+  const businessRegNumber = readText(formData, "businessRegNumber");
+  const preferredPaymentMethod = readText(formData, "preferredPaymentMethod");
+  const needsReceipts = readBoolean(formData, "needsReceipts");
   const interestedInCredit = readBoolean(formData, "interestedInCredit");
   const message = readText(formData, "message");
 
@@ -442,6 +445,9 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
       usualProduceNeeds: usualProduceNeeds || null,
       orderFrequency: orderFrequency || null,
       estimatedSpend: estimatedSpend || null,
+      businessRegNumber: businessRegNumber || null,
+      preferredPaymentMethod: preferredPaymentMethod || null,
+      needsReceipts,
       interestedInCredit,
       message: message || null,
       status: "New",
@@ -461,4 +467,159 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   revalidatePath("/admin/buyer-account-requests");
   revalidatePath("/admin/audit-log");
   redirect("/buyer-account-request?submitted=1");
+}
+
+export async function createOrderRequestAction(formData: FormData) {
+  const buyerName = readText(formData, "buyerName");
+  const buyerType = readText(formData, "buyerType", "Household / individual");
+  const phone = readText(formData, "phone");
+  const email = readText(formData, "email");
+  const location = readText(formData, "location");
+  const deliveryPreference = readText(formData, "deliveryPreference", "Delivery");
+  const items = readText(formData, "items");
+  const timing = readText(formData, "timing");
+  const groupBuyInterest = readBoolean(formData, "groupBuyInterest");
+  const message = readText(formData, "message");
+
+  if (!buyerName || !phone || !items) {
+    throw new Error("Buyer name, phone, and items are required.");
+  }
+
+  const orderRequest = await prisma.orderRequest.create({
+    data: {
+      buyerName,
+      buyerType,
+      phone,
+      email: email || null,
+      location: location || null,
+      deliveryPreference,
+      items,
+      timing: timing || null,
+      groupBuyInterest,
+      message: message || null,
+      status: "New",
+      source: "Order request page",
+    },
+  });
+
+  await createAuditLog({
+    action: "Created order request",
+    entityType: "OrderRequest",
+    entityId: orderRequest.id,
+    entityLabel: `${orderRequest.buyerName} · ${orderRequest.buyerType}`,
+    newValue: orderRequest,
+  });
+
+  revalidatePath("/order-request");
+  revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/audit-log");
+  redirect("/order-request?submitted=1");
+}
+
+export async function updateBuyerAccountRequestStatusAction(formData: FormData) {
+  const requestId = readText(formData, "requestId");
+  const status = readText(formData, "status");
+
+  if (!requestId || !status) {
+    throw new Error("Request ID and status are required.");
+  }
+
+  const updated = await prisma.buyerAccountRequest.update({
+    where: {id: requestId},
+    data: {status},
+  });
+
+  await createAuditLog({
+    action: "Updated buyer account request status",
+    entityType: "BuyerAccountRequest",
+    entityId: updated.id,
+    entityLabel: `${updated.buyerType} · ${updated.contactName}`,
+    newValue: {status: updated.status},
+  });
+
+  revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/audit-log");
+}
+
+export async function convertBuyerAccountRequestToCustomerAction(formData: FormData) {
+  const requestId = readText(formData, "requestId");
+
+  if (!requestId) {
+    throw new Error("Request ID is required.");
+  }
+
+  const request = await prisma.buyerAccountRequest.findUnique({
+    where: {id: requestId},
+  });
+
+  if (!request) {
+    throw new Error("Buyer account request not found.");
+  }
+
+  const customer = await prisma.customer.create({
+    data: {
+      name: request.organisationName || request.contactName,
+      buyerType: request.buyerType,
+      phone: request.phone,
+      email: request.email || null,
+      location: request.location || null,
+      accountStatus: "Approved - manual setup",
+      accountLoginReady: false,
+      creditLimit: 0,
+      outstandingBalance: 0,
+      paymentTerms: request.interestedInCredit
+        ? "Payment terms interest noted - partner review required"
+        : "Pay on order / manual terms",
+      receiptEmail: request.email || null,
+    },
+  });
+
+  const updated = await prisma.buyerAccountRequest.update({
+    where: {id: request.id},
+    data: {
+      status: "Converted to customer",
+      adminNote: `Converted to customer record: ${customer.id}`,
+    },
+  });
+
+  await createAuditLog({
+    action: "Converted buyer account request to customer",
+    entityType: "BuyerAccountRequest",
+    entityId: updated.id,
+    entityLabel: `${updated.buyerType} · ${updated.contactName}`,
+    newValue: {
+      request: updated,
+      customer,
+    },
+  });
+
+  revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/audit-log");
+}
+
+export async function updateOrderRequestStatusAction(formData: FormData) {
+  const requestId = readText(formData, "requestId");
+  const status = readText(formData, "status");
+
+  if (!requestId || !status) {
+    throw new Error("Request ID and status are required.");
+  }
+
+  const updated = await prisma.orderRequest.update({
+    where: {id: requestId},
+    data: {status},
+  });
+
+  await createAuditLog({
+    action: "Updated order request status",
+    entityType: "OrderRequest",
+    entityId: updated.id,
+    entityLabel: `${updated.buyerName} · ${updated.buyerType}`,
+    newValue: {status: updated.status},
+  });
+
+  revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/audit-log");
 }

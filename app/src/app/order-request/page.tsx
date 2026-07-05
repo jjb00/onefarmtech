@@ -1,28 +1,27 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
-import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
+import {createOrderRequestAction} from "@/actions/createAdminRecords";
 
 const buyerTypes = [
+  "Household / individual",
+  "Family bulk buyer",
   "Restaurant / hotel / caterer",
   "Food vendor",
   "Retailer / shop",
   "Office / corporate buyer",
-  "Household / family bulk buyer",
   "Community / neighbourhood group",
-  "Other recurring buyer",
+  "Other buyer",
 ];
 
-const frequencies = [
-  "Daily",
-  "Several times a week",
-  "Weekly",
-  "Fortnightly",
-  "Monthly",
-  "Occasional bulk orders",
+const deliveryOptions = [
+  "Delivery",
+  "Pickup",
+  "Either delivery or pickup",
+  "Group-buy collection point",
 ];
 
-export default async function BuyerAccountRequestPage({
+export default async function OrderRequestPage({
   searchParams,
 }: {
   searchParams?: Promise<{submitted?: string}>;
@@ -35,13 +34,13 @@ export default async function BuyerAccountRequestPage({
       <PublicImageCollage
         images={[
           {
-            src: "/backgrounds/buyers.png",
+            src: "/backgrounds/trolley.png",
             alt: "",
             className:
               "right-[-160px] top-24 h-80 w-80 opacity-[0.34] md:h-[31rem] md:w-[31rem]",
           },
           {
-            src: "/backgrounds/banking.png",
+            src: "/backgrounds/delivery.png",
             alt: "",
             className:
               "left-[-170px] bottom-[-120px] h-80 w-80 opacity-[0.28] md:h-[30rem] md:w-[30rem]",
@@ -66,13 +65,13 @@ export default async function BuyerAccountRequestPage({
               href="/buyer-login"
               className="hidden rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white md:inline-flex"
             >
-              Account info
+              Buyer account
             </Link>
             <Link
-              href="/order"
+              href="/contact"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
             >
-              Order
+              Contact
             </Link>
           </nav>
         </header>
@@ -80,68 +79,50 @@ export default async function BuyerAccountRequestPage({
         <section className="grid gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">
           <div>
             <p className="text-sm font-black uppercase tracking-[0.24em] text-[#C95F3D]">
-              Buyer account request
+              Order request
             </p>
 
             <h1 className="mt-4 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
-              Request a OneFarmTech buyer account.
+              Tell us what fresh produce you need.
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
-              For recurring buyers who want order history, receipts, authorised
-              contacts, repeat-order support, and structured payment records.
+              Submit a structured request for fresh produce, bulk buying, pickup,
+              delivery, or group-buy support. The team will review it manually and
+              follow up.
             </p>
 
-            <div className="mt-8 grid gap-3">
-              {[
-                "Restaurants, hotels and caterers",
-                "Food vendors and retailers",
-                "Offices and corporate buying groups",
-                "Families, communities and neighbourhood groups",
-              ].map((item) => (
-                <div
-                  key={item}
-                  className="rounded-2xl border border-[#101712]/10 bg-white/90 px-4 py-3 text-sm font-black shadow-sm backdrop-blur"
-                >
-                  {item}
-                </div>
-              ))}
+            <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/90 p-5 text-sm leading-7 text-[#405348] shadow-sm backdrop-blur">
+              <strong className="text-[#102015]">WhatsApp-first workflow:</strong>{" "}
+              This form creates an internal order request record. WhatsApp can still
+              be used for quick follow-up, clarifications, and fulfilment coordination.
             </div>
           </div>
 
           <form
-            action={createBuyerAccountRequestAction}
+            action={createOrderRequestAction}
             className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur"
           >
-            <h2 className="text-2xl font-black">Account setup details</h2>
+            <h2 className="text-2xl font-black">Order details</h2>
 
             {submitted ? (
               <p className="mt-3 rounded-2xl bg-[#3E7A4C]/10 p-4 text-sm font-bold leading-7 text-[#1f7a3f]">
-Your account request has been received. We’ll review your details and get back to you within 2 working days by WhatsApp or email. If approved, your buyer profile will be set up for order history, receipts, authorised contacts and account features.
+                Your order request has been received. The OneFarmTech team will review it manually.
               </p>
             ) : (
               <p className="mt-2 text-sm leading-7 text-[#405348]">
-                Tell us who you are buying for and how often you expect to order.
+                Add the items, quantities, timing, and preferred fulfilment option.
               </p>
             )}
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                Contact name
+                Buyer name
                 <input
-                  name="contactName"
+                  name="buyerName"
                   required
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   placeholder="Your name"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                Business / group name
-                <input
-                  name="organisationName"
-                  className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Business, household, office or group name"
                 />
               </label>
 
@@ -150,7 +131,7 @@ Your account request has been received. We’ll review your details and get back
                   Buyer type
                   <select
                     name="buyerType"
-                    defaultValue="Restaurant / hotel / caterer"
+                    defaultValue="Household / individual"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
                     {buyerTypes.map((type) => (
@@ -192,83 +173,43 @@ Your account request has been received. We’ll review your details and get back
               </div>
 
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                Usual produce needs
+                Items and quantities
                 <textarea
-                  name="usualProduceNeeds"
-                  rows={3}
+                  name="items"
+                  required
+                  rows={5}
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="e.g. tomatoes, peppers, onions, plantain, leafy greens..."
+                  placeholder="e.g. 2 baskets tomatoes, 1 bag onions, 20kg plantain, leafy greens..."
                 />
               </label>
 
-              <div className="rounded-[1.5rem] bg-[#f3f8ef] p-4">
-                <h3 className="text-sm font-black uppercase tracking-[0.18em] text-[#C95F3D]">
-                  Business and payment profile
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-[#405348]">
-                  Optional details help us understand buying patterns, payment preferences and future partner-supported payment options without asking for business verification documents yet.
-                </p>
-
-                <div className="mt-4 grid gap-4 md:grid-cols-2">
-                  <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                    Business registration / CAC / tax ID
-                    <input
-                      name="businessRegNumber"
-                      className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                      placeholder="Optional, if available"
-                    />
-                  </label>
-
-                  <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                    Preferred payment method
-                    <select
-                      name="preferredPaymentMethod"
-                      defaultValue="Bank transfer"
-                      className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    >
-                      <option>Bank transfer</option>
-                      <option>Card payment</option>
-                      <option>Mobile money / wallet</option>
-                      <option>Cash on pickup/delivery</option>
-                      <option>Invoice / account terms</option>
-                      <option>Not sure yet</option>
-                    </select>
-                  </label>
-                </div>
-
-                <label className="mt-4 flex items-start gap-3 text-sm font-semibold leading-7 text-[#102015]">
-                  <input name="needsReceipts" type="checkbox" defaultChecked className="mt-1" />
-                  I need receipts, invoices or structured payment records.
-                </label>
-              </div>
-
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                  Order frequency
+                  Delivery / pickup preference
                   <select
-                    name="orderFrequency"
-                    defaultValue="Weekly"
+                    name="deliveryPreference"
+                    defaultValue="Delivery"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   >
-                    {frequencies.map((frequency) => (
-                      <option key={frequency}>{frequency}</option>
+                    {deliveryOptions.map((option) => (
+                      <option key={option}>{option}</option>
                     ))}
                   </select>
                 </label>
 
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                  Estimated spend
+                  Timing
                   <input
-                    name="estimatedSpend"
+                    name="timing"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    placeholder="e.g. ₦100k weekly"
+                    placeholder="e.g. tomorrow morning, Friday, weekly"
                   />
                 </label>
               </div>
 
               <label className="flex items-start gap-3 rounded-2xl bg-[#f3f8ef] p-4 text-sm font-semibold leading-7 text-[#102015]">
-                <input name="interestedInCredit" type="checkbox" className="mt-1" />
-                I am interested in payment terms, credit-limit support, or working-capital options through regulated partners.
+                <input name="groupBuyInterest" type="checkbox" className="mt-1" />
+                I am interested in joining or organising a group-buy to reduce cost.
               </label>
 
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
@@ -277,7 +218,7 @@ Your account request has been received. We’ll review your details and get back
                   name="message"
                   rows={4}
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Anything else we should know?"
+                  placeholder="Any special notes, delivery details, preferred markets, or recurring needs?"
                 />
               </label>
 
@@ -285,7 +226,7 @@ Your account request has been received. We’ll review your details and get back
                 type="submit"
                 className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
-                Submit account request
+                Submit order request
               </button>
             </div>
           </form>
