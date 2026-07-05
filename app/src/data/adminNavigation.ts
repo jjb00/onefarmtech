@@ -8,6 +8,11 @@ export const adminNavigationGroups = [
         description: "Operations overview",
       },
       {
+        title: "Launch inbox",
+        href: "/admin/launch-inbox",
+        description: "Requests and follow-ups",
+      },
+      {
         title: "Create order",
         href: "/admin/create-order",
         description: "Manual order entry",

@@ -623,3 +623,29 @@ export async function updateOrderRequestStatusAction(formData: FormData) {
   revalidatePath("/admin/order-requests");
   revalidatePath("/admin/audit-log");
 }
+
+export async function updateContactEnquiryStatusAction(formData: FormData) {
+  const enquiryId = readText(formData, "enquiryId");
+  const status = readText(formData, "status");
+
+  if (!enquiryId || !status) {
+    throw new Error("Enquiry ID and status are required.");
+  }
+
+  const updated = await prisma.contactEnquiry.update({
+    where: {id: enquiryId},
+    data: {status},
+  });
+
+  await createAuditLog({
+    action: "Updated contact enquiry status",
+    entityType: "ContactEnquiry",
+    entityId: updated.id,
+    entityLabel: `${updated.enquiryType} · ${updated.name}`,
+    newValue: {status: updated.status},
+  });
+
+  revalidatePath("/admin/contact-enquiries");
+  revalidatePath("/admin/launch-inbox");
+  revalidatePath("/admin/audit-log");
+}

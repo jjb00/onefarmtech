@@ -94,13 +94,6 @@ export default async function BuyerAccountRequestsPage() {
 
                 <form action={updateBuyerAccountRequestStatusAction}>
                   <input type="hidden" name="requestId" value={request.id} />
-                  <input type="hidden" name="status" value="Approved" />
-                  <button
-                    type="submit"
-                    className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white shadow-sm"
-                  >
-                    Approve
-                  </button>
                 </form>
 
                 <form action={updateBuyerAccountRequestStatusAction}>
