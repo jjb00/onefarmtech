@@ -116,6 +116,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
       links: [
         ["Payments", "/admin/payments", "Payment records and reconciliation status."],
         ["Receipts", "/admin/receipts", "Issue and view buyer receipts."],
+        ["Reports", "/admin/reports", "Company metrics and investor update snapshot."],
       ],
     },
     {

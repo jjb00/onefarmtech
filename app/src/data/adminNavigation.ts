@@ -67,6 +67,11 @@ export const adminNavigationGroups = [
         href: "/admin/receipts",
         description: "Electronic receipt issue log",
       },
+      {
+        title: "Reports",
+        href: "/admin/reports",
+        description: "Company metrics and investor update snapshot",
+      },
     ],
   },
   {

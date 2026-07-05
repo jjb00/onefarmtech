@@ -33,6 +33,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     ...sharedAdminPaths,
     "/admin/payments",
     "/admin/receipts",
+    "/admin/reports",
     "/admin/buyer-accounts",
     "/admin/buyer-access",
     "/admin/audit-log",
