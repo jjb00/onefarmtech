@@ -1,159 +1,106 @@
 export const buyerAccountTypeOptions = [
-  "Restaurant / hotel / caterer",
-  "Food vendor",
-  "Retailer / shop",
-  "Office / corporate buyer",
-  "Household / family bulk buyer",
-  "Community / neighbourhood group",
-  "Other recurring buyer",
-];
+  "Household buyer",
+  "Estate / compound buyer",
+  "Restaurant / food business",
+  "Retailer / reseller",
+  "Corporate / office buyer",
+  "School / institution",
+  "Other",
+] as const;
 
 export const orderBuyerTypeOptions = [
-  "Household / individual",
-  "Family bulk buyer",
-  "Restaurant / hotel / caterer",
-  "Food vendor",
-  "Retailer / shop",
-  "Office / corporate buyer",
-  "Community / neighbourhood group",
-  "Other buyer",
-];
+  "Household",
+  "Restaurant / food business",
+  "Retailer / reseller",
+  "Office / corporate",
+  "Estate / group-buy",
+  "School / institution",
+  "Other",
+] as const;
 
 export const orderFrequencyOptions = [
-  "Daily",
-  "Several times a week",
+  "One-off order",
   "Weekly",
-  "Fortnightly",
+  "Twice weekly",
   "Monthly",
-  "Occasional bulk orders",
-];
+  "As needed",
+] as const;
 
 export const estimatedSpendOptions = [
-  "Under ₦50,000",
+  "Under ₦25,000",
+  "₦25,000 - ₦50,000",
   "₦50,000 - ₦100,000",
   "₦100,000 - ₦250,000",
-  "₦250,000 - ₦500,000",
-  "₦500,000+",
+  "₦250,000+",
   "Not sure yet",
-];
+] as const;
 
 export const deliveryPreferenceOptions = [
   "Delivery",
   "Pickup",
   "Either delivery or pickup",
-  "Group-buy collection point",
-];
+  "Group-buy delivery",
+] as const;
 
 export const timingOptions = [
   "Today",
   "Tomorrow",
   "This week",
   "Next week",
-  "Weekly / recurring",
+  "Recurring",
   "Flexible",
-];
+] as const;
 
 export const enquiryTypeOptions = [
+  "Buyer account request",
+  "Order support",
+  "Payment / receipt",
+  "Delivery / pickup",
+  "Supplier / partner enquiry",
   "General enquiry",
-  "Buyer support",
-  "Bank / fintech partnership",
-  "Logistics / fulfilment partnership",
-  "NGO / development partnership",
-  "Impact / development finance partnership",
-  "Insurance / risk partnership",
-  "Technology / API partnership",
-  "Corporate / institutional partnership",
-  "Media / ecosystem enquiry",
-  "Complaint or issue",
-  "Other",
-];
+] as const;
 
 export const staffStatusOptions = [
-  "Invited",
   "Active",
   "Suspended",
-];
+  "Inactive",
+] as const;
 
 export const productCategoryOptions = [
   "Vegetables",
   "Fruits",
+  "Tubers",
+  "Grains",
+  "Seeds",
+  "Spices / herbs",
   "Poultry",
   "Meat",
   "Fish / seafood",
-  "Grains",
-  "Seeds",
-  "Tubers",
-  "Spices / herbs",
-  "Fresh produce",
-  "Seasonal produce",
-  "Other",
-];
+  "Seasonal / other",
+] as const;
 
 export const productUnitOptions = [
   "kg",
   "bag",
   "basket",
   "crate",
-  "box",
   "bunch",
   "piece",
+  "dozen",
   "tray",
   "carton",
-  "litre",
-  "unit",
-];
+  "paint bucket",
+] as const;
 
 export const productAvailabilityOptions = [
   "Available",
   "Limited",
   "Seasonal",
   "Unavailable",
-];
+] as const;
 
 export const productStatusOptions = [
   "Active",
   "Paused",
   "Archived",
-];
-
-export const productCategoryOptions = [
-  "Vegetables",
-  "Fruits",
-  "Poultry",
-  "Meat",
-  "Fish / seafood",
-  "Grains",
-  "Seeds",
-  "Tubers",
-  "Spices / herbs",
-  "Fresh produce",
-  "Seasonal produce",
-  "Other",
-];
-
-export const productUnitOptions = [
-  "kg",
-  "bag",
-  "basket",
-  "crate",
-  "box",
-  "bunch",
-  "piece",
-  "tray",
-  "carton",
-  "litre",
-  "unit",
-];
-
-export const productAvailabilityOptions = [
-  "Available",
-  "Limited",
-  "Seasonal",
-  "Unavailable",
-];
-
-export const productStatusOptions = [
-  "Active",
-  "Paused",
-  "Archived",
-];
+] as const;
