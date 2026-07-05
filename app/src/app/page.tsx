@@ -59,22 +59,22 @@ export default async function HomePage() {
           images={[
             {
               src: "/backgrounds/produce.png",
-              alt: "Fresh produce supply background",
+              alt: "",
               className: "left-[-120px] top-24 h-80 w-80 opacity-[0.36] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
             },
             {
               src: "/backgrounds/trolley.png",
-              alt: "Fresh produce trolley",
+              alt: "",
               className: "right-[-150px] top-28 h-80 w-80 opacity-[0.38] md:h-[30rem] md:w-[30rem]",
             },
             {
               src: "/backgrounds/buyers.png",
-              alt: "Nigerian fresh food buyer categories",
+              alt: "",
               className: "bottom-[-120px] left-[32%] hidden h-[28rem] w-[28rem] opacity-[0.38] lg:block",
             },
             {
               src: "/backgrounds/delivery.png",
-              alt: "Fresh produce delivery and fulfilment",
+              alt: "",
               className: "bottom-[-130px] right-[8%] hidden h-[24rem] w-[24rem] opacity-[0.37] xl:block",
             },
           ]}

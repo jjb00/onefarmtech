@@ -49,5 +49,5 @@ Delivery: ${order.deliveryMethod}
 Delivery note: ${order.deliveryNote || "To be confirmed"}
 
 OneFarmTech
-Managed food procurement for buyers, kitchens, and food businesses.`;
+Managed fresh food supply for buyers, kitchens, and food businesses.`;
 }

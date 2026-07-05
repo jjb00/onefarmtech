@@ -106,7 +106,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
         ["Buyer accounts", "/admin/buyer-accounts", "Approved buyer profiles and account status."],
         ["Buyer access", "/admin/buyer-access", "Login readiness and buyer access control."],
         ["Products", "/admin/products", "Catalogue, availability and product status."],
-        ["Suppliers", "/admin/suppliers", "Supply partners and procurement contacts."],
+        ["Suppliers", "/admin/suppliers", "Supply partners and fulfilment contacts."],
       ],
     },
     {

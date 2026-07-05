@@ -19,7 +19,7 @@ export default async function ProductsPage() {
   return (
     <AdminPageShell
       title="Products"
-      description="Manage produce, pricing, grades, availability, and internal procurement catalogue."
+      description="Manage produce, pricing, grades, availability, and the internal product catalogue."
     >
       <div className="grid gap-8">
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">

@@ -124,7 +124,7 @@ export default async function ReceiptDetailPage({params}: ReceiptDetailPageProps
             <h2 className="text-lg font-black">Note</h2>
             <p className="mt-3 text-sm leading-7 text-[#1E2420]/70">
               This is a OneFarmTech electronic receipt record for a managed
-              procurement order. Automated PDF/email delivery will be connected
+              fresh food order. Automated PDF/email delivery will be connected
               after production authentication and payment infrastructure are ready.
             </p>
           </div>
@@ -149,7 +149,7 @@ export default async function ReceiptDetailPage({params}: ReceiptDetailPageProps
         </div>
 
         <p className="mt-8 text-center text-xs text-[#1E2420]/45">
-          OneFarmTech · Farm-to-city procurement · WhatsApp-first operations
+          OneFarmTech · Farm-to-city fresh food supply · WhatsApp-first operations
         </p>
       </section>
     </main>

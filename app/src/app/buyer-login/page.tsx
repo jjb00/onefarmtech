@@ -9,17 +9,17 @@ export default function BuyerLoginPage() {
         images={[
           {
             src: "/backgrounds/buyers.png",
-            alt: "Nigerian recurring fresh food buyers",
+            alt: "",
             className: "right-[-180px] top-20 h-80 w-80 opacity-[0.38] md:h-[32rem] md:w-[32rem]",
           },
           {
             src: "/backgrounds/banking.png",
-            alt: "Buyer account payment and credit support",
+            alt: "",
             className: "left-[-170px] bottom-[-120px] h-80 w-80 opacity-[0.34] md:h-[30rem] md:w-[30rem]",
           },
           {
             src: "/backgrounds/produce.png",
-            alt: "Fresh produce baskets",
+            alt: "",
             className: "bottom-[-150px] right-[28%] hidden h-[24rem] w-[24rem] opacity-[0.36] lg:block",
           },
         ]}

@@ -111,7 +111,7 @@ export async function getPrelaunchChecks() {
       detail:
         "Payments and receipts are manually recorded. Paystack links and webhooks are not active yet.",
       recommendation:
-        "Manual finance workflow is fine for local MVP, but payment automation should come after auth/database migration.",
+        "Manual finance workflow is acceptable for launch, but payment automation should come after stronger auth and database controls.",
     },
     {
       title: "Runtime environment",

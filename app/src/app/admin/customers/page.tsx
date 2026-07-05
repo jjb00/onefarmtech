@@ -31,7 +31,7 @@ export default async function CustomersPage() {
   return (
     <AdminPageShell
       title="Customers"
-      description="View buyer accounts, payment terms, credit limits, receipt readiness, and customer readiness for WhatsApp-first procurement."
+      description="View buyer accounts, payment terms, credit limits, receipt readiness, and customer readiness for WhatsApp-first fresh food supply."
     >
       <div className="grid gap-8">
         <form
