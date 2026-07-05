@@ -41,12 +41,12 @@ export async function getPrelaunchChecks() {
       title: "Database provider",
       status: isSqlite ? "fail" : isPostgres ? "pass" : "warn",
       detail: isSqlite
-        ? "Prisma is currently configured for local SQLite."
+        ? "Prisma is not yet confirmed against the expected production database configuration."
         : isPostgres
           ? "Prisma is configured for Postgres."
           : "Database provider could not be confidently identified.",
       recommendation: isSqlite
-        ? "Do not deploy as production. Reset Supabase DB password, migrate to Postgres, seed, and test locally first."
+        ? "Do not treat as production-ready until Supabase/Postgres, secrets, seeding and deployment checks are verified."
         : "Confirm migrations, seed data, and connection pooling before Vercel testing.",
     },
     {
@@ -57,7 +57,7 @@ export async function getPrelaunchChecks() {
         : "DATABASE_URL is not present in the environment.",
       recommendation: databaseUrl
         ? "Ensure the value is not pasted into chat or committed to git."
-        : "For Supabase/Postgres, add DATABASE_URL locally and in Vercel environment variables.",
+        : "For Supabase/Postgres, keep DATABASE_URL configured locally and in Vercel environment variables.",
     },
     {
       title: "Temporary staff password",
@@ -119,7 +119,7 @@ export async function getPrelaunchChecks() {
       detail: `NODE_ENV is ${nodeEnv}.`,
       recommendation:
         nodeEnv === "production" && isSqlite
-          ? "Production runtime must not use local SQLite."
+          ? "Production runtime must use the approved Postgres database connection."
           : "Keep using local mode until Supabase/Postgres is deliberately resumed.",
     },
   ];

@@ -26,7 +26,7 @@ export default async function DeploymentReadinessPage() {
   return (
     <AdminPageShell
       title="Deployment readiness"
-      description="This page prevents accidental deployment assumptions. The app can keep progressing locally, but Vercel team testing should wait until database and authentication foundations are production-ready."
+      description="This page prevents accidental deployment assumptions. The app can keep progressing through controlled launch checks, but wider team testing should wait until database and authentication foundations are production-ready."
     >
       <div className="grid gap-6">
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
@@ -97,11 +97,11 @@ export default async function DeploymentReadinessPage() {
           <h2 className="text-2xl font-black text-[#102015]">Next safe path</h2>
 
           <ol className="mt-5 grid gap-3 text-sm leading-7 text-[#405348]">
-            <li>1. Continue local product/admin build while SQLite is stable.</li>
+            <li>1. Continue controlled product/admin build while the database is stable.</li>
             <li>2. Reset the compromised Supabase database password.</li>
             <li>3. Create a dedicated Supabase migration branch.</li>
             <li>
-              4. Move Prisma provider to Postgres and test locally against
+              4. Keep Prisma on Postgres and test safely against
               Supabase.
             </li>
             <li>

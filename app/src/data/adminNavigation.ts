@@ -30,7 +30,7 @@ export const adminNavigationGroups = [
     ],
   },
   {
-    title: "Commercial",
+    title: "Buyer management",
     links: [
       {
         title: "Customers",
@@ -57,6 +57,11 @@ export const adminNavigationGroups = [
         href: "/admin/buyer-access",
         description: "Contacts and invites",
       },
+    ],
+  },
+  {
+    title: "Finance & reporting",
+    links: [
       {
         title: "Payments",
         href: "/admin/payments",

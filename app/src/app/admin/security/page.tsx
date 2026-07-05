@@ -5,13 +5,13 @@ import {getCurrentStaffActor} from "@/lib/currentStaff";
 const readinessItems = [
   {
     title: "Temporary staff password gate",
-    status: "Active locally",
+    status: "Active",
     note: "Useful for local testing only. It must be replaced before Vercel team testing.",
   },
   {
     title: "Staff role records",
     status: "Foundation added",
-    note: "Staff records exist locally for planning, but they are not real login identities yet.",
+    note: "Staff records exist for planning, but they are not real login identities yet.",
   },
   {
     title: "Audit attribution",

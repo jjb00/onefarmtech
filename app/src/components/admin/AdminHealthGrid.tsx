@@ -7,7 +7,7 @@ export default function AdminHealthGrid() {
       <div>
         <h2 className="text-2xl font-bold">Readiness</h2>
         <p className="mt-2 text-sm leading-6 text-[#d8e8dc]">
-          This helps keep the difference clear between what is demo-ready now
+          This helps keep the difference clear between what is launch-ready now
           and what still needs backend/integration work.
         </p>
       </div>
