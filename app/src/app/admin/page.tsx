@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {getDbOrders, getDbOrderStats, formatOrderTotal} from "@/data/dbOrders";
 import {
@@ -233,8 +234,9 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
         </section>
 
         <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-          <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-            <div className="flex items-center justify-between gap-4">
+          <AdminDisclosure title="Recent orders" defaultOpen={false}>
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+              <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-bold">Recent orders</h2>
                 <p className="mt-1 text-sm text-[#405348]">
@@ -280,11 +282,13 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
                 </p>
               ) : null}
             </div>
-          </section>
+            </section>
+          </AdminDisclosure>
 
           <aside className="grid gap-8">
-            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
-              <h2 className="text-2xl font-bold">Issue watch</h2>
+            <AdminDisclosure title="Issue watch" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Issue watch</h2>
               <p className="mt-2 text-sm text-[#587063]">
                 Active complaints and unresolved order issues.
               </p>
@@ -310,10 +314,12 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
                   ))
                 )}
               </div>
-            </section>
+              </section>
+            </AdminDisclosure>
 
-            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
-              <h2 className="text-2xl font-bold">Recent audit activity</h2>
+            <AdminDisclosure title="Recent audit activity" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Recent audit activity</h2>
               <div className="mt-6 grid gap-3">
                 {auditLogs.map((log) => (
                   <Link
@@ -336,19 +342,23 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
                   </p>
                 ) : null}
               </div>
-            </section>
+              </section>
+            </AdminDisclosure>
 
-            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
-              <h2 className="text-2xl font-bold">Control readiness</h2>
+            <AdminDisclosure title="Control readiness" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Control readiness</h2>
               <div className="mt-6 grid gap-3 text-sm">
                 <ControlRow label="Staff records" value={String(staffUsers.length)} href="/admin/staff" />
                 <ControlRow label="Audit events" value={String(auditLogs.length)} href="/admin/audit-log" />
                 <ControlRow label="Receipt records" value={String(receipts.length)} href="/admin/receipts" />
               </div>
-            </section>
+              </section>
+            </AdminDisclosure>
 
-            <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
-              <h2 className="text-2xl font-bold">Quick actions</h2>
+            <AdminDisclosure title="Quick actions" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Quick actions</h2>
               <div className="mt-6 grid gap-3">
                 {quickActions.map(([label, href]) => (
                   <Link
@@ -360,7 +370,8 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
                   </Link>
                 ))}
               </div>
-            </section>
+              </section>
+            </AdminDisclosure>
           </aside>
         </div>
       </section>
