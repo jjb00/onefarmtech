@@ -53,10 +53,9 @@ export default async function AdminLayoutFrame({
           </div>
 
           <div className="mt-10 grid gap-3">
-            {visibleNavigationGroups.map((group, index) => (
+            {visibleNavigationGroups.map((group) => (
               <details
                 key={group.title}
-                open={index < 2}
                 className="group rounded-3xl border border-white/10 bg-white/[0.03] p-3"
               >
                 <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-2 py-2">
