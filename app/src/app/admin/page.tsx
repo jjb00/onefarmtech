@@ -38,6 +38,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     receipts,
     auditLogs,
     staffUsers,
+    buyerAccountRequests,
   ] = await Promise.all([
     getDbOrders(),
     getDbOrderStats(),
@@ -49,6 +50,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     prisma.receipt.findMany({orderBy: {issuedAt: "desc"}, take: 5}),
     prisma.auditLog.findMany({orderBy: {createdAt: "desc"}, take: 5}),
     prisma.staffUser.findMany({orderBy: {createdAt: "desc"}, take: 10}),
+    prisma.buyerAccountRequest.findMany({orderBy: {createdAt: "desc"}, take: 20}),
   ]);
 
   const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -62,6 +64,12 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   const outstandingBalance = customers.reduce(
     (sum, customer) => sum + customer.outstandingBalance,
     0,
+  );
+  const newBuyerAccountRequests = buyerAccountRequests.filter(
+    (request) => request.status === "New",
+  );
+  const reviewingBuyerAccountRequests = buyerAccountRequests.filter(
+    (request) => request.status === "Reviewing",
   );
 
   const quickActions = [
@@ -98,6 +106,58 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
               Use the visible navigation links for the areas available to this role, or sign out and use the correct staff role.
             </p>
           </div>
+        ) : null}
+
+        {newBuyerAccountRequests.length || reviewingBuyerAccountRequests.length ? (
+          <section className="rounded-[2rem] border border-[#F2B84B]/30 bg-[#fff8e4] p-5 text-[#102015] shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#C95F3D]">
+                  Buyer account attention
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {newBuyerAccountRequests.length} new request{newBuyerAccountRequests.length === 1 ? "" : "s"} need review
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[#405348]">
+                  Review new buyer account requests, approve suitable buyers, then generate a buyer login access code in Buyer access.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[28rem]">
+                <Link
+                  href="/admin/buyer-account-requests"
+                  className="rounded-2xl bg-[#1f7a3f] px-5 py-4 text-center text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+                >
+                  Review buyer requests
+                </Link>
+                <Link
+                  href="/admin/buyer-access"
+                  className="rounded-2xl border border-[#102015]/10 bg-white px-5 py-4 text-center text-sm font-black text-[#102015] shadow-sm transition hover:bg-[#f3f8ef]"
+                >
+                  Generate access code
+                </Link>
+              </div>
+            </div>
+
+            {buyerAccountRequests.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {buyerAccountRequests.slice(0, 3).map((request) => (
+                  <Link
+                    key={request.id}
+                    href="/admin/buyer-account-requests"
+                    className="rounded-2xl bg-white p-4 text-sm shadow-sm transition hover:bg-[#f3f8ef]"
+                  >
+                    <p className="font-black text-[#102015]">
+                      {request.organisationName || request.contactName}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[#587063]">
+                      {request.status} · {request.buyerType} · {request.phone}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
         ) : null}
 
         <div className="grid gap-4 md:grid-cols-4">
