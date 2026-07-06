@@ -1,162 +1,149 @@
 import Link from "next/link";
-import AdminPageShell from "@/components/AdminPageShell";
-import StatusBadge from "@/components/admin/StatusBadge";
-import {getDbOrders, formatOrderTotal} from "@/data/dbOrders";
+import {AdminPage} from "@/components/portal/AdminPage";
+import {requireStaff} from "@/lib/auth";
+import {prisma} from "@/lib/prisma";
 
-const deliveryMethods = [
-  "Platform delivery",
-  "Scheduled delivery",
-  "Pickup from listed location",
-  "Pickup from office",
-  "Customer arranged delivery",
-];
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-const dispatchReadyStatuses = ["Packed", "Ready for dispatch", "Ready for pickup"];
-const inTransitStatuses = ["Out for delivery"];
-const completedStatuses = ["Delivered", "Completed"];
-const exceptionStatuses = ["Issue reported", "Cancelled"];
+function formatNaira(amount: number | null | undefined) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(amount || 0);
+}
+
+function formatDate(value: Date | string | null) {
+  if (!value) return "Not set";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(value));
+}
 
 export default async function DeliveriesPage() {
-  const orders = await getDbOrders();
+  await requireStaff();
 
-  const deliveryOrders = orders.filter((order) =>
-    deliveryMethods.includes(order.deliveryMethod),
-  );
-
-  const readyOrders = deliveryOrders.filter((order) =>
-    dispatchReadyStatuses.includes(order.fulfilmentStatus),
-  );
-  const inTransitOrders = deliveryOrders.filter((order) =>
-    inTransitStatuses.includes(order.fulfilmentStatus),
-  );
-  const completedOrders = deliveryOrders.filter((order) =>
-    completedStatuses.includes(order.fulfilmentStatus),
-  );
-  const exceptionOrders = deliveryOrders.filter((order) =>
-    exceptionStatuses.includes(order.fulfilmentStatus),
-  );
+  const deliveries = await prisma.delivery.findMany({
+    orderBy: {createdAt: "desc"},
+    take: 100,
+    include: {
+      order: {
+        select: {
+          id: true,
+          code: true,
+          buyerName: true,
+          phone: true,
+          fulfilmentStatus: true,
+          paymentStatus: true,
+        },
+      },
+      customer: {
+        select: {
+          id: true,
+          fullName: true,
+        },
+      },
+      deliveryPartner: {
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+        },
+      },
+    },
+  });
 
   return (
-    <AdminPageShell
+    <AdminPage
       title="Deliveries"
-      description="Delivery and pickup control board for active OneFarmTech orders, dispatch readiness, exceptions, and closeout."
+      subtitle="Track delivery assignments, partner status, delivery fees and proof-of-delivery notes."
     >
-      <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-5">
-          <Metric label="Delivery/pickup orders" value={String(deliveryOrders.length)} />
-          <Metric label="Ready" value={String(readyOrders.length)} />
-          <Metric label="Out for delivery" value={String(inTransitOrders.length)} />
-          <Metric label="Completed" value={String(completedOrders.length)} />
-          <Metric label="Exceptions" value={String(exceptionOrders.length)} />
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              Delivery operations
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#102015]">
+              Delivery records
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+              Deliveries will appear here when orders are assigned for fulfilment.
+            </p>
+          </div>
+
+          <Link
+            href="/admin/delivery-partners"
+            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+          >
+            Manage partners
+          </Link>
         </div>
 
-        <section className="grid gap-4 lg:grid-cols-4">
-          <Bucket title="Ready for handoff" orders={readyOrders} />
-          <Bucket title="In transit" orders={inTransitOrders} />
-          <Bucket title="Completed" orders={completedOrders.slice(0, 8)} />
-          <Bucket title="Exceptions" orders={exceptionOrders} />
-        </section>
-
-        <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
-          <table className="min-w-[1000px] divide-y divide-[#102015]/10 text-sm">
-            <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
+        <div className="mt-6 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-[#f7f5ec] text-[#405348]">
               <tr>
                 <th className="px-5 py-4 font-semibold">Order</th>
                 <th className="px-5 py-4 font-semibold">Buyer</th>
-                <th className="px-5 py-4 font-semibold">Delivery method</th>
-                <th className="px-5 py-4 font-semibold">Delivery note</th>
-                <th className="px-5 py-4 font-semibold">Total</th>
-                <th className="px-5 py-4 font-semibold">Fulfilment</th>
+                <th className="px-5 py-4 font-semibold">Partner</th>
+                <th className="px-5 py-4 font-semibold">Fee</th>
+                <th className="px-5 py-4 font-semibold">Preferred date</th>
+                <th className="px-5 py-4 font-semibold">Status</th>
               </tr>
             </thead>
-
-            <tbody className="divide-y divide-[#102015]/10">
-              {deliveryOrders.map((order) => (
-                <tr key={order.id} className="text-[#405348]">
-                  <td className="px-5 py-4">
-                    <Link
-                      href={`/admin/orders/${order.code}`}
-                      className="font-semibold text-[#1f7a3f] hover:underline"
-                    >
-                      {order.code}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-4">
-                    <div className="font-semibold text-[#102015]">{order.buyerName}</div>
-                    <div className="text-xs text-[#587063]">{order.phone}</div>
-                  </td>
-                  <td className="px-5 py-4">{order.deliveryMethod}</td>
-                  <td className="px-5 py-4">
-                    {order.deliveryNote || "No delivery note"}
-                  </td>
-                  <td className="px-5 py-4">{formatOrderTotal(order.estimatedTotal)}</td>
-                  <td className="px-5 py-4">
-                    <StatusBadge status={order.fulfilmentStatus} />
-                  </td>
-                </tr>
-              ))}
-
-              {!deliveryOrders.length ? (
+            <tbody>
+              {deliveries.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-8 text-center text-[#587063]">
-                    No delivery or pickup orders yet.
+                  <td className="px-5 py-6 text-[#405348]" colSpan={6}>
+                    No delivery records yet. Delivery records should be created when an order is assigned for fulfilment.
                   </td>
                 </tr>
-              ) : null}
+              ) : (
+                deliveries.map((delivery) => (
+                  <tr key={delivery.id} className="border-b border-[#102015]/10">
+                    <td className="px-5 py-4">
+                      <Link
+                        href={`/admin/orders/${delivery.orderId}`}
+                        className="font-black text-[#1f7a3f] underline underline-offset-4"
+                      >
+                        {delivery.order.code}
+                      </Link>
+                      <p className="text-xs text-[#405348]">
+                        {delivery.order.paymentStatus} · {delivery.order.fulfilmentStatus}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 text-[#405348]">
+                      <p>{delivery.customer?.fullName || delivery.order.buyerName}</p>
+                      <p className="text-xs">{delivery.order.phone}</p>
+                    </td>
+                    <td className="px-5 py-4 text-[#405348]">
+                      <p>{delivery.deliveryPartner?.name || delivery.deliveryPartnerName || "Unassigned"}</p>
+                      <p className="text-xs">
+                        {delivery.deliveryPartner?.phone || delivery.deliveryPartnerPhone || "No contact"}
+                      </p>
+                    </td>
+                    <td className="px-5 py-4 text-[#405348]">
+                      {formatNaira(delivery.deliveryFee)}
+                    </td>
+                    <td className="px-5 py-4 text-[#405348]">
+                      {formatDate(delivery.preferredDate)}
+                    </td>
+                    <td className="px-5 py-4">
+                      <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
+                        {delivery.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-    </AdminPageShell>
-  );
-}
-
-function Metric({label, value}: {label: string; value: string}) {
-  return (
-    <div className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]">
-      <p className="text-sm text-[#587063]">{label}</p>
-      <p className="mt-2 text-3xl font-black">{value}</p>
-    </div>
-  );
-}
-
-function Bucket({
-  title,
-  orders,
-}: {
-  title: string;
-  orders: {
-    id: string;
-    code: string;
-    buyerName: string;
-    fulfilmentStatus: string;
-    deliveryMethod: string;
-  }[];
-}) {
-  return (
-    <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015]">
-      <h2 className="text-lg font-black">{title}</h2>
-      <div className="mt-4 grid gap-3">
-        {orders.map((order) => (
-          <Link
-            key={order.id}
-            href={`/admin/orders/${order.code}`}
-            className="rounded-2xl bg-[#f3f8ef] p-4 hover:bg-[#f3f8ef]"
-          >
-            <p className="font-bold text-[#1f7a3f]">{order.code}</p>
-            <p className="mt-1 text-sm text-[#405348]">{order.buyerName}</p>
-            <p className="mt-2 text-xs text-[#587063]">
-              {order.fulfilmentStatus} · {order.deliveryMethod}
-            </p>
-          </Link>
-        ))}
-
-        {!orders.length ? (
-          <p className="rounded-2xl bg-white p-4 text-sm text-[#587063]">
-            No orders in this bucket.
-          </p>
-        ) : null}
-      </div>
-    </section>
+      </section>
+    </AdminPage>
   );
 }

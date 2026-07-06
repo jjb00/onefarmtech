@@ -31,6 +31,8 @@ model Customer {
   buyerMessages              BuyerMessage[]
   createdAt                  DateTime                    @default(now())
   updatedAt                  DateTime                    @updatedAt
+  paymentRequests            PaymentRequest[]
+  deliveries                 Delivery[]
 }
 
 model Product {
@@ -74,12 +76,23 @@ model Order {
   fulfilmentStatus String      @default("New order")
   deliveryMethod   String
   deliveryNote     String?
+  source           String      @default("Admin")
+  sourcePhone      String?
+  buyerContactId   String?
+  subtotal         Int         @default(0)
+  deliveryFee      Int         @default(0)
+  serviceFee       Int         @default(0)
+  discountAmount   Int         @default(0)
+  totalAmount      Int         @default(0)
+  paymentReference String?
   estimatedTotal   Int         @default(0)
   adminNote        String?
   items            OrderItem[]
   payments         Payment[]
   complaints       Complaint[]
   receipts         Receipt[]
+  paymentRequests  PaymentRequest[]
+  delivery         Delivery?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 }
@@ -353,4 +366,68 @@ model OrderRequest {
   adminNote          String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+}
+
+
+model DeliveryPartner {
+  id           String     @id @default(cuid())
+  name         String
+  contactName  String?
+  phone        String?
+  email        String?
+  serviceArea  String?
+  status       String     @default("Active")
+  notes        String?
+  deliveries   Delivery[]
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+
+
+model PaymentRequest {
+  id               String    @id @default(cuid())
+  orderId          String
+  customerId       String?
+  provider         String    @default("Manual")
+  reference        String    @unique
+  amount           Int
+  currency         String    @default("NGN")
+  status           String    @default("Pending")
+  paymentUrl       String?
+  bankName         String?
+  accountNumber    String?
+  accountName      String?
+  gatewayReference String?
+  expiresAt        DateTime?
+  paidAt           DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer         Customer? @relation(fields: [customerId], references: [id])
+}
+
+
+model Delivery {
+  id                   String           @id @default(cuid())
+  orderId              String           @unique
+  customerId           String?
+  deliveryPartnerId    String?
+  deliveryMethod       String           @default("OneFarmTech arranged")
+  deliveryPartnerName  String?
+  deliveryPartnerPhone String?
+  deliveryFee          Int              @default(0)
+  deliveryAddress      String?
+  deliveryArea         String?
+  preferredDate        DateTime?
+  status               String           @default("Pending")
+  trackingReference    String?
+  proofOfDeliveryNote  String?
+  deliveredAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  order                Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer             Customer?        @relation(fields: [customerId], references: [id])
+  deliveryPartner      DeliveryPartner? @relation(fields: [deliveryPartnerId], references: [id])
 }
