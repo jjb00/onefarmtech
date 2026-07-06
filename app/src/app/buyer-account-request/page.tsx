@@ -45,10 +45,10 @@ export default async function BuyerAccountRequestPage({
 
           <nav className="flex items-center gap-3">
             <Link
-              href="/buyer-login"
+              href="/faq"
               className="hidden rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white md:inline-flex"
             >
-              Account info
+              FAQ
             </Link>
             <Link
               href="/order"
@@ -88,6 +88,30 @@ export default async function BuyerAccountRequestPage({
                   {item}
                 </div>
               ))}
+            </div>
+
+            <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-sm backdrop-blur">
+              <h2 className="text-xl font-black">What a buyer account helps with</h2>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {[
+                  "Order history",
+                  "Electronic receipts",
+                  "Payment records",
+                  "Authorised contacts",
+                  "Credit and balance tracking",
+                  "Repeat-order support",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    className="rounded-2xl bg-[#f3f8ef] p-4 text-sm font-black"
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+              <p className="mt-4 text-sm leading-7 text-[#405348]">
+                One-off buyers can still order without an account. This page is mainly for recurring buyers who want a more organised buying relationship.
+              </p>
             </div>
           </div>
 
