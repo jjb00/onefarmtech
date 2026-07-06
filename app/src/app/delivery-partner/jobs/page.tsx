@@ -2,6 +2,7 @@ import {deliveryPartnerLogoutAction, updateDeliveryJobStatusAction} from "@/acti
 import {getCurrentDeliveryPartner} from "@/lib/currentDeliveryPartner";
 import {prisma} from "@/lib/prisma";
 import {redirect} from "next/navigation";
+import DeliveryPartnerMobileMenu from "@/components/DeliveryPartnerMobileMenu";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -66,14 +67,19 @@ export default async function DeliveryPartnerJobsPage() {
               </p>
             </div>
 
-            <form action={deliveryPartnerLogoutAction}>
-              <button
-                type="submit"
-                className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-              >
-                Sign out
-              </button>
-            </form>
+            <div className="flex items-center gap-3">
+              <div className="lg:hidden">
+                <DeliveryPartnerMobileMenu signedIn logoutAction={deliveryPartnerLogoutAction} />
+              </div>
+              <form action={deliveryPartnerLogoutAction} className="hidden lg:block">
+                <button
+                  type="submit"
+                  className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
           </div>
         </section>
 

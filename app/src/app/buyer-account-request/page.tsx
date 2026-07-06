@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 import BuyerLoginModal from "@/components/BuyerLoginModal";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
@@ -57,7 +58,7 @@ export default async function BuyerAccountRequestPage({
             <BrandMark />
           </Link>
 
-          <nav className="flex items-center gap-3">
+          <nav className="hidden items-center gap-3 md:flex">
             <BuyerLoginModal />
             <Link
               href="/order"
@@ -66,6 +67,7 @@ export default async function BuyerAccountRequestPage({
               Order
             </Link>
           </nav>
+                  <PublicMobileMenu />
         </header>
 
         <section className="grid gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">

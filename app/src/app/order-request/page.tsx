@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 import {createOrderRequestAction} from "@/actions/createAdminRecords";
 import {deliveryPreferenceOptions, orderBuyerTypeOptions, timingOptions} from "@/lib/formOptions";
 
@@ -43,7 +44,7 @@ export default async function OrderRequestPage({
             <BrandMark />
           </Link>
 
-          <nav className="flex items-center gap-3">
+          <nav className="hidden items-center gap-3 md:flex">
             <Link
               href="/buyer-login"
               className="hidden rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white md:inline-flex"
@@ -57,6 +58,7 @@ export default async function OrderRequestPage({
               Contact
             </Link>
           </nav>
+                  <PublicMobileMenu />
         </header>
 
         <section className="grid gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">

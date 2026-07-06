@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 
 export default function BuyerLoginPage() {
   return (
@@ -26,6 +27,10 @@ export default function BuyerLoginPage() {
       />
       <div className="pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
       <div className="pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/25 blur-3xl" />
+
+      <div className="relative z-10 mx-auto flex max-w-5xl justify-end">
+        <PublicMobileMenu />
+      </div>
 
       <section className="relative mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
         <div className="oft-fade-up w-full rounded-[2rem] border border-[#101712]/10 bg-white/95 p-8 shadow-sm backdrop-blur">
@@ -63,31 +68,18 @@ export default function BuyerLoginPage() {
             ))}
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
             <Link
               href="/buyer-account-request"
-              className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              className="rounded-full bg-[#1f7a3f] px-6 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
             >
               Request account setup
             </Link>
-            <Link
-              href="/order-request"
-              className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712]"
-            >
-              Order
-            </Link>
-            <Link
-              href="/faq"
-              className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712]"
-            >
-              Read FAQ
-            </Link>
-            <Link
-              href="/contact"
-              className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712]"
-            >
-              Contact us
-            </Link>
+            <div className="flex flex-wrap gap-3 text-sm font-black text-[#1f7a3f]">
+              <Link href="/order-request" className="hover:underline">Order form</Link>
+              <Link href="/faq" className="hover:underline">FAQ</Link>
+              <Link href="/contact" className="hover:underline">Contact</Link>
+            </div>
           </div>
         </div>
       </section>

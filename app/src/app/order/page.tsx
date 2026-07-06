@@ -32,7 +32,7 @@ export default function OrderPage() {
             <BrandMark />
           </Link>
 
-          <nav className="flex items-center gap-3">
+          <nav className="hidden items-center gap-3 md:flex">
             <Link
               href="/faq"
               className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white md:inline-flex"

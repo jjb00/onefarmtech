@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DeliveryPartnerMobileMenu from "@/components/DeliveryPartnerMobileMenu";
 import {deliveryPartnerLoginAction} from "@/actions/createAdminRecords";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,13 @@ export default async function DeliveryPartnerLoginPage({
 
   return (
     <main className="min-h-screen bg-[#f7f5ec] px-4 py-10 text-[#102015] sm:px-6 lg:px-8">
-      <section className="mx-auto max-w-xl rounded-[2rem] bg-white p-8 shadow-sm">
+      <section className="mx-auto max-w-xl rounded-[2rem] bg-white p-6 shadow-sm sm:p-8">
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <Link href="/delivery-partner" className="text-sm font-black text-[#1f7a3f] hover:underline">
+            Partner portal
+          </Link>
+          <DeliveryPartnerMobileMenu />
+        </div>
         <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
           Delivery partner
         </p>

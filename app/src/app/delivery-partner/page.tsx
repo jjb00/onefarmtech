@@ -1,4 +1,5 @@
 import Link from "next/link";
+import DeliveryPartnerMobileMenu from "@/components/DeliveryPartnerMobileMenu";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -6,7 +7,14 @@ export const runtime = "nodejs";
 export default function DeliveryPartnerLandingPage() {
   return (
     <main className="min-h-screen bg-[#f7f5ec] px-4 py-10 text-[#102015] sm:px-6 lg:px-8">
-      <section className="mx-auto grid max-w-5xl gap-6 rounded-[2rem] bg-white p-8 shadow-sm lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="mx-auto grid max-w-5xl gap-6 rounded-[2rem] bg-white p-6 shadow-sm sm:p-8 lg:grid-cols-[1.2fr_0.8fr]">
+        <div className="flex items-start justify-between gap-4 lg:col-span-2">
+          <Link href="/" className="text-sm font-black text-[#1f7a3f] hover:underline">
+            OneFarmTech
+          </Link>
+          <DeliveryPartnerMobileMenu />
+        </div>
+
         <div>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
             OneFarmTech logistics
