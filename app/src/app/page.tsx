@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import MobileJourneyNav from "@/components/MobileJourneyNav";
 import {prisma} from "@/lib/prisma";
 
 async function getHomepageActivity() {
@@ -111,6 +112,8 @@ export default async function HomePage() {
               </a>
             </nav>
           </header>
+
+        <MobileJourneyNav />
           <div
             data-testid="mobile-launch-cta-row"
             className="mt-5 rounded-[1.5rem] border border-[#101712]/10 bg-white/90 p-3 shadow-sm backdrop-blur md:hidden"
