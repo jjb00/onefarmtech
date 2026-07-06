@@ -182,6 +182,41 @@ export default async function AdminOrderDetailPage({
   const latestPaymentRequest = order.paymentRequests[0];
   const latestReceipt = order.receipts[0];
 
+  const operationalChecklist = [
+    {
+      title: "Buyer",
+      status: order.customerId ? "Linked account" : "Guest / unlinked",
+      note: order.customerId
+        ? "Buyer account history is connected."
+        : "Keep as guest for one-off buyers, or link if recurring.",
+      href: order.customerId ? `/admin/customers/${order.customerId}` : "#buyer-link",
+    },
+    {
+      title: "Payment",
+      status: latestPaymentRequest ? latestPaymentRequest.status : "No request",
+      note: latestPaymentRequest
+        ? `Reference ${latestPaymentRequest.reference}`
+        : "Create or review payment request from the payment section.",
+      href: "/admin/payment-requests",
+    },
+    {
+      title: "Delivery",
+      status: order.delivery?.status || "No delivery record",
+      note: order.delivery
+        ? order.delivery.deliveryPartner?.name || order.delivery.deliveryPartnerName || "Delivery record exists but partner is unassigned."
+        : "Create or assign delivery from the deliveries page.",
+      href: "/admin/deliveries",
+    },
+    {
+      title: "Receipt",
+      status: latestReceipt ? latestReceipt.status : "Not issued",
+      note: latestReceipt
+        ? `Receipt ${latestReceipt.code}`
+        : "Issue receipt after payment is confirmed.",
+      href: "/admin/receipts",
+    },
+  ];
+
   const templateInput = {
     code: order.code,
     buyerName: order.customer?.name || order.buyerName,
@@ -303,7 +338,39 @@ export default async function AdminOrderDetailPage({
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              Next actions
+            </p>
+            <h3 className="mt-2 text-2xl font-black text-[#102015]">
+              Operational checklist
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+              Use this as the quick control strip before working through buyer, payment, delivery and receipt details below.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {operationalChecklist.map((step) => (
+            <Link
+              key={step.title}
+              href={step.href}
+              className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 transition hover:-translate-y-0.5 hover:bg-[#f3f8ef]"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+                {step.title}
+              </p>
+              <p className="mt-2 font-black text-[#102015]">{step.status}</p>
+              <p className="mt-2 text-sm leading-6 text-[#405348]">{step.note}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section id="buyer-link" className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[2rem] bg-white p-6 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
             Buyer
@@ -738,14 +805,20 @@ export default async function AdminOrderDetailPage({
           </Link>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {whatsappTemplates.map((template) => (
-            <article key={template.title} className="rounded-2xl border border-[#102015]/10 p-5">
-              <h4 className="font-black text-[#102015]">{template.title}</h4>
+        <div className="mt-6 grid gap-4">
+          {whatsappTemplates.map((template, index) => (
+            <details
+              key={template.title}
+              open={index === 0}
+              className="rounded-2xl border border-[#102015]/10 bg-white p-5"
+            >
+              <summary className="cursor-pointer font-black text-[#102015]">
+                {template.title}
+              </summary>
               <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#102015]">
 {template.body}
               </pre>
-            </article>
+            </details>
           ))}
         </div>
       </section>
