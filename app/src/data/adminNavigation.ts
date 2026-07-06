@@ -77,7 +77,12 @@ export const adminNavigationGroups = [
         href: "/admin/reports",
         description: "Company metrics and investor update snapshot",
       },
-    ],
+    
+      {
+        title: "Guest buyers",
+        href: "/admin/guest-buyers",
+        description: "Review unlinked WhatsApp and event buyers before deciding whether to create an account.",
+      },],
   },
   {
     title: "Supply",
@@ -108,6 +113,16 @@ export const adminNavigationGroups = [
         description: "Dispatch and delivery",
       },
       {
+        title: "Delivery partners",
+        href: "/admin/delivery-partners",
+        description: "Manage logistics partners, access codes and delivery assignment readiness.",
+      },
+      {
+        title: "Operations hub",
+        href: "/admin/operations",
+        description: "Control map for WhatsApp ordering, payments, delivery, buyer accounts and launch checks.",
+      },
+      {
         title: "Pickup locations",
         href: "/admin/pickup-locations",
         description: "Collection points",
@@ -132,7 +147,27 @@ export const adminNavigationGroups = [
         href: "/admin/whatsapp",
         description: "Manual message centre",
       },
-    ],
+      {
+        title: "WhatsApp message tools",
+        href: "/admin/whatsapp-tools",
+        description: "Copy-ready product list and buyer update messages generated from live records.",
+      },
+      {
+        title: "Create WhatsApp order",
+        href: "/admin/whatsapp-orders/new",
+        description: "Turn a WhatsApp buyer conversation into an order, payment request and delivery record.",
+      },
+    
+      {
+        title: "Launch readiness",
+        href: "/admin/launch-readiness",
+        description: "Check database, products, WhatsApp ordering, payments, delivery and production setup.",
+      },
+      {
+        title: "Buyer messages",
+        href: "/admin/buyer-messages",
+        description: "Communication evidence log for WhatsApp, email, support, portal and account notices.",
+      },],
   },
   {
     title: "Control",

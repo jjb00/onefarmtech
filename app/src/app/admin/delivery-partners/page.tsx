@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
 import {
   createDeliveryPartnerAction,
@@ -114,9 +115,17 @@ export default async function DeliveryPartnersPage() {
               Active and paused partners
             </h2>
           </div>
-          <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
-            {partners.length} partners
-          </span>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/delivery-partner/login"
+              className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Partner login page
+            </Link>
+            <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
+              {partners.length} partners
+            </span>
+          </div>
         </div>
 
         <div className="mt-6 overflow-x-auto">
