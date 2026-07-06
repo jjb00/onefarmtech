@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import PublicMobileActions from "@/components/PublicMobileActions";
 import {createContactEnquiryAction} from "@/actions/createAdminRecords";
 import {enquiryTypeOptions} from "@/lib/formOptions";
 
@@ -100,6 +101,8 @@ export default function ContactPage() {
             </Link>
           </nav>
         </header>
+
+        <PublicMobileActions />
 
         <section className="grid gap-10 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:py-20">
           <div>
