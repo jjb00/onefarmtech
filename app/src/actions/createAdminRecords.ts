@@ -767,6 +767,56 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
   redirect("/buyer-account?profileSubmitted=1#profile-updates");
 }
 
+export async function logPreparedBuyerWhatsAppAction(formData: FormData) {
+  const customerId = readText(formData, "customerId");
+  const title = readText(formData, "title", "WhatsApp message prepared");
+  const body = readText(formData, "body");
+  const relatedType = readText(formData, "relatedType");
+  const relatedId = readText(formData, "relatedId");
+
+  if (!customerId || !body) {
+    throw new Error("Customer and message body are required.");
+  }
+
+  const customer = await prisma.customer.findUnique({
+    where: {id: customerId},
+  });
+
+  if (!customer) {
+    throw new Error("Customer not found.");
+  }
+
+  const message = await prisma.buyerMessage.create({
+    data: {
+      customerId: customer.id,
+      title,
+      body,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      status: "Prepared",
+      recipient: customer.phone,
+      source: "Admin compose",
+      relatedType: relatedType || null,
+      relatedId: relatedId || null,
+      metadata: "Manual WhatsApp compose opened by admin. Delivery confirmation is outside the app until WhatsApp Business/API is connected.",
+    },
+  });
+
+  await createAuditLog({
+    action: "Prepared buyer WhatsApp message",
+    entityType: "BuyerMessage",
+    entityId: message.id,
+    entityLabel: `${customer.name} · ${title}`,
+    newValue: message,
+    actorRole: "Admin",
+  });
+
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/admin");
+  revalidatePath(`/admin/customers/${customer.id}`);
+  revalidatePath("/buyer-account/inbox");
+}
+
 export async function updateBuyerProfileUpdateRequestStatusAction(formData: FormData) {
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status", "Reviewing");

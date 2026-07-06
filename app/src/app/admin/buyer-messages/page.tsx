@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import BuyerWhatsAppComposeButton from "@/components/admin/BuyerWhatsAppComposeButton";
 import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -48,12 +49,23 @@ export default async function BuyerMessagesAdminPage() {
                   </p>
                 </div>
 
-                <Link
-                  href={`/admin/customers/${message.customerId}`}
-                  className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white"
-                >
-                  Open buyer
-                </Link>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href={`/admin/customers/${message.customerId}`}
+                    className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white"
+                  >
+                    Open buyer
+                  </Link>
+                  <BuyerWhatsAppComposeButton
+                    customerId={message.customerId}
+                    phone={message.customer.phone}
+                    title={`WhatsApp follow-up: ${message.title}`}
+                    body={`Hello ${message.customer.name},\n\nFollowing up on: ${message.title}\n\n${message.body}\n\nOneFarmTech`}
+                    relatedType={message.relatedType || "BuyerMessage"}
+                    relatedId={message.relatedId || message.id}
+                    label="WhatsApp follow-up"
+                  />
+                </div>
               </div>
 
               <p className="mt-5 whitespace-pre-wrap rounded-2xl bg-[#f3f8ef] p-4 text-sm leading-7 text-[#102015]">

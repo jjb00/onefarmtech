@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BuyerWhatsAppComposeButton from "@/components/admin/BuyerWhatsAppComposeButton";
 import {notFound} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
 import StatusBadge from "@/components/admin/StatusBadge";

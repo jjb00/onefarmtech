@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import BuyerWhatsAppComposeButton from "@/components/admin/BuyerWhatsAppComposeButton";
 import {updateBuyerProfileUpdateRequestStatusAction} from "@/actions/createAdminRecords";
 import {prisma} from "@/lib/prisma";
 
@@ -121,6 +122,15 @@ export default async function BuyerProfileRequestsAdminPage() {
                 >
                   Manage access
                 </Link>
+                <BuyerWhatsAppComposeButton
+                  customerId={request.customerId}
+                  phone={request.customer.phone}
+                  title="Profile update request received"
+                  body={`Hello ${request.customer.name},\n\nWe have received your ${request.requestType.toLowerCase()} and it is under review. We will update your buyer account once the review is complete.\n\nOneFarmTech`}
+                  relatedType="BuyerProfileUpdateRequest"
+                  relatedId={request.id}
+                  label="WhatsApp buyer"
+                />
               </div>
             </article>
           ))}
