@@ -19,24 +19,13 @@ async function getHomepageActivity() {
     },
   });
 
-  const [activeGroupBuyCount, groupBuyReservationCount] = await Promise.all([
-    prisma.groupBuy.count({
-      where: {
-        status: {
-          in: ["Open", "Minimum met"],
-        },
+  const activeGroupBuyCount = await prisma.groupBuy.count({
+    where: {
+      status: {
+        in: ["Open", "Minimum met"],
       },
-    }),
-    prisma.groupBuyReservation.count({
-      where: {
-        groupBuy: {
-          status: {
-            in: ["Open", "Minimum met"],
-          },
-        },
-      },
-    }),
-  ]);
+    },
+  });
 
   const reservedQuantity = activeGroupBuy?.reservedQuantity || 0;
   const targetQuantity = activeGroupBuy?.targetQuantity || 0;
@@ -48,7 +37,6 @@ async function getHomepageActivity() {
   return {
     activeGroupBuy,
     activeGroupBuyCount,
-    groupBuyReservationCount,
     reservedQuantity,
     targetQuantity,
     progress,
@@ -246,10 +234,9 @@ export default async function HomePage() {
                   </p>
                 </div>
 
-                <div className="mt-6 grid grid-cols-3 gap-3">
+                <div className="mt-6 grid grid-cols-2 gap-3">
                   <LiveMetric label="buyers joined" value={String(activity.reservationCount)} />
                   <LiveMetric label="active group buys" value={String(activity.activeGroupBuyCount)} />
-                  <LiveMetric label="group-buy reservations" value={String(activity.groupBuyReservationCount)} />
                 </div>
               </div>
 
