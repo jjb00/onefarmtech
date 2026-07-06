@@ -17,6 +17,11 @@ const operations = [
     description: "View buyer communication evidence, prepared WhatsApp messages and account notices.",
   },
   {
+    title: "Payment requests",
+    href: "/admin/payment-requests",
+    description: "Track payment references, manual confirmations, gateway details and receipts.",
+  },
+  {
     title: "Deliveries",
     href: "/admin/deliveries",
     description: "Track fulfilment, delivery assignment and delivery status.",
