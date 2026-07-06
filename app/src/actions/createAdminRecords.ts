@@ -1752,3 +1752,93 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
 
   redirect("/admin/payment-requests?receipt=issued");
 }
+
+export async function updateAdminOrderControlAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const orderId = String(formData.get("orderId") || "");
+  const paymentStatus = String(formData.get("paymentStatus") || "").trim();
+  const fulfilmentStatus = String(formData.get("fulfilmentStatus") || "").trim();
+  const adminNote = String(formData.get("adminNote") || "").trim();
+  const deliveryNote = String(formData.get("deliveryNote") || "").trim();
+
+  if (!orderId) {
+    redirect("/admin/orders?error=missing-order");
+  }
+
+  await prisma.order.update({
+    where: {id: orderId},
+    data: {
+      paymentStatus: paymentStatus || undefined,
+      fulfilmentStatus: fulfilmentStatus || undefined,
+      adminNote: adminNote || null,
+      deliveryNote: deliveryNote || null,
+    },
+  });
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/deliveries");
+  revalidatePath("/buyer-account/orders");
+  revalidatePath(`/buyer-account/orders/${orderId}`);
+
+  redirect(`/admin/orders/${orderId}?updated=1`);
+}
+
+export async function logOrderBuyerMessageAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const orderId = String(formData.get("orderId") || "");
+  const customerId = String(formData.get("customerId") || "");
+  const title = String(formData.get("title") || "").trim();
+  const body = String(formData.get("body") || "").trim();
+  const channel = String(formData.get("channel") || "Portal").trim();
+
+  if (!orderId) {
+    redirect("/admin/orders?error=missing-order");
+  }
+
+  if (!customerId || !title || !body) {
+    redirect(`/admin/orders/${orderId}?error=message-required`);
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {id: orderId},
+    select: {
+      id: true,
+      phone: true,
+    },
+  });
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title,
+      body,
+      channel,
+      direction: "Outbound",
+      status: "Unread",
+      recipient: order?.phone || null,
+      source: "Admin order detail",
+      relatedType: "Order",
+      relatedId: orderId,
+    },
+  });
+
+  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/buyer-account/inbox");
+
+  redirect(`/admin/orders/${orderId}?message=logged`);
+}
