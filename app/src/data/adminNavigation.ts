@@ -18,6 +18,11 @@ export const adminNavigationGroups = [
         description: "Manual order entry",
       },
       {
+        title: "Create WhatsApp order",
+        href: "/admin/whatsapp-orders/new",
+        description: "Turn a WhatsApp buyer conversation into an order, payment request and delivery record.",
+      },
+      {
         title: "Draft orders",
         href: "/admin/drafts",
         description: "Local saved drafts",
@@ -38,9 +43,9 @@ export const adminNavigationGroups = [
         description: "Buyer records",
       },
       {
-        title: "Contact enquiries",
-        href: "/admin/contact-enquiries",
-        description: "Public forms and partnerships",
+        title: "Guest buyers",
+        href: "/admin/guest-buyers",
+        description: "Review unlinked WhatsApp and event buyers before deciding whether to create an account.",
       },
       {
         title: "Buyer accounts",
@@ -57,6 +62,16 @@ export const adminNavigationGroups = [
         href: "/admin/buyer-access",
         description: "Contacts and invites",
       },
+      {
+        title: "Buyer messages",
+        href: "/admin/buyer-messages",
+        description: "Communication evidence log for WhatsApp, email, support, portal and account notices.",
+      },
+      {
+        title: "Contact enquiries",
+        href: "/admin/contact-enquiries",
+        description: "Public forms and partnerships",
+      },
     ],
   },
   {
@@ -68,6 +83,11 @@ export const adminNavigationGroups = [
         description: "References and status",
       },
       {
+        title: "Payment requests",
+        href: "/admin/payment-requests",
+        description: "Payment links, references and buyer payment follow-up.",
+      },
+      {
         title: "Receipts",
         href: "/admin/receipts",
         description: "Electronic receipt issue log",
@@ -77,12 +97,7 @@ export const adminNavigationGroups = [
         href: "/admin/reports",
         description: "Company metrics and investor update snapshot",
       },
-    
-      {
-        title: "Guest buyers",
-        href: "/admin/guest-buyers",
-        description: "Review unlinked WhatsApp and event buyers before deciding whether to create an account.",
-      },],
+    ],
   },
   {
     title: "Supply",
@@ -108,6 +123,21 @@ export const adminNavigationGroups = [
     title: "Operations",
     links: [
       {
+        title: "Operations hub",
+        href: "/admin/operations",
+        description: "Control map for WhatsApp ordering, payments, delivery, buyer accounts and launch checks.",
+      },
+      {
+        title: "WhatsApp ops",
+        href: "/admin/whatsapp",
+        description: "Manual message centre",
+      },
+      {
+        title: "WhatsApp message tools",
+        href: "/admin/whatsapp-tools",
+        description: "Copy-ready product list and buyer update messages generated from live records.",
+      },
+      {
         title: "Deliveries",
         href: "/admin/deliveries",
         description: "Dispatch and delivery",
@@ -116,11 +146,6 @@ export const adminNavigationGroups = [
         title: "Delivery partners",
         href: "/admin/delivery-partners",
         description: "Manage logistics partners, access codes and delivery assignment readiness.",
-      },
-      {
-        title: "Operations hub",
-        href: "/admin/operations",
-        description: "Control map for WhatsApp ordering, payments, delivery, buyer accounts and launch checks.",
       },
       {
         title: "Pickup locations",
@@ -142,45 +167,20 @@ export const adminNavigationGroups = [
         href: "/admin/operating-manual",
         description: "Staff SOP guide",
       },
-      {
-        title: "WhatsApp ops",
-        href: "/admin/whatsapp",
-        description: "Manual message centre",
-      },
-      {
-        title: "WhatsApp message tools",
-        href: "/admin/whatsapp-tools",
-        description: "Copy-ready product list and buyer update messages generated from live records.",
-      },
-      {
-        title: "Create WhatsApp order",
-        href: "/admin/whatsapp-orders/new",
-        description: "Turn a WhatsApp buyer conversation into an order, payment request and delivery record.",
-      },
-    
+    ],
+  },
+  {
+    title: "Control",
+    links: [
       {
         title: "Launch readiness",
         href: "/admin/launch-readiness",
         description: "Check database, products, WhatsApp ordering, payments, delivery and production setup.",
       },
       {
-        title: "Buyer messages",
-        href: "/admin/buyer-messages",
-        description: "Communication evidence log for WhatsApp, email, support, portal and account notices.",
-      },],
-  },
-  {
-    title: "Control",
-    links: [
-      {
-        title: "Staff & roles",
-        href: "/admin/staff",
-        description: "Access role planning",
-      },
-      {
-        title: "Permissions",
-        href: "/admin/permissions",
-        description: "Role matrix",
+        title: "Deployment",
+        href: "/admin/deployment-readiness",
+        description: "Prelaunch checks",
       },
       {
         title: "Security",
@@ -188,9 +188,14 @@ export const adminNavigationGroups = [
         description: "Auth readiness",
       },
       {
-        title: "Deployment",
-        href: "/admin/deployment-readiness",
-        description: "Prelaunch checks",
+        title: "Permissions",
+        href: "/admin/permissions",
+        description: "Role matrix",
+      },
+      {
+        title: "Staff & roles",
+        href: "/admin/staff",
+        description: "Access role planning",
       },
       {
         title: "Audit log",
