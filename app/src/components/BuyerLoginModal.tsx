@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {useState} from "react";
+import {buyerLoginAction} from "@/actions/auth";
 
 export default function BuyerLoginModal() {
   const [open, setOpen] = useState(false);
@@ -56,7 +57,7 @@ export default function BuyerLoginModal() {
               </button>
             </div>
 
-            <form className="mt-6 grid gap-4">
+            <form action={buyerLoginAction} className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-black text-[#102015]">
                 Email or phone
                 <input
@@ -69,18 +70,18 @@ export default function BuyerLoginModal() {
               </label>
 
               <label className="grid gap-2 text-sm font-black text-[#102015]">
-                Password or access code
+                Access code
                 <input
                   name="buyerAccessCode"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="Enter your access details"
+                  placeholder="Enter your buyer access code"
                   className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none focus:border-[#1f7a3f]"
                 />
               </label>
 
               <button
-                type="button"
+                type="submit"
                 className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
                 Sign in
