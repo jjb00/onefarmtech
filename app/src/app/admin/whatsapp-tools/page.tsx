@@ -177,6 +177,25 @@ export default async function AdminWhatsAppToolsPage() {
           </Link>
         </div>
       </section>
+    
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+          WhatsApp inbox
+        </p>
+        <h3 className="mt-2 text-2xl font-black text-[#102015]">
+          Inbound webhook review
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+          Review incoming WhatsApp messages matched to buyers or held as unmatched enquiries.
+        </p>
+        <Link
+          href="/admin/whatsapp-inbox"
+          className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+        >
+          Open WhatsApp inbox
+        </Link>
+      </section>
+
     </AdminPage>
   );
 }
