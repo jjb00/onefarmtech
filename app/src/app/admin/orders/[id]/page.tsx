@@ -4,6 +4,7 @@ import {notFound} from "next/navigation";
 import {AdminPage} from "@/components/portal/AdminPage";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
 import {
+  createOrAssignDeliveryFromOrderAction,
   createPaymentRequestFromOrderAction,
   linkOrderToCustomerAction,
   logOrderBuyerMessageAction,
@@ -151,7 +152,7 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
 
-  const [buyerMessages, linkableCustomers] = await Promise.all([
+  const [buyerMessages, linkableCustomers, deliveryPartners] = await Promise.all([
     order.customerId
       ? prisma.buyerMessage.findMany({
           where: {
@@ -176,6 +177,21 @@ export default async function AdminOrderDetailPage({
             accountStatus: true,
           },
         }),
+    prisma.deliveryPartner.findMany({
+      where: {
+        status: {
+          notIn: ["Inactive", "Suspended", "Cancelled"],
+        },
+      },
+      orderBy: {name: "asc"},
+      select: {
+        id: true,
+        name: true,
+        phone: true,
+        serviceArea: true,
+        status: true,
+      },
+    }),
   ]);
 
   const subtotal = order.subtotal || order.items.reduce((sum, item) => sum + item.lineTotal, 0);
@@ -750,10 +766,110 @@ export default async function AdminOrderDetailPage({
               <p><span className="font-black text-[#102015]">Proof / issue:</span> {order.delivery.proofOfDeliveryNote || "Not set"}</p>
             </div>
           ) : (
-            <p className="mt-5 rounded-2xl bg-[#f7f5ec] p-4 text-sm text-[#405348]">
-              No delivery record created for this order yet.
+            <p className="mt-5 rounded-2xl bg-[#fff6d6] p-4 text-sm leading-7 text-[#7a4a00]">
+              No delivery record created for this order yet. Create one below when fulfilment is ready.
             </p>
           )}
+
+          <details className="mt-5 rounded-2xl border border-[#102015]/10 bg-white p-4">
+            <summary className="cursor-pointer font-black text-[#102015]">
+              {order.delivery ? "Update / assign delivery" : "Create delivery record"}
+            </summary>
+
+            <form action={createOrAssignDeliveryFromOrderAction} className="mt-4 grid gap-3">
+              <input type="hidden" name="orderId" value={order.id} />
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Delivery partner
+                <select
+                  name="deliveryPartnerId"
+                  defaultValue={order.delivery?.deliveryPartnerId || ""}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                >
+                  <option value="">Unassigned</option>
+                  {deliveryPartners.map((partner) => (
+                    <option key={partner.id} value={partner.id}>
+                      {partner.name} · {partner.serviceArea || "Coverage not set"} · {partner.status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Status
+                  <select
+                    name="status"
+                    defaultValue={order.delivery?.status || "Pending assignment"}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  >
+                    <option>Pending assignment</option>
+                    <option>Assigned</option>
+                    <option>Accepted</option>
+                    <option>Picked up</option>
+                    <option>In transit</option>
+                    <option>Delivered</option>
+                    <option>Failed / issue</option>
+                  </select>
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Delivery method
+                  <input
+                    name="deliveryMethod"
+                    defaultValue={order.delivery?.deliveryMethod || order.deliveryMethod || "OneFarmTech arranged"}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Delivery area
+                  <input
+                    name="deliveryArea"
+                    defaultValue={order.delivery?.deliveryArea || ""}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                    placeholder="City / area"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Delivery fee
+                  <input
+                    name="deliveryFee"
+                    defaultValue={order.delivery?.deliveryFee || order.deliveryFee || 0}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Tracking reference
+                  <input
+                    name="trackingReference"
+                    defaultValue={order.delivery?.trackingReference || ""}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                    placeholder="Optional"
+                  />
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#405348] md:col-span-2">
+                  Delivery address / note
+                  <textarea
+                    name="deliveryAddress"
+                    defaultValue={order.delivery?.deliveryAddress || order.deliveryNote || ""}
+                    rows={3}
+                    className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  />
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Save delivery
+              </button>
+            </form>
+          </details>
         </div>
       </section>
 

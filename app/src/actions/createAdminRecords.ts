@@ -1592,6 +1592,125 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
 }
 
 
+
+export async function createOrAssignDeliveryFromOrderAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const orderId = String(formData.get("orderId") || "");
+  const deliveryPartnerId = String(formData.get("deliveryPartnerId") || "").trim();
+  const deliveryMethod =
+    String(formData.get("deliveryMethod") || "OneFarmTech arranged").trim() ||
+    "OneFarmTech arranged";
+  const deliveryArea = String(formData.get("deliveryArea") || "").trim();
+  const deliveryAddress = String(formData.get("deliveryAddress") || "").trim();
+  const deliveryFeeInput = String(formData.get("deliveryFee") || "").replace(/[^\d]/g, "");
+  const trackingReference = String(formData.get("trackingReference") || "").trim();
+  const status = String(formData.get("status") || "").trim();
+
+  if (!orderId) {
+    redirect("/admin/orders?error=missing-order");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {id: orderId},
+    include: {
+      delivery: true,
+    },
+  });
+
+  if (!order) {
+    redirect("/admin/orders?error=order-not-found");
+  }
+
+  const partner = deliveryPartnerId
+    ? await prisma.deliveryPartner.findUnique({
+        where: {id: deliveryPartnerId},
+      })
+    : null;
+
+  const existingDeliveryFee =
+    typeof order.delivery?.deliveryFee === "number" ? order.delivery.deliveryFee : 0;
+
+  const deliveryFee =
+    deliveryFeeInput.length > 0
+      ? Number(deliveryFeeInput)
+      : existingDeliveryFee || order.deliveryFee || 0;
+
+  const nextStatus =
+    status ||
+    (partner ? "Assigned" : order.delivery?.status || "Pending assignment");
+
+  const delivery = await prisma.delivery.upsert({
+    where: {orderId: order.id},
+    create: {
+      orderId: order.id,
+      customerId: order.customerId || null,
+      deliveryPartnerId: partner?.id || null,
+      deliveryPartnerName: partner?.name || null,
+      deliveryPartnerPhone: partner?.phone || null,
+      deliveryMethod,
+      deliveryFee,
+      deliveryArea: deliveryArea || null,
+      deliveryAddress: deliveryAddress || order.deliveryNote || null,
+      trackingReference: trackingReference || null,
+      status: nextStatus,
+    },
+    update: {
+      deliveryPartnerId: partner?.id || order.delivery?.deliveryPartnerId || null,
+      deliveryPartnerName: partner?.name || order.delivery?.deliveryPartnerName || null,
+      deliveryPartnerPhone: partner?.phone || order.delivery?.deliveryPartnerPhone || null,
+      deliveryMethod,
+      deliveryFee,
+      deliveryArea: deliveryArea || order.delivery?.deliveryArea || null,
+      deliveryAddress: deliveryAddress || order.delivery?.deliveryAddress || order.deliveryNote || null,
+      trackingReference: trackingReference || order.delivery?.trackingReference || null,
+      status: nextStatus,
+    },
+  });
+
+  await prisma.order.update({
+    where: {id: order.id},
+    data: {
+      deliveryMethod,
+      deliveryFee,
+      deliveryNote: deliveryAddress || order.deliveryNote || null,
+      fulfilmentStatus: partner ? "Delivery assigned" : order.fulfilmentStatus,
+    },
+  });
+
+  if (order.customerId && partner) {
+    await prisma.buyerMessage.create({
+      data: {
+        customerId: order.customerId,
+        title: `Delivery assigned for ${order.code}`,
+        body: `Delivery has been assigned for order ${order.code}.\\n\\nDelivery partner: ${partner.name}\\nPhone: ${partner.phone || "Not set"}\\nArea: ${delivery.deliveryArea || "Not set"}\\nTracking: ${delivery.trackingReference || "Not set"}`,
+        channel: "Portal",
+        direction: "Outbound",
+        status: "Unread",
+        recipient: order.phone,
+        source: "Delivery assigned",
+        relatedType: "Delivery",
+        relatedId: delivery.id,
+      },
+    });
+  }
+
+  revalidatePath("/admin/deliveries");
+  revalidatePath(`/admin/orders/${order.id}`);
+  revalidatePath("/delivery-partner/jobs");
+  revalidatePath("/buyer-account/orders");
+  revalidatePath(`/buyer-account/orders/${order.id}`);
+  revalidatePath("/buyer-account/inbox");
+
+  redirect(`/admin/orders/${order.id}?delivery=updated`);
+}
+
+
 export async function updatePaymentRequestStatusAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
