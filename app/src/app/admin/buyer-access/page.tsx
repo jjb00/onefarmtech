@@ -166,10 +166,13 @@ export default async function BuyerAccessPage() {
         </form>
 
         <form action={createBuyerAccountInviteAction} className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <h2 className="text-2xl font-black text-[#102015]">Prepare account invite</h2>
+          <h2 className="text-2xl font-black text-[#102015]">Generate buyer login access code</h2>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
-            This creates an invite record only. It does not send email, SMS, or open real login access yet.
+            Use this after a buyer account has been approved. Choose the approved buyer, add the buyer email or phone, then generate the code they will use in the Buyer login pop-up.
           </p>
+          <div className="mt-4 rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#405348]">
+            This does not send WhatsApp or email automatically yet. After the code is generated, copy the message shown below and send it manually.
+          </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-semibold md:col-span-2">
@@ -189,7 +192,7 @@ export default async function BuyerAccessPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
-              Invite email
+              Buyer login email
               <input
                 name="email"
                 type="email"
@@ -199,7 +202,7 @@ export default async function BuyerAccessPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
-              Invite phone
+              Buyer login phone
               <input
                 name="phone"
                 className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
@@ -208,7 +211,7 @@ export default async function BuyerAccessPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
-              Invite role
+              Buyer login role
               <select
                 name="role"
                 defaultValue="Buyer user"
@@ -221,10 +224,10 @@ export default async function BuyerAccessPage() {
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
-              Status
+              Access status
               <select
                 name="status"
-                defaultValue="Draft"
+                defaultValue="Ready to send"
                 className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
               >
                 <option>Draft</option>
@@ -240,7 +243,7 @@ export default async function BuyerAccessPage() {
             type="submit"
             className="mt-6 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white"
           >
-            Create invite record
+            Generate access code
           </button>
         </form>
       </section>
@@ -300,28 +303,53 @@ export default async function BuyerAccessPage() {
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-black text-[#102015]">Account invite records</h2>
+        <h2 className="text-2xl font-black text-[#102015]">Generated buyer login access codes</h2>
         <div className="mt-6 grid gap-4">
-          {invites.map((invite) => (
-            <article key={invite.id} className="rounded-2xl bg-[#f3f8ef] p-5">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="text-sm font-black text-[#C95F3D]">{invite.inviteCode}</p>
-                  <h3 className="mt-1 text-xl font-black">{invite.customer.name}</h3>
-                  <p className="mt-1 text-sm text-[#587063]">
-                    {invite.email || "No email"} · {invite.phone || "No phone"} · {invite.role}
+          {invites.map((invite) => {
+            const buyerName = invite.customer.name;
+            const contactTarget = invite.email || invite.phone || "buyer";
+            const shareMessage = `Hello ${buyerName}, your OneFarmTech buyer account has been approved. Use this access code to sign in: ${invite.inviteCode}. If you need help, contact the OneFarmTech team.`;
+
+            return (
+              <article key={invite.id} className="rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] p-5">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">
+                      Buyer access code
+                    </p>
+                    <p className="mt-2 rounded-2xl bg-white px-4 py-3 font-mono text-2xl font-black text-[#102015] shadow-sm">
+                      {invite.inviteCode}
+                    </p>
+                    <h3 className="mt-4 text-xl font-black">{buyerName}</h3>
+                    <p className="mt-1 text-sm text-[#587063]">
+                      Send to: {contactTarget} · Role: {invite.role}
+                    </p>
+                  </div>
+
+                  <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
+                    {invite.status}
+                  </span>
+                </div>
+
+                <div className="mt-5 rounded-2xl bg-white p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#587063]">
+                    Manual WhatsApp/email message
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-[#405348]">
+                    {shareMessage}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
-                  {invite.status}
-                </span>
-              </div>
-            </article>
-          ))}
+
+                <p className="mt-4 text-xs font-semibold leading-6 text-[#587063]">
+                  For now, copy this message and send it manually by WhatsApp or email. Automatic notification can be wired later once the WhatsApp/email provider is ready.
+                </p>
+              </article>
+            );
+          })}
 
           {!invites.length ? (
             <p className="rounded-2xl bg-[#f3f8ef] p-5 text-sm text-[#587063]">
-              No buyer invite records yet.
+              No buyer login access codes generated yet.
             </p>
           ) : null}
         </div>

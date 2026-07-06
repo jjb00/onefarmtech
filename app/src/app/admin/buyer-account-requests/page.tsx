@@ -80,53 +80,63 @@ export default async function BuyerAccountRequestsPage() {
                 </div>
               </div>
 
-              <div className="mt-5 flex flex-wrap gap-2">
-                <form action={updateBuyerAccountRequestStatusAction}>
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <input type="hidden" name="status" value="Reviewing" />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-[#102015]/10 bg-white px-4 py-2 text-xs font-black text-[#102015] shadow-sm"
-                  >
-                    Set reviewing
-                  </button>
-                </form>
+              <div className="mt-6 rounded-[1.5rem] border border-[#102015]/10 bg-[#fbfff8] p-4">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-[#587063]">
+                  Admin actions
+                </p>
 
-                <form action={updateBuyerAccountRequestStatusAction}>
-                  <input type="hidden" name="requestId" value={request.id} />
-                </form>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <form action={updateBuyerAccountRequestStatusAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <input type="hidden" name="status" value="Reviewing" />
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl border border-[#102015]/10 bg-white px-4 py-4 text-sm font-black text-[#102015] shadow-sm transition hover:bg-[#f3f8ef]"
+                    >
+                      Review request
+                    </button>
+                  </form>
 
-                <form action={updateBuyerAccountRequestStatusAction}>
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <input type="hidden" name="status" value="Rejected" />
-                  <button
-                    type="submit"
-                    className="rounded-full bg-[#C95F3D] px-4 py-2 text-xs font-black text-white shadow-sm"
-                  >
-                    Reject
-                  </button>
-                </form>
+                  <form action={convertBuyerAccountRequestToCustomerAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl bg-[#1f7a3f] px-4 py-4 text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+                    >
+                      Approve + create buyer
+                    </button>
+                  </form>
 
-                <form action={convertBuyerAccountRequestToCustomerAction}>
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <button
-                    type="submit"
-                    className="rounded-full bg-[#102015] px-4 py-2 text-xs font-black text-white shadow-sm"
-                  >
-                    Approve + create buyer profile
-                  </button>
-                </form>
+                  <form action={updateBuyerAccountRequestStatusAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <input type="hidden" name="status" value="Rejected" />
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl bg-[#C95F3D] px-4 py-4 text-sm font-black text-white shadow-sm transition hover:bg-[#9f4228]"
+                    >
+                      Reject request
+                    </button>
+                  </form>
 
-                <form action={updateBuyerAccountRequestStatusAction}>
-                  <input type="hidden" name="requestId" value={request.id} />
-                  <input type="hidden" name="status" value="Closed" />
-                  <button
-                    type="submit"
-                    className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-4 py-2 text-xs font-black text-[#102015]"
-                  >
-                    Close
-                  </button>
-                </form>
+                  <form action={updateBuyerAccountRequestStatusAction}>
+                    <input type="hidden" name="requestId" value={request.id} />
+                    <input type="hidden" name="status" value="Closed" />
+                    <button
+                      type="submit"
+                      className="w-full rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] px-4 py-4 text-sm font-black text-[#102015] transition hover:bg-white"
+                    >
+                      Close request
+                    </button>
+                  </form>
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-white p-4 text-sm leading-7 text-[#405348]">
+                  <strong className="text-[#102015]">After approval:</strong>{" "}
+                  open <strong>Buyer access</strong>, use <strong>Generate buyer login access code</strong>, choose the approved buyer, add the buyer email or phone, then copy the generated access-code message and send it manually by WhatsApp or email.
+                  <br />
+                  <strong className="text-[#102015]">Credit/payment terms:</strong>{" "}
+                  these are set manually by admin on the buyer account. Do not treat credit as automatically approved.
+                </div>
               </div>
 
               <p className="mt-4 text-xs font-semibold text-[#587063]">
