@@ -4,10 +4,12 @@ import {AdminPage} from "@/components/portal/AdminPage";
 import {
   generatePaymentLinkAction,
   issueReceiptFromPaymentRequestAction,
+  sendPaymentRequestWhatsAppAction,
   updatePaymentRequestStatusAction,
 } from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -82,7 +84,7 @@ export default async function AdminPaymentRequestsPage() {
               Order payment requests
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              Manual v1 payment tracking. Paystack or Flutterwave webhooks can update these records later.
+              Use the method that is easiest for the buyer: Paystack link for quick checkout, Flutterwave link for an alternate gateway, or manual bank details for buyers who prefer direct transfer.
             </p>
           </div>
 
@@ -160,6 +162,32 @@ export default async function AdminPaymentRequestsPage() {
                     {request.accountNumber || "Not set"} {request.accountName ? `· ${request.accountName}` : ""}
                   </p>
                 </div>
+
+                <details className="mt-4 rounded-2xl border border-[#102015]/10 bg-white p-4">
+                  <summary className="cursor-pointer text-sm font-black text-[#102015]">
+                    WhatsApp payment message
+                  </summary>
+                  <textarea
+                    readOnly
+                    rows={10}
+                    value={buildPaymentInstructionMessage({
+                      orderCode: request.order.code,
+                      buyerName: request.customer?.name || request.order.buyerName,
+                      amount: request.amount,
+                      currency: request.currency,
+                      reference: request.reference,
+                      provider: request.provider,
+                      paymentUrl: request.paymentUrl,
+                      bankName: request.bankName,
+                      accountNumber: request.accountNumber,
+                      accountName: request.accountName,
+                    })}
+                    className="mt-4 w-full rounded-2xl border border-[#102015]/15 bg-[#f7f5ec] px-4 py-3 text-sm leading-6 text-[#102015]"
+                  />
+                  <p className="mt-2 text-xs font-bold text-[#405348]">
+                    Copy this into WhatsApp after generating a link or entering bank details.
+                  </p>
+                </details>
 
                 <form action={updatePaymentRequestStatusAction} className="mt-5 grid gap-4 lg:grid-cols-3">
                   <input type="hidden" name="id" value={request.id} />
@@ -284,6 +312,17 @@ export default async function AdminPaymentRequestsPage() {
                       </form>
                     </>
                   )}
+
+                  <form action={sendPaymentRequestWhatsAppAction}>
+                    <input type="hidden" name="id" value={request.id} />
+                    <button
+                      type="submit"
+                      disabled={!request.order.phone}
+                      className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f] hover:bg-[#dff0d8] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Send WhatsApp payment request
+                    </button>
+                  </form>
 
                   <form action={issueReceiptFromPaymentRequestAction}>
                     <input type="hidden" name="id" value={request.id} />

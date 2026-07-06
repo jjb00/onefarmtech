@@ -9,6 +9,7 @@ import {
   generatePaymentLinkAction,
   linkOrderToCustomerAction,
   logOrderBuyerMessageAction,
+  sendPaymentRequestWhatsAppAction,
   updateAdminOrderControlAction,
 } from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
@@ -20,6 +21,7 @@ import {
   buildOutForDeliveryMessage,
   buildPaymentRequestMessage,
 } from "@/lib/communications/orderTemplates";
+import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -648,6 +650,17 @@ export default async function AdminOrderDetailPage({
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <form action={sendPaymentRequestWhatsAppAction}>
+                    <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                    <button
+                      type="submit"
+                      disabled={!order.phone}
+                      className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-4 py-2 text-sm font-black text-[#1f7a3f] hover:bg-[#dff0d8] disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      Send WhatsApp
+                    </button>
+                  </form>
+
                   {latestPaymentRequest.paymentUrl ? (
                     <a
                       href={latestPaymentRequest.paymentUrl}
@@ -686,6 +699,32 @@ export default async function AdminOrderDetailPage({
                   )}
                 </div>
               </div>
+
+              <details className="mt-4 rounded-2xl bg-white p-4">
+                <summary className="cursor-pointer text-sm font-black text-[#102015]">
+                  WhatsApp payment message
+                </summary>
+                <textarea
+                  readOnly
+                  rows={10}
+                  value={buildPaymentInstructionMessage({
+                    orderCode: order.code,
+                    buyerName: order.customer?.name || order.buyerName,
+                    amount: latestPaymentRequest.amount,
+                    currency: latestPaymentRequest.currency,
+                    reference: latestPaymentRequest.reference,
+                    provider: latestPaymentRequest.provider,
+                    paymentUrl: latestPaymentRequest.paymentUrl,
+                    bankName: latestPaymentRequest.bankName,
+                    accountNumber: latestPaymentRequest.accountNumber,
+                    accountName: latestPaymentRequest.accountName,
+                  })}
+                  className="mt-4 w-full rounded-2xl border border-[#102015]/15 bg-[#f7f5ec] px-4 py-3 text-sm leading-6 text-[#102015]"
+                />
+                <p className="mt-2 text-xs font-bold text-[#405348]">
+                  Copy this into WhatsApp after generating a link or entering bank details.
+                </p>
+              </details>
             </div>
           ) : null}
 

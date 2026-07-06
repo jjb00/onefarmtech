@@ -1799,6 +1799,89 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 }
 
 
+export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+  const {buildPaymentInstructionMessage} = await import("@/lib/communications/paymentTemplates");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "");
+
+  if (!id) {
+    redirect("/admin/payment-requests?error=missing-id");
+  }
+
+  const paymentRequest = await prisma.paymentRequest.findUnique({
+    where: {id},
+    include: {
+      order: true,
+      customer: true,
+    },
+  });
+
+  if (!paymentRequest) {
+    redirect("/admin/payment-requests?error=not-found");
+  }
+
+  const body = buildPaymentInstructionMessage({
+    orderCode: paymentRequest.order.code,
+    buyerName: paymentRequest.customer?.name || paymentRequest.order.buyerName,
+    amount: paymentRequest.amount,
+    currency: paymentRequest.currency,
+    reference: paymentRequest.reference,
+    provider: paymentRequest.provider,
+    paymentUrl: paymentRequest.paymentUrl,
+    bankName: paymentRequest.bankName,
+    accountNumber: paymentRequest.accountNumber,
+    accountName: paymentRequest.accountName,
+  });
+
+  try {
+    const result = await sendWhatsAppTextMessage({
+      to: paymentRequest.order.phone,
+      body,
+    });
+
+    if (paymentRequest.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: paymentRequest.customerId,
+          title: `WhatsApp payment request for ${paymentRequest.order.code}`,
+          body,
+          channel: "WhatsApp",
+          direction: "Outbound",
+          status: result.status,
+          recipient: paymentRequest.order.phone,
+          source: "WhatsApp API",
+          relatedType: "PaymentRequest",
+          relatedId: paymentRequest.id,
+          sentAt: new Date(),
+          metadata: JSON.stringify({
+            provider: result.provider,
+            messageId: result.messageId,
+          }),
+        },
+      });
+    }
+
+    revalidatePath("/admin/payment-requests");
+    revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
+    revalidatePath("/admin/buyer-messages");
+    revalidatePath("/buyer-account/inbox");
+
+    redirect("/admin/payment-requests?whatsapp=sent");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "whatsapp-send-failed";
+    const encoded = encodeURIComponent(message).slice(0, 180);
+    redirect(`/admin/payment-requests?error=${encoded}`);
+  }
+}
+
+
 export async function updatePaymentRequestStatusAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
