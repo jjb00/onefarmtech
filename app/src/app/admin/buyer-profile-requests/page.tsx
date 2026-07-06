@@ -1,9 +1,12 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import {updateBuyerProfileUpdateRequestStatusAction} from "@/actions/createAdminRecords";
 import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+const statuses = ["New", "Reviewing", "Approved", "Changes applied", "Rejected"];
 
 export default async function BuyerProfileRequestsAdminPage() {
   const requests = await prisma.buyerProfileUpdateRequest.findMany({
@@ -18,7 +21,7 @@ export default async function BuyerProfileRequestsAdminPage() {
   return (
     <AdminPageShell
       title="Buyer profile update requests"
-      description="Review buyer-submitted company, buying profile, finance, contact and partner-readiness information before changing approved account records."
+      description="Review buyer-submitted profile, finance, contact and partner-readiness updates before changing approved account records."
     >
       <div className="grid gap-6">
         <section className="grid gap-4 md:grid-cols-3">
@@ -60,6 +63,50 @@ export default async function BuyerProfileRequestsAdminPage() {
                 <RequestBlock title="Documents / verification note" value={request.documentsNote} />
                 <RequestBlock title="Extra message" value={request.message} />
               </div>
+
+              {request.adminNote ? (
+                <div className="mt-5 rounded-2xl bg-[#fff8e6] p-4 text-sm leading-7 text-[#5d4716]">
+                  <strong className="text-[#102015]">Admin note:</strong>{" "}
+                  {request.adminNote}
+                </div>
+              ) : null}
+
+              <form
+                action={updateBuyerProfileUpdateRequestStatusAction}
+                className="mt-5 grid gap-3 rounded-2xl bg-[#f3f8ef] p-4 md:grid-cols-[1fr_1.4fr_auto]"
+              >
+                <input type="hidden" name="requestId" value={request.id} />
+
+                <label className="grid gap-2 text-sm font-bold text-[#102015]">
+                  Status
+                  <select
+                    name="status"
+                    defaultValue={request.status}
+                    className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal"
+                  >
+                    {statuses.map((status) => (
+                      <option key={status}>{status}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#102015]">
+                  Admin note
+                  <input
+                    name="adminNote"
+                    defaultValue={request.adminNote || ""}
+                    className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal"
+                    placeholder="Optional review note"
+                  />
+                </label>
+
+                <button
+                  type="submit"
+                  className="self-end rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white"
+                >
+                  Save
+                </button>
+              </form>
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link

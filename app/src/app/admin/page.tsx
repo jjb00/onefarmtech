@@ -42,6 +42,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     auditLogs,
     staffUsers,
     buyerAccountRequests,
+    buyerProfileUpdateRequests,
   ] = await Promise.all([
     getDbOrders(),
     getDbOrderStats(),
@@ -54,6 +55,11 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     prisma.auditLog.findMany({orderBy: {createdAt: "desc"}, take: 5}),
     prisma.staffUser.findMany({orderBy: {createdAt: "desc"}, take: 10}),
     prisma.buyerAccountRequest.findMany({orderBy: {createdAt: "desc"}, take: 20}),
+    prisma.buyerProfileUpdateRequest.findMany({
+      orderBy: {createdAt: "desc"},
+      include: {customer: true},
+      take: 20,
+    }),
   ]);
 
   const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -74,12 +80,16 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   const reviewingBuyerAccountRequests = buyerAccountRequests.filter(
     (request) => request.status === "Reviewing",
   );
+  const openBuyerProfileUpdateRequests = buyerProfileUpdateRequests.filter(
+    (request) => ["New", "Reviewing"].includes(request.status),
+  );
 
   const quickActions = [
     ["Create order", "/admin/create-order"],
     ["Add customer", "/admin/customers"],
     ["Buyer accounts", "/admin/buyer-accounts"],
     ["Buyer access", "/admin/buyer-access"],
+    ["Profile updates", "/admin/buyer-profile-requests"],
     ["Issue receipt", "/admin/receipts"],
     ["Audit log", "/admin/audit-log"],
     ["Staff & roles", "/admin/staff"],
@@ -109,6 +119,46 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
               Use the visible navigation links for the areas available to this role, or sign out and use the correct staff role.
             </p>
           </div>
+        ) : null}
+
+        {openBuyerProfileUpdateRequests.length ? (
+          <section className="rounded-[2rem] border border-[#3E7A4C]/20 bg-[#eef8ed] p-5 text-[#102015] shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1f7a3f]">
+                  Buyer profile updates
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {openBuyerProfileUpdateRequests.length} profile update request{openBuyerProfileUpdateRequests.length === 1 ? "" : "s"} need review
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[#405348]">
+                  Review buyer-submitted company, contact, finance and partner-readiness updates before changing approved account records.
+                </p>
+              </div>
+
+              <Link
+                href="/admin/buyer-profile-requests"
+                className="rounded-2xl bg-[#1f7a3f] px-5 py-4 text-center text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+              >
+                Review profile updates
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {openBuyerProfileUpdateRequests.slice(0, 3).map((request) => (
+                <Link
+                  key={request.id}
+                  href="/admin/buyer-profile-requests"
+                  className="rounded-2xl bg-white p-4 text-sm shadow-sm transition hover:bg-[#f3f8ef]"
+                >
+                  <p className="font-black text-[#102015]">{request.customer.name}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#587063]">
+                    {request.status} · {request.requestType}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
         ) : null}
 
         {newBuyerAccountRequests.length || reviewingBuyerAccountRequests.length ? (

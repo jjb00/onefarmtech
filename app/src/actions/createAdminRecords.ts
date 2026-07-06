@@ -735,6 +735,53 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
   redirect("/buyer-account?profileSubmitted=1#profile-updates");
 }
 
+export async function updateBuyerProfileUpdateRequestStatusAction(formData: FormData) {
+  const requestId = readText(formData, "requestId");
+  const status = readText(formData, "status", "Reviewing");
+  const adminNote = readText(formData, "adminNote");
+
+  if (!requestId || !status) {
+    throw new Error("Request ID and status are required.");
+  }
+
+  const existing = await prisma.buyerProfileUpdateRequest.findUnique({
+    where: {id: requestId},
+    include: {customer: true},
+  });
+
+  if (!existing) {
+    throw new Error("Buyer profile update request not found.");
+  }
+
+  const updated = await prisma.buyerProfileUpdateRequest.update({
+    where: {id: requestId},
+    data: {
+      status,
+      adminNote: adminNote || existing.adminNote,
+    },
+  });
+
+  await createAuditLog({
+    action: "Updated buyer profile update request",
+    entityType: "BuyerProfileUpdateRequest",
+    entityId: updated.id,
+    entityLabel: `${existing.customer.name} · ${updated.requestType}`,
+    previousValue: {
+      status: existing.status,
+      adminNote: existing.adminNote,
+    },
+    newValue: {
+      status: updated.status,
+      adminNote: updated.adminNote,
+    },
+    actorRole: "Buyer account manager",
+  });
+
+  revalidatePath("/admin/buyer-profile-requests");
+  revalidatePath("/admin");
+  revalidatePath("/admin/audit-log");
+}
+
 export async function updateBuyerAccountRequestStatusAction(formData: FormData) {
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
