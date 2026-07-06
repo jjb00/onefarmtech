@@ -63,6 +63,79 @@ export default async function BuyerAccountPage() {
           </div>
         </section>
 
+        <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">
+                Buyer partner tools
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Account actions</h2>
+              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+                Use these for repeat buying, bulk pricing, account support, payment proof,
+                credit review, and order issues. These launch through WhatsApp support now
+                and can become automated chatbot workflows later.
+              </p>
+            </div>
+
+            <SupportChatLauncher
+              label="Ask account support"
+              context={`Buyer account: ${customer.name}`}
+              defaultMessage={`I need support with my OneFarmTech buyer account for ${customer.name}.`}
+              variant="green"
+            />
+          </div>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <BuyerActionCard
+              title="Repeat last order"
+              description="Ask the team to prepare a repeat order based on your usual buying pattern."
+              actionLabel="Request repeat order"
+              message={`I want to repeat a previous OneFarmTech order for ${customer.name}. Please help me confirm the items, quantity, price and delivery details.`}
+              context={`Buyer account: ${customer.name} · Repeat order`}
+            />
+
+            <BuyerActionCard
+              title="Request bulk quote"
+              description="Useful for restaurants, caterers, retailers, buying groups and planned large orders."
+              actionLabel="Request quote"
+              message={`I need a bulk produce quote for ${customer.name}. Please help me with availability, pricing, delivery timing and minimum quantity.`}
+              context={`Buyer account: ${customer.name} · Bulk quote`}
+            />
+
+            <BuyerActionCard
+              title="Request credit review"
+              description="Ask the admin team to review payment terms or credit limit for recurring supply."
+              actionLabel="Request review"
+              message={`I would like a credit/payment terms review for ${customer.name}. Current credit limit shown: ${formatNaira(customer.creditLimit)}. Current outstanding balance shown: ${formatNaira(customer.outstandingBalance)}.`}
+              context={`Buyer account: ${customer.name} · Credit review`}
+            />
+
+            <BuyerActionCard
+              title="Send payment proof"
+              description="Start a payment confirmation workflow for transfer, receipt or balance updates."
+              actionLabel="Send proof"
+              message={`I want to send payment proof for ${customer.name}. Please help me confirm the order/payment reference and receipt update.`}
+              context={`Buyer account: ${customer.name} · Payment proof`}
+            />
+
+            <BuyerActionCard
+              title="Report order issue"
+              description="Raise a delivery, quality, shortage, substitution or fulfilment concern."
+              actionLabel="Report issue"
+              message={`I need to report an issue with a OneFarmTech order for ${customer.name}. Please help me log the issue and next step.`}
+              context={`Buyer account: ${customer.name} · Order issue`}
+            />
+
+            <BuyerActionCard
+              title="Update contacts"
+              description="Ask to add, pause or change authorised people on this buyer account."
+              actionLabel="Update contacts"
+              message={`I need to update authorised contacts for ${customer.name}'s OneFarmTech buyer account.`}
+              context={`Buyer account: ${customer.name} · Contact update`}
+            />
+          </div>
+        </section>
+
         <section className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
           <div className="grid gap-6">
             <Panel title="Buyer profile">
@@ -224,6 +297,34 @@ export default async function BuyerAccountPage() {
         </section>
       </div>
     </main>
+  );
+}
+
+function BuyerActionCard({
+  title,
+  description,
+  actionLabel,
+  message,
+  context,
+}: {
+  title: string;
+  description: string;
+  actionLabel: string;
+  message: string;
+  context: string;
+}) {
+  return (
+    <article className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-5">
+      <h3 className="text-lg font-black">{title}</h3>
+      <p className="mt-2 min-h-14 text-sm leading-7 text-[#405348]">{description}</p>
+      <div className="mt-4">
+        <SupportChatLauncher
+          label={actionLabel}
+          context={context}
+          defaultMessage={message}
+        />
+      </div>
+    </article>
   );
 }
 

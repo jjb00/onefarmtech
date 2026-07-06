@@ -5,6 +5,7 @@ import {useState} from "react";
 type SupportChatLauncherProps = {
   label?: string;
   context?: string;
+  defaultMessage?: string;
   variant?: "light" | "dark" | "green";
 };
 
@@ -46,6 +47,7 @@ function makeWhatsAppUrl(message: string, context?: string) {
 export default function SupportChatLauncher({
   label = "Contact support",
   context,
+  defaultMessage,
   variant = "light",
 }: SupportChatLauncherProps) {
   const [open, setOpen] = useState(false);
@@ -96,6 +98,20 @@ export default function SupportChatLauncher({
                 ×
               </button>
             </div>
+
+            {defaultMessage ? (
+              <a
+                href={makeWhatsAppUrl(defaultMessage, context)}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-6 block rounded-2xl bg-[#1f7a3f] px-4 py-4 text-sm font-black text-white transition hover:bg-[#155c2f]"
+              >
+                Continue on WhatsApp
+                <span className="mt-1 block text-xs font-semibold leading-6 text-white/80">
+                  Opens WhatsApp with this request already prepared.
+                </span>
+              </a>
+            ) : null}
 
             <div className="mt-6 grid gap-3">
               {supportTopics.map((topic) => (
