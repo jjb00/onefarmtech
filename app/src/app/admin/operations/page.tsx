@@ -193,18 +193,29 @@ export default async function AdminOperationsPage() {
         </div>
       </section>
 
-      <section className="grid gap-6">
-        {operationGroups.map((group) => (
-          <div key={group.title} className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                Operations
-              </p>
-              <h2 className="mt-2 text-2xl font-black text-[#102015]">{group.title}</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-                {group.description}
-              </p>
-            </div>
+      <section className="grid gap-4">
+        {operationGroups.map((group, index) => (
+          <details
+            key={group.title}
+            open={index === 0}
+            className="rounded-[2rem] bg-white p-6 shadow-sm"
+          >
+            <summary className="cursor-pointer list-none">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+                    Operations area
+                  </p>
+                  <h2 className="mt-2 text-2xl font-black text-[#102015]">{group.title}</h2>
+                  <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+                    {group.description}
+                  </p>
+                </div>
+                <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
+                  {group.items.length} links
+                </span>
+              </div>
+            </summary>
 
             <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               {group.items.map((item) => (
@@ -221,7 +232,7 @@ export default async function AdminOperationsPage() {
                 </Link>
               ))}
             </div>
-          </div>
+          </details>
         ))}
       </section>
     </AdminPage>

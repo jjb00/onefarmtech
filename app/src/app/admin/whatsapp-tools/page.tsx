@@ -83,7 +83,7 @@ export default async function AdminWhatsAppToolsPage() {
               Product availability message
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              Use this page when a buyer asks what is available. It pulls from the live product catalogue and keeps the operational workflow compact.
+              Use this page when a buyer asks what is available. It pulls from the live product catalogue and keeps the workflow compact.
             </p>
           </div>
 
@@ -178,6 +178,5 @@ export default async function AdminWhatsAppToolsPage() {
         </div>
       </section>
     </AdminPage>
-  );
   );
 }
