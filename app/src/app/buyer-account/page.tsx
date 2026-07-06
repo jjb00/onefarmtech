@@ -1,4 +1,5 @@
 import Link from "next/link";
+import {buyerLogoutAction} from "@/actions/auth";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
 
@@ -28,12 +29,23 @@ export default async function BuyerAccountPage() {
               </p>
             </div>
 
-            <Link
-              href="/order"
-              className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-            >
-              Place order
-            </Link>
+            <div className="flex flex-wrap gap-3">
+              <Link
+                href="/order"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Place order
+              </Link>
+
+              <form action={buyerLogoutAction}>
+                <button
+                  type="submit"
+                  className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] shadow-sm hover:bg-[#f3f8ef]"
+                >
+                  Sign out
+                </button>
+              </form>
+            </div>
           </div>
 
           <div className="mt-6 grid gap-3 md:grid-cols-4">
