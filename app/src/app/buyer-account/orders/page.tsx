@@ -33,7 +33,7 @@ export default async function BuyerOrdersPage() {
             <div key={order.id} className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="font-black">{order.code}</p>
+                  <p className="font-black"><Link href={`/buyer-account/orders/${order.id}`} className="text-[#1f7a3f] underline underline-offset-4">{order.code}</Link></p>
                   <p className="mt-1 text-sm text-[#405348]">
                     {order.deliveryMethod} · {order.fulfilmentStatus}
                   </p>
