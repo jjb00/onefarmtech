@@ -691,6 +691,50 @@ export async function createBuyerPortalOrderAction(formData: FormData) {
   redirect("/buyer-account?orderSubmitted=1");
 }
 
+export async function createBuyerProfileUpdateRequestAction(formData: FormData) {
+  const {customer} = await requireBuyer();
+
+  const requestType = readText(formData, "requestType", "Profile update");
+  const companyInfo = readText(formData, "companyInfo");
+  const buyingProfile = readText(formData, "buyingProfile");
+  const financeInfo = readText(formData, "financeInfo");
+  const contactInfo = readText(formData, "contactInfo");
+  const documentsNote = readText(formData, "documentsNote");
+  const message = readText(formData, "message");
+
+  if (!companyInfo && !buyingProfile && !financeInfo && !contactInfo && !documentsNote && !message) {
+    throw new Error("Please describe the update you want us to review.");
+  }
+
+  const request = await prisma.buyerProfileUpdateRequest.create({
+    data: {
+      customerId: customer.id,
+      requestType,
+      companyInfo: companyInfo || null,
+      buyingProfile: buyingProfile || null,
+      financeInfo: financeInfo || null,
+      contactInfo: contactInfo || null,
+      documentsNote: documentsNote || null,
+      message: message || null,
+      status: "New",
+    },
+  });
+
+  await createAuditLog({
+    action: "Created buyer profile update request",
+    entityType: "BuyerProfileUpdateRequest",
+    entityId: request.id,
+    entityLabel: `${customer.name} · ${request.requestType}`,
+    newValue: request,
+    actorRole: "Buyer portal",
+  });
+
+  revalidatePath("/buyer-account");
+  revalidatePath("/admin/buyer-profile-requests");
+  revalidatePath("/admin/audit-log");
+  redirect("/buyer-account?profileSubmitted=1#profile-updates");
+}
+
 export async function updateBuyerAccountRequestStatusAction(formData: FormData) {
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
