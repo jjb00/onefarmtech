@@ -154,11 +154,20 @@ export async function seedBaselineProductsAction() {
 
 export async function updateProductCatalogueStatusAction(formData: FormData) {
   const productId = readText(formData, "productId");
+  const name = readText(formData, "name");
+  const category = readText(formData, "category", "Fresh produce");
+  const unit = readText(formData, "unit", "kg");
+  const grade = readText(formData, "grade", "Standard");
+  const basePrice = readNumber(formData, "basePrice");
   const availability = readText(formData, "availability", "Available");
   const status = readText(formData, "status", "Active");
 
   if (!productId) {
     throw new Error("Product ID is required.");
+  }
+
+  if (!name) {
+    throw new Error("Product name is required.");
   }
 
   const previousProduct = await prisma.product.findUnique({
@@ -172,13 +181,18 @@ export async function updateProductCatalogueStatusAction(formData: FormData) {
       id: productId,
     },
     data: {
+      name,
+      category,
+      unit,
+      grade,
+      basePrice,
       availability,
       status,
     },
   });
 
   await createAuditLog({
-    action: "Updated product catalogue status",
+    action: "Updated product catalogue",
     entityType: "Product",
     entityId: product.id,
     entityLabel: product.name,
@@ -188,6 +202,7 @@ export async function updateProductCatalogueStatusAction(formData: FormData) {
 
   revalidatePath("/admin/products");
   revalidatePath("/admin/create-order");
+  revalidatePath("/admin/group-buys");
   revalidatePath("/admin/audit-log");
   redirect("/admin/products");
 }
