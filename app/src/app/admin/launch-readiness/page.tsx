@@ -6,19 +6,7 @@ import {prisma} from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function StatusPill({ok, label}: {ok: boolean; label: string}) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-3 py-1 text-xs font-black ${
-        ok ? "bg-[#eef6ea] text-[#1f7a3f]" : "bg-[#fff6d6] text-[#7a4a00]"
-      }`}
-    >
-      {label}
-    </span>
-  );
-}
-
-function Row({
+function CheckRow({
   title,
   detail,
   ok,
@@ -30,7 +18,7 @@ function Row({
   href?: string;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#102015]/10 py-4 last:border-b-0">
+    <div className="flex flex-wrap items-start justify-between gap-4 border-b border-[#102015]/10 py-5 last:border-b-0">
       <div>
         <h3 className="font-black text-[#102015]">{title}</h3>
         <p className="mt-1 max-w-3xl text-sm leading-7 text-[#405348]">{detail}</p>
@@ -43,7 +31,14 @@ function Row({
           </Link>
         ) : null}
       </div>
-      <StatusPill ok={ok} label={ok ? "Ready" : "Needs work"} />
+
+      <span
+        className={`rounded-full px-3 py-1 text-xs font-black ${
+          ok ? "bg-[#eef6ea] text-[#1f7a3f]" : "bg-[#fff6d6] text-[#7a4a00]"
+        }`}
+      >
+        {ok ? "Ready" : "Needs work"}
+      </span>
     </div>
   );
 }
@@ -52,61 +47,127 @@ export default async function LaunchReadinessPage() {
   await requireStaff();
 
   let databaseConnected = false;
-  let counts = {
+
+  const counts = {
     customers: 0,
     orders: 0,
-    buyerMessages: 0,
     products: 0,
+    availableProducts: 0,
+    paymentRequests: 0,
+    deliveryPartners: 0,
+    buyerMessages: 0,
+    guestOrders: 0,
   };
 
   try {
-    const [customers, orders, buyerMessages, products] = await Promise.all([
+    const [
+      customers,
+      orders,
+      products,
+      availableProducts,
+      paymentRequests,
+      deliveryPartners,
+      buyerMessages,
+      guestOrders,
+    ] = await Promise.all([
       prisma.customer.count(),
       prisma.order.count(),
-      prisma.buyerMessage.count(),
       prisma.product.count(),
+      prisma.product.count({
+        where: {
+          status: "Active",
+          availability: {
+            in: ["Available", "In stock", "Active"],
+          },
+        },
+      }),
+      prisma.paymentRequest.count(),
+      prisma.deliveryPartner.count(),
+      prisma.buyerMessage.count(),
+      prisma.order.count({
+        where: {
+          customerId: null,
+        },
+      }),
     ]);
 
     databaseConnected = true;
-    counts = {customers, orders, buyerMessages, products};
+    counts.customers = customers;
+    counts.orders = orders;
+    counts.products = products;
+    counts.availableProducts = availableProducts;
+    counts.paymentRequests = paymentRequests;
+    counts.deliveryPartners = deliveryPartners;
+    counts.buyerMessages = buyerMessages;
+    counts.guestOrders = guestOrders;
   } catch {
     databaseConnected = false;
   }
 
   const supportWhatsAppConfigured = Boolean(process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP);
   const databasePoolConfigured = Boolean(process.env.DATABASE_POOL_MAX);
+  const hasProducts = counts.availableProducts > 0;
+  const hasDeliveryPartner = counts.deliveryPartners > 0;
 
   const checks = [
     {
       title: "Database connection",
       detail: databaseConnected
-        ? `Connected. Current counts: ${counts.customers} customers, ${counts.orders} orders, ${counts.products} products, ${counts.buyerMessages} buyer messages.`
+        ? `Connected. Current records: ${counts.customers} customers, ${counts.orders} orders, ${counts.products} products, ${counts.paymentRequests} payment requests.`
         : "Database query failed. Check DATABASE_URL, Supabase pooler settings and Prisma client generation.",
       ok: databaseConnected,
     },
     {
-      title: "Buyer account requests",
-      detail: "Public buyer account request and admin review flow should be available.",
-      ok: true,
-      href: "/admin/buyer-account-requests",
+      title: "Available product catalogue",
+      detail: hasProducts
+        ? `${counts.availableProducts} active available products can be used in WhatsApp ordering.`
+        : "No active available products found. WhatsApp order entry needs available products and prices.",
+      ok: hasProducts,
+      href: "/admin/products",
     },
     {
-      title: "Buyer access codes",
-      detail: "Invite-code buyer login is the current fastest auth route. Confirm approved buyers have active access codes.",
+      title: "WhatsApp order workflow",
+      detail: "Admin-assisted WhatsApp order entry exists and creates orders, order items, payment requests and delivery records.",
       ok: true,
-      href: "/admin/buyer-access",
+      href: "/admin/whatsapp-orders/new",
     },
     {
-      title: "Buyer messages evidence log",
-      detail: "BuyerMessage exists and admin has a communication evidence page.",
+      title: "Guest buyer handling",
+      detail: `${counts.guestOrders} unlinked guest orders. Guest buyers can remain unlinked unless they become recurring or high-value.`,
+      ok: true,
+      href: "/admin/guest-buyers",
+    },
+    {
+      title: "Buyer communication evidence",
+      detail: `${counts.buyerMessages} buyer messages logged. Buyer inbox and admin evidence log are available.`,
       ok: true,
       href: "/admin/buyer-messages",
+    },
+    {
+      title: "Payment request workflow",
+      detail: "Manual payment request tracking exists. Paystack/Flutterwave webhook integration is still a later provider step.",
+      ok: true,
+      href: "/admin/payment-requests",
+    },
+    {
+      title: "Delivery partner setup",
+      detail: hasDeliveryPartner
+        ? `${counts.deliveryPartners} delivery partners are registered.`
+        : "No delivery partners registered yet. Add at least one partner before delivery testing.",
+      ok: hasDeliveryPartner,
+      href: "/admin/delivery-partners",
+    },
+    {
+      title: "Delivery partner portal",
+      detail: "Partner login and jobs page exist. Jobs appear after admin assigns deliveries to a partner.",
+      ok: true,
+      href: "/delivery-partner",
     },
     {
       title: "Support WhatsApp number",
       detail: supportWhatsAppConfigured
         ? "NEXT_PUBLIC_SUPPORT_WHATSAPP is configured."
-        : "NEXT_PUBLIC_SUPPORT_WHATSAPP is not configured. Set the real WhatsApp Business number before public launch.",
+        : "NEXT_PUBLIC_SUPPORT_WHATSAPP is not configured. Set the real WhatsApp Business/support number before public use.",
       ok: supportWhatsAppConfigured,
     },
     {
@@ -117,23 +178,13 @@ export default async function LaunchReadinessPage() {
       ok: databasePoolConfigured,
     },
     {
-      title: "Payment gateway",
-      detail: "Payment gateway/API is not yet connected. For launch, use manual proof-of-payment and admin confirmation unless gateway is added.",
-      ok: false,
-    },
-    {
-      title: "Email delivery",
-      detail: "Transactional email provider is not yet connected. Buyer notifications are logged internally, but automated email sending is still pending.",
-      ok: false,
-    },
-    {
-      title: "WhatsApp API",
-      detail: "Manual WhatsApp compose is acceptable for v1. API/webhook delivery status is a later integration.",
+      title: "Payment gateway integration",
+      detail: "Manual payment tracking is ready. Automated Paystack/Flutterwave checkout and webhook handling are not yet connected.",
       ok: false,
     },
     {
       title: "Prisma migration history",
-      detail: "Current temporary safe sync path is prisma db push + prisma generate because old migration lock references sqlite. Clean migration baseline is needed before serious production data growth.",
+      detail: "Temporary sync path uses prisma db push + prisma generate because old migration history has sqlite/provider mismatch. Clean Postgres migration baseline is still needed before serious production data growth.",
       ok: false,
     },
   ];
@@ -141,7 +192,7 @@ export default async function LaunchReadinessPage() {
   return (
     <AdminPage
       title="Launch readiness"
-      subtitle="Operational checklist for database, buyer workflows, communications and launch blockers."
+      subtitle="Operational checklist for database, WhatsApp ordering, payments, delivery, buyer accounts and production configuration."
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -153,21 +204,21 @@ export default async function LaunchReadinessPage() {
               Readiness checks
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              This page separates what is usable now from what still needs configuration before a full public launch.
+              This page separates what is usable now from what still needs configuration or integration before launch.
             </p>
           </div>
 
           <Link
-            href="/admin"
-            className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            href="/admin/operations"
+            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
           >
-            Back to dashboard
+            Operations
           </Link>
         </div>
 
         <div className="mt-6">
           {checks.map((check) => (
-            <Row key={check.title} {...check} />
+            <CheckRow key={check.title} {...check} />
           ))}
         </div>
       </section>
