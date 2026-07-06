@@ -15,10 +15,12 @@ const navItems = [
 export default function BuyerPortalFrame({
   customerName,
   buyerType,
+  unreadMessageCount = 0,
   children,
 }: {
   customerName: string;
   buyerType: string;
+  unreadMessageCount?: number;
   children: ReactNode;
 }) {
   return (
@@ -41,7 +43,13 @@ export default function BuyerPortalFrame({
                 >
                   <span>{label}</span>
                   {label === "Inbox" ? (
-                    <span aria-hidden="true" className="text-base leading-none">🔔</span>
+                    unreadMessageCount > 0 ? (
+                      <span className="inline-flex min-w-6 items-center justify-center rounded-full bg-[#d9471f] px-2 py-1 text-xs font-black leading-none text-white">
+                        {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                      </span>
+                    ) : (
+                      <span aria-hidden="true" className="text-base leading-none">🔔</span>
+                    )
                   ) : null}
                 </Link>
               ))}
