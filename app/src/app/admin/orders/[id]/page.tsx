@@ -6,6 +6,7 @@ import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
 import {
   createOrAssignDeliveryFromOrderAction,
   createPaymentRequestFromOrderAction,
+  generatePaymentLinkAction,
   linkOrderToCustomerAction,
   logOrderBuyerMessageAction,
   updateAdminOrderControlAction,
@@ -627,6 +628,52 @@ export default async function AdminOrderDetailPage({
               Manage payments
             </Link>
           </div>
+
+          {latestPaymentRequest ? (
+            <div className="mt-5 rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="font-black text-[#102015]">
+                    Latest request: {latestPaymentRequest.reference}
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-[#405348]">
+                    {latestPaymentRequest.provider} · {latestPaymentRequest.status} · {formatNaira(latestPaymentRequest.amount)}
+                  </p>
+                  {latestPaymentRequest.paymentUrl ? (
+                    <p className="mt-2 break-all text-sm text-[#405348]">
+                      <span className="font-black text-[#102015]">Payment link:</span>{" "}
+                      {latestPaymentRequest.paymentUrl}
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {latestPaymentRequest.paymentUrl ? (
+                    <a
+                      href={latestPaymentRequest.paymentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f]"
+                    >
+                      Open link
+                    </a>
+                  ) : (
+                    <form action={generatePaymentLinkAction}>
+                      <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                      <input type="hidden" name="provider" value="Paystack" />
+                      <button
+                        type="submit"
+                        disabled={latestPaymentRequest.status === "Paid"}
+                        className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Generate Paystack link
+                      </button>
+                    </form>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <div className="mt-5 grid gap-3">
             {order.paymentRequests.length === 0 ? (

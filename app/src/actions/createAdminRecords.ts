@@ -1593,6 +1593,94 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
 
 
 
+export async function generatePaymentLinkAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {createPaymentCheckout} = await import("@/lib/payments/provider");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "");
+  const provider = String(formData.get("provider") || "Paystack").trim() || "Paystack";
+
+  if (!id) {
+    redirect("/admin/payment-requests?error=missing-id");
+  }
+
+  const paymentRequest = await prisma.paymentRequest.findUnique({
+    where: {id},
+    include: {
+      order: true,
+      customer: true,
+    },
+  });
+
+  if (!paymentRequest) {
+    redirect("/admin/payment-requests?error=not-found");
+  }
+
+  if (paymentRequest.status === "Paid") {
+    redirect("/admin/payment-requests?error=already-paid");
+  }
+
+  try {
+    const checkout = await createPaymentCheckout({
+      provider,
+      reference: paymentRequest.reference,
+      amount: paymentRequest.amount,
+      currency: paymentRequest.currency || "NGN",
+      buyerEmail: paymentRequest.customer?.email || null,
+      buyerName: paymentRequest.customer?.name || paymentRequest.order.buyerName,
+      buyerPhone: paymentRequest.order.phone,
+      orderCode: paymentRequest.order.code,
+      callbackPath: `/admin/payment-requests?reference=${encodeURIComponent(paymentRequest.reference)}`,
+    });
+
+    await prisma.paymentRequest.update({
+      where: {id: paymentRequest.id},
+      data: {
+        provider: checkout.provider,
+        paymentUrl: checkout.paymentUrl,
+        gatewayReference: checkout.gatewayReference,
+        status: "Pending",
+      },
+    });
+
+    if (paymentRequest.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: paymentRequest.customerId,
+          title: `Payment link for ${paymentRequest.order.code}`,
+          body: `A payment link has been generated for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount)}\\nPayment link: ${checkout.paymentUrl}`,
+          channel: "Portal",
+          direction: "Outbound",
+          status: "Unread",
+          recipient: paymentRequest.order.phone,
+          source: "Payment link",
+          relatedType: "PaymentRequest",
+          relatedId: paymentRequest.id,
+          metadata: JSON.stringify({provider: checkout.provider, gatewayReference: checkout.gatewayReference}),
+        },
+      });
+    }
+
+    revalidatePath("/admin/payment-requests");
+    revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
+    revalidatePath("/buyer-account/payments");
+    revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
+    revalidatePath("/buyer-account/inbox");
+
+    redirect("/admin/payment-requests?paymentLink=generated");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "payment-link-failed";
+    const encoded = encodeURIComponent(message).slice(0, 180);
+    redirect(`/admin/payment-requests?error=${encoded}`);
+  }
+}
+
+
 export async function createOrAssignDeliveryFromOrderAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");

@@ -2,6 +2,7 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
 import {
+  generatePaymentLinkAction,
   issueReceiptFromPaymentRequestAction,
   updatePaymentRequestStatusAction,
 } from "@/actions/createAdminRecords";
@@ -247,6 +248,29 @@ export default async function AdminPaymentRequestsPage() {
                 </form>
 
                 <div className="mt-4 flex flex-wrap gap-3 border-t border-[#102015]/10 pt-4">
+                  {request.paymentUrl ? (
+                    <a
+                      href={request.paymentUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                    >
+                      Open payment link
+                    </a>
+                  ) : (
+                    <form action={generatePaymentLinkAction}>
+                      <input type="hidden" name="id" value={request.id} />
+                      <input type="hidden" name="provider" value="Paystack" />
+                      <button
+                        type="submit"
+                        disabled={request.status === "Paid"}
+                        className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Generate Paystack link
+                      </button>
+                    </form>
+                  )}
+
                   <form action={issueReceiptFromPaymentRequestAction}>
                     <input type="hidden" name="id" value={request.id} />
                     <button
