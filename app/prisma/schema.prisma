@@ -8,85 +8,86 @@ datasource db {
 }
 
 model Customer {
-  id           String   @id @default(cuid())
-  name         String
-  phone        String
-  email        String?
-  buyerType    String
-  location     String?
-  paymentTerms       String    @default("Full payment before order allocation")
-  creditLimit        Int       @default(0)
-  outstandingBalance Int       @default(0)
-  accountStatus      String    @default("Manual WhatsApp")
-  accountLoginReady  Boolean   @default(false)
-  receiptEmail       String?
-  approvedBy         String?
-  approvedAt         DateTime?
-  status             String    @default("Active")
-  orders             Order[]
-  receipts           Receipt[]
-  buyerContacts      BuyerContact[]
-  buyerInvites       BuyerAccountInvite[]
+  id                         String                      @id @default(cuid())
+  name                       String
+  phone                      String
+  email                      String?
+  buyerType                  String
+  location                   String?
+  paymentTerms               String                      @default("Full payment before order allocation")
+  creditLimit                Int                         @default(0)
+  outstandingBalance         Int                         @default(0)
+  accountStatus              String                      @default("Manual WhatsApp")
+  accountLoginReady          Boolean                     @default(false)
+  receiptEmail               String?
+  approvedBy                 String?
+  approvedAt                 DateTime?
+  status                     String                      @default("Active")
+  orders                     Order[]
+  receipts                   Receipt[]
+  buyerContacts              BuyerContact[]
+  buyerInvites               BuyerAccountInvite[]
   buyerProfileUpdateRequests BuyerProfileUpdateRequest[]
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  buyerMessages              BuyerMessage[]
+  createdAt                  DateTime                    @default(now())
+  updatedAt                  DateTime                    @updatedAt
 }
 
 model Product {
-  id          String      @id @default(cuid())
-  name        String
-  category    String
-  unit        String
-  grade       String      @default("Standard")
-  basePrice   Int         @default(0)
-  availability String     @default("Available")
-  status      String      @default("Active")
-  orderItems  OrderItem[]
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id           String      @id @default(cuid())
+  name         String
+  category     String
+  unit         String
+  grade        String      @default("Standard")
+  basePrice    Int         @default(0)
+  availability String      @default("Available")
+  status       String      @default("Active")
+  orderItems   OrderItem[]
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
 }
 
 model Supplier {
-  id             String   @id @default(cuid())
-  name           String
-  type           String
-  phone          String?
-  location       String
-  produceFocus   String
-  reliability    String   @default("Unrated")
-  paymentMethod  String   @default("Bank transfer")
-  status         String   @default("Active")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            String   @id @default(cuid())
+  name          String
+  type          String
+  phone         String?
+  location      String
+  produceFocus  String
+  reliability   String   @default("Unrated")
+  paymentMethod String   @default("Bank transfer")
+  status        String   @default("Active")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Order {
-  id                String      @id @default(cuid())
-  code              String      @unique
-  customerId        String?
-  customer          Customer?   @relation(fields: [customerId], references: [id])
-  buyerName         String
-  phone             String
-  buyerType         String
-  orderType         String
-  paymentStatus     String      @default("Unpaid")
-  fulfilmentStatus  String      @default("New order")
-  deliveryMethod    String
-  deliveryNote      String?
-  estimatedTotal    Int         @default(0)
-  adminNote         String?
-  items             OrderItem[]
-  payments          Payment[]
-  complaints        Complaint[]
-  receipts          Receipt[]
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id               String      @id @default(cuid())
+  code             String      @unique
+  customerId       String?
+  customer         Customer?   @relation(fields: [customerId], references: [id])
+  buyerName        String
+  phone            String
+  buyerType        String
+  orderType        String
+  paymentStatus    String      @default("Unpaid")
+  fulfilmentStatus String      @default("New order")
+  deliveryMethod   String
+  deliveryNote     String?
+  estimatedTotal   Int         @default(0)
+  adminNote        String?
+  items            OrderItem[]
+  payments         Payment[]
+  complaints       Complaint[]
+  receipts         Receipt[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
   productId String?
   product   Product? @relation(fields: [productId], references: [id])
   name      String
@@ -97,39 +98,38 @@ model OrderItem {
   lineTotal Int
 }
 
-
 model GroupBuy {
-  id                String                @id @default(cuid())
-  code              String                @unique
-  title             String
-  description       String?
-  status            String                @default("Draft")
-  minQuantity       Int                   @default(0)
-  targetQuantity    Int                   @default(0)
-  reservedQuantity  Int                   @default(0)
-  unit              String                @default("unit")
-  closingDate       DateTime?
-  pickupWindow      String?
-  paymentStatus     String                @default("Collecting payments")
-  fulfilmentStatus  String                @default("Planning")
-  adminNote         String?
-  items             GroupBuyItem[]
-  reservations      GroupBuyReservation[]
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  id               String                @id @default(cuid())
+  code             String                @unique
+  title            String
+  description      String?
+  status           String                @default("Draft")
+  minQuantity      Int                   @default(0)
+  targetQuantity   Int                   @default(0)
+  reservedQuantity Int                   @default(0)
+  unit             String                @default("unit")
+  closingDate      DateTime?
+  pickupWindow     String?
+  paymentStatus    String                @default("Collecting payments")
+  fulfilmentStatus String                @default("Planning")
+  adminNote        String?
+  items            GroupBuyItem[]
+  reservations     GroupBuyReservation[]
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 }
 
 model GroupBuyItem {
-  id          String   @id @default(cuid())
-  groupBuyId  String
-  groupBuy    GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
-  productId   String?
-  name        String
-  grade       String
-  quantity    Int
-  unit        String
-  unitPrice   Int
-  lineTotal   Int
+  id         String   @id @default(cuid())
+  groupBuyId String
+  groupBuy   GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  productId  String?
+  name       String
+  grade      String
+  quantity   Int
+  unit       String
+  unitPrice  Int
+  lineTotal  Int
 }
 
 model GroupBuyReservation {
@@ -146,29 +146,29 @@ model GroupBuyReservation {
 }
 
 model Payment {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   orderId   String
-  order     Order    @relation(fields: [orderId], references: [id])
-  reference String   @unique
+  order     Order     @relation(fields: [orderId], references: [id])
+  reference String    @unique
   provider  String
   amount    Int
   status    String
   paidAt    DateTime?
   receipts  Receipt[]
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 }
 
 model Complaint {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  code        String   @unique
-  issue       String
-  priority    String
-  status      String   @default("Open")
-  resolution  String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id])
+  code       String   @unique
+  issue      String
+  priority   String
+  status     String   @default("Open")
+  resolution String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model PickupLocation {
@@ -182,7 +182,6 @@ model PickupLocation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
 
 model StaffUser {
   id        String   @id @default(cuid())
@@ -210,58 +209,77 @@ model AuditLog {
 }
 
 model Receipt {
-  id            String    @id @default(cuid())
-  code          String    @unique
-  orderId       String
-  order         Order     @relation(fields: [orderId], references: [id])
-  customerId    String?
-  customer      Customer? @relation(fields: [customerId], references: [id])
-  paymentId     String?
-  payment       Payment?  @relation(fields: [paymentId], references: [id])
-  buyerName     String
-  buyerEmail    String?
-  amount        Int
-  status        String    @default("Issued")
-  issuedBy      String    @default("Local admin")
-  issuedAt      DateTime  @default(now())
-  createdAt     DateTime  @default(now())
+  id         String    @id @default(cuid())
+  code       String    @unique
+  orderId    String
+  order      Order     @relation(fields: [orderId], references: [id])
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  paymentId  String?
+  payment    Payment?  @relation(fields: [paymentId], references: [id])
+  buyerName  String
+  buyerEmail String?
+  amount     Int
+  status     String    @default("Issued")
+  issuedBy   String    @default("Local admin")
+  issuedAt   DateTime  @default(now())
+  createdAt  DateTime  @default(now())
 }
 
-
 model BuyerContact {
-  id             String   @id @default(cuid())
-  customerId     String
-  customer       Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  name           String
-  email          String?
-  phone          String?
-  role           String   @default("Buyer user")
-  canPlaceOrders Boolean  @default(true)
-  canViewReceipts Boolean @default(true)
-  canViewCredit  Boolean  @default(false)
-  status         String   @default("Active")
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id              String   @id @default(cuid())
+  customerId      String
+  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  name            String
+  email           String?
+  phone           String?
+  role            String   @default("Buyer user")
+  canPlaceOrders  Boolean  @default(true)
+  canViewReceipts Boolean  @default(true)
+  canViewCredit   Boolean  @default(false)
+  status          String   @default("Active")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model BuyerAccountInvite {
-  id          String    @id @default(cuid())
-  customerId  String
-  customer    Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  inviteCode  String    @unique
-  email       String?
-  phone       String?
-  role        String    @default("Buyer user")
-  status      String    @default("Draft")
-  expiresAt   DateTime?
-  sentAt      DateTime?
-  acceptedAt  DateTime?
-  createdBy   String    @default("Local staff user")
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  customerId String
+  customer   Customer  @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  inviteCode String    @unique
+  email      String?
+  phone      String?
+  role       String    @default("Buyer user")
+  status     String    @default("Draft")
+  expiresAt  DateTime?
+  sentAt     DateTime?
+  acceptedAt DateTime?
+  createdBy  String    @default("Local staff user")
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
 
+model BuyerMessage {
+  id         String   @id @default(cuid())
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
+  title       String
+  body        String
+  channel     String  @default("Portal")
+  direction   String  @default("Outbound")
+  status      String  @default("Logged")
+  recipient   String?
+  source      String  @default("System")
+  relatedType String?
+  relatedId   String?
+  metadata    String?
+
+  sentAt    DateTime?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
 
 model BuyerProfileUpdateRequest {
   id            String   @id @default(cuid())
@@ -280,7 +298,6 @@ model BuyerProfileUpdateRequest {
   updatedAt     DateTime @updatedAt
 }
 
-
 model ContactEnquiry {
   id           String   @id @default(cuid())
   name         String
@@ -296,46 +313,44 @@ model ContactEnquiry {
   updatedAt    DateTime @updatedAt
 }
 
-
 model BuyerAccountRequest {
-  id                  String   @id @default(cuid())
-  contactName         String
-  organisationName    String?
-  buyerType           String   @default("Business buyer")
-  phone               String
-  email               String?
-  location            String?
-  usualProduceNeeds   String?
-  orderFrequency      String?
-  estimatedSpend      String?
-  businessRegNumber    String?
+  id                     String   @id @default(cuid())
+  contactName            String
+  organisationName       String?
+  buyerType              String   @default("Business buyer")
+  phone                  String
+  email                  String?
+  location               String?
+  usualProduceNeeds      String?
+  orderFrequency         String?
+  estimatedSpend         String?
+  businessRegNumber      String?
   preferredPaymentMethod String?
-  needsReceipts        Boolean  @default(true)
-  interestedInCredit  Boolean  @default(false)
-  message             String?
-  status              String   @default("New")
-  source              String   @default("Buyer account request page")
-  adminNote           String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  needsReceipts          Boolean  @default(true)
+  interestedInCredit     Boolean  @default(false)
+  message                String?
+  status                 String   @default("New")
+  source                 String   @default("Buyer account request page")
+  adminNote              String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 }
 
-
 model OrderRequest {
-  id                String   @id @default(cuid())
-  buyerName         String
-  buyerType         String   @default("Household / individual")
-  phone             String
-  email             String?
-  location          String?
-  deliveryPreference String  @default("Delivery")
-  items             String
-  timing            String?
-  groupBuyInterest  Boolean  @default(false)
-  message           String?
-  status            String   @default("New")
-  source            String   @default("Order request page")
-  adminNote         String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  buyerName          String
+  buyerType          String   @default("Household / individual")
+  phone              String
+  email              String?
+  location           String?
+  deliveryPreference String   @default("Delivery")
+  items              String
+  timing             String?
+  groupBuyInterest   Boolean  @default(false)
+  message            String?
+  status             String   @default("New")
+  source             String   @default("Order request page")
+  adminNote          String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 }

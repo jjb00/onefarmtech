@@ -4,6 +4,7 @@ import {buyerLogoutAction} from "@/actions/auth";
 
 const navItems = [
   ["Overview", "/buyer-account"],
+  ["Inbox", "/buyer-account/inbox"],
   ["Profile", "/buyer-account/profile"],
   ["Orders", "/buyer-account/orders"],
   ["Payments", "/buyer-account/payments"],
@@ -36,9 +37,12 @@ export default function BuyerPortalFrame({
                 <Link
                   key={href}
                   href={href}
-                  className="rounded-2xl bg-[#f3f8ef] px-4 py-3 text-sm font-black text-[#102015] hover:bg-[#e8f2e2]"
+                  className="flex items-center justify-between rounded-2xl bg-[#f3f8ef] px-4 py-3 text-sm font-black text-[#102015] hover:bg-[#e8f2e2]"
                 >
-                  {label}
+                  <span>{label}</span>
+                  {label === "Inbox" ? (
+                    <span aria-hidden="true" className="text-base leading-none">🔔</span>
+                  ) : null}
                 </Link>
               ))}
             </nav>

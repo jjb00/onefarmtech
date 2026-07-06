@@ -90,6 +90,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     ["Buyer accounts", "/admin/buyer-accounts"],
     ["Buyer access", "/admin/buyer-access"],
     ["Profile updates", "/admin/buyer-profile-requests"],
+    ["Buyer messages", "/admin/buyer-messages"],
     ["Issue receipt", "/admin/receipts"],
     ["Audit log", "/admin/audit-log"],
     ["Staff & roles", "/admin/staff"],

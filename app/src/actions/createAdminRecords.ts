@@ -684,7 +684,23 @@ export async function createBuyerPortalOrderAction(formData: FormData) {
     actorRole: "Buyer portal",
   });
 
+  await prisma.buyerMessage.create({
+    data: {
+      customerId: customer.id,
+      title: "Order request received",
+      body: `Your buyer order request ${order.code} has been received. The team will confirm availability, pricing, payment and fulfilment.`,
+      channel: "Portal",
+      direction: "Outbound",
+      status: "Logged",
+      recipient: customer.email || customer.phone,
+      source: "Buyer portal",
+      relatedType: "Order",
+      relatedId: order.id,
+    },
+  });
+
   revalidatePath("/buyer-account");
+  revalidatePath("/buyer-account/inbox");
   revalidatePath("/admin/orders");
   revalidatePath("/admin");
   revalidatePath("/admin/audit-log");
@@ -729,7 +745,23 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
     actorRole: "Buyer portal",
   });
 
+  await prisma.buyerMessage.create({
+    data: {
+      customerId: customer.id,
+      title: "Profile update request received",
+      body: `Your ${request.requestType.toLowerCase()} has been submitted for review.`,
+      channel: "Portal",
+      direction: "Outbound",
+      status: "Logged",
+      recipient: customer.email || customer.phone,
+      source: "Buyer portal",
+      relatedType: "BuyerProfileUpdateRequest",
+      relatedId: request.id,
+    },
+  });
+
   revalidatePath("/buyer-account");
+  revalidatePath("/buyer-account/inbox");
   revalidatePath("/admin/buyer-profile-requests");
   revalidatePath("/admin/audit-log");
   redirect("/buyer-account?profileSubmitted=1#profile-updates");
