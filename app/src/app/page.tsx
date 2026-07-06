@@ -1,7 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
-import MobileJourneyNav from "@/components/MobileJourneyNav";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -114,9 +114,9 @@ export default async function HomePage() {
                 Order on WhatsApp
               </a>
             </nav>
+            <PublicMobileMenu />
           </header>
 
-        <MobileJourneyNav />
           <div className="grid gap-10 py-14 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-20">
             <section>
               <h1 className="oft-fade-up max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">

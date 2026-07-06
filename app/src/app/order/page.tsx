@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import PublicMobileMenu from "@/components/PublicMobileMenu";
 
 const whatsappOrderHref =
   "https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___";
@@ -40,11 +41,12 @@ export default function OrderPage() {
             </Link>
             <Link
               href="/contact"
-              className="rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white"
+              className="hidden rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white md:inline-flex"
             >
               Contact
             </Link>
           </nav>
+          <PublicMobileMenu />
         </header>
 
         <section className="grid gap-8 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">
