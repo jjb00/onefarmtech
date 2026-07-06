@@ -7,6 +7,16 @@ const globalForPrisma = globalThis as unknown as {
   prismaPool?: Pool;
 };
 
+function readPoolMax() {
+  const configured = Number(process.env.DATABASE_POOL_MAX);
+
+  if (Number.isFinite(configured) && configured >= 1) {
+    return Math.floor(configured);
+  }
+
+  return process.env.NODE_ENV === "production" ? 1 : 3;
+}
+
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL;
 
@@ -18,17 +28,16 @@ function createPrismaClient() {
     globalForPrisma.prismaPool ??
     new Pool({
       connectionString,
-      max: 3,
-      idleTimeoutMillis: 10_000,
+      max: readPoolMax(),
+      idleTimeoutMillis: 5_000,
       connectionTimeoutMillis: 10_000,
+      maxUses: 500,
       ssl: {
         rejectUnauthorized: false,
       },
     });
 
-  if (process.env.NODE_ENV !== "production") {
-    globalForPrisma.prismaPool = pool;
-  }
+  globalForPrisma.prismaPool = pool;
 
   const adapter = new PrismaPg(pool);
 
@@ -37,6 +46,4 @@ function createPrismaClient() {
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+globalForPrisma.prisma = prisma;
