@@ -4,6 +4,9 @@ import {getDbOrders} from "@/data/dbOrders";
 import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function percentage(value: number, total: number) {
   if (total === 0) {
     return "0%";

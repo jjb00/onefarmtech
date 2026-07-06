@@ -6,6 +6,9 @@ import {
   createBuyerContactAction,
 } from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 const buyerContactRoles = [
   "Owner / director",
   "Procurement lead",

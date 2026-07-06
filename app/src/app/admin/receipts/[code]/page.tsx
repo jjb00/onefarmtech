@@ -4,6 +4,9 @@ import {prisma} from "@/lib/prisma";
 import {formatNaira} from "@/lib/format";
 import BrandMark from "@/components/BrandMark";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type ReceiptDetailPageProps = {
   params: Promise<{
     code: string;

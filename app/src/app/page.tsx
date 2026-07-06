@@ -4,6 +4,9 @@ import PublicImageCollage from "@/components/PublicImageCollage";
 import MobileJourneyNav from "@/components/MobileJourneyNav";
 import {prisma} from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 async function getHomepageActivity() {
   const activeGroupBuy = await prisma.groupBuy.findFirst({
     where: {

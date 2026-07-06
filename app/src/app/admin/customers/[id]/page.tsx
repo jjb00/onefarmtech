@@ -6,6 +6,9 @@ import {prisma} from "@/lib/prisma";
 import {formatNaira} from "@/lib/format";
 import {updateCustomerAccountAction} from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type CustomerDetailPageProps = {
   params: Promise<{
     id: string;

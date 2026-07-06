@@ -8,6 +8,9 @@ import {staffRoles} from "@/lib/permissions";
 import {staffStatusOptions} from "@/lib/formOptions";
 import {createStaffUserAction} from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function formatDate(value?: Date | string | null) {
   if (!value) return "Not recorded";
 

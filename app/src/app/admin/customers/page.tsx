@@ -4,6 +4,9 @@ import {prisma} from "@/lib/prisma";
 import {createCustomerAction} from "@/actions/createAdminRecords";
 import {buyerTypes} from "@/constants/orderOptions";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function money(value: number) {
   return `₦${value.toLocaleString()}`;
 }

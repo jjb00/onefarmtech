@@ -3,6 +3,9 @@ import AdminPageShell from "@/components/AdminPageShell";
 import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function money(value: number) {
   return `₦${value.toLocaleString()}`;
 }

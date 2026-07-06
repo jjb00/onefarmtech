@@ -2,6 +2,9 @@ import AdminPageShell from "@/components/AdminPageShell";
 import {prisma} from "@/lib/prisma";
 import {updateOrderRequestStatusAction} from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export default async function OrderRequestsPage() {
   const requests = await prisma.orderRequest.findMany({
     orderBy: {createdAt: "desc"},

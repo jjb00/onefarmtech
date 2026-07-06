@@ -9,6 +9,9 @@ import {
   updateOrderRequestStatusAction,
 } from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function whatsappHref(phone?: string | null, message?: string) {
   const digits = (phone || "").replace(/\D/g, "");
   if (!digits) return null;

@@ -5,6 +5,9 @@ import {
   updateBuyerAccountRequestStatusAction,
 } from "@/actions/createAdminRecords";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 export default async function BuyerAccountRequestsPage() {
   const requests = await prisma.buyerAccountRequest.findMany({
     orderBy: {createdAt: "desc"},

@@ -15,6 +15,9 @@ import {prisma} from "@/lib/prisma";
 import {getCurrentStaffActor} from "@/lib/currentStaff";
 import {canAccessAdminPath} from "@/lib/adminAccess";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type AdminDashboardPageProps = {
   searchParams?: Promise<{
     access?: string;
