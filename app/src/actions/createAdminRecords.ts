@@ -2,6 +2,7 @@
 
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
+import {requireBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
@@ -613,6 +614,81 @@ export async function createOrderRequestAction(formData: FormData) {
   revalidatePath("/admin/order-requests");
   revalidatePath("/admin/audit-log");
   redirect("/order-request?submitted=1");
+}
+
+async function makeOrderCode() {
+  const count = await prisma.order.count();
+
+  return `OFT-${String(count + 1).padStart(5, "0")}`;
+}
+
+export async function createBuyerPortalOrderAction(formData: FormData) {
+  const {customer} = await requireBuyer();
+
+  const items = readText(formData, "items");
+  const deliveryPreference = readText(formData, "deliveryPreference", "Delivery");
+  const timing = readText(formData, "timing");
+  const groupBuyInterest = readBoolean(formData, "groupBuyInterest");
+  const message = readText(formData, "message");
+
+  if (!items) {
+    throw new Error("Items and quantities are required.");
+  }
+
+  const order = await prisma.order.create({
+    data: {
+      code: await makeOrderCode(),
+      customerId: customer.id,
+      buyerName: customer.name,
+      phone: customer.phone,
+      buyerType: customer.buyerType,
+      orderType: "Buyer portal request",
+      paymentStatus: "Pending confirmation",
+      fulfilmentStatus: "Buyer request",
+      deliveryMethod: deliveryPreference,
+      deliveryNote: [
+        timing ? `Timing: ${timing}` : null,
+        groupBuyInterest ? "Open to group-buy if useful." : null,
+        message || null,
+        `Requested items: ${items}`,
+      ]
+        .filter(Boolean)
+        .join("\n"),
+      estimatedTotal: 0,
+      adminNote: "Created from buyer account portal. Admin should confirm availability, pricing, delivery plan and payment step.",
+      items: {
+        create: {
+          name: "Buyer requested items",
+          grade: "To confirm",
+          quantity: 1,
+          unit: "Request",
+          unitPrice: 0,
+          lineTotal: 0,
+        },
+      },
+    },
+  });
+
+  await createAuditLog({
+    action: "Created buyer portal order",
+    entityType: "Order",
+    entityId: order.id,
+    entityLabel: order.code,
+    newValue: {
+      order,
+      requestedItems: items,
+      timing,
+      groupBuyInterest,
+      message,
+    },
+    actorRole: "Buyer portal",
+  });
+
+  revalidatePath("/buyer-account");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin");
+  revalidatePath("/admin/audit-log");
+  redirect("/buyer-account?orderSubmitted=1");
 }
 
 export async function updateBuyerAccountRequestStatusAction(formData: FormData) {

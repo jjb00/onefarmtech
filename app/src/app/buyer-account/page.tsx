@@ -32,7 +32,7 @@ export default async function BuyerAccountPage() {
 
             <div className="flex flex-wrap gap-3">
               <Link
-                href="/order"
+                href="/buyer-account/order"
                 className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
                 Place order
@@ -86,13 +86,18 @@ export default async function BuyerAccountPage() {
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            <BuyerActionCard
-              title="Repeat last order"
-              description="Ask the team to prepare a repeat order based on your usual buying pattern."
-              actionLabel="Request repeat order"
-              message={`I want to repeat a previous OneFarmTech order for ${customer.name}. Please help me confirm the items, quantity, price and delivery details.`}
-              context={`Buyer account: ${customer.name} · Repeat order`}
-            />
+            <article className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-5">
+              <h3 className="text-lg font-black">Repeat or place order</h3>
+              <p className="mt-2 min-h-14 text-sm leading-7 text-[#405348]">
+                Submit a buyer-linked order request so it appears in your account history.
+              </p>
+              <Link
+                href="/buyer-account/order"
+                className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Start buyer order
+              </Link>
+            </article>
 
             <BuyerActionCard
               title="Request bulk quote"
@@ -188,7 +193,7 @@ export default async function BuyerAccountPage() {
                 {customer.orders.map((order) => (
                   <Link
                     key={order.id}
-                    href="/order"
+                    href="/buyer-account/order"
                     className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-4 transition hover:bg-[#f3f8ef]"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
@@ -288,7 +293,7 @@ export default async function BuyerAccountPage() {
               context={`Buyer account: ${customer.name}`}
             />
             <Link
-              href="/order"
+              href="/buyer-account/order"
               className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white"
             >
               Place another order
