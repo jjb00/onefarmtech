@@ -69,3 +69,7 @@ export async function requireBuyer() {
     customer,
   };
 }
+
+export async function getCurrentBuyer() {
+  return getCurrentBuyerActor();
+}
