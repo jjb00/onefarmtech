@@ -1147,3 +1147,190 @@ export async function updateDeliveryPartnerStatusAction(formData: FormData) {
   revalidatePath("/admin/delivery-partners");
   redirect("/admin/delivery-partners?updated=1");
 }
+
+export async function createWhatsAppAssistedOrderAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {
+    matchBuyerByPhone,
+    makePaymentReference,
+    normalisePhone,
+    parseMoney,
+    parseQuantity,
+    formatNaira,
+  } = await import("@/lib/commerce/whatsappOrders");
+
+  await requireStaff();
+
+  const whatsappPhoneInput = String(formData.get("whatsappPhone") || "").trim();
+  const buyerNameInput = String(formData.get("buyerName") || "").trim();
+  const buyerTypeInput = String(formData.get("buyerType") || "WhatsApp buyer").trim();
+  const deliveryMethod = String(formData.get("deliveryMethod") || "Delivery").trim();
+  const deliveryAddress = String(formData.get("deliveryAddress") || "").trim();
+  const deliveryArea = String(formData.get("deliveryArea") || "").trim();
+  const deliveryNote = String(formData.get("deliveryNote") || "").trim();
+  const adminNote = String(formData.get("adminNote") || "").trim();
+
+  const deliveryFee = parseMoney(formData.get("deliveryFee"), 0);
+  const serviceFee = parseMoney(formData.get("serviceFee"), 0);
+  const discountAmount = parseMoney(formData.get("discountAmount"), 0);
+
+  const matched = await matchBuyerByPhone(whatsappPhoneInput);
+  const sourcePhone = matched.phone || normalisePhone(whatsappPhoneInput);
+
+  if (!sourcePhone) {
+    redirect("/admin/whatsapp-orders/new?error=missing-phone");
+  }
+
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+    },
+    orderBy: [{category: "asc"}, {name: "asc"}],
+  });
+
+  const selectedLines = products
+    .map((product) => {
+      const quantity = parseQuantity(formData.get(`quantity_${product.id}`));
+      if (quantity <= 0) return null;
+
+      const unitPrice = product.basePrice || 0;
+      const lineTotal = quantity * unitPrice;
+
+      return {
+        product,
+        quantity,
+        unitPrice,
+        lineTotal,
+      };
+    })
+    .filter(Boolean) as Array<{
+      product: Awaited<ReturnType<typeof prisma.product.findMany>>[number];
+      quantity: number;
+      unitPrice: number;
+      lineTotal: number;
+    }>;
+
+  if (selectedLines.length === 0) {
+    redirect("/admin/whatsapp-orders/new?error=no-items");
+  }
+
+  const subtotal = selectedLines.reduce((sum, line) => sum + line.lineTotal, 0);
+  const totalAmount = Math.max(0, subtotal + deliveryFee + serviceFee - discountAmount);
+  const orderCode = await makeOrderCode();
+
+  const buyerName =
+    matched.customer?.fullName ||
+    buyerNameInput ||
+    matched.buyerContact?.name ||
+    "WhatsApp buyer";
+
+  const buyerType =
+    matched.customer?.buyerType ||
+    buyerTypeInput ||
+    "WhatsApp buyer";
+
+  const order = await prisma.order.create({
+    data: {
+      code: orderCode,
+      customerId: matched.customer?.id || null,
+      buyerName,
+      phone: sourcePhone,
+      buyerType,
+      orderType: "WhatsApp assisted",
+      paymentStatus: "Payment pending",
+      fulfilmentStatus: "WhatsApp order received",
+      deliveryMethod,
+      deliveryNote: deliveryNote || null,
+      source: "WhatsApp",
+      sourcePhone,
+      buyerContactId: matched.buyerContact?.id || null,
+      subtotal,
+      deliveryFee,
+      serviceFee,
+      discountAmount,
+      totalAmount,
+      estimatedTotal: totalAmount,
+      adminNote: adminNote || "Created from WhatsApp-assisted admin order entry.",
+      items: {
+        create: selectedLines.map((line) => ({
+          productId: line.product.id,
+          productName: line.product.name,
+          category: line.product.category,
+          unit: line.product.unit,
+          quantity: line.quantity,
+          unitPrice: line.unitPrice,
+          lineTotal: line.lineTotal,
+        })),
+      },
+    },
+    include: {
+      items: true,
+    },
+  });
+
+  const paymentReference = await makePaymentReference(order.code);
+
+  await prisma.paymentRequest.create({
+    data: {
+      orderId: order.id,
+      customerId: matched.customer?.id || null,
+      provider: "Manual",
+      reference: paymentReference,
+      amount: totalAmount,
+      currency: "NGN",
+      status: "Pending",
+    },
+  });
+
+  await prisma.order.update({
+    where: {id: order.id},
+    data: {
+      paymentReference,
+    },
+  });
+
+  await prisma.delivery.create({
+    data: {
+      orderId: order.id,
+      customerId: matched.customer?.id || null,
+      deliveryMethod,
+      deliveryFee,
+      deliveryAddress: deliveryAddress || null,
+      deliveryArea: deliveryArea || null,
+      status: "Pending assignment",
+    },
+  });
+
+  if (matched.customer?.id) {
+    const itemSummary = selectedLines
+      .map((line) => `- ${line.product.name}: ${line.quantity} ${line.product.unit} x ${formatNaira(line.unitPrice)} = ${formatNaira(line.lineTotal)}`)
+      .join("\\n");
+
+    await prisma.buyerMessage.create({
+      data: {
+        customerId: matched.customer.id,
+        title: `WhatsApp order ${order.code} received`,
+        body: `Your WhatsApp order has been recorded.\\n\\n${itemSummary}\\n\\nSubtotal: ${formatNaira(subtotal)}\\nDelivery: ${formatNaira(deliveryFee)}\\nService fee: ${formatNaira(serviceFee)}\\nDiscount: ${formatNaira(discountAmount)}\\nTotal: ${formatNaira(totalAmount)}\\n\\nPayment reference: ${paymentReference}`,
+        channel: "WhatsApp",
+        direction: "Outbound",
+        status: "Prepared",
+        recipient: sourcePhone,
+        source: "WhatsApp-assisted order",
+        relatedType: "Order",
+        relatedId: order.id,
+      },
+    });
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/whatsapp-orders/new");
+  revalidatePath("/admin/deliveries");
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/buyer-account/orders");
+  revalidatePath("/buyer-account/inbox");
+
+  redirect(`/admin/orders/${order.id}`);
+}
