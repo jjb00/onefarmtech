@@ -70,15 +70,12 @@ export default async function OrderRequestPage({
             </h1>
 
             <p className="mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
-              Submit a structured request for fresh produce, bulk buying, pickup,
-              delivery, or group-buy support. The team will review it manually and
-              follow up.
+              Share your items, quantity, location and timing. We will confirm availability, price and fulfilment details before payment or delivery.
             </p>
 
             <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/90 p-5 text-sm leading-7 text-[#405348] shadow-sm backdrop-blur">
-              <strong className="text-[#102015]">WhatsApp-first workflow:</strong>{" "}
-              This form creates an internal order request record. WhatsApp can still
-              be used for quick follow-up, clarifications, and fulfilment coordination.
+              <strong className="text-[#102015]">What happens next:</strong>{" "}
+              Your request goes to the OneFarmTech team. We check the order, confirm what is available, then follow up by WhatsApp or phone.
             </div>
           </div>
 
@@ -90,11 +87,11 @@ export default async function OrderRequestPage({
 
             {submitted ? (
               <p className="mt-3 rounded-2xl bg-[#3E7A4C]/10 p-4 text-sm font-bold leading-7 text-[#1f7a3f]">
-                Your order request has been received. The OneFarmTech team will review it manually.
+                Your order request has been received. We will check availability and follow up with the next step.
               </p>
             ) : (
               <p className="mt-2 text-sm leading-7 text-[#405348]">
-                Add the items, quantities, timing, and preferred fulfilment option.
+                Add what you want to buy, how much you need, and where it should go.
               </p>
             )}
 
@@ -168,7 +165,7 @@ export default async function OrderRequestPage({
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                  Delivery / pickup preference
+                  Delivery or pickup
                   <select
                     name="deliveryPreference"
                     defaultValue="Delivery"
@@ -196,7 +193,7 @@ export default async function OrderRequestPage({
 
               <label className="flex items-start gap-3 rounded-2xl bg-[#f3f8ef] p-4 text-sm font-semibold leading-7 text-[#102015]">
                 <input name="groupBuyInterest" type="checkbox" className="mt-1" />
-                I am interested in joining or organising a group-buy to reduce cost.
+                I am open to a group-buy if it can reduce cost or make the order easier to fulfil.
               </label>
 
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
@@ -205,7 +202,7 @@ export default async function OrderRequestPage({
                   name="message"
                   rows={4}
                   className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="Any special notes, delivery details, preferred markets, or recurring needs?"
+                  placeholder="Delivery notes, preferred timing, quality preference, recurring needs, or anything else we should know."
                 />
               </label>
 
@@ -213,7 +210,7 @@ export default async function OrderRequestPage({
                 type="submit"
                 className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
-                Submit order request
+                Send order request
               </button>
             </div>
           </form>
