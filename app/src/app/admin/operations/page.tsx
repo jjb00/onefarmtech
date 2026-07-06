@@ -12,6 +12,11 @@ const operations = [
     description: "Create database orders from WhatsApp conversations using live product prices.",
   },
   {
+    title: "Guest buyers",
+    href: "/admin/guest-buyers",
+    description: "Review unlinked WhatsApp/event buyers and identify account conversion candidates.",
+  },
+  {
     title: "Buyer messages",
     href: "/admin/buyer-messages",
     description: "View buyer communication evidence, prepared WhatsApp messages and account notices.",
