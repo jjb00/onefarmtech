@@ -15,18 +15,17 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
   const nextPath = params?.next || "/admin";
 
   return (
-    <main className="min-h-screen bg-[#07120c] px-6 py-10 text-white">
+    <main className="min-h-screen bg-[#07120c] px-4 py-6 text-white sm:px-6 sm:py-10">
       <section className="mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-        <div className="grid w-full gap-8 rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl md:grid-cols-[0.9fr_1.1fr] md:p-8">
-          <div className="rounded-[1.5rem] bg-[#f8f1e7] p-8 text-[#102015]">
+        <div className="w-full rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-3 shadow-2xl sm:rounded-[2rem] sm:p-6 md:grid md:grid-cols-[0.9fr_1.1fr] md:gap-8 md:p-8">
+          <div className="hidden rounded-[1.5rem] bg-[#f8f1e7] p-8 text-[#102015] md:block">
             <BrandMark />
             <h1 className="mt-8 text-4xl font-black leading-tight">
               Staff operations console.
             </h1>
             <p className="mt-5 text-sm leading-6 text-[#405348]">
-              Manage OneFarmTech orders, customers, payments, receipts, complaints,
-              group buys, buyer accounts, and manual WhatsApp operations from one
-              controlled admin desk.
+              Manage OneFarmTech orders, buyers, payments, receipts, complaints,
+              group buys and WhatsApp-first operations from one controlled admin desk.
             </p>
 
             <div className="mt-6 rounded-2xl border border-[#c95f3d]/20 bg-[#c95f3d]/10 p-4">
@@ -34,26 +33,39 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
                 Controlled staff access
               </p>
               <p className="mt-2 text-xs leading-5 text-[#405348]">
-                This shared staff gate protects the launch admin area. The selected
-                role now controls which admin pages are visible during this session.
+                The selected role controls which admin pages are visible during this session.
               </p>
             </div>
           </div>
 
           <form
             action={loginAction}
-            className="flex flex-col justify-center rounded-[1.5rem] bg-white p-6 text-[#102015]"
+            className="flex flex-col justify-center rounded-[1.25rem] bg-white p-5 text-[#102015] sm:rounded-[1.5rem] sm:p-6"
           >
             <input type="hidden" name="next" value={nextPath} />
 
-            <p className="text-sm font-bold uppercase tracking-[0.25em] text-[#1f7a3f]">
+            <div className="md:hidden">
+              <BrandMark />
+            </div>
+
+            <p className="mt-6 text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f] md:mt-0">
               Staff access
             </p>
-            <h2 className="mt-3 text-3xl font-black">Sign in</h2>
-            <p className="mt-2 text-sm text-[#405348]">
-              Enter the staff access password and select the role for this session.
-              The role controls which admin pages are visible.
+            <h1 className="mt-3 text-3xl font-black leading-tight sm:text-4xl md:text-3xl">
+              Enter staff console
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
+              Sign in to manage orders, buyers, payments and launch operations.
             </p>
+
+            <details className="mt-4 rounded-2xl border border-[#101712]/10 bg-[#f8f1e7] p-4 text-sm md:hidden">
+              <summary className="cursor-pointer font-black text-[#102015]">
+                What is this login for?
+              </summary>
+              <p className="mt-3 leading-6 text-[#405348]">
+                This is the staff-only admin area. Your selected role controls which pages are visible after sign in.
+              </p>
+            </details>
 
             {hasError && (
               <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700">
@@ -110,7 +122,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
 
             <button
               type="submit"
-              className="mt-6 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
+              className="mt-6 w-full rounded-full bg-[#1f7a3f] px-5 py-4 text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
             >
               Enter staff console
             </button>
