@@ -111,22 +111,40 @@ export default async function HomePage() {
                 href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
                 className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
               >
-                Start an order
+                Order on WhatsApp
               </a>
             </nav>
           </header>
           <div data-testid="mobile-launch-cta-row" className="mt-5 grid grid-cols-2 gap-3 md:hidden">
-            <Link
-              href="/order-request"
+            <a
+              href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
               className="rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white shadow-sm"
             >
-              Order
+              WhatsApp order
+            </a>
+            <Link
+              href="/order-request"
+              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+            >
+              Order form
             </Link>
             <Link
               href="/buyer-account-request"
-              className="rounded-full border border-[#101712]/10 bg-white/85 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
             >
               Buyer account
+            </Link>
+            <Link
+              href="/faq"
+              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+            >
+              FAQ
+            </Link>
+            <Link
+              href="/contact"
+              className="col-span-2 rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+            >
+              Contact
             </Link>
           </div>
 
@@ -146,7 +164,7 @@ export default async function HomePage() {
                   href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
                   className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
                 >
-                  Order fresh produce
+                  Order on WhatsApp
                 </a>
                 <a
                   href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20join%20or%20create%20a%20group%20buy.%20Group%20type%3A%20family%2Ffriends%2Fcity%2Fbusiness.%20Location%3A%20___%20Items%3A%20___"
