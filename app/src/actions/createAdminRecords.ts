@@ -997,3 +997,35 @@ export async function updateContactEnquiryStatusAction(formData: FormData) {
   revalidatePath("/admin/launch-inbox");
   revalidatePath("/admin/audit-log");
 }
+
+export async function markBuyerMessageReadAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {prisma} = await import("@/lib/prisma");
+  const {getCurrentBuyer} = await import("@/lib/currentBuyer");
+
+  const buyer = await getCurrentBuyer();
+  if (!buyer?.customerId) {
+    redirect("/buyer-account-request");
+  }
+
+  const messageId = String(formData.get("messageId") || "");
+  if (!messageId) {
+    redirect("/buyer-account/inbox");
+  }
+
+  await prisma.buyerMessage.updateMany({
+    where: {
+      id: messageId,
+      customerId: buyer.customerId,
+    },
+    data: {
+      status: "Read",
+      readAt: new Date(),
+    },
+  });
+
+  revalidatePath("/buyer-account");
+  revalidatePath("/buyer-account/inbox");
+  redirect("/buyer-account/inbox");
+}
