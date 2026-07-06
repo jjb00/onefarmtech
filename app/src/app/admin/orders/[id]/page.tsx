@@ -9,6 +9,13 @@ import {
 } from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {
+  buildDeliveredMessage,
+  buildDeliveryAssignedMessage,
+  buildOrderSummaryMessage,
+  buildOutForDeliveryMessage,
+  buildPaymentRequestMessage,
+} from "@/lib/communications/orderTemplates";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -171,6 +178,62 @@ export default async function AdminOrderDetailPage({
 
   const subtotal = order.subtotal || order.items.reduce((sum, item) => sum + item.lineTotal, 0);
   const total = order.totalAmount || order.estimatedTotal || subtotal;
+  const latestPaymentRequest = order.paymentRequests[0];
+  const latestReceipt = order.receipts[0];
+
+  const templateInput = {
+    code: order.code,
+    buyerName: order.customer?.fullName || order.buyerName,
+    paymentStatus: order.paymentStatus,
+    fulfilmentStatus: order.fulfilmentStatus,
+    totalAmount: total,
+    subtotal,
+    deliveryFee: order.deliveryFee,
+    serviceFee: order.serviceFee,
+    discountAmount: order.discountAmount,
+    paymentReference: order.paymentReference || latestPaymentRequest?.reference,
+    paymentUrl: latestPaymentRequest?.paymentUrl,
+    bankName: latestPaymentRequest?.bankName,
+    accountNumber: latestPaymentRequest?.accountNumber,
+    accountName: latestPaymentRequest?.accountName,
+    deliveryMethod: order.delivery?.deliveryMethod || order.deliveryMethod,
+    deliveryArea: order.delivery?.deliveryArea,
+    deliveryAddress: order.delivery?.deliveryAddress || order.deliveryNote,
+    deliveryPartnerName:
+      order.delivery?.deliveryPartner?.name || order.delivery?.deliveryPartnerName,
+    trackingReference: order.delivery?.trackingReference,
+    receiptCode: latestReceipt?.code,
+    items: order.items.map((item) => ({
+      productName: item.productName,
+      unit: item.unit,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      lineTotal: item.lineTotal,
+    })),
+  };
+
+  const whatsappTemplates = [
+    {
+      title: "Order summary",
+      body: buildOrderSummaryMessage(templateInput),
+    },
+    {
+      title: "Payment request",
+      body: buildPaymentRequestMessage(templateInput),
+    },
+    {
+      title: "Delivery assigned",
+      body: buildDeliveryAssignedMessage(templateInput),
+    },
+    {
+      title: "Out for delivery",
+      body: buildOutForDeliveryMessage(templateInput),
+    },
+    {
+      title: "Delivered / receipt",
+      body: buildDeliveredMessage(templateInput),
+    },
+  ];
 
   return (
     <AdminPage
@@ -649,6 +712,40 @@ export default async function AdminOrderDetailPage({
               Link this order to a buyer account before logging buyer inbox messages.
             </p>
           )}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              WhatsApp templates
+            </p>
+            <h3 className="mt-2 text-2xl font-black text-[#102015]">
+              Copy-ready buyer updates
+            </h3>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+              Use these messages for manual WhatsApp updates now. Later, these templates can feed the WhatsApp API workflow.
+            </p>
+          </div>
+
+          <Link
+            href="/admin/whatsapp-tools"
+            className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+          >
+            WhatsApp tools
+          </Link>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {whatsappTemplates.map((template) => (
+            <article key={template.title} className="rounded-2xl border border-[#102015]/10 p-5">
+              <h4 className="font-black text-[#102015]">{template.title}</h4>
+              <pre className="mt-4 whitespace-pre-wrap rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#102015]">
+{template.body}
+              </pre>
+            </article>
+          ))}
         </div>
       </section>
 
