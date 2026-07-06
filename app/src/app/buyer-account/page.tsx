@@ -2,6 +2,7 @@ import Link from "next/link";
 import {buyerLogoutAction} from "@/actions/auth";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
+import SupportChatLauncher from "@/components/SupportChatLauncher";
 
 export default async function BuyerAccountPage() {
   const {buyer, customer} = await requireBuyer();
@@ -209,12 +210,10 @@ export default async function BuyerAccountPage() {
             contacts, or order history look incorrect.
           </p>
           <div className="mt-5 flex flex-wrap gap-3">
-            <Link
-              href="/contact"
-              className="rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015]"
-            >
-              Contact support
-            </Link>
+            <SupportChatLauncher
+              label="Contact support"
+              context={`Buyer account: ${customer.name}`}
+            />
             <Link
               href="/order"
               className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white"
