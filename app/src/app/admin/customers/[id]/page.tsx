@@ -114,11 +114,19 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
           >
             <input type="hidden" name="customerId" value={customer.id} />
 
-            <h2 className="text-2xl font-black">Account controls</h2>
+            <h2 className="text-2xl font-black">Manual account settings</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Update recurring buyer settings before proper buyer login is connected.
-              These controls prepare the account for receipts, credit limits, and approved access.
+              Use this panel to approve and maintain the buyer account manually. Credit limits,
+              payment terms, balances, receipt email, and login readiness are set by the
+              OneFarmTech admin team.
             </p>
+
+            <div className="mt-5 rounded-2xl border border-[#F2B84B]/40 bg-[#fff8e6] p-4 text-sm leading-7 text-[#5d4716]">
+              <strong className="text-[#102015]">Credit approval note:</strong>{" "}
+              buyer interest in credit is only a request signal. Credit is not approved until
+              admin sets the credit limit, payment terms, customer status, and marks the account
+              as ready.
+            </div>
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-semibold">
@@ -197,7 +205,7 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
                   className="h-4 w-4"
                   defaultChecked={customer.accountLoginReady}
                 />
-                Mark buyer as login-ready when proper auth is connected
+                Mark buyer as login-ready after admin approval and access-code setup
               </label>
             </div>
 
@@ -243,7 +251,7 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
             <div>
               <h2 className="text-2xl font-black">Buyer access controls</h2>
               <p className="mt-1 text-sm text-[#405348]">
-                Authorised contacts and invite records prepared for future buyer login.
+                Add authorised contacts and generate access codes for approved buyer login.
               </p>
             </div>
             <Link
