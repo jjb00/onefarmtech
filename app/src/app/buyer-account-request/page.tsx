@@ -44,12 +44,12 @@ export default async function BuyerAccountRequestPage({
           </Link>
 
           <nav className="flex items-center gap-3">
-            <Link
-              href="/faq"
+            <a
+              href="#buyer-login-panel"
               className="hidden rounded-full border border-[#101712]/10 bg-white/80 px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-white md:inline-flex"
             >
-              FAQ
-            </Link>
+              Buyer login
+            </a>
             <Link
               href="/order"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
@@ -115,7 +115,58 @@ export default async function BuyerAccountRequestPage({
             </div>
           </div>
 
+          <div className="grid gap-5">
+            <details
+              id="buyer-login-panel"
+              className="group rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-sm backdrop-blur"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4">
+                <span>
+                  <span className="block text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+                    Already approved?
+                  </span>
+                  <span className="mt-2 block text-2xl font-black text-[#102015]">
+                    Buyer login
+                  </span>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f3f8ef] text-2xl font-black text-[#1f7a3f] transition group-open:rotate-90"
+                >
+                  ›
+                </span>
+              </summary>
+
+              <div className="mt-5 rounded-2xl bg-[#f7f5ec] p-5">
+                <p className="text-sm leading-7 text-[#405348]">
+                  Buyer login is for approved OneFarmTech buyers whose account access has been activated by the team. Use the access details shared with you when your buyer profile is ready.
+                </p>
+
+                <div className="mt-5 grid gap-3">
+                  <Link
+                    href="/contact"
+                    className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                  >
+                    Contact support for access
+                  </Link>
+                  <Link
+                    href="/order"
+                    className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-center text-sm font-black text-[#101712]"
+                  >
+                    Place an order instead
+                  </Link>
+                  <a
+                    href="#buyer-account-request-form"
+                    className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-center text-sm font-black text-[#101712]"
+                  >
+                    Request buyer account setup
+                  </a>
+                </div>
+              </div>
+            </details>
+
           <form
+            id="buyer-account-request-form"
             action={createBuyerAccountRequestAction}
             className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur"
           >
@@ -299,6 +350,7 @@ Your account request has been received. We’ll review your details and get back
               </button>
             </div>
           </form>
+          </div>
         </section>
       </div>
     </main>
