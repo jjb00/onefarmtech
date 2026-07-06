@@ -1088,3 +1088,62 @@ export async function updateDeliveryPartnerStatusAction(formData: FormData) {
   revalidatePath("/admin/delivery-partners");
   redirect("/admin/delivery-partners?updated=1");
 }
+
+export async function createDeliveryPartnerAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const name = String(formData.get("name") || "").trim();
+  const contactName = String(formData.get("contactName") || "").trim();
+  const phone = String(formData.get("phone") || "").trim();
+  const email = String(formData.get("email") || "").trim();
+  const serviceArea = String(formData.get("serviceArea") || "").trim();
+  const notes = String(formData.get("notes") || "").trim();
+
+  if (!name) {
+    redirect("/admin/delivery-partners?error=missing-name");
+  }
+
+  await prisma.deliveryPartner.create({
+    data: {
+      name,
+      contactName: contactName || null,
+      phone: phone || null,
+      email: email || null,
+      serviceArea: serviceArea || null,
+      notes: notes || null,
+      status: "Active",
+    },
+  });
+
+  revalidatePath("/admin/delivery-partners");
+  redirect("/admin/delivery-partners?created=1");
+}
+
+export async function updateDeliveryPartnerStatusAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "");
+  const status = String(formData.get("status") || "Active");
+
+  if (!id) {
+    redirect("/admin/delivery-partners");
+  }
+
+  await prisma.deliveryPartner.update({
+    where: {id},
+    data: {status},
+  });
+
+  revalidatePath("/admin/delivery-partners");
+  redirect("/admin/delivery-partners?updated=1");
+}
