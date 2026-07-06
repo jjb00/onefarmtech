@@ -76,77 +76,6 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     ["Operating manual", "/admin/operating-manual"],
   ].filter(([, href]) => canAccessAdminPath(staff.role, href));
 
-  const dashboardGroups = [
-    {
-      title: "Launch operations",
-      description: "Review new buyer requests, order requests and public enquiries.",
-      links: [
-        ["Launch inbox", "/admin/launch-inbox", "All incoming launch requests in one place."],
-        ["Order requests", "/admin/order-requests", "Fresh produce requests submitted from the public site."],
-        ["Account requests", "/admin/buyer-account-requests", "Buyer account setup requests awaiting review."],
-        ["Contact enquiries", "/admin/contact-enquiries", "General support, supplier and buyer messages."],
-      ],
-    },
-    {
-      title: "Orders & fulfilment",
-      description: "Create, manage and fulfil orders from WhatsApp-first operations.",
-      links: [
-        ["Create order", "/admin/create-order", "Manually create a buyer order."],
-        ["Orders", "/admin/orders", "Track submitted and active orders."],
-        ["Draft orders", "/admin/drafts", "Review local draft orders before processing."],
-        ["Deliveries", "/admin/deliveries", "Manage delivery and pickup activity."],
-        ["Group-buys", "/admin/group-buys", "Coordinate pooled buyer demand."],
-        ["Pickup locations", "/admin/pickup-locations", "Manage pickup points and coverage."],
-      ],
-    },
-    {
-      title: "Commercial records",
-      description: "Maintain buyer, product and supplier records.",
-      links: [
-        ["Customers", "/admin/customers", "Buyer records and order history."],
-        ["Buyer accounts", "/admin/buyer-accounts", "Approved buyer profiles and account status."],
-        ["Buyer access", "/admin/buyer-access", "Login readiness and buyer access control."],
-        ["Products", "/admin/products", "Catalogue, availability and product status."],
-        ["Suppliers", "/admin/suppliers", "Supply partners and fulfilment contacts."],
-      ],
-    },
-    {
-      title: "Finance",
-      description: "Track payments, receipts and finance-facing records.",
-      links: [
-        ["Payments", "/admin/payments", "Payment records and reconciliation status."],
-        ["Receipts", "/admin/receipts", "Issue and view buyer receipts."],
-        ["Reports", "/admin/reports", "Company metrics and investor update snapshot."],
-      ],
-    },
-    {
-      title: "Support & operations",
-      description: "Handle issues, WhatsApp workflows and internal operating guidance.",
-      links: [
-        ["Complaints", "/admin/complaints", "Buyer complaints and issue resolution."],
-        ["WhatsApp ops", "/admin/whatsapp", "WhatsApp-first message workflows."],
-        ["Workflows", "/admin/workflows", "Operational process checklists."],
-        ["Operating manual", "/admin/operating-manual", "Internal launch operating guidance."],
-      ],
-    },
-    {
-      title: "Control room",
-      description: "Manage staff, access, security, audit and deployment readiness.",
-      links: [
-        ["Staff", "/admin/staff", "Staff users and assigned roles."],
-        ["Permissions", "/admin/permissions", "Role access reference."],
-        ["Security", "/admin/security", "Admin security controls and notes."],
-        ["Audit log", "/admin/audit-log", "Recorded admin actions."],
-        ["Deployment readiness", "/admin/deployment-readiness", "Launch readiness checks."],
-      ],
-    },
-  ]
-    .map((group) => ({
-      ...group,
-      links: group.links.filter(([, href]) => canAccessAdminPath(staff.role, href)),
-    }))
-    .filter((group) => group.links.length > 0);
-
   return (
     <AdminShell
       title="Admin dashboard"
@@ -193,46 +122,6 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
           <MetricCard label="Payments recorded" value={formatNaira(paymentTotal)} href="/admin/payments" />
           <MetricCard label="Receipts issued" value={formatNaira(receiptTotal)} href="/admin/receipts" />
         </div>
-
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                Command centre
-              </p>
-              <h2 className="mt-3 text-2xl font-black">Admin work areas</h2>
-              <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-                Use these grouped work areas to move quickly from launch inbox to orders, fulfilment, finance, support and control-room tasks.
-              </p>
-            </div>
-            <p className="rounded-full bg-[#f3f8ef] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#1f7a3f]">
-              {staff.role}
-            </p>
-          </div>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
-            {dashboardGroups.map((group) => (
-              <div
-                key={group.title}
-                className="rounded-3xl border border-[#102015]/10 bg-[#f7f5ec] p-5"
-              >
-                <h3 className="text-lg font-black">{group.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-[#405348]">{group.description}</p>
-
-                <div className="mt-5 grid gap-3">
-                  {group.links.map(([label, href, description]) => (
-                    <DashboardLinkCard
-                      key={href}
-                      label={label}
-                      href={href}
-                      description={description}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
 
         <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
           <AdminDisclosure title="Recent orders" defaultOpen={false}>
@@ -385,33 +274,6 @@ function MetricCard({label, value, href}: {label: string; value: string; href: s
     <Link href={href} className="rounded-3xl bg-white p-5 text-[#102015] transition hover:translate-y-[-1px]">
       <p className="text-sm text-[#405348]">{label}</p>
       <p className="mt-2 text-2xl font-black">{value}</p>
-    </Link>
-  );
-}
-
-function DashboardLinkCard({
-  label,
-  href,
-  description,
-}: {
-  label: string;
-  href: string;
-  description: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="rounded-2xl bg-white p-4 text-[#102015] transition hover:translate-y-[-1px] hover:shadow-sm"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-black text-[#1f7a3f]">{label}</p>
-          <p className="mt-1 text-sm leading-6 text-[#405348]">{description}</p>
-        </div>
-        <span className="text-lg font-black text-[#1f7a3f]" aria-hidden="true">
-          →
-        </span>
-      </div>
     </Link>
   );
 }
