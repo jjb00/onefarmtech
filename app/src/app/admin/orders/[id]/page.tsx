@@ -4,6 +4,7 @@ import {notFound} from "next/navigation";
 import {AdminPage} from "@/components/portal/AdminPage";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
 import {
+  createPaymentRequestFromOrderAction,
   linkOrderToCustomerAction,
   logOrderBuyerMessageAction,
   updateAdminOrderControlAction,
@@ -613,9 +614,91 @@ export default async function AdminOrderDetailPage({
 
           <div className="mt-5 grid gap-3">
             {order.paymentRequests.length === 0 ? (
-              <p className="rounded-2xl bg-[#f7f5ec] p-4 text-sm text-[#405348]">
-                No payment requests created.
-              </p>
+              <form
+                action={createPaymentRequestFromOrderAction}
+                className="rounded-2xl bg-[#f7f5ec] p-4"
+              >
+                <input type="hidden" name="orderId" value={order.id} />
+
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div>
+                    <p className="font-black text-[#102015]">No payment request yet</p>
+                    <p className="mt-1 text-sm leading-6 text-[#405348]">
+                      Create a payment request from this order total, then confirm payment from the payment requests page.
+                    </p>
+                  </div>
+                  <p className="text-xl font-black text-[#102015]">{formatNaira(total)}</p>
+                </div>
+
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Amount
+                    <input
+                      name="amount"
+                      defaultValue={total}
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Provider
+                    <select
+                      name="provider"
+                      defaultValue="Manual"
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                    >
+                      <option>Manual</option>
+                      <option>Bank transfer</option>
+                      <option>Paystack</option>
+                      <option>Flutterwave</option>
+                      <option>Cash</option>
+                    </select>
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Payment URL
+                    <input
+                      name="paymentUrl"
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                      placeholder="Optional link"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Bank name
+                    <input
+                      name="bankName"
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                      placeholder="Optional"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Account number
+                    <input
+                      name="accountNumber"
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                      placeholder="Optional"
+                    />
+                  </label>
+
+                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                    Account name
+                    <input
+                      name="accountName"
+                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                      placeholder="Optional"
+                    />
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  className="mt-4 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                >
+                  Create payment request
+                </button>
+              </form>
             ) : (
               order.paymentRequests.map((request) => (
                 <div key={request.id} className="rounded-2xl border border-[#102015]/10 p-4">

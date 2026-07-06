@@ -1495,6 +1495,103 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
   redirect("/admin/deliveries?assigned=1");
 }
 
+
+export async function createPaymentRequestFromOrderAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const orderId = String(formData.get("orderId") || "");
+  const provider = String(formData.get("provider") || "Manual").trim() || "Manual";
+  const amountInput = String(formData.get("amount") || "").replace(/[^\d]/g, "");
+  const paymentUrl = String(formData.get("paymentUrl") || "").trim();
+  const bankName = String(formData.get("bankName") || "").trim();
+  const accountNumber = String(formData.get("accountNumber") || "").trim();
+  const accountName = String(formData.get("accountName") || "").trim();
+
+  if (!orderId) {
+    redirect("/admin/orders?error=missing-order");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: {id: orderId},
+    include: {
+      paymentRequests: {
+        orderBy: {createdAt: "desc"},
+        take: 1,
+      },
+    },
+  });
+
+  if (!order) {
+    redirect("/admin/orders?error=order-not-found");
+  }
+
+  const amount =
+    amountInput.length > 0
+      ? Number(amountInput)
+      : order.totalAmount || order.estimatedTotal || order.subtotal || 0;
+
+  if (!amount || amount <= 0) {
+    redirect(`/admin/orders/${orderId}?error=invalid-payment-amount`);
+  }
+
+  const reference = await makePaymentReference(order.code);
+
+  await prisma.paymentRequest.create({
+    data: {
+      orderId: order.id,
+      customerId: order.customerId || null,
+      provider,
+      reference,
+      amount,
+      currency: "NGN",
+      status: "Pending",
+      paymentUrl: paymentUrl || null,
+      bankName: bankName || null,
+      accountNumber: accountNumber || null,
+      accountName: accountName || null,
+    },
+  });
+
+  await prisma.order.update({
+    where: {id: order.id},
+    data: {
+      paymentReference: reference,
+      paymentStatus: "Payment pending",
+    },
+  });
+
+  if (order.customerId) {
+    await prisma.buyerMessage.create({
+      data: {
+        customerId: order.customerId,
+        title: `Payment request for ${order.code}`,
+        body: `A payment request has been created for order ${order.code}.\\n\\nReference: ${reference}\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(amount)}`,
+        channel: "Portal",
+        direction: "Outbound",
+        status: "Unread",
+        recipient: order.phone,
+        source: "Payment request",
+        relatedType: "PaymentRequest",
+        relatedId: reference,
+      },
+    });
+  }
+
+  revalidatePath("/admin/payment-requests");
+  revalidatePath(`/admin/orders/${order.id}`);
+  revalidatePath("/buyer-account/payments");
+  revalidatePath(`/buyer-account/orders/${order.id}`);
+  revalidatePath("/buyer-account/inbox");
+
+  redirect(`/admin/orders/${order.id}?paymentRequest=created`);
+}
+
+
 export async function updatePaymentRequestStatusAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
