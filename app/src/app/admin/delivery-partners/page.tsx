@@ -1,6 +1,7 @@
 import {AdminPage} from "@/components/portal/AdminPage";
 import {
   createDeliveryPartnerAction,
+  generateDeliveryPartnerAccessCodeAction,
   updateDeliveryPartnerStatusAction,
 } from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
@@ -127,13 +128,14 @@ export default async function DeliveryPartnersPage() {
                 <th className="px-5 py-4 font-semibold">Service area</th>
                 <th className="px-5 py-4 font-semibold">Deliveries</th>
                 <th className="px-5 py-4 font-semibold">Status</th>
+                <th className="px-5 py-4 font-semibold">Access</th>
                 <th className="px-5 py-4 font-semibold">Update</th>
               </tr>
             </thead>
             <tbody>
               {partners.length === 0 ? (
                 <tr>
-                  <td className="px-5 py-6 text-[#405348]" colSpan={6}>
+                  <td className="px-5 py-6 text-[#405348]" colSpan={7}>
                     No delivery partners added yet.
                   </td>
                 </tr>
@@ -158,6 +160,22 @@ export default async function DeliveryPartnersPage() {
                       <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
                         {partner.status}
                       </span>
+                    </td>
+                    <td className="px-5 py-4">
+                      <div className="grid gap-2">
+                        <p className="text-xs font-bold text-[#405348]">
+                          {partner.accessCode || "No access code"}
+                        </p>
+                        <form action={generateDeliveryPartnerAccessCodeAction}>
+                          <input type="hidden" name="id" value={partner.id} />
+                          <button
+                            type="submit"
+                            className="rounded-full border border-[#102015]/15 px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]"
+                          >
+                            {partner.accessCode ? "Regenerate" : "Create code"}
+                          </button>
+                        </form>
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       <form action={updateDeliveryPartnerStatusAction} className="flex gap-2">

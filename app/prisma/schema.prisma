@@ -379,6 +379,9 @@ model DeliveryPartner {
   status       String     @default("Active")
   notes        String?
   deliveries   Delivery[]
+  accessCode   String?    @unique
+  accessStatus String     @default("Not invited")
+  lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }

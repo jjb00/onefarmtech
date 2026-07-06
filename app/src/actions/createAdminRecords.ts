@@ -1334,3 +1334,136 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
 
   redirect(`/admin/orders/${order.id}`);
 }
+
+export async function generateDeliveryPartnerAccessCodeAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "");
+  if (!id) {
+    redirect("/admin/delivery-partners");
+  }
+
+  const accessCode = `DP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+
+  await prisma.deliveryPartner.update({
+    where: {id},
+    data: {
+      accessCode,
+      accessStatus: "Active",
+    },
+  });
+
+  revalidatePath("/admin/delivery-partners");
+  redirect("/admin/delivery-partners?access=created");
+}
+
+export async function deliveryPartnerLoginAction(formData: FormData) {
+  const {redirect} = await import("next/navigation");
+  const {prisma} = await import("@/lib/prisma");
+  const {setDeliveryPartnerSession} = await import("@/lib/currentDeliveryPartner");
+
+  const accessCode = String(formData.get("accessCode") || "").trim().toUpperCase();
+
+  if (!accessCode) {
+    redirect("/delivery-partner/login?error=missing-code");
+  }
+
+  const partner = await prisma.deliveryPartner.findFirst({
+    where: {
+      accessCode,
+      status: "Active",
+      accessStatus: "Active",
+    },
+  });
+
+  if (!partner) {
+    redirect("/delivery-partner/login?error=invalid-code");
+  }
+
+  await prisma.deliveryPartner.update({
+    where: {id: partner.id},
+    data: {lastLoginAt: new Date()},
+  });
+
+  await setDeliveryPartnerSession(partner.id);
+  redirect("/delivery-partner/jobs");
+}
+
+export async function deliveryPartnerLogoutAction() {
+  const {redirect} = await import("next/navigation");
+  const {clearDeliveryPartnerSession} = await import("@/lib/currentDeliveryPartner");
+
+  await clearDeliveryPartnerSession();
+  redirect("/delivery-partner/login");
+}
+
+export async function updateDeliveryJobStatusAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {prisma} = await import("@/lib/prisma");
+  const {getCurrentDeliveryPartner} = await import("@/lib/currentDeliveryPartner");
+
+  const partner = await getCurrentDeliveryPartner();
+
+  if (!partner) {
+    redirect("/delivery-partner/login");
+  }
+
+  const deliveryId = String(formData.get("deliveryId") || "");
+  const status = String(formData.get("status") || "Accepted");
+  const proofOfDeliveryNote = String(formData.get("proofOfDeliveryNote") || "").trim();
+
+  if (!deliveryId) {
+    redirect("/delivery-partner/jobs");
+  }
+
+  const delivery = await prisma.delivery.findFirst({
+    where: {
+      id: deliveryId,
+      deliveryPartnerId: partner.id,
+    },
+    select: {
+      id: true,
+      orderId: true,
+    },
+  });
+
+  if (!delivery) {
+    redirect("/delivery-partner/jobs?error=not-found");
+  }
+
+  await prisma.delivery.update({
+    where: {id: delivery.id},
+    data: {
+      status,
+      proofOfDeliveryNote: proofOfDeliveryNote || undefined,
+      deliveredAt: status === "Delivered" ? new Date() : undefined,
+    },
+  });
+
+  const fulfilmentStatus =
+    status === "Delivered"
+      ? "Delivered"
+      : status === "In transit"
+        ? "Out for delivery"
+        : status === "Picked up"
+          ? "Picked up by delivery partner"
+          : status === "Failed / issue"
+            ? "Delivery issue"
+            : "Delivery assigned";
+
+  await prisma.order.update({
+    where: {id: delivery.orderId},
+    data: {fulfilmentStatus},
+  });
+
+  revalidatePath("/delivery-partner/jobs");
+  revalidatePath("/admin/deliveries");
+  revalidatePath(`/admin/orders/${delivery.orderId}`);
+  redirect("/delivery-partner/jobs?updated=1");
+}
