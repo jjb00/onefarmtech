@@ -5,13 +5,26 @@ import BuyerLoginModal from "@/components/BuyerLoginModal";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 
+const buyerLoginMessages: Record<string, string> = {
+  missing: "Please enter both your email/phone and buyer access code.",
+  invalid: "Access code not recognised. Check the code shared by the OneFarmTech team.",
+  identifier: "The email or phone entered does not match this buyer access code.",
+  cancelled: "This buyer access code has been cancelled. Please contact support for a new code.",
+  expired: "This buyer access code has expired. Please contact support for a new code.",
+  "not-ready": "This buyer account is not login-ready yet. The OneFarmTech team may still be reviewing the account.",
+  required: "Please sign in to view your buyer account.",
+};
+
 export default async function BuyerAccountRequestPage({
   searchParams,
 }: {
-  searchParams?: Promise<{submitted?: string}>;
+  searchParams?: Promise<{submitted?: string; buyerLogin?: string}>;
 }) {
   const params = await searchParams;
   const submitted = params?.submitted === "1";
+  const buyerLoginMessage = params?.buyerLogin
+    ? buyerLoginMessages[params.buyerLogin]
+    : null;
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] text-[#101712]">
@@ -117,6 +130,12 @@ export default async function BuyerAccountRequestPage({
             className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur"
           >
             <h2 className="text-2xl font-black">Account setup details</h2>
+
+            {buyerLoginMessage ? (
+              <div className="mt-3 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ed] p-4 text-sm font-bold leading-7 text-[#8b3f25]">
+                {buyerLoginMessage}
+              </div>
+            ) : null}
 
             {submitted ? (
               <p className="mt-3 rounded-2xl bg-[#3E7A4C]/10 p-4 text-sm font-bold leading-7 text-[#1f7a3f]">
