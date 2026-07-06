@@ -79,17 +79,20 @@ export default async function BuyerProfilePage() {
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="max-w-3xl">
-          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">
-            Request changes
-          </p>
-          <h2 className="mt-2 text-2xl font-black">Update profile or contacts</h2>
-          <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Submit the changes you want reviewed. Approved account records are updated by admin.
-          </p>
-        </div>
+        <details>
+          <summary className="cursor-pointer list-none">
+            <div className="max-w-3xl">
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">
+                Request changes
+              </p>
+              <h2 className="mt-2 text-2xl font-black">Update profile or contacts</h2>
+              <p className="mt-2 text-sm leading-7 text-[#405348]">
+                Submit changes only when account, contact, buying or finance details need admin review.
+              </p>
+            </div>
+          </summary>
 
-        <form action={createBuyerProfileUpdateRequestAction} className="mt-6 grid gap-4">
+          <form action={createBuyerProfileUpdateRequestAction} className="mt-6 grid gap-4">
           <label className="grid gap-2 text-sm font-bold text-[#102015]">
             Request type
             <select
@@ -149,7 +152,8 @@ export default async function BuyerProfilePage() {
           >
             Submit change request
           </button>
-        </form>
+          </form>
+        </details>
       </section>
     </BuyerPortalFrame>
   );

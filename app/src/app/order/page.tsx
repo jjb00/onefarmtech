@@ -73,42 +73,37 @@ export default function OrderPage() {
               className="rounded-[2rem] bg-[#1f7a3f] p-6 text-white shadow-xl transition hover:bg-[#155c2f]"
             >
               <p className="text-sm font-black uppercase tracking-[0.22em] text-[#9ee6ad]">
-                Fastest
+                Primary route
               </p>
               <h2 className="mt-3 text-3xl font-black">Order on WhatsApp</h2>
               <p className="mt-3 text-sm leading-7 text-white/75">
-                Best if you want to quickly message your items, ask questions, confirm availability or continue an existing conversation.
+                Fastest for fresh produce orders, availability checks and follow-up with the OneFarmTech team.
               </p>
               <span className="mt-5 inline-flex rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015]">
                 Open WhatsApp
               </span>
             </a>
 
-            <Link
-              href="/order-request"
-              className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 text-[#102015] shadow-sm transition hover:bg-[#f3f8ef]"
-            >
-              <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                Structured request
-              </p>
-              <h2 className="mt-3 text-3xl font-black">Use the order form</h2>
-              <p className="mt-3 text-sm leading-7 text-[#405348]">
-                Best for restaurants, caterers, retailers, households or groups with several items, quantities, delivery notes or recurring needs.
-              </p>
-              <span className="mt-5 inline-flex rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white">
-                Fill order form
-              </span>
-            </Link>
-
-            <Link
-              href="/buyer-account-request"
-              className="rounded-[2rem] border border-[#101712]/10 bg-[#f3f8ef] p-5 text-[#102015]"
-            >
-              <h2 className="text-xl font-black">Ordering regularly?</h2>
+            <div className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 text-[#102015] shadow-sm">
+              <h2 className="text-xl font-black">Other order options</h2>
               <p className="mt-2 text-sm leading-7 text-[#405348]">
-                Request a buyer account for order history, receipts, authorised contacts and repeat-order support.
+                Use the form for structured requests, or request a buyer account if you order regularly.
               </p>
-            </Link>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <Link
+                  href="/order-request"
+                  className="rounded-full border border-[#101712]/10 bg-[#f3f8ef] px-5 py-3 text-sm font-black text-[#102015]"
+                >
+                  Order form
+                </Link>
+                <Link
+                  href="/buyer-account-request"
+                  className="rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#102015]"
+                >
+                  Buyer account
+                </Link>
+              </div>
+            </div>
           </div>
         </section>
       </div>

@@ -43,7 +43,7 @@ export default async function BuyerAccountPage({
               {customer.name}
             </h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Manage orders, payments, contacts and account requests from the side menu.
+              View recent account activity and use the main actions below for orders or profile changes.
             </p>
           </div>
 
@@ -63,7 +63,7 @@ export default async function BuyerAccountPage({
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-2">
         <ActionCard
           title="Place buyer order"
           body="Submit an order linked to this account."
@@ -72,16 +72,10 @@ export default async function BuyerAccountPage({
           primary
         />
         <ActionCard
-          title="Profile"
-          body="View account details, contacts and request changes."
+          title="Profile and account settings"
+          body="View company details, authorised contacts, credit readiness and request changes."
           href="/buyer-account/profile"
           label="Open profile"
-        />
-        <ActionCard
-          title="Credit review"
-          body="Review terms, credit limit and partner-readiness."
-          href="/buyer-account/credit"
-          label="View credit"
         />
       </section>
 

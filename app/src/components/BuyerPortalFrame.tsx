@@ -8,7 +8,6 @@ const navItems = [
   ["Profile", "/buyer-account/profile"],
   ["Orders", "/buyer-account/orders"],
   ["Payments", "/buyer-account/payments"],
-  ["Credit", "/buyer-account/credit"],
   ["Support", "/buyer-account/support"],
 ];
 
@@ -56,21 +55,28 @@ export default function BuyerPortalFrame({
             </nav>
 
             <div className="mt-5 grid gap-3">
-              <Link
-                href="/buyer-account/order"
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-              >
-                New buyer order
-              </Link>
+              <details className="rounded-2xl border border-[#102015]/10 bg-white p-3">
+                <summary className="cursor-pointer text-sm font-black text-[#102015]">
+                  Account actions
+                </summary>
+                <div className="mt-3 grid gap-2">
+                  <Link
+                    href="/buyer-account/order"
+                    className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                  >
+                    New buyer order
+                  </Link>
 
-              <form action={buyerLogoutAction}>
-                <button
-                  type="submit"
-                  className="w-full rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] shadow-sm hover:bg-[#f3f8ef]"
-                >
-                  Sign out
-                </button>
-              </form>
+                  <form action={buyerLogoutAction}>
+                    <button
+                      type="submit"
+                      className="w-full rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] shadow-sm hover:bg-[#f3f8ef]"
+                    >
+                      Sign out
+                    </button>
+                  </form>
+                </div>
+              </details>
             </div>
           </div>
         </aside>
