@@ -109,43 +109,51 @@ export default async function HomePage() {
               </Link>
               <a
                 href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                className="hidden rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] md:inline-flex"
               >
                 Order on WhatsApp
               </a>
             </nav>
           </header>
-          <div data-testid="mobile-launch-cta-row" className="mt-5 grid grid-cols-2 gap-3 md:hidden">
-            <a
-              href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
-              className="rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white shadow-sm"
-            >
-              WhatsApp order
-            </a>
-            <Link
-              href="/order-request"
-              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
-            >
-              Order form
-            </Link>
-            <Link
-              href="/buyer-account-request"
-              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
-            >
-              Buyer account
-            </Link>
-            <Link
-              href="/faq"
-              className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
-            >
-              FAQ
-            </Link>
-            <Link
-              href="/contact"
-              className="col-span-2 rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
-            >
-              Contact
-            </Link>
+          <div
+            data-testid="mobile-launch-cta-row"
+            className="mt-5 rounded-[1.5rem] border border-[#101712]/10 bg-white/90 p-3 shadow-sm backdrop-blur md:hidden"
+          >
+            <p className="px-2 pb-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+              What do you need?
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              <a
+                href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
+                className="col-span-2 rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white shadow-sm"
+              >
+                Order on WhatsApp
+              </a>
+              <Link
+                href="/order-request"
+                className="rounded-full border border-[#101712]/10 bg-[#f3f8ef] px-4 py-3 text-center text-sm font-black text-[#101712]"
+              >
+                Order form
+              </Link>
+              <Link
+                href="/buyer-account-request"
+                className="rounded-full border border-[#101712]/10 bg-[#f3f8ef] px-4 py-3 text-center text-sm font-black text-[#101712]"
+              >
+                Buyer account
+              </Link>
+              <Link
+                href="/faq"
+                className="rounded-full border border-[#101712]/10 bg-white px-4 py-3 text-center text-sm font-black text-[#101712]"
+              >
+                FAQ
+              </Link>
+              <Link
+                href="/contact"
+                className="rounded-full border border-[#101712]/10 bg-white px-4 py-3 text-center text-sm font-black text-[#101712]"
+              >
+                Contact
+              </Link>
+            </div>
           </div>
 
           <div className="grid gap-10 py-14 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-20">
@@ -159,7 +167,7 @@ export default async function HomePage() {
                 groups order fresh produce, join bulk buys, track payments and receive receipts.
               </p>
 
-              <div className="mt-8 flex flex-wrap gap-3">
+              <div className="mt-8 hidden flex-wrap gap-3 md:flex">
                 <a
                   href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
                   className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
