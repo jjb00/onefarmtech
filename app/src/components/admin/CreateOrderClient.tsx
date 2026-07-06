@@ -76,6 +76,20 @@ export default function CreateOrderClient({
     (product) => product.id === form.productId
   );
 
+  const produceItemOptions = Array.from(
+    new Set([
+      ...productOptions.map((product) => product.name).filter(Boolean),
+      ...produceItems,
+    ])
+  ).sort((a, b) => a.localeCompare(b));
+
+  const produceGradeOptions = Array.from(
+    new Set([
+      ...productOptions.map((product) => product.grade).filter(Boolean),
+      ...produceGrades,
+    ])
+  );
+
   const quantityNumber = Number(form.quantity) || 0;
   const unitPriceNumber = Number(form.unitPrice) || selectedProduct?.basePrice || 0;
   const estimatedTotal = quantityNumber * unitPriceNumber;
@@ -287,7 +301,7 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
               value={form.produceItem}
               onChange={(event) => updateField("produceItem", event.target.value)}
             >
-              {produceItems.map((item) => (
+              {produceItemOptions.map((item) => (
                 <option key={item}>{item}</option>
               ))}
             </select>
@@ -301,7 +315,7 @@ Admin note: generate Paystack payment link later when gateway is connected.`;
               value={form.produceGrade}
               onChange={(event) => updateField("produceGrade", event.target.value)}
             >
-              {produceGrades.map((grade) => (
+              {produceGradeOptions.map((grade) => (
                 <option key={grade}>{grade}</option>
               ))}
             </select>
