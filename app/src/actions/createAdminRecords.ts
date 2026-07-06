@@ -1467,3 +1467,81 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
   revalidatePath(`/admin/orders/${delivery.orderId}`);
   redirect("/delivery-partner/jobs?updated=1");
 }
+
+export async function assignDeliveryPartnerAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const deliveryId = String(formData.get("deliveryId") || "");
+  const deliveryPartnerId = String(formData.get("deliveryPartnerId") || "");
+  const status = String(formData.get("status") || "Assigned");
+  const deliveryFeeRaw = String(formData.get("deliveryFee") || "").replace(/[^\d]/g, "");
+  const deliveryFee = deliveryFeeRaw ? Number.parseInt(deliveryFeeRaw, 10) : 0;
+  const deliveryArea = String(formData.get("deliveryArea") || "").trim();
+  const deliveryAddress = String(formData.get("deliveryAddress") || "").trim();
+  const trackingReference = String(formData.get("trackingReference") || "").trim();
+  const proofOfDeliveryNote = String(formData.get("proofOfDeliveryNote") || "").trim();
+
+  if (!deliveryId) {
+    redirect("/admin/deliveries?error=missing-delivery");
+  }
+
+  const partner = deliveryPartnerId
+    ? await prisma.deliveryPartner.findUnique({
+        where: {id: deliveryPartnerId},
+        select: {id: true, name: true, phone: true},
+      })
+    : null;
+
+  const delivery = await prisma.delivery.update({
+    where: {id: deliveryId},
+    data: {
+      deliveryPartnerId: partner?.id || null,
+      deliveryPartnerName: partner?.name || null,
+      deliveryPartnerPhone: partner?.phone || null,
+      deliveryFee,
+      deliveryArea: deliveryArea || null,
+      deliveryAddress: deliveryAddress || null,
+      trackingReference: trackingReference || null,
+      proofOfDeliveryNote: proofOfDeliveryNote || null,
+      status,
+    },
+    select: {
+      id: true,
+      orderId: true,
+      order: {
+        select: {
+          totalAmount: true,
+          subtotal: true,
+          serviceFee: true,
+          discountAmount: true,
+        },
+      },
+    },
+  });
+
+  const fulfilmentStatus = partner ? "Delivery assigned" : "Delivery pending assignment";
+  const totalAmount = Math.max(
+    0,
+    (delivery.order.subtotal || 0) + deliveryFee + (delivery.order.serviceFee || 0) - (delivery.order.discountAmount || 0)
+  );
+
+  await prisma.order.update({
+    where: {id: delivery.orderId},
+    data: {
+      fulfilmentStatus,
+      deliveryFee,
+      totalAmount,
+      estimatedTotal: totalAmount,
+    },
+  });
+
+  revalidatePath("/admin/deliveries");
+  revalidatePath(`/admin/orders/${delivery.orderId}`);
+  revalidatePath("/delivery-partner/jobs");
+  redirect("/admin/deliveries?assigned=1");
+}
