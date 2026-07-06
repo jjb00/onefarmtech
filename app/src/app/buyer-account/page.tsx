@@ -72,10 +72,10 @@ export default async function BuyerAccountPage({
           primary
         />
         <ActionCard
-          title="Update profile"
-          body="Request company, contact or buying-profile changes."
-          href="/buyer-account/profile-updates"
-          label="Request update"
+          title="Profile"
+          body="View account details, contacts and request changes."
+          href="/buyer-account/profile"
+          label="Open profile"
         />
         <ActionCard
           title="Credit review"

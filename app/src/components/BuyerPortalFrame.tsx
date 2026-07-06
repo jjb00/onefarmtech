@@ -8,8 +8,6 @@ const navItems = [
   ["Orders", "/buyer-account/orders"],
   ["Payments", "/buyer-account/payments"],
   ["Credit", "/buyer-account/credit"],
-  ["Contacts", "/buyer-account/contacts"],
-  ["Profile updates", "/buyer-account/profile-updates"],
   ["Support", "/buyer-account/support"],
 ];
 
