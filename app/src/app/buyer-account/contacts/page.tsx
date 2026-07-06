@@ -1,8 +1,8 @@
 import {redirect} from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
-export default function BuyerContactsRedirectPage() {
+export default function RedirectToBuyerProfile() {
+  // Contacts are now managed from the consolidated buyer profile page.
   redirect("/buyer-account/profile");
 }
