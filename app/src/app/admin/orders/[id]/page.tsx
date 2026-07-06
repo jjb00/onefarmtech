@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import {AdminPage} from "@/components/portal/AdminPage";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
 import {
+  linkOrderToCustomerAction,
   logOrderBuyerMessageAction,
   updateAdminOrderControlAction,
 } from "@/actions/createAdminRecords";
@@ -141,17 +142,32 @@ export default async function AdminOrderDetailPage({
     notFound();
   }
 
-  const buyerMessages = order.customerId
-    ? await prisma.buyerMessage.findMany({
-        where: {
-          customerId: order.customerId,
-          relatedType: "Order",
-          relatedId: order.id,
-        },
-        orderBy: {createdAt: "desc"},
-        take: 10,
-      })
-    : [];
+  const [buyerMessages, linkableCustomers] = await Promise.all([
+    order.customerId
+      ? prisma.buyerMessage.findMany({
+          where: {
+            customerId: order.customerId,
+            relatedType: "Order",
+            relatedId: order.id,
+          },
+          orderBy: {createdAt: "desc"},
+          take: 10,
+        })
+      : Promise.resolve([]),
+    order.customerId
+      ? Promise.resolve([])
+      : prisma.customer.findMany({
+          orderBy: {fullName: "asc"},
+          take: 200,
+          select: {
+            id: true,
+            fullName: true,
+            phoneNormalized: true,
+            buyerType: true,
+            accountStatus: true,
+          },
+        }),
+  ]);
 
   const subtotal = order.subtotal || order.items.reduce((sum, item) => sum + item.lineTotal, 0);
   const total = order.totalAmount || order.estimatedTotal || subtotal;
@@ -242,8 +258,47 @@ export default async function AdminOrderDetailPage({
           </div>
 
           {!order.customerId ? (
-            <div className="mt-5 rounded-2xl bg-[#fff6d6] p-4 text-sm leading-7 text-[#7a4a00]">
-              This order is not linked to a buyer account. Link the phone number to a buyer/customer account so future WhatsApp orders update the buyer portal automatically.
+            <div className="mt-5 rounded-2xl bg-[#fff6d6] p-4">
+              <p className="text-sm leading-7 text-[#7a4a00]">
+                This is a guest or unlinked WhatsApp order. Keep it unlinked for one-off/event buyers, or link it to a buyer account if this is a recurring customer.
+              </p>
+
+              <form action={linkOrderToCustomerAction} className="mt-4 grid gap-3">
+                <input type="hidden" name="orderId" value={order.id} />
+
+                <label className="grid gap-2 text-sm font-bold text-[#7a4a00]">
+                  Link to existing buyer account
+                  <select
+                    name="customerId"
+                    defaultValue=""
+                    className="rounded-2xl border border-[#7a4a00]/20 bg-white px-4 py-3 text-[#102015]"
+                  >
+                    <option value="">Select buyer account</option>
+                    {linkableCustomers.map((customer) => (
+                      <option key={customer.id} value={customer.id}>
+                        {customer.fullName} · {customer.buyerType || "Buyer"} · {customer.accountStatus}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="flex items-center gap-3 text-sm font-bold text-[#7a4a00]">
+                  <input
+                    type="checkbox"
+                    name="createBuyerContact"
+                    defaultChecked
+                    className="h-4 w-4"
+                  />
+                  Save this WhatsApp phone as a buyer contact for future matching
+                </label>
+
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                >
+                  Link order to buyer account
+                </button>
+              </form>
             </div>
           ) : null}
         </div>

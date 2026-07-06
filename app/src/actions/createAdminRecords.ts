@@ -1842,3 +1842,123 @@ export async function logOrderBuyerMessageAction(formData: FormData) {
 
   redirect(`/admin/orders/${orderId}?message=logged`);
 }
+
+export async function linkOrderToCustomerAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {normalisePhone} = await import("@/lib/commerce/whatsappOrders");
+
+  await requireStaff();
+
+  const orderId = String(formData.get("orderId") || "");
+  const customerId = String(formData.get("customerId") || "");
+  const createBuyerContact = String(formData.get("createBuyerContact") || "") === "on";
+
+  if (!orderId) {
+    redirect("/admin/orders?error=missing-order");
+  }
+
+  if (!customerId) {
+    redirect(`/admin/orders/${orderId}?error=missing-customer`);
+  }
+
+  const [order, customer] = await Promise.all([
+    prisma.order.findUnique({
+      where: {id: orderId},
+    }),
+    prisma.customer.findUnique({
+      where: {id: customerId},
+    }),
+  ]);
+
+  if (!order || !customer) {
+    redirect(`/admin/orders/${orderId}?error=link-not-found`);
+  }
+
+  const phone = normalisePhone(order.sourcePhone || order.phone);
+
+  await prisma.order.update({
+    where: {id: order.id},
+    data: {
+      customerId: customer.id,
+      buyerName: customer.fullName,
+      buyerType: customer.buyerType || order.buyerType,
+      phone: phone || order.phone,
+      sourcePhone: phone || order.sourcePhone,
+      adminNote: [
+        order.adminNote || "",
+        `Linked to buyer account ${customer.fullName} from admin order detail.`,
+      ]
+        .filter(Boolean)
+        .join("\\n"),
+    },
+  });
+
+  if (createBuyerContact && phone) {
+    const existingContact = await prisma.buyerContact.findFirst({
+      where: {
+        customerId: customer.id,
+        OR: [
+          {phone},
+          {phoneNormalized: phone},
+          {phoneNormalized: phone.replace(/[^\\d]/g, "")},
+        ],
+      },
+    });
+
+    if (!existingContact) {
+      await prisma.buyerContact.create({
+        data: {
+          customerId: customer.id,
+          name: order.buyerName || customer.fullName,
+          email: null,
+          phone,
+          phoneNormalized: phone,
+          role: "WhatsApp ordering contact",
+          status: "Active",
+        },
+      });
+    }
+  }
+
+  await prisma.paymentRequest.updateMany({
+    where: {orderId: order.id},
+    data: {customerId: customer.id},
+  });
+
+  await prisma.receipt.updateMany({
+    where: {orderId: order.id},
+    data: {customerId: customer.id},
+  });
+
+  await prisma.delivery.updateMany({
+    where: {orderId: order.id},
+    data: {customerId: customer.id},
+  });
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId: customer.id,
+      title: `Order ${order.code} linked to your account`,
+      body: `Order ${order.code} has been linked to your OneFarmTech buyer account. You can now view the order, payment and delivery status in your portal.`,
+      channel: "Portal",
+      direction: "Outbound",
+      status: "Unread",
+      recipient: phone || order.phone,
+      source: "Order linked to buyer account",
+      relatedType: "Order",
+      relatedId: order.id,
+    },
+  });
+
+  revalidatePath(`/admin/orders/${order.id}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/buyer-account/orders");
+  revalidatePath(`/buyer-account/orders/${order.id}`);
+  revalidatePath("/buyer-account/inbox");
+
+  redirect(`/admin/orders/${order.id}?linked=1`);
+}
