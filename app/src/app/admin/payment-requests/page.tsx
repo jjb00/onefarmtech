@@ -258,17 +258,31 @@ export default async function AdminPaymentRequestsPage() {
                       Open payment link
                     </a>
                   ) : (
-                    <form action={generatePaymentLinkAction}>
-                      <input type="hidden" name="id" value={request.id} />
-                      <input type="hidden" name="provider" value="Paystack" />
-                      <button
-                        type="submit"
-                        disabled={request.status === "Paid"}
-                        className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Generate Paystack link
-                      </button>
-                    </form>
+                    <>
+                      <form action={generatePaymentLinkAction}>
+                        <input type="hidden" name="id" value={request.id} />
+                        <input type="hidden" name="provider" value="Paystack" />
+                        <button
+                          type="submit"
+                          disabled={request.status === "Paid"}
+                          className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Generate Paystack link
+                        </button>
+                      </form>
+
+                      <form action={generatePaymentLinkAction}>
+                        <input type="hidden" name="id" value={request.id} />
+                        <input type="hidden" name="provider" value="Flutterwave" />
+                        <button
+                          type="submit"
+                          disabled={request.status === "Paid"}
+                          className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Generate Flutterwave link
+                        </button>
+                      </form>
+                    </>
                   )}
 
                   <form action={issueReceiptFromPaymentRequestAction}>

@@ -658,17 +658,31 @@ export default async function AdminOrderDetailPage({
                       Open link
                     </a>
                   ) : (
-                    <form action={generatePaymentLinkAction}>
-                      <input type="hidden" name="id" value={latestPaymentRequest.id} />
-                      <input type="hidden" name="provider" value="Paystack" />
-                      <button
-                        type="submit"
-                        disabled={latestPaymentRequest.status === "Paid"}
-                        className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Generate Paystack link
-                      </button>
-                    </form>
+                    <>
+                      <form action={generatePaymentLinkAction}>
+                        <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                        <input type="hidden" name="provider" value="Paystack" />
+                        <button
+                          type="submit"
+                          disabled={latestPaymentRequest.status === "Paid"}
+                          className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Generate Paystack link
+                        </button>
+                      </form>
+
+                      <form action={generatePaymentLinkAction}>
+                        <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                        <input type="hidden" name="provider" value="Flutterwave" />
+                        <button
+                          type="submit"
+                          disabled={latestPaymentRequest.status === "Paid"}
+                          className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef] disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Generate Flutterwave link
+                        </button>
+                      </form>
+                    </>
                   )}
                 </div>
               </div>

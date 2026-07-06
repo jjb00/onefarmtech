@@ -1,4 +1,5 @@
 import {createPaystackCheckout} from "./paystack";
+import {createFlutterwaveCheckout} from "./flutterwave";
 
 export type PaymentProviderName = "Manual" | "Bank transfer" | "Paystack" | "Flutterwave" | "Cash";
 
@@ -30,9 +31,14 @@ function getBaseUrl() {
 }
 
 function getCheckoutEmail(input: PaymentCheckoutInput) {
+  const provider = String(input.provider || "").trim();
+
   return (
     input.buyerEmail ||
-    process.env.PAYSTACK_FALLBACK_EMAIL ||
+    (provider === "Flutterwave"
+      ? process.env.FLUTTERWAVE_FALLBACK_EMAIL
+      : process.env.PAYSTACK_FALLBACK_EMAIL) ||
+    process.env.PAYMENT_FALLBACK_EMAIL ||
     ""
   ).trim();
 }
@@ -42,34 +48,58 @@ export async function createPaymentCheckout(
 ): Promise<PaymentCheckoutResult> {
   const provider = String(input.provider || "Manual").trim();
 
-  if (provider !== "Paystack") {
-    throw new Error(`Automated checkout is not configured for ${provider}.`);
-  }
-
   const callbackPath =
     input.callbackPath ||
     `/admin/payment-requests?reference=${encodeURIComponent(input.reference)}`;
 
-  const checkout = await createPaystackCheckout({
-    reference: input.reference,
-    amount: input.amount,
-    currency: input.currency || "NGN",
-    email: getCheckoutEmail(input),
-    callbackUrl: `${getBaseUrl()}${callbackPath}`,
-    metadata: {
-      orderCode: input.orderCode,
-      buyerName: input.buyerName,
-      buyerPhone: input.buyerPhone,
-      source: "OneFarmTech",
-    },
-  });
+  if (provider === "Paystack") {
+    const checkout = await createPaystackCheckout({
+      reference: input.reference,
+      amount: input.amount,
+      currency: input.currency || "NGN",
+      email: getCheckoutEmail(input),
+      callbackUrl: `${getBaseUrl()}${callbackPath}`,
+      metadata: {
+        orderCode: input.orderCode,
+        buyerName: input.buyerName,
+        buyerPhone: input.buyerPhone,
+        source: "OneFarmTech",
+      },
+    });
 
-  return {
-    provider: checkout.provider,
-    paymentUrl: checkout.paymentUrl,
-    gatewayReference: checkout.gatewayReference,
-    metadata: {
-      accessCode: checkout.accessCode,
-    },
-  };
+    return {
+      provider: checkout.provider,
+      paymentUrl: checkout.paymentUrl,
+      gatewayReference: checkout.gatewayReference,
+      metadata: {
+        accessCode: checkout.accessCode,
+      },
+    };
+  }
+
+  if (provider === "Flutterwave") {
+    const checkout = await createFlutterwaveCheckout({
+      reference: input.reference,
+      amount: input.amount,
+      currency: input.currency || "NGN",
+      email: getCheckoutEmail(input),
+      name: input.buyerName,
+      phone: input.buyerPhone,
+      redirectUrl: `${getBaseUrl()}${callbackPath}`,
+      metadata: {
+        orderCode: input.orderCode,
+        buyerName: input.buyerName,
+        buyerPhone: input.buyerPhone,
+        source: "OneFarmTech",
+      },
+    });
+
+    return {
+      provider: checkout.provider,
+      paymentUrl: checkout.paymentUrl,
+      gatewayReference: checkout.gatewayReference,
+    };
+  }
+
+  throw new Error(`Automated checkout is not configured for ${provider}.`);
 }
