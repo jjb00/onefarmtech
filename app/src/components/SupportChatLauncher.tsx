@@ -71,12 +71,12 @@ export default function SupportChatLauncher({
 
       {open ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-[#102015]/55 px-4 pb-4 pt-20 backdrop-blur-sm sm:items-center sm:p-6"
+          className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-6 sm:w-[26rem]"
           role="dialog"
-          aria-modal="true"
+          aria-modal="false"
           aria-label="OneFarmTech support chat"
         >
-          <div className="w-full max-w-lg rounded-[2rem] bg-white p-5 text-[#102015] shadow-2xl sm:p-6">
+          <div className="max-h-[82vh] overflow-y-auto rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-2xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
