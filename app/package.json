@@ -10,7 +10,8 @@
     "dev:3002": "next dev -p 3002",
     "check:prelaunch": "node scripts/check-prelaunch.mjs",
     "check:prelaunch:strict": "node scripts/check-prelaunch.mjs --strict",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "smoke:production": "node scripts/smoke-production-readiness.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
