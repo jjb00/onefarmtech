@@ -22,6 +22,14 @@ export default async function WhatsAppAssistedOrderPage({
 }) {
   await requireStaff();
 
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const draftId = resolvedSearchParams?.draftId || "";
+  const sourceDraft = draftId
+    ? await prisma.orderRequest.findUnique({
+        where: {id: draftId},
+      })
+    : null;
+
   const params = searchParams ? await searchParams : {};
   const error = typeof params.error === "string" ? params.error : "";
 
@@ -42,7 +50,28 @@ export default async function WhatsAppAssistedOrderPage({
       subtitle="Create a database order from a WhatsApp buyer conversation using live product prices."
     >
       {error ? (
-        <section className="rounded-[2rem] border border-[#d9471f]/30 bg-[#fff4ef] p-5 text-sm font-bold text-[#9b2f12]">
+        {sourceDraft ? (
+        <section className="rounded-[2rem] border border-[#7a4a00]/20 bg-[#fff6d6] p-6 shadow-sm">
+          <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7a4a00]">
+            Source WhatsApp draft
+          </p>
+          <h2 className="mt-2 text-2xl font-black text-[#102015]">
+            Review draft before confirming order
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-[#7a4a00]">
+            This form was opened from inbound WhatsApp draft {sourceDraft.id}. Confirm buyer, items, delivery details, delivery fee and payment method before creating the order.
+          </p>
+          <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm leading-7 text-[#102015]">
+            <p><strong>Buyer:</strong> {sourceDraft.buyerName}</p>
+            <p><strong>Phone:</strong> {sourceDraft.phone}</p>
+            <p><strong>Location:</strong> {sourceDraft.location || "Not parsed"}</p>
+            <p><strong>Items:</strong></p>
+            <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm">{sourceDraft.items}</pre>
+          </div>
+        </section>
+      ) : null}
+
+      <section className="rounded-[2rem] border border-[#d9471f]/30 bg-[#fff4ef] p-5 text-sm font-bold text-[#9b2f12]">
           {error === "missing-phone"
             ? "Enter the buyer WhatsApp phone number."
             : error === "no-items"
@@ -91,7 +120,7 @@ export default async function WhatsAppAssistedOrderPage({
                 name="buyerName"
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="Optional for new WhatsApp buyer"
-              />
+               defaultValue={sourceDraft?.buyerName || ""} />
             </label>
 
             <label className="grid gap-2 text-sm font-bold text-[#405348]">

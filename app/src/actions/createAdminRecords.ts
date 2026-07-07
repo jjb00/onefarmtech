@@ -1799,6 +1799,58 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 }
 
 
+export async function updateWhatsAppDraftStatusAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "");
+  const status = String(formData.get("status") || "").trim();
+  const adminNote = String(formData.get("adminNote") || "").trim();
+
+  if (!id) {
+    redirect("/admin/whatsapp-drafts?error=missing-id");
+  }
+
+  const draft = await prisma.orderRequest.findUnique({
+    where: {id},
+  });
+
+  if (!draft) {
+    redirect("/admin/whatsapp-drafts?error=not-found");
+  }
+
+  let existingNote = {};
+  try {
+    existingNote = JSON.parse(draft.adminNote || "{}");
+  } catch {
+    existingNote = {previousNote: draft.adminNote || ""};
+  }
+
+  await prisma.orderRequest.update({
+    where: {id},
+    data: {
+      status: status || draft.status,
+      adminNote: JSON.stringify({
+        ...existingNote,
+        staffReviewStatus: status || draft.status,
+        staffNote: adminNote || existingNote.staffNote || null,
+        reviewedAt: new Date().toISOString(),
+      }),
+    },
+  });
+
+  revalidatePath("/admin/whatsapp-drafts");
+  revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/whatsapp-inbox");
+
+  redirect("/admin/whatsapp-drafts?updated=1");
+}
+
+
 export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
