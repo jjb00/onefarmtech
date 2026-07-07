@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import {NextRequest, NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
+import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -191,13 +192,23 @@ export async function POST(request: NextRequest) {
       const contact = contacts.find((item: any) => String(item?.wa_id || "") === from);
       const body = getTextBody(message);
 
+      const profileName = contact?.profile?.name || null;
+      const messageId = message?.id || null;
+
       await logInboundMessage({
         from,
-        profileName: contact?.profile?.name || null,
+        profileName,
         body,
-        messageId: message?.id || null,
+        messageId,
         timestamp: message?.timestamp || null,
         raw: message,
+      });
+
+      await createDraftOrderRequestFromInboundWhatsApp({
+        from,
+        profileName,
+        body,
+        messageId,
       });
 
       logged += 1;
