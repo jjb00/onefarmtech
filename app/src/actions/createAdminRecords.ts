@@ -1237,9 +1237,11 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
       adminNote: adminNote || "Created from WhatsApp-assisted admin order entry.",
       items: {
         create: selectedLines.map((line) => ({
-          productId: line.product.id,
-          productName: line.product.name,
-          category: line.product.category,
+          product: {
+            connect: {id: line.product.id},
+          },
+          name: line.product.name,
+          grade: line.product.grade || "Standard",
           unit: line.product.unit,
           quantity: line.quantity,
           unitPrice: line.unitPrice,
