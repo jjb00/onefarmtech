@@ -1708,13 +1708,13 @@ export async function generatePaymentLinkAction(formData: FormData) {
     revalidatePath("/buyer-account/payments");
     revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
     revalidatePath("/buyer-account/inbox");
-
-    redirect("/admin/payment-requests?paymentLink=generated");
   } catch (error) {
     const message = error instanceof Error ? error.message : "payment-link-failed";
     const encoded = encodeURIComponent(message).slice(0, 180);
     redirect(`/admin/payment-requests?error=${encoded}`);
   }
+
+  redirect("/admin/payment-requests?paymentLink=generated");
 }
 
 
@@ -1916,6 +1916,22 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
     redirect("/admin/payment-requests?error=not-found");
   }
 
+  const alreadySent = await prisma.buyerMessage.findFirst({
+    where: {
+      relatedType: "PaymentRequest",
+      relatedId: paymentRequest.id,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      source: "WhatsApp API",
+      status: "Sent",
+    },
+    select: {id: true},
+  });
+
+  if (alreadySent) {
+    redirect("/admin/payment-requests?whatsapp=already-sent");
+  }
+
   const body = buildPaymentInstructionMessage({
     orderCode: paymentRequest.order.code,
     buyerName: paymentRequest.customer?.name || paymentRequest.order.buyerName,
@@ -1935,39 +1951,75 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
       body,
     });
 
-    if (paymentRequest.customerId) {
-      await prisma.buyerMessage.create({
-        data: {
-          customerId: paymentRequest.customerId,
-          title: `WhatsApp payment request for ${paymentRequest.order.code}`,
-          body,
-          channel: "WhatsApp",
-          direction: "Outbound",
-          status: result.status,
-          recipient: paymentRequest.order.phone,
-          source: "WhatsApp API",
-          relatedType: "PaymentRequest",
-          relatedId: paymentRequest.id,
-          sentAt: new Date(),
-          metadata: JSON.stringify({
-            provider: result.provider,
-            messageId: result.messageId,
-          }),
-        },
+    let customerId = paymentRequest.customerId || paymentRequest.order.customerId || null;
+
+    if (!customerId) {
+      const existingCustomer = await prisma.customer.findFirst({
+        where: {phone: paymentRequest.order.phone},
+      });
+
+      const customer =
+        existingCustomer ||
+        (await prisma.customer.create({
+          data: {
+            name: paymentRequest.order.buyerName || "WhatsApp buyer",
+            phone: paymentRequest.order.phone,
+            email: paymentRequest.customer?.email || null,
+            buyerType: paymentRequest.order.buyerType || "WhatsApp buyer",
+            location: paymentRequest.order.deliveryNote || null,
+            accountStatus: "Manual WhatsApp",
+            status: "Active",
+          },
+        }));
+
+      customerId = customer.id;
+
+      await prisma.order.update({
+        where: {id: paymentRequest.orderId},
+        data: {customerId},
+      });
+
+      await prisma.paymentRequest.update({
+        where: {id: paymentRequest.id},
+        data: {customerId},
       });
     }
+
+    if (!customerId) {
+      throw new Error("Could not create or resolve buyer record for WhatsApp evidence.");
+    }
+
+    await prisma.buyerMessage.create({
+      data: {
+        customerId,
+        title: `WhatsApp payment request for ${paymentRequest.order.code}`,
+        body,
+        channel: "WhatsApp",
+        direction: "Outbound",
+        status: result.status,
+        recipient: paymentRequest.order.phone,
+        source: "WhatsApp API",
+        relatedType: "PaymentRequest",
+        relatedId: paymentRequest.id,
+        sentAt: new Date(),
+        metadata: JSON.stringify({
+          provider: result.provider,
+          messageId: result.messageId,
+        }),
+      },
+    });
 
     revalidatePath("/admin/payment-requests");
     revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
     revalidatePath("/admin/buyer-messages");
     revalidatePath("/buyer-account/inbox");
-
-    redirect("/admin/payment-requests?whatsapp=sent");
   } catch (error) {
     const message = error instanceof Error ? error.message : "whatsapp-send-failed";
     const encoded = encodeURIComponent(message).slice(0, 180);
     redirect(`/admin/payment-requests?error=${encoded}`);
   }
+
+  redirect("/admin/payment-requests?whatsapp=sent");
 }
 
 

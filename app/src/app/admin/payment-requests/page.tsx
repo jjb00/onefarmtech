@@ -69,6 +69,34 @@ export default async function AdminPaymentRequestsPage() {
     },
   }) as any[];
 
+  const paymentRequestIds = paymentRequests.map((request) => request.id);
+
+  const whatsappSentMessages = paymentRequestIds.length
+    ? await prisma.buyerMessage.findMany({
+        where: {
+          relatedType: "PaymentRequest",
+          relatedId: {in: paymentRequestIds},
+          channel: "WhatsApp",
+          direction: "Outbound",
+          source: "WhatsApp API",
+          status: "Sent",
+        },
+        select: {
+          relatedId: true,
+          sentAt: true,
+          createdAt: true,
+          metadata: true,
+        },
+        orderBy: {createdAt: "desc"},
+      })
+    : [];
+
+  const whatsappSentByRequest = new Map(
+    whatsappSentMessages
+      .filter((message) => message.relatedId)
+      .map((message) => [message.relatedId, message]),
+  );
+
   return (
     <AdminPage
       title="Payment requests"
@@ -313,16 +341,22 @@ export default async function AdminPaymentRequestsPage() {
                     </>
                   )}
 
-                  <form action={sendPaymentRequestWhatsAppAction}>
-                    <input type="hidden" name="id" value={request.id} />
-                    <button
-                      type="submit"
-                      disabled={!request.order.phone}
-                      className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f] hover:bg-[#dff0d8] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Send WhatsApp payment request
-                    </button>
-                  </form>
+                  {whatsappSentByRequest.has(request.id) ? (
+                    <span className="rounded-full bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f]">
+                      WhatsApp sent
+                    </span>
+                  ) : (
+                    <form action={sendPaymentRequestWhatsAppAction}>
+                      <input type="hidden" name="id" value={request.id} />
+                      <button
+                        type="submit"
+                        disabled={!request.order.phone}
+                        className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f] hover:bg-[#dff0d8] disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Send WhatsApp payment request
+                      </button>
+                    </form>
+                  )}
 
                   <form action={issueReceiptFromPaymentRequestAction}>
                     <input type="hidden" name="id" value={request.id} />

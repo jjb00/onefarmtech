@@ -1,3 +1,8 @@
+import nextEnv from "@next/env";
+
+const {loadEnvConfig} = nextEnv;
+loadEnvConfig(process.cwd());
+
 import fs from "node:fs";
 
 const requiredFiles = [
