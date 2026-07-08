@@ -92,6 +92,12 @@ async function findCustomerByWhatsAppPhone(phone: string) {
 }
 
 
+
+async function makeComplaintCode() {
+  const count = await prisma.complaint.count();
+  return `CMP-OFT-${String(count + 1).padStart(5, "0")}`;
+}
+
 function shouldAutoSendCatalogue(intent: string | undefined) {
   return ["product_price_enquiry", "availability_enquiry"].includes(String(intent || ""));
 }
@@ -182,6 +188,143 @@ async function logOutboundCatalogueReply(input: {
       }),
     },
   });
+}
+
+
+async function maybeCreateComplaintFromInbound(input: {
+  from: string;
+  body: string;
+  messageId?: string | null;
+  profileName?: string | null;
+  parsedIntent: ReturnType<typeof parseWhatsAppOrderMessage>;
+  matchedCustomerId?: string | null;
+}) {
+  if (input.parsedIntent.intent !== "complaint") {
+    return {
+      created: false,
+      reason: "intent-not-complaint",
+    };
+  }
+
+  const customerId = input.matchedCustomerId || null;
+
+  if (!customerId) {
+    return {
+      created: false,
+      reason: "no-matched-customer",
+    };
+  }
+
+  const recentOrder = await prisma.order.findFirst({
+    where: {
+      customerId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      code: true,
+    },
+  });
+
+  if (!recentOrder) {
+    return {
+      created: false,
+      reason: "no-recent-order",
+    };
+  }
+
+  const existing = input.messageId
+    ? await prisma.complaint.findFirst({
+        where: {
+          orderId: recentOrder.id,
+          issue: {
+            contains: input.messageId,
+          },
+        },
+        select: {
+          id: true,
+          code: true,
+        },
+      })
+    : null;
+
+  if (existing) {
+    return {
+      created: false,
+      reason: "duplicate",
+      complaintId: existing.id,
+      complaintCode: existing.code,
+    };
+  }
+
+  const complaintCode = await makeComplaintCode();
+
+  const complaintIssue = [
+    input.body,
+    "",
+    "--- WhatsApp source context ---",
+    "Source: WhatsApp storefront",
+    input.messageId ? `Message ID: ${input.messageId}` : "",
+    input.profileName ? `Profile name: ${input.profileName}` : "",
+    `From: ${input.from}`,
+    `Intent: ${input.parsedIntent.intent}`,
+    `Confidence: ${input.parsedIntent.confidence}`,
+    input.parsedIntent.matchedIntentKeywords?.length
+      ? `Matched keywords: ${input.parsedIntent.matchedIntentKeywords.join(", ")}`
+      : "",
+    `Linked order: ${recentOrder.code}`,
+    "Needs staff review: yes",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const complaint = await prisma.complaint.create({
+    data: {
+      orderId: recentOrder.id,
+      code: complaintCode,
+      issue: complaintIssue,
+      priority: "High",
+      status: "New",
+    },
+    select: {
+      id: true,
+      code: true,
+    },
+  });
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title: `WhatsApp complaint logged for ${recentOrder.code}`,
+      body: input.body,
+      channel: "WhatsApp",
+      direction: "Inbound",
+      status: "Unread",
+      recipient: input.from,
+      source: "WhatsApp storefront complaint routing",
+      relatedType: "Complaint",
+      relatedId: complaint.id,
+      sentAt: new Date(),
+      metadata: JSON.stringify({
+        complaintId: complaint.id,
+        complaintCode: complaint.code,
+        orderId: recentOrder.id,
+        orderCode: recentOrder.code,
+        messageId: input.messageId,
+        intent: input.parsedIntent.intent,
+        confidence: input.parsedIntent.confidence,
+      }),
+    },
+  });
+
+  return {
+    created: true,
+    reason: "complaint-created",
+    complaintId: complaint.id,
+    complaintCode: complaint.code,
+  };
 }
 
 async function maybeSendCatalogueAutoReply(input: {
@@ -365,6 +508,19 @@ export async function POST(request: NextRequest) {
         body,
         messageId,
       });
+
+      try {
+        await maybeCreateComplaintFromInbound({
+          from,
+          profileName,
+          body,
+          messageId,
+          parsedIntent,
+          matchedCustomerId: inboundLog.customerId,
+        });
+      } catch (error) {
+        console.error("WhatsApp complaint routing failed", error);
+      }
 
       try {
         await maybeSendCatalogueAutoReply({
