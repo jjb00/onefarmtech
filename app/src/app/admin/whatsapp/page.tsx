@@ -181,8 +181,14 @@ export default async function AdminWhatsAppPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/admin/whatsapp-tools"
+              href="/admin/whatsapp-workflow"
               className="rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Workflow checklist
+            </Link>
+            <Link
+              href="/admin/whatsapp-tools"
+              className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
             >
               Send menu/list
             </Link>
