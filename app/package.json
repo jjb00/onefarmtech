@@ -11,7 +11,12 @@
     "check:prelaunch": "node scripts/check-prelaunch.mjs",
     "check:prelaunch:strict": "node scripts/check-prelaunch.mjs --strict",
     "postinstall": "prisma generate",
-    "smoke:production": "node scripts/smoke-production-readiness.mjs"
+    "smoke:production": "node scripts/smoke-production-readiness.mjs",
+    "provider:readiness": "node scripts/provider-readiness.mjs",
+    "simulate:webhook": "node scripts/simulate-provider-webhook.mjs",
+    "simulate:paystack": "node scripts/simulate-provider-webhook.mjs paystack",
+    "simulate:flutterwave": "node scripts/simulate-provider-webhook.mjs flutterwave",
+    "simulate:whatsapp": "node scripts/simulate-provider-webhook.mjs whatsapp"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
