@@ -1345,6 +1345,222 @@ export default async function AdminOrderDetailPage({
           )}
         </div>
       </section>
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              WhatsApp delivery and receipt handoff
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#102015]">
+              Complete the post-payment workflow
+            </h2>
+            <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
+              Once payment is confirmed, assign delivery, track the delivery state, and use the receipt/delivery message as buyer-facing WhatsApp copy.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <span className={`rounded-full px-4 py-2 text-sm font-black ${statusClass(order.paymentStatus)}`}>
+              {order.paymentStatus}
+            </span>
+            <span className={`rounded-full px-4 py-2 text-sm font-black ${statusClass(order.delivery?.status || order.fulfilmentStatus)}`}>
+              {order.delivery?.status || order.fulfilmentStatus}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-2xl bg-[#f7f5ec] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Payment confirmation
+            </p>
+            <p className="mt-2 text-xl font-black text-[#102015]">
+              {paymentIsPaid ? "Payment confirmed" : "Awaiting payment"}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[#405348]">
+              {paymentIsPaid
+                ? "This order is ready for delivery handoff and receipt follow-up."
+                : "Keep delivery assignment cautious until payment is confirmed or manually approved."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#f7f5ec] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Delivery record
+            </p>
+            <p className="mt-2 text-xl font-black text-[#102015]">
+              {order.delivery?.status || "Not assigned"}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[#405348]">
+              {order.delivery?.deliveryPartner?.name ||
+                order.delivery?.deliveryPartnerName ||
+                "Assign a delivery partner or create a delivery record below."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-[#f7f5ec] p-5">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Receipt status
+            </p>
+            <p className="mt-2 text-xl font-black text-[#102015]">
+              {latestReceipt ? latestReceipt.status : "Not issued"}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-[#405348]">
+              {latestReceipt
+                ? `Receipt ${latestReceipt.code}`
+                : "Issue or record receipt once payment is confirmed."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          <form action={createOrAssignDeliveryFromOrderAction} className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black text-[#102015]">
+                  Create / update delivery handoff
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-[#405348]">
+                  Use this to create the delivery record after payment confirmation or update the delivery assignment as the order progresses.
+                </p>
+              </div>
+              <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#405348]">
+                {deliveryPartners.length} partners
+              </span>
+            </div>
+
+            <input type="hidden" name="orderId" value={order.id} />
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Delivery partner
+                <select
+                  name="deliveryPartnerId"
+                  defaultValue={order.delivery?.deliveryPartnerId || ""}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                >
+                  <option value="">Unassigned / manual delivery</option>
+                  {deliveryPartners.map((partner) => (
+                    <option key={partner.id} value={partner.id}>
+                      {partner.name} {partner.serviceArea ? `· ${partner.serviceArea}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Status
+                <select
+                  name="status"
+                  defaultValue={order.delivery?.status || "Delivery assigned"}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                >
+                  <option value="Delivery pending assignment">Delivery pending assignment</option>
+                  <option value="Delivery assigned">Delivery assigned</option>
+                  <option value="Picked up by delivery partner">Picked up by delivery partner</option>
+                  <option value="Out for delivery">Out for delivery</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Delivery issue">Delivery issue</option>
+                </select>
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Delivery method
+                <input
+                  name="deliveryMethod"
+                  defaultValue={order.delivery?.deliveryMethod || order.deliveryMethod || "OneFarmTech arranged"}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Delivery area
+                <input
+                  name="deliveryArea"
+                  defaultValue={order.delivery?.deliveryArea || ""}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  placeholder="Lekki, VI, Ikeja..."
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348] md:col-span-2">
+                Delivery address / note
+                <textarea
+                  name="deliveryAddress"
+                  defaultValue={order.delivery?.deliveryAddress || order.deliveryNote || ""}
+                  rows={3}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  placeholder="Buyer address, landmark, preferred timing, delivery instructions..."
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Delivery fee
+                <input
+                  name="deliveryFee"
+                  defaultValue={order.deliveryFee || order.delivery?.deliveryFee || ""}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  placeholder="0"
+                />
+              </label>
+
+              <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                Tracking reference
+                <input
+                  name="trackingReference"
+                  defaultValue={order.delivery?.trackingReference || ""}
+                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
+                  placeholder="Optional"
+                />
+              </label>
+            </div>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+              >
+                Save delivery handoff
+              </button>
+              <Link
+                href="/admin/deliveries"
+                className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+              >
+                Open deliveries
+              </Link>
+            </div>
+          </form>
+
+          <div className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-5">
+            <h3 className="text-xl font-black text-[#102015]">
+              WhatsApp receipt / delivery copy
+            </h3>
+            <p className="mt-2 text-sm leading-7 text-[#405348]">
+              Copy this into WhatsApp after payment/receipt confirmation or delivery completion. It uses the same order template data already loaded on this page.
+            </p>
+
+            <pre className="mt-5 max-h-[26rem] overflow-auto whitespace-pre-wrap rounded-2xl bg-white p-5 text-sm leading-7 text-[#102015]">
+{buildDeliveredMessage(templateInput)}
+            </pre>
+
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link
+                href="/admin/receipts"
+                className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white hover:bg-[#1f3426]"
+              >
+                Open receipts
+              </Link>
+              <Link
+                href="/admin/buyer-messages"
+                className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+              >
+                Message evidence
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
     </AdminPage>
   );
 }
