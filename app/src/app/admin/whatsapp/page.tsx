@@ -1,223 +1,299 @@
 import Link from "next/link";
-import AdminPageShell from "@/components/AdminPageShell";
-import StatusBadge from "@/components/admin/StatusBadge";
-import { getDbOrders, formatOrderTotal } from "@/data/dbOrders";
-import { getDbGroupBuys } from "@/data/dbAdmin";
-import {
-  createDeliveryUpdateMessage,
-  createGroupBuyBroadcastMessage,
-  createOrderConfirmationMessage,
-  createPaymentReminderMessage,
-  createReservationFollowUpMessage,
-  createWhatsappUrl,
-} from "@/lib/whatsappMessages";
+import {AdminPage} from "@/components/portal/AdminPage";
+import {requireStaff} from "@/lib/auth";
+import {prisma} from "@/lib/prisma";
 
-export default async function WhatsappOpsPage() {
-  const [orders, groupBuys] = await Promise.all([
-    getDbOrders(),
-    getDbGroupBuys(),
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
+function parseNote(note: string | null | undefined) {
+  try {
+    return JSON.parse(note || "{}");
+  } catch {
+    return {};
+  }
+}
+
+export default async function AdminWhatsAppPage() {
+  await requireStaff();
+
+  const [
+    inboundBuyerMessages,
+    inboundUnknownMessages,
+    whatsappDrafts,
+    pendingPaymentRequests,
+    activeDeliveries,
+    openComplaints,
+    availableProducts,
+  ] = await Promise.all([
+    prisma.buyerMessage.findMany({
+      where: {
+        channel: "WhatsApp",
+        direction: "Inbound",
+      },
+      orderBy: {createdAt: "desc"},
+      take: 50,
+      select: {
+        id: true,
+        metadata: true,
+      },
+    }),
+    prisma.contactEnquiry.findMany({
+      where: {
+        enquiryType: "WhatsApp inbound",
+      },
+      orderBy: {createdAt: "desc"},
+      take: 50,
+      select: {
+        id: true,
+        adminNote: true,
+      },
+    }),
+    prisma.orderRequest.count({
+      where: {
+        source: "WhatsApp inbound draft",
+        status: {
+          not: "Converted to order",
+        },
+      },
+    }),
+    prisma.paymentRequest.count({
+      where: {
+        status: "Pending",
+      },
+    }),
+    prisma.delivery.count({
+      where: {
+        status: {
+          notIn: ["Delivered", "Cancelled"],
+        },
+      },
+    }),
+    prisma.complaint.count({
+      where: {
+        status: {
+          notIn: ["Resolved", "Closed"],
+        },
+      },
+    }),
+    prisma.product.count({
+      where: {
+        status: "Active",
+        OR: [
+          {availability: "Available"},
+          {availability: "In stock"},
+          {availability: "Active"},
+          {availability: "Limited"},
+          {availability: "Seasonal"},
+        ],
+      },
+    }),
   ]);
 
-  const activeOrders = orders.slice(0, 10);
-  const activeGroupBuys = groupBuys.slice(0, 8);
+  const allIntents = [
+    ...inboundBuyerMessages.map((message) => parseNote(message.metadata).intent || "general"),
+    ...inboundUnknownMessages.map((message) => parseNote(message.adminNote).intent || "general"),
+  ];
+
+  const intentCounts = allIntents.reduce<Record<string, number>>((counts, intent) => {
+    counts[intent] = (counts[intent] || 0) + 1;
+    return counts;
+  }, {});
+
+  const catalogueEnquiries =
+    (intentCounts.product_price_enquiry || 0) + (intentCounts.availability_enquiry || 0);
+
+  const followUps =
+    (intentCounts.payment_follow_up || 0) +
+    (intentCounts.delivery_follow_up || 0) +
+    (intentCounts.complaint || 0);
+
+  const cards = [
+    {
+      label: "Send menu / product list",
+      value: availableProducts,
+      caption: "available products",
+      href: "/admin/whatsapp-tools",
+      tone: "green",
+    },
+    {
+      label: "WhatsApp inbox",
+      value: inboundBuyerMessages.length + inboundUnknownMessages.length,
+      caption: "recent inbound messages",
+      href: "/admin/whatsapp-inbox",
+      tone: "neutral",
+    },
+    {
+      label: "Draft orders",
+      value: whatsappDrafts,
+      caption: "awaiting conversion",
+      href: "/admin/whatsapp-drafts",
+      tone: "amber",
+    },
+    {
+      label: "Payment requests",
+      value: pendingPaymentRequests,
+      caption: "pending payment",
+      href: "/admin/payment-requests",
+      tone: "amber",
+    },
+    {
+      label: "Deliveries",
+      value: activeDeliveries,
+      caption: "active delivery records",
+      href: "/admin/deliveries",
+      tone: "neutral",
+    },
+    {
+      label: "Complaints",
+      value: openComplaints,
+      caption: "open complaint records",
+      href: "/admin/complaints",
+      tone: "red",
+    },
+  ];
+
+  function cardClassName(tone: string) {
+    if (tone === "green") return "border-[#1f7a3f]/20 bg-[#eef6ea]";
+    if (tone === "amber") return "border-[#7a4a00]/20 bg-[#fff6d6]";
+    if (tone === "red") return "border-[#9b2f12]/20 bg-[#fff4ef]";
+    return "border-[#102015]/10 bg-white";
+  }
 
   return (
-    <AdminPageShell
-      title="WhatsApp ops"
-      description="Manual WhatsApp-first operating centre for order confirmations, payment reminders, delivery updates, and group-buy broadcasts."
+    <AdminPage
+      title="WhatsApp storefront"
+      subtitle="Main command centre for WhatsApp-first product discovery, ordering, payment, delivery and support."
     >
-      <div className="grid gap-8">
-        <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
-          <h2 className="text-2xl font-bold">Order WhatsApp messages</h2>
-          <p className="mt-2 text-sm text-[#405348]">
-            Open WhatsApp with a prepared message, then review and send manually.
-          </p>
-
-          <div className="mt-6 grid gap-4">
-            {activeOrders.map((order) => {
-              const confirmationMessage = createOrderConfirmationMessage(order);
-              const paymentMessage = createPaymentReminderMessage(order);
-              const deliveryMessage = createDeliveryUpdateMessage(order);
-
-              return (
-                <article
-                  key={order.id}
-                  className="rounded-2xl border border-[#e3e8dc] bg-[#f7f5ec] p-5"
-                >
-                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                    <div>
-                      <Link
-                        href={`/admin/orders/${order.code}`}
-                        className="text-sm font-bold text-[#1f7a3f] hover:underline"
-                      >
-                        {order.code}
-                      </Link>
-                      <h3 className="mt-1 text-xl font-black">{order.buyerName}</h3>
-                      <p className="mt-1 text-sm text-[#405348]">
-                        {order.phone} · {formatOrderTotal(order.estimatedTotal)}
-                      </p>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <StatusBadge status={order.paymentStatus} />
-                      <StatusBadge status={order.fulfilmentStatus} />
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 md:grid-cols-3">
-                    <a
-                      href={createWhatsappUrl(order.phone, confirmationMessage)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-bold text-white"
-                    >
-                      Send confirmation
-                    </a>
-                    <a
-                      href={createWhatsappUrl(order.phone, paymentMessage)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-white px-4 py-3 text-center text-sm font-bold text-[#102015]"
-                    >
-                      Send payment reminder
-                    </a>
-                    <a
-                      href={createWhatsappUrl(order.phone, deliveryMessage)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full border border-[#1f7a3f]/25 px-4 py-3 text-center text-sm font-bold text-[#1f7a3f]"
-                    >
-                      Send delivery update
-                    </a>
-                  </div>
-
-                  <details className="mt-4 rounded-2xl bg-white p-4">
-                    <summary className="cursor-pointer text-sm font-bold text-[#1f7a3f]">
-                      Preview order confirmation message
-                    </summary>
-                    <pre className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[#405348]">
-                      {confirmationMessage}
-                    </pre>
-                  </details>
-                </article>
-              );
-            })}
+      <section className="rounded-[2rem] bg-[#102015] p-6 text-white shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-5">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-white/60">
+              Mobile-first storefront
+            </p>
+            <h2 className="mt-3 text-3xl font-black">
+              Run the buyer journey from WhatsApp
+            </h2>
+            <p className="mt-3 max-w-4xl text-sm leading-7 text-white/75">
+              Use this hub to send the storefront menu, share live product availability, review inbound messages, convert order drafts, follow payments, assign deliveries and handle complaints.
+            </p>
           </div>
-        </section>
 
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015]">
-          <h2 className="text-2xl font-bold">Group-buy WhatsApp broadcasts</h2>
-          <p className="mt-2 text-sm text-[#587063]">
-            Broadcast group-buy offers and follow up with buyers who reserved slots.
-          </p>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/admin/whatsapp-tools"
+              className="rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Send menu/list
+            </Link>
+            <Link
+              href="/admin/whatsapp-inbox"
+              className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
+            >
+              Open inbox
+            </Link>
+          </div>
+        </div>
+      </section>
 
-          <div className="mt-6 grid gap-6">
-            {activeGroupBuys.length === 0 ? (
-              <p className="rounded-2xl bg-[#f3f8ef] p-4 text-sm text-[#587063]">
-                No group buys yet.
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {cards.map((card) => (
+          <Link
+            key={card.label}
+            href={card.href}
+            className={`rounded-[2rem] border p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${cardClassName(card.tone)}`}
+          >
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#405348]">
+              {card.label}
+            </p>
+            <p className="mt-3 text-4xl font-black text-[#102015]">
+              {card.value}
+            </p>
+            <p className="mt-2 text-sm font-bold text-[#405348]">
+              {card.caption}
+            </p>
+          </Link>
+        ))}
+      </section>
+
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+          Storefront intent mix
+        </p>
+        <h3 className="mt-2 text-2xl font-black text-[#102015]">
+          What buyers are doing in WhatsApp
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+          These counts come from recent inbound WhatsApp messages and help staff see whether buyers are discovering products, placing orders, chasing payments/delivery or raising complaints.
+        </p>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Product discovery", catalogueEnquiries],
+            ["Order intent", intentCounts.order_intent || 0],
+            ["Payment follow-up", intentCounts.payment_follow_up || 0],
+            ["Delivery follow-up", intentCounts.delivery_follow_up || 0],
+            ["Complaints", intentCounts.complaint || 0],
+            ["Support", intentCounts.support || 0],
+            ["General", intentCounts.general || 0],
+            ["Urgent follow-ups", followUps],
+          ].map(([label, value]) => (
+            <div key={String(label)} className="rounded-2xl bg-[#f7f5ec] p-4">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+                {label}
               </p>
-            ) : (
-              activeGroupBuys.map((groupBuy) => {
-                const broadcastMessage = createGroupBuyBroadcastMessage(groupBuy);
+              <p className="mt-2 text-2xl font-black text-[#102015]">{value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
-                return (
-                  <article
-                    key={groupBuy.id}
-                    className="rounded-2xl bg-[#f3f8ef] p-5"
-                  >
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div>
-                        <p className="text-sm font-bold text-[#1f7a3f]">
-                          {groupBuy.code}
-                        </p>
-                        <h3 className="mt-1 text-xl font-black">{groupBuy.title}</h3>
-                        <p className="mt-1 text-sm text-[#587063]">
-                          Reserved {groupBuy.reservedQuantity}/{groupBuy.targetQuantity} {groupBuy.unit}
-                        </p>
-                      </div>
+      <section className="grid gap-4 lg:grid-cols-3">
+        <Link
+          href="/admin/products"
+          className="rounded-[2rem] bg-white p-6 shadow-sm hover:bg-[#f3f8ef]"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+            Catalogue source
+          </p>
+          <h3 className="mt-2 text-xl font-black text-[#102015]">
+            Product catalogue
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-[#405348]">
+            Update products, prices, grades and availability here. WhatsApp product messages pull from this source.
+          </p>
+        </Link>
 
-                      <div className="flex flex-wrap gap-2">
-                        <StatusBadge status={groupBuy.status} />
-                        <StatusBadge status={groupBuy.paymentStatus} />
-                      </div>
-                    </div>
+        <Link
+          href="/admin/whatsapp-orders/new"
+          className="rounded-[2rem] bg-white p-6 shadow-sm hover:bg-[#f3f8ef]"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+            Manual conversion
+          </p>
+          <h3 className="mt-2 text-xl font-black text-[#102015]">
+            Create WhatsApp order
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-[#405348]">
+            Use when staff need to create a confirmed order directly from a WhatsApp conversation.
+          </p>
+        </Link>
 
-                    <div className="mt-5 grid gap-3 md:grid-cols-2">
-                      <a
-                        href={createWhatsappUrl("", broadcastMessage)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded-full bg-[#9ee6ad] px-4 py-3 text-center text-sm font-bold text-[#102015]"
-                      >
-                        Open broadcast message
-                      </a>
-
-                      <Link
-                        href="/admin/group-buys"
-                        className="rounded-full border border-[#102015]/10 px-4 py-3 text-center text-sm font-bold text-[#1f7a3f]"
-                      >
-                        Manage group buy
-                      </Link>
-                    </div>
-
-                    <details className="mt-4 rounded-2xl bg-[#f3f8ef] p-4">
-                      <summary className="cursor-pointer text-sm font-bold text-[#1f7a3f]">
-                        Preview broadcast message
-                      </summary>
-                      <pre className="mt-4 whitespace-pre-wrap text-sm leading-6 text-[#405348]">
-                        {broadcastMessage}
-                      </pre>
-                    </details>
-
-                    <div className="mt-5 grid gap-3">
-                      {groupBuy.reservations.length === 0 ? (
-                        <p className="rounded-2xl bg-[#f3f8ef] p-4 text-sm text-[#587063]">
-                          No reservations to follow up yet.
-                        </p>
-                      ) : (
-                        groupBuy.reservations.map((reservation) => {
-                          const reservationMessage = createReservationFollowUpMessage(
-                            groupBuy,
-                            reservation
-                          );
-
-                          return (
-                            <div
-                              key={reservation.id}
-                              className="rounded-2xl bg-[#f3f8ef] p-4"
-                            >
-                              <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                                <div>
-                                  <p className="font-bold">{reservation.buyerName}</p>
-                                  <p className="mt-1 text-sm text-[#587063]">
-                                    {reservation.phone} · {reservation.quantity} {groupBuy.unit}
-                                  </p>
-                                </div>
-
-                                <a
-                                  href={createWhatsappUrl(
-                                    reservation.phone,
-                                    reservationMessage
-                                  )}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="rounded-full bg-[#9ee6ad] px-4 py-2 text-center text-sm font-bold text-[#102015]"
-                                >
-                                  Follow up
-                                </a>
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </article>
-                );
-              })
-            )}
-          </div>
-        </section>
-      </div>
-    </AdminPageShell>
+        <Link
+          href="/admin/buyer-messages"
+          className="rounded-[2rem] bg-white p-6 shadow-sm hover:bg-[#f3f8ef]"
+        >
+          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+            Evidence
+          </p>
+          <h3 className="mt-2 text-xl font-black text-[#102015]">
+            Buyer message log
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-[#405348]">
+            Review outbound and inbound buyer messages retained as operational evidence.
+          </p>
+        </Link>
+      </section>
+    </AdminPage>
   );
 }
