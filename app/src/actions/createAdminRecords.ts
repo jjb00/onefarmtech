@@ -1860,6 +1860,127 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 }
 
 
+export async function sendWhatsAppProductListAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+  const {
+    buildWhatsAppProductListMessage,
+    isProductAvailableForWhatsApp,
+  } = await import("@/lib/whatsapp/productCatalogue");
+  const {
+    matchBuyerByPhone,
+    normalisePhone,
+  } = await import("@/lib/commerce/whatsappOrders");
+
+  await requireStaff();
+
+  const recipientPhoneInput = String(formData.get("recipientPhone") || "").trim();
+  const sourcePhone = normalisePhone(recipientPhoneInput);
+
+  if (!sourcePhone) {
+    redirect("/admin/whatsapp-tools?error=missing-phone");
+  }
+
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+    },
+    orderBy: [{category: "asc"}, {name: "asc"}],
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      unit: true,
+      grade: true,
+      basePrice: true,
+      availability: true,
+      status: true,
+    },
+  });
+
+  const availableProducts = products.filter(isProductAvailableForWhatsApp);
+  const body = buildWhatsAppProductListMessage(availableProducts);
+
+  let result;
+  try {
+    result = await sendWhatsAppTextMessage({
+      to: sourcePhone,
+      body,
+    });
+  } catch (error) {
+    console.error("sendWhatsAppProductListAction failed", error);
+    redirect("/admin/whatsapp-tools?error=send-failed");
+  }
+
+  const matched = await matchBuyerByPhone(sourcePhone);
+
+  let customerId = matched.customer?.id || null;
+
+  if (!customerId) {
+    const existingCustomer = await prisma.customer.findFirst({
+      where: {
+        phone: sourcePhone,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingCustomer) {
+      customerId = existingCustomer.id;
+    }
+  }
+
+  if (!customerId) {
+    const customer = await prisma.customer.create({
+      data: {
+        name: "WhatsApp buyer",
+        phone: sourcePhone,
+        buyerType: "WhatsApp buyer",
+        accountStatus: "Manual WhatsApp",
+        status: "Active",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    customerId = customer.id;
+  }
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title: "WhatsApp product list sent",
+      body,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      status: "Sent",
+      recipient: sourcePhone,
+      source: "WhatsApp storefront product catalogue",
+      relatedType: "ProductCatalogue",
+      relatedId: null,
+      sentAt: new Date(),
+      metadata: JSON.stringify({
+        provider: result.provider,
+        messageId: result.messageId,
+        productCount: availableProducts.length,
+      }),
+    },
+  });
+
+  revalidatePath("/admin/whatsapp-tools");
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/admin/customers");
+  revalidatePath("/buyer-account/inbox");
+
+  redirect("/admin/whatsapp-tools?catalogue=sent");
+}
+
+
 export async function updateWhatsAppDraftStatusAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");

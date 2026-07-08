@@ -1,50 +1,27 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
+import {sendWhatsAppProductListAction} from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
+import {
+  buildWhatsAppProductListMessage,
+  formatWhatsAppNaira,
+  isProductAvailableForWhatsApp,
+} from "@/lib/whatsapp/productCatalogue";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function formatNaira(amount: number | null | undefined) {
-  return new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    maximumFractionDigits: 0,
-  }).format(amount || 0);
-}
-
-function buildProductListMessage(products: Array<{
-  name: string;
-  category: string;
-  unit: string;
-  grade: string;
-  basePrice: number;
-  availability: string;
-}>) {
-  if (products.length === 0) {
-    return "Hello, thank you for contacting OneFarmTech. Our available product list is being updated. Please check back shortly.";
-  }
-
-  const lines = products.map((product, index) => {
-    return `${index + 1}. ${product.name} (${product.grade}) — ${formatNaira(product.basePrice)} / ${product.unit}`;
-  });
-
-  return [
-    "Hello, thank you for contacting OneFarmTech.",
-    "",
-    "Available produce today:",
-    ...lines,
-    "",
-    "Please reply with the item number and quantity.",
-    "Example: 1 x 2, 3 x 1",
-    "",
-    "Prices are subject to confirmation based on availability, delivery location and order timing.",
-  ].join("\\n");
-}
-
-export default async function AdminWhatsAppToolsPage() {
+export default async function AdminWhatsAppToolsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+}) {
   await requireStaff();
+
+  const resolvedSearchParams = searchParams ? await searchParams : {};
+  const catalogueStatus = typeof resolvedSearchParams.catalogue === "string" ? resolvedSearchParams.catalogue : "";
+  const error = typeof resolvedSearchParams.error === "string" ? resolvedSearchParams.error : "";
 
   const products = await prisma.product.findMany({
     where: {
@@ -62,17 +39,31 @@ export default async function AdminWhatsAppToolsPage() {
     },
   });
 
-  const availableProducts = products.filter((product) =>
-    ["available", "in stock", "active"].includes(product.availability.toLowerCase())
-  );
+  const availableProducts = products.filter(isProductAvailableForWhatsApp);
 
-  const productListMessage = buildProductListMessage(availableProducts);
+  const productListMessage = buildWhatsAppProductListMessage(availableProducts);
 
   return (
     <AdminPage
       title="WhatsApp message tools"
       subtitle="Copy-ready WhatsApp utilities generated from live operating records."
     >
+      {catalogueStatus === "sent" ? (
+        <section className="rounded-[2rem] border border-[#1f7a3f]/20 bg-[#eef6ea] p-5 text-sm font-bold text-[#1f7a3f]">
+          Product list sent by WhatsApp and logged where a buyer record was matched or created.
+        </section>
+      ) : null}
+
+      {error ? (
+        <section className="rounded-[2rem] border border-[#d9471f]/30 bg-[#fff4ef] p-5 text-sm font-bold text-[#9b2f12]">
+          {error === "missing-phone"
+            ? "Enter the buyer WhatsApp phone number."
+            : error === "send-failed"
+              ? "WhatsApp product list could not be sent. Check the phone number, token and Meta test recipient setup."
+              : "The product list could not be sent."}
+        </section>
+      ) : null}
+
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -117,6 +108,30 @@ export default async function AdminWhatsAppToolsPage() {
             <pre className="mt-5 whitespace-pre-wrap rounded-2xl bg-white p-5 text-sm leading-7 text-[#102015]">
 {productListMessage}
             </pre>
+
+            <form action={sendWhatsAppProductListAction} className="mt-5 rounded-2xl bg-white p-4">
+              <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
+                <label className="grid gap-2 text-sm font-bold text-[#405348]">
+                  Send to WhatsApp number
+                  <input
+                    name="recipientPhone"
+                    required
+                    className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
+                    placeholder="+234..."
+                  />
+                </label>
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+                  disabled={availableProducts.length === 0}
+                >
+                  Send product list
+                </button>
+              </div>
+              <p className="mt-3 text-xs font-bold leading-6 text-[#405348]">
+                Sends through Meta WhatsApp Cloud API. If the number is not an existing buyer, a lightweight WhatsApp buyer record is created so the outbound message is retained as evidence.
+              </p>
+            </form>
           </details>
 
           <details className="rounded-2xl border border-[#102015]/10 bg-white p-5">
@@ -140,7 +155,7 @@ export default async function AdminWhatsAppToolsPage() {
                         </p>
                       </div>
                       <p className="font-black text-[#102015]">
-                        {formatNaira(product.basePrice)}
+                        {formatWhatsAppNaira(product.basePrice)}
                       </p>
                     </div>
                   </div>
