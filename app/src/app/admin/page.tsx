@@ -66,6 +66,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   const receiptTotal = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
   const activeComplaints = complaints.filter(
     (complaint) => !["Closed", "Resolved"].includes(complaint.status),
+    </>
   );
   const recentOrders = orders.slice(0, 5);
   const buyerLoginReady = customers.filter((customer) => customer.accountLoginReady).length;
@@ -99,6 +100,59 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   ].filter(([, href]) => canAccessAdminPath(staff.role, href));
 
   return (
+    <>
+
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              Launch operations
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#102015]">
+              Integration and smoke-test controls
+            </h2>
+            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+              Use these pages before live testing payment links, WhatsApp webhooks, inbound messages and delivery handoff.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+          <Link
+            href="/admin/integration-readiness"
+            className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 hover:bg-[#f3f8ef]"
+          >
+            <p className="text-sm font-black text-[#102015]">Integration readiness</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">Check Paystack, Flutterwave, WhatsApp and app URL env readiness.</p>
+          </Link>
+
+          <Link
+            href="/admin/launch-smoke-test"
+            className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 hover:bg-[#f3f8ef]"
+          >
+            <p className="text-sm font-black text-[#102015]">Launch smoke test</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">Run the manual end-to-end operating checklist.</p>
+          </Link>
+
+          <Link
+            href="/admin/whatsapp-inbox"
+            className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 hover:bg-[#f3f8ef]"
+          >
+            <p className="text-sm font-black text-[#102015]">WhatsApp inbox</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">Review inbound WhatsApp messages and evidence logs.</p>
+          </Link>
+
+          <Link
+            href="/admin/whatsapp-drafts"
+            className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 hover:bg-[#f3f8ef]"
+          >
+            <p className="text-sm font-black text-[#102015]">WhatsApp drafts</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">Review likely inbound WhatsApp orders before converting.</p>
+          </Link>
+        </div>
+      </section>
+
+
     <AdminShell
       title="Admin dashboard"
       description="Database-backed operating view for orders, buyers, suppliers, payments, receipts, staff roles, audit logs, and issues."

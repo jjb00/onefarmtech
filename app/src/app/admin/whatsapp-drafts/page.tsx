@@ -57,6 +57,20 @@ export default async function AdminWhatsAppDraftsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+
+            <Link
+              href="/admin/integration-readiness"
+              className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Integration readiness
+            </Link>
+            <Link
+              href="/admin/launch-smoke-test"
+              className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Smoke test
+            </Link>
+
             <Link
               href="/admin/whatsapp-orders/new"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
