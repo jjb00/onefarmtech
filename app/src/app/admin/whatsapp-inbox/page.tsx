@@ -58,6 +58,25 @@ export default async function AdminWhatsAppInboxPage() {
     }),
   ]);
 
+  const allInboundIntents = [
+    ...matchedMessages.map((message) => parseNote(message.metadata).intent || "general"),
+    ...unmatchedMessages.map((message) => parseNote(message.adminNote).intent || "general"),
+  ];
+
+  const intentCounts = allInboundIntents.reduce<Record<string, number>>((counts, intent) => {
+    counts[intent] = (counts[intent] || 0) + 1;
+    return counts;
+  }, {});
+
+  const urgentCount =
+    (intentCounts.complaint || 0) +
+    (intentCounts.payment_follow_up || 0) +
+    (intentCounts.delivery_follow_up || 0);
+
+  const catalogueCount =
+    (intentCounts.product_price_enquiry || 0) +
+    (intentCounts.availability_enquiry || 0);
+
   return (
     <AdminPage
       title="WhatsApp inbox"
@@ -99,7 +118,7 @@ export default async function AdminWhatsAppInboxPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-4">
           <div className="rounded-2xl bg-[#f7f5ec] p-4">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#405348]">
               Matched buyers
@@ -118,12 +137,56 @@ export default async function AdminWhatsAppInboxPage() {
           </div>
           <div className="rounded-2xl bg-[#eef6ea] p-4">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-              Routing mode
+              Catalogue enquiries
             </p>
-            <p className="mt-2 font-black text-[#102015]">
-              Review first
+            <p className="mt-2 text-3xl font-black text-[#102015]">
+              {catalogueCount}
             </p>
           </div>
+          <div className="rounded-2xl bg-[#fff4ef] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#9b2f12]">
+              Follow-up / complaint
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#102015]">
+              {urgentCount}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+          Operational routing
+        </p>
+        <h3 className="mt-2 text-2xl font-black text-[#102015]">
+          What the inbox is seeing
+        </h3>
+        <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
+          This gives staff a quick read of whether WhatsApp is being used for product discovery, orders, payment, delivery, complaints or support.
+        </p>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {[
+            ["Order intent", intentCounts.order_intent || 0, "/admin/whatsapp-drafts"],
+            ["Product / price", intentCounts.product_price_enquiry || 0, "/admin/whatsapp-tools"],
+            ["Availability", intentCounts.availability_enquiry || 0, "/admin/whatsapp-tools"],
+            ["Payment follow-up", intentCounts.payment_follow_up || 0, "/admin/payment-requests"],
+            ["Delivery follow-up", intentCounts.delivery_follow_up || 0, "/admin/deliveries"],
+            ["Complaints", intentCounts.complaint || 0, "/admin/complaints"],
+            ["Support", intentCounts.support || 0, "/admin/contact-enquiries"],
+            ["General", intentCounts.general || 0, "/admin/contact-enquiries"],
+          ].map(([label, count, href]) => (
+            <Link
+              key={label}
+              href={String(href)}
+              className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 hover:bg-[#eef6ea]"
+            >
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+                {label}
+              </p>
+              <p className="mt-2 text-2xl font-black text-[#102015]">{count}</p>
+            </Link>
+          ))}
         </div>
       </section>
 
@@ -157,6 +220,19 @@ export default async function AdminWhatsAppInboxPage() {
                           <span>Intent: {metadata.intent || "general"}</span>
                           <span>Confidence: {metadata.confidence || "Low"}</span>
                         </div>
+                        <p className="mt-2 text-xs font-bold leading-6 text-[#405348]">
+                          {metadata.intent === "product_price_enquiry" || metadata.intent === "availability_enquiry"
+                            ? "Suggested action: send product list or confirm availability."
+                            : metadata.intent === "payment_follow_up"
+                              ? "Suggested action: check payment request and receipt status."
+                              : metadata.intent === "delivery_follow_up"
+                                ? "Suggested action: check delivery assignment/status."
+                                : metadata.intent === "complaint"
+                                  ? "Suggested action: open complaint/support follow-up."
+                                  : metadata.intent === "order_intent"
+                                    ? "Suggested action: review draft order queue."
+                                    : "Suggested action: review and respond from WhatsApp ops."}
+                        </p>
                       </div>
                       <BuyerMessageStatusPill status={message.status} />
                     </div>
@@ -207,6 +283,19 @@ export default async function AdminWhatsAppInboxPage() {
                           <span>Intent: {note.intent || "general"}</span>
                           <span>Confidence: {note.confidence || "Low"}</span>
                         </div>
+                        <p className="mt-2 text-xs font-bold leading-6 text-[#405348]">
+                          {note.intent === "product_price_enquiry" || note.intent === "availability_enquiry"
+                            ? "Suggested action: send product list or confirm availability."
+                            : note.intent === "payment_follow_up"
+                              ? "Suggested action: check payment request and receipt status."
+                              : note.intent === "delivery_follow_up"
+                                ? "Suggested action: check delivery assignment/status."
+                                : note.intent === "complaint"
+                                  ? "Suggested action: open complaint/support follow-up."
+                                  : note.intent === "order_intent"
+                                    ? "Suggested action: review draft order queue."
+                                    : "Suggested action: review and respond from WhatsApp ops."}
+                        </p>
                       </div>
                       <span className="rounded-full bg-[#fff6d6] px-3 py-1 text-xs font-black text-[#7a4a00]">
                         Unmatched
