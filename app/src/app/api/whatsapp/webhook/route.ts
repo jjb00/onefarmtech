@@ -3,6 +3,7 @@ import {NextRequest, NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
 import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
+import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -92,6 +93,7 @@ async function logInboundMessage(input: {
   messageId?: string | null;
   timestamp?: string | null;
   raw: unknown;
+  parsedIntent?: ReturnType<typeof parseWhatsAppOrderMessage>;
 }) {
   const customer = await findCustomerByWhatsAppPhone(input.from);
 
@@ -114,6 +116,9 @@ async function logInboundMessage(input: {
           profileName: input.profileName,
           messageId: input.messageId,
           matchedCustomerId: customer.id,
+          intent: input.parsedIntent?.intent || "general",
+          confidence: input.parsedIntent?.confidence || "Low",
+          matchedIntentKeywords: input.parsedIntent?.matchedIntentKeywords || [],
           raw: input.raw,
         }),
       },
@@ -136,6 +141,9 @@ async function logInboundMessage(input: {
         messageId: input.messageId,
         profileName: input.profileName,
         timestamp: input.timestamp,
+        intent: input.parsedIntent?.intent || "general",
+        confidence: input.parsedIntent?.confidence || "Low",
+        matchedIntentKeywords: input.parsedIntent?.matchedIntentKeywords || [],
       }),
     },
   });
@@ -195,6 +203,12 @@ export async function POST(request: NextRequest) {
       const profileName = contact?.profile?.name || null;
       const messageId = message?.id || null;
 
+      const parsedIntent = parseWhatsAppOrderMessage({
+        from,
+        profileName,
+        body,
+      });
+
       await logInboundMessage({
         from,
         profileName,
@@ -202,6 +216,7 @@ export async function POST(request: NextRequest) {
         messageId,
         timestamp: message?.timestamp || null,
         raw: message,
+        parsedIntent,
       });
 
       await createDraftOrderRequestFromInboundWhatsApp({

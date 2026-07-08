@@ -55,8 +55,10 @@ export async function createDraftOrderRequestFromInboundWhatsApp(input: {
       status: "Draft from WhatsApp",
       source: "WhatsApp inbound draft",
       adminNote: JSON.stringify({
+        intent: parsed.intent,
         confidence: parsed.confidence,
         matchedKeywords: parsed.matchedKeywords,
+        matchedIntentKeywords: parsed.matchedIntentKeywords,
         messageId: input.messageId,
         needsStaffReview: true,
         autoCreatedOrder: false,

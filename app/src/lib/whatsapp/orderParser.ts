@@ -1,4 +1,15 @@
+export type WhatsAppInboundIntent =
+  | "order_intent"
+  | "product_price_enquiry"
+  | "availability_enquiry"
+  | "payment_follow_up"
+  | "delivery_follow_up"
+  | "complaint"
+  | "support"
+  | "general";
+
 export type ParsedWhatsAppOrder = {
+  intent: WhatsAppInboundIntent;
   isLikelyOrder: boolean;
   confidence: "Low" | "Medium" | "High";
   buyerName?: string | null;
@@ -9,6 +20,7 @@ export type ParsedWhatsAppOrder = {
   itemsText: string;
   notes?: string | null;
   matchedKeywords: string[];
+  matchedIntentKeywords: string[];
 };
 
 const orderKeywords = [
@@ -20,13 +32,19 @@ const orderKeywords = [
   "deliver",
   "delivery",
   "basket",
+  "baskets",
   "bag",
+  "bags",
   "crate",
+  "crates",
   "kg",
   "kilo",
   "tomato",
+  "tomatoes",
   "pepper",
+  "peppers",
   "onion",
+  "onions",
   "yam",
   "plantain",
   "rice",
@@ -37,17 +55,91 @@ const orderKeywords = [
   "produce",
 ];
 
-const supportKeywords = [
-  "receipt",
+const priceKeywords = [
+  "price",
+  "prices",
+  "cost",
+  "how much",
+  "rate",
+  "rates",
+  "price list",
+  "pricelist",
+  "catalogue",
+  "catalog",
+  "list",
+];
+
+const availabilityKeywords = [
+  "available",
+  "availability",
+  "what do you have",
+  "what is available",
+  "what's available",
+  "in stock",
+  "stock",
+  "today",
+  "menu",
+];
+
+const paymentKeywords = [
   "paid",
   "payment",
+  "pay",
+  "transfer",
+  "receipt",
+  "proof",
+  "payment proof",
+  "bank",
+  "account",
+  "link",
+];
+
+const deliveryKeywords = [
   "where is",
-  "status",
+  "track",
+  "tracking",
+  "delivery status",
+  "delivered",
+  "driver",
+  "rider",
+  "dispatch",
+  "arrived",
+  "address",
+];
+
+const complaintKeywords = [
   "complaint",
+  "complain",
+  "bad",
+  "spoilt",
+  "spoiled",
+  "damaged",
+  "rotten",
+  "wrong",
+  "missing",
   "refund",
   "issue",
   "problem",
+  "not good",
 ];
+
+const supportKeywords = [
+  "help",
+  "support",
+  "speak",
+  "agent",
+  "person",
+  "team",
+  "hello",
+  "hi",
+  "good morning",
+  "good afternoon",
+  "good evening",
+];
+
+function matchKeywords(text: string, keywords: string[]) {
+  return keywords.filter((keyword) => text.includes(keyword));
+}
 
 function lineValue(lines: string[], labels: string[]) {
   for (const line of lines) {
@@ -66,7 +158,7 @@ function detectLocation(text: string, lines: string[]) {
   const explicit = lineValue(lines, ["location", "address", "deliver to", "delivery address", "area"]);
   if (explicit) return explicit;
 
-  const match = text.match(/\b(?:to|at|in|around)\s+([A-Za-z][A-Za-z\s,.'-]{2,60})/i);
+  const match = text.match(/\\b(?:to|at|in|around)\\s+([A-Za-z][A-Za-z\\s,.'-]{2,60})/i);
   return match?.[1]?.trim() || null;
 }
 
@@ -105,12 +197,71 @@ function extractItemsText(text: string, lines: string[]) {
   const usefulLines = lines.filter((line) => {
     const lower = line.toLowerCase();
     return (
-      /\d/.test(line) ||
+      /\\d/.test(line) ||
       orderKeywords.some((keyword) => lower.includes(keyword))
     );
   });
 
   return usefulLines.length ? usefulLines.join("\\n") : text.trim();
+}
+
+function detectIntent(input: {
+  lower: string;
+  hasQuantity: boolean;
+  matchedOrder: string[];
+  matchedPrice: string[];
+  matchedAvailability: string[];
+  matchedPayment: string[];
+  matchedDelivery: string[];
+  matchedComplaint: string[];
+  matchedSupport: string[];
+}): {intent: WhatsAppInboundIntent; matchedIntentKeywords: string[]} {
+  const {
+    lower,
+    hasQuantity,
+    matchedOrder,
+    matchedPrice,
+    matchedAvailability,
+    matchedPayment,
+    matchedDelivery,
+    matchedComplaint,
+    matchedSupport,
+  } = input;
+
+  const hasOrderLanguage = matchedOrder.length >= 2 || lower.includes("i want") || lower.includes("i need");
+
+  if (matchedComplaint.length > 0) {
+    return {intent: "complaint", matchedIntentKeywords: matchedComplaint};
+  }
+
+  if (matchedPayment.length > 0 && !hasOrderLanguage) {
+    return {intent: "payment_follow_up", matchedIntentKeywords: matchedPayment};
+  }
+
+  if (matchedDelivery.length > 0 && !hasOrderLanguage) {
+    return {intent: "delivery_follow_up", matchedIntentKeywords: matchedDelivery};
+  }
+
+  if (hasQuantity && hasOrderLanguage) {
+    return {intent: "order_intent", matchedIntentKeywords: matchedOrder};
+  }
+
+  if (matchedPrice.length > 0) {
+    return {intent: "product_price_enquiry", matchedIntentKeywords: matchedPrice};
+  }
+
+  if (matchedAvailability.length > 0 || (matchedOrder.length > 0 && lower.length < 80)) {
+    return {
+      intent: "availability_enquiry",
+      matchedIntentKeywords: matchedAvailability.length > 0 ? matchedAvailability : matchedOrder,
+    };
+  }
+
+  if (matchedSupport.length > 0) {
+    return {intent: "support", matchedIntentKeywords: matchedSupport};
+  }
+
+  return {intent: "general", matchedIntentKeywords: []};
 }
 
 export function parseWhatsAppOrderMessage(input: {
@@ -125,18 +276,37 @@ export function parseWhatsAppOrderMessage(input: {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  const matchedKeywords = orderKeywords.filter((keyword) => lower.includes(keyword));
-  const matchedSupport = supportKeywords.filter((keyword) => lower.includes(keyword));
+  const matchedOrder = matchKeywords(lower, orderKeywords);
+  const matchedPrice = matchKeywords(lower, priceKeywords);
+  const matchedAvailability = matchKeywords(lower, availabilityKeywords);
+  const matchedPayment = matchKeywords(lower, paymentKeywords);
+  const matchedDelivery = matchKeywords(lower, deliveryKeywords);
+  const matchedComplaint = matchKeywords(lower, complaintKeywords);
+  const matchedSupport = matchKeywords(lower, supportKeywords);
 
   const hasQuantity = /\\b\\d+\\s?(kg|kilo|bag|bags|crate|crates|basket|baskets|tubers?|pcs|pieces?|unit|units)?\\b/i.test(body);
-  const hasOrderLanguage = matchedKeywords.length >= 2 || lower.includes("i want") || lower.includes("i need");
-  const isLikelyOrder = hasQuantity && hasOrderLanguage && matchedSupport.length < 3;
+
+  const {intent, matchedIntentKeywords} = detectIntent({
+    lower,
+    hasQuantity,
+    matchedOrder,
+    matchedPrice,
+    matchedAvailability,
+    matchedPayment,
+    matchedDelivery,
+    matchedComplaint,
+    matchedSupport,
+  });
+
+  const isLikelyOrder = intent === "order_intent";
 
   let confidence: ParsedWhatsAppOrder["confidence"] = "Low";
-  if (isLikelyOrder && matchedKeywords.length >= 3) confidence = "High";
+  if (isLikelyOrder && matchedOrder.length >= 3) confidence = "High";
   else if (isLikelyOrder) confidence = "Medium";
+  else if (matchedIntentKeywords.length >= 2) confidence = "Medium";
 
   return {
+    intent,
     isLikelyOrder,
     confidence,
     buyerName: lineValue(lines, ["name", "buyer", "customer"]) || input.profileName || null,
@@ -146,6 +316,7 @@ export function parseWhatsAppOrderMessage(input: {
     timing: detectTiming(body, lines),
     itemsText: extractItemsText(body, lines),
     notes: body,
-    matchedKeywords,
+    matchedKeywords: matchedOrder,
+    matchedIntentKeywords,
   };
 }
