@@ -27,6 +27,70 @@ function parseNote(note: string | null | undefined) {
   }
 }
 
+function intentAction(intent: string | null | undefined) {
+  switch (intent) {
+    case "product_price_enquiry":
+    case "availability_enquiry":
+      return {
+        label: "Send product list",
+        href: "/admin/whatsapp-tools",
+        tone: "green",
+      };
+    case "order_intent":
+      return {
+        label: "Open draft orders",
+        href: "/admin/whatsapp-drafts",
+        tone: "green",
+      };
+    case "payment_follow_up":
+      return {
+        label: "Review payments",
+        href: "/admin/payment-requests",
+        tone: "amber",
+      };
+    case "delivery_follow_up":
+      return {
+        label: "Review deliveries",
+        href: "/admin/deliveries",
+        tone: "amber",
+      };
+    case "complaint":
+      return {
+        label: "Review complaints",
+        href: "/admin/complaints",
+        tone: "red",
+      };
+    case "support":
+      return {
+        label: "Support queue",
+        href: "/admin/contact-enquiries",
+        tone: "neutral",
+      };
+    default:
+      return {
+        label: "WhatsApp ops",
+        href: "/admin/whatsapp",
+        tone: "neutral",
+      };
+  }
+}
+
+function actionClassName(tone: string) {
+  if (tone === "green") {
+    return "rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white hover:bg-[#155c2f]";
+  }
+
+  if (tone === "amber") {
+    return "rounded-full bg-[#fff6d6] px-4 py-2 text-xs font-black text-[#7a4a00] hover:bg-[#ffe9a6]";
+  }
+
+  if (tone === "red") {
+    return "rounded-full bg-[#fff4ef] px-4 py-2 text-xs font-black text-[#9b2f12] hover:bg-[#ffe0d4]";
+  }
+
+  return "rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]";
+}
+
 export default async function AdminWhatsAppInboxPage() {
   await requireStaff();
 
@@ -207,6 +271,7 @@ export default async function AdminWhatsAppInboxPage() {
             ) : (
               matchedMessages.map((message) => {
                 const metadata = parseNote(message.metadata);
+                const action = intentAction(metadata.intent);
 
                 return (
                   <article key={message.id} className="rounded-2xl border border-[#102015]/10 p-4">
@@ -241,10 +306,13 @@ export default async function AdminWhatsAppInboxPage() {
                       {message.body}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-[#405348]">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-[#405348]">
                       <span>{formatDate(message.createdAt)}</span>
                       <Link href={`/admin/customers/${message.customerId}`} className="text-[#1f7a3f] underline underline-offset-4">
                         Open buyer
+                      </Link>
+                      <Link href={action.href} className={actionClassName(action.tone)}>
+                        {action.label}
                       </Link>
                     </div>
                   </article>
@@ -270,6 +338,7 @@ export default async function AdminWhatsAppInboxPage() {
             ) : (
               unmatchedMessages.map((message) => {
                 const note = parseNote(message.adminNote);
+                const action = intentAction(note.intent);
 
                 return (
                   <article key={message.id} className="rounded-2xl border border-[#102015]/10 p-4">
@@ -306,10 +375,13 @@ export default async function AdminWhatsAppInboxPage() {
                       {message.message}
                     </p>
 
-                    <div className="mt-3 flex flex-wrap gap-2 text-xs font-bold text-[#405348]">
+                    <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-bold text-[#405348]">
                       <span>{formatDate(message.createdAt)}</span>
                       <Link href="/admin/contact-enquiries" className="text-[#1f7a3f] underline underline-offset-4">
                         Review enquiries
+                      </Link>
+                      <Link href={action.href} className={actionClassName(action.tone)}>
+                        {action.label}
                       </Link>
                     </div>
                   </article>
