@@ -1860,6 +1860,103 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 }
 
 
+export async function sendWhatsAppStorefrontMenuAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+  const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+  const {buildWhatsAppStorefrontMenuMessage} = await import("@/lib/whatsapp/storefrontMenu");
+  const {
+    matchBuyerByPhone,
+    normalisePhone,
+  } = await import("@/lib/commerce/whatsappOrders");
+
+  await requireStaff();
+
+  const recipientPhoneInput = String(formData.get("recipientPhone") || "").trim();
+  const sourcePhone = normalisePhone(recipientPhoneInput);
+
+  if (!sourcePhone) {
+    redirect("/admin/whatsapp-tools?error=missing-phone");
+  }
+
+  const body = buildWhatsAppStorefrontMenuMessage();
+
+  let result;
+  try {
+    result = await sendWhatsAppTextMessage({
+      to: sourcePhone,
+      body,
+    });
+  } catch (error) {
+    console.error("sendWhatsAppStorefrontMenuAction failed", error);
+    redirect("/admin/whatsapp-tools?error=send-failed");
+  }
+
+  const matched = await matchBuyerByPhone(sourcePhone);
+
+  let customerId = matched.customer?.id || null;
+
+  if (!customerId) {
+    const existingCustomer = await prisma.customer.findFirst({
+      where: {
+        phone: sourcePhone,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    customerId = existingCustomer?.id || null;
+  }
+
+  if (!customerId) {
+    const customer = await prisma.customer.create({
+      data: {
+        name: "WhatsApp buyer",
+        phone: sourcePhone,
+        buyerType: "WhatsApp buyer",
+        accountStatus: "Manual WhatsApp",
+        status: "Active",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    customerId = customer.id;
+  }
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title: "WhatsApp storefront menu sent",
+      body,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      status: "Sent",
+      recipient: sourcePhone,
+      source: "WhatsApp storefront menu",
+      relatedType: "WhatsAppStorefrontMenu",
+      relatedId: null,
+      sentAt: new Date(),
+      metadata: JSON.stringify({
+        provider: result.provider,
+        messageId: result.messageId,
+      }),
+    },
+  });
+
+  revalidatePath("/admin/whatsapp-tools");
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/admin/customers");
+  revalidatePath("/buyer-account/inbox");
+
+  redirect("/admin/whatsapp-tools?menu=sent");
+}
+
+
 export async function sendWhatsAppProductListAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
