@@ -1145,6 +1145,12 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
 
   await requireStaff();
 
+  const sourceDraft = sourceDraftId
+    ? await prisma.orderRequest.findUnique({
+        where: {id: sourceDraftId},
+      })
+    : null;
+
   const whatsappPhoneInput = String(formData.get("whatsappPhone") || "").trim();
   const buyerNameInput = String(formData.get("buyerName") || "").trim();
   const buyerTypeInput = String(formData.get("buyerType") || "WhatsApp buyer").trim();
@@ -1213,6 +1219,24 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
     buyerTypeInput ||
     "WhatsApp buyer";
 
+  const sourceDraftContext = sourceDraft
+    ? [
+        "",
+        "Source WhatsApp storefront draft:",
+        `Draft ID: ${sourceDraft.id}`,
+        `Draft status: ${sourceDraft.status}`,
+        `Original buyer: ${sourceDraft.buyerName}`,
+        `Original phone: ${sourceDraft.phone}`,
+        sourceDraft.location ? `Parsed location: ${sourceDraft.location}` : "",
+        sourceDraft.timing ? `Parsed timing: ${sourceDraft.timing}` : "",
+        sourceDraft.message ? `Original message: ${sourceDraft.message}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : "";
+
+  const orderAdminNote = `${adminNote || "Created from WhatsApp-assisted admin order entry."}${sourceDraftContext}`;
+
   const order = await prisma.order.create({
     data: {
       code: orderCode,
@@ -1234,7 +1258,7 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
       discountAmount,
       totalAmount,
       estimatedTotal: totalAmount,
-      adminNote: adminNote || "Created from WhatsApp-assisted admin order entry.",
+      adminNote: orderAdminNote,
       items: {
         create: selectedLines.map((line) => ({
           product: {

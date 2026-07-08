@@ -15,6 +15,34 @@ function formatNaira(amount: number | null | undefined) {
   }).format(amount || 0);
 }
 
+function parseDraftNote(note: string | null | undefined) {
+  try {
+    return JSON.parse(note || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function buildDraftAdminNote(sourceDraft: any, note: any) {
+  if (!sourceDraft) return "";
+
+  const parts = [
+    "Created from inbound WhatsApp storefront draft.",
+    `Draft ID: ${sourceDraft.id}`,
+    `Original phone: ${sourceDraft.phone}`,
+    sourceDraft.location ? `Parsed location: ${sourceDraft.location}` : "",
+    sourceDraft.timing ? `Parsed timing: ${sourceDraft.timing}` : "",
+    note?.messageId ? `Meta message ID: ${note.messageId}` : "",
+    note?.intent ? `Intent: ${note.intent}` : "",
+    note?.confidence ? `Parser confidence: ${note.confidence}` : "",
+    "",
+    "Original WhatsApp message:",
+    sourceDraft.message || sourceDraft.items || "",
+  ].filter(Boolean);
+
+  return parts.join("\n");
+}
+
 export default async function WhatsAppAssistedOrderPage({
   searchParams,
 }: {
@@ -30,8 +58,10 @@ export default async function WhatsAppAssistedOrderPage({
         where: {id: draftId},
       })
     : null;
+  const sourceDraftNote = parseDraftNote(sourceDraft?.adminNote);
+  const sourceDraftAdminNote = buildDraftAdminNote(sourceDraft, sourceDraftNote);
 
-  const params = searchParams ? await searchParams : {};
+  const params = resolvedSearchParams;
   const error = typeof params.error === "string" ? params.error : "";
 
   const products = await prisma.product.findMany({
@@ -71,12 +101,23 @@ export default async function WhatsAppAssistedOrderPage({
           <p className="mt-2 text-sm leading-7 text-[#7a4a00]">
             This form was opened from inbound WhatsApp draft {sourceDraft.id}. Confirm buyer, items, delivery details, delivery fee and payment method before creating the order.
           </p>
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            <div className="rounded-2xl bg-white/70 p-4 text-sm leading-7 text-[#102015]">
+              <p><strong>Buyer:</strong> {sourceDraft.buyerName}</p>
+              <p><strong>Phone:</strong> {sourceDraft.phone}</p>
+              <p><strong>Location:</strong> {sourceDraft.location || "Not parsed"}</p>
+              <p><strong>Delivery:</strong> {sourceDraft.deliveryPreference || "Delivery"}</p>
+              <p><strong>Timing:</strong> {sourceDraft.timing || "Not parsed"}</p>
+              <p><strong>Confidence:</strong> {sourceDraftNote?.confidence || "Unknown"}</p>
+            </div>
+            <div className="rounded-2xl bg-white/70 p-4 text-sm leading-7 text-[#102015]">
+              <p><strong>Parsed items:</strong></p>
+              <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm">{sourceDraft.items}</pre>
+            </div>
+          </div>
           <div className="mt-4 rounded-2xl bg-white/70 p-4 text-sm leading-7 text-[#102015]">
-            <p><strong>Buyer:</strong> {sourceDraft.buyerName}</p>
-            <p><strong>Phone:</strong> {sourceDraft.phone}</p>
-            <p><strong>Location:</strong> {sourceDraft.location || "Not parsed"}</p>
-            <p><strong>Items:</strong></p>
-            <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm">{sourceDraft.items}</pre>
+            <p><strong>Original WhatsApp message:</strong></p>
+            <pre className="mt-2 whitespace-pre-wrap rounded-xl bg-white p-3 text-sm">{sourceDraft.message || "No original message stored"}</pre>
           </div>
         </section>
       ) : null}
@@ -113,6 +154,7 @@ export default async function WhatsAppAssistedOrderPage({
                 required
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="+234..."
+                defaultValue={sourceDraft?.phone || ""}
               />
             </label>
 
@@ -146,7 +188,7 @@ export default async function WhatsAppAssistedOrderPage({
               Delivery method
               <select
                 name="deliveryMethod"
-                defaultValue="Delivery"
+                defaultValue={sourceDraft?.deliveryPreference || "Delivery"}
                 className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
               >
                 <option>Delivery</option>
@@ -268,6 +310,7 @@ export default async function WhatsAppAssistedOrderPage({
                 name="deliveryArea"
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="e.g. Lekki Phase 1"
+                defaultValue={sourceDraft?.location || ""}
               />
             </label>
 
@@ -278,6 +321,7 @@ export default async function WhatsAppAssistedOrderPage({
                 rows={3}
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="Delivery address or pickup note"
+                defaultValue={sourceDraft?.location || ""}
               />
             </label>
 
@@ -288,6 +332,7 @@ export default async function WhatsAppAssistedOrderPage({
                 rows={3}
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="Gate code, preferred time, contact on arrival..."
+                defaultValue={sourceDraft?.timing || ""}
               />
             </label>
 
@@ -295,9 +340,10 @@ export default async function WhatsAppAssistedOrderPage({
               Internal admin note
               <textarea
                 name="adminNote"
-                rows={3}
+                rows={6}
                 className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
                 placeholder="Any internal context from the WhatsApp conversation"
+                defaultValue={sourceDraftAdminNote}
               />
             </label>
           </div>

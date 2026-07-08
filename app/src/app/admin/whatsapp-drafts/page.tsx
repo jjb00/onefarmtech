@@ -37,10 +37,13 @@ export default async function AdminWhatsAppDraftsPage() {
     take: 100,
   });
 
+  const activeDrafts = drafts.filter((draft) => draft.status !== "Converted to order");
+  const convertedDrafts = drafts.filter((draft) => draft.status === "Converted to order");
+
   return (
     <AdminPage
       title="WhatsApp draft orders"
-      subtitle="Inbound WhatsApp messages that look like orders. Review and convert manually; no automatic confirmed order creation yet."
+      subtitle="WhatsApp storefront order queue. Review parsed messages, clarify where needed, then convert them into confirmed orders."
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -65,13 +68,6 @@ export default async function AdminWhatsAppDraftsPage() {
               Integration readiness
             </Link>
             <Link
-              href="/admin/launch-smoke-test"
-              className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-            >
-              Smoke test
-            </Link>
-
-            <Link
               href="/admin/whatsapp-orders/new"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
             >
@@ -86,6 +82,27 @@ export default async function AdminWhatsAppDraftsPage() {
           </div>
         </div>
 
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          <div className="rounded-2xl bg-[#fff6d6] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#7a4a00]">
+              Needs review
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#102015]">{activeDrafts.length}</p>
+          </div>
+          <div className="rounded-2xl bg-[#eef6ea] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+              Converted
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#102015]">{convertedDrafts.length}</p>
+          </div>
+          <div className="rounded-2xl bg-[#f7f5ec] p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#405348]">
+              Total storefront drafts
+            </p>
+            <p className="mt-2 text-3xl font-black text-[#102015]">{drafts.length}</p>
+          </div>
+        </div>
+
         <div className="mt-6 grid gap-4">
           {drafts.length === 0 ? (
             <div className="rounded-2xl bg-[#f7f5ec] p-5 text-sm leading-7 text-[#405348]">
@@ -94,9 +111,17 @@ export default async function AdminWhatsAppDraftsPage() {
           ) : (
             drafts.map((draft) => {
               const note = parseNote(draft.adminNote);
+              const isConverted = draft.status === "Converted to order";
+              const convertedOrderId = note.convertedOrderId;
+              const convertedOrderCode = note.convertedOrderCode;
 
               return (
-                <article key={draft.id} className="rounded-[1.5rem] border border-[#102015]/10 p-5">
+                <article
+                  key={draft.id}
+                  className={`rounded-[1.5rem] border p-5 ${
+                    isConverted ? "border-[#1f7a3f]/20 bg-[#eef6ea]" : "border-[#102015]/10 bg-white"
+                  }`}
+                >
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap gap-2">
@@ -113,14 +138,36 @@ export default async function AdminWhatsAppDraftsPage() {
                       <p className="mt-1 text-sm leading-7 text-[#405348]">
                         {draft.phone} · {draft.location || "Location not parsed"} · {formatDate(draft.createdAt)}
                       </p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-xs font-bold text-[#405348]">
+                        {note.intent ? <span>Intent: {note.intent}</span> : null}
+                        {note.messageId ? <span>Meta ID logged</span> : null}
+                        {convertedOrderCode ? <span>Converted: {convertedOrderCode}</span> : null}
+                      </div>
                     </div>
 
-                    <Link
-                      href={`/admin/order-requests`}
-                      className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-                    >
-                      Open order requests
-                    </Link>
+                    <div className="flex flex-wrap gap-2">
+                      {isConverted && convertedOrderId ? (
+                        <Link
+                          href={`/admin/orders/${convertedOrderId}`}
+                          className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f]"
+                        >
+                          Open {convertedOrderCode || "order"}
+                        </Link>
+                      ) : (
+                        <Link
+                          href={`/admin/whatsapp-orders/new?draftId=${draft.id}`}
+                          className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white hover:bg-[#155c2f]"
+                        >
+                          Convert to order
+                        </Link>
+                      )}
+                      <Link
+                        href={`/admin/order-requests`}
+                        className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+                      >
+                        Order requests
+                      </Link>
+                    </div>
                   </div>
 
                   <div className="mt-4 grid gap-4 lg:grid-cols-2">
@@ -143,8 +190,12 @@ export default async function AdminWhatsAppDraftsPage() {
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-2xl bg-[#fff6d6] p-4 text-sm leading-7 text-[#7a4a00]">
-                    Staff action: confirm buyer, quantity, delivery address, delivery fee and payment method before creating a confirmed WhatsApp-assisted order.
+                  <div className={`mt-4 rounded-2xl p-4 text-sm leading-7 ${
+                    isConverted ? "bg-white text-[#1f7a3f]" : "bg-[#fff6d6] text-[#7a4a00]"
+                  }`}>
+                    {isConverted
+                      ? `Converted into ${convertedOrderCode || "an order"}. Use the linked order record for payment, receipt and delivery.`
+                      : "Staff action: confirm buyer, quantity, delivery address, delivery fee and payment method, then convert this WhatsApp storefront draft into an order."}
                   </div>
                 </article>
               );
