@@ -191,6 +191,136 @@ async function logOutboundCatalogueReply(input: {
 }
 
 
+
+async function findLatestCustomerOrder(customerId: string | null) {
+  if (!customerId) return null;
+
+  return prisma.order.findFirst({
+    where: {
+      customerId,
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+    select: {
+      id: true,
+      code: true,
+      paymentStatus: true,
+      fulfilmentStatus: true,
+      totalAmount: true,
+      paymentReference: true,
+      delivery: {
+        select: {
+          id: true,
+          status: true,
+          trackingReference: true,
+          deliveryPartnerName: true,
+          deliveryPartnerPhone: true,
+        },
+      },
+      paymentRequests: {
+        orderBy: {
+          createdAt: "desc",
+        },
+        take: 1,
+        select: {
+          id: true,
+          reference: true,
+          status: true,
+          provider: true,
+          amount: true,
+          paymentUrl: true,
+        },
+      },
+    },
+  });
+}
+
+async function logWhatsAppOperationalFollowUp(input: {
+  from: string;
+  body: string;
+  messageId?: string | null;
+  parsedIntent: ReturnType<typeof parseWhatsAppOrderMessage>;
+  matchedCustomerId?: string | null;
+}) {
+  const intent = input.parsedIntent.intent;
+
+  if (!["payment_follow_up", "delivery_follow_up"].includes(intent)) {
+    return {
+      logged: false,
+      reason: "intent-not-follow-up",
+    };
+  }
+
+  const customerId = input.matchedCustomerId || null;
+
+  if (!customerId) {
+    return {
+      logged: false,
+      reason: "no-matched-customer",
+    };
+  }
+
+  const latestOrder = await findLatestCustomerOrder(customerId);
+
+  if (!latestOrder) {
+    return {
+      logged: false,
+      reason: "no-recent-order",
+    };
+  }
+
+  const relatedType = intent === "payment_follow_up" ? "PaymentFollowUp" : "DeliveryFollowUp";
+  const title =
+    intent === "payment_follow_up"
+      ? `WhatsApp payment follow-up for ${latestOrder.code}`
+      : `WhatsApp delivery follow-up for ${latestOrder.code}`;
+
+  const context =
+    intent === "payment_follow_up"
+      ? {
+          orderCode: latestOrder.code,
+          paymentStatus: latestOrder.paymentStatus,
+          paymentReference: latestOrder.paymentReference,
+          latestPaymentRequest: latestOrder.paymentRequests?.[0] || null,
+        }
+      : {
+          orderCode: latestOrder.code,
+          fulfilmentStatus: latestOrder.fulfilmentStatus,
+          delivery: latestOrder.delivery || null,
+        };
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title,
+      body: input.body,
+      channel: "WhatsApp",
+      direction: "Inbound",
+      status: "Unread",
+      recipient: input.from,
+      source: "WhatsApp storefront follow-up routing",
+      relatedType,
+      relatedId: latestOrder.id,
+      sentAt: new Date(),
+      metadata: JSON.stringify({
+        messageId: input.messageId,
+        intent,
+        confidence: input.parsedIntent.confidence,
+        matchedIntentKeywords: input.parsedIntent.matchedIntentKeywords,
+        ...context,
+      }),
+    },
+  });
+
+  return {
+    logged: true,
+    reason: "follow-up-logged",
+    orderId: latestOrder.id,
+    orderCode: latestOrder.code,
+  };
+}
+
 async function maybeCreateComplaintFromInbound(input: {
   from: string;
   body: string;
@@ -520,6 +650,18 @@ export async function POST(request: NextRequest) {
         });
       } catch (error) {
         console.error("WhatsApp complaint routing failed", error);
+      }
+
+      try {
+        await logWhatsAppOperationalFollowUp({
+          from,
+          body,
+          messageId,
+          parsedIntent,
+          matchedCustomerId: inboundLog.customerId,
+        });
+      } catch (error) {
+        console.error("WhatsApp payment/delivery follow-up routing failed", error);
       }
 
       try {
