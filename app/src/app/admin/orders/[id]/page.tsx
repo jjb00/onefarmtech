@@ -202,6 +202,26 @@ export default async function AdminOrderDetailPage({
   const latestPaymentRequest = order.paymentRequests[0];
   const latestReceipt = order.receipts[0];
 
+  const latestPaymentWhatsAppMessage =
+    latestPaymentRequest && order.customerId
+      ? await prisma.buyerMessage.findFirst({
+          where: {
+            customerId: order.customerId,
+            relatedType: "PaymentRequest",
+            relatedId: latestPaymentRequest.id,
+            channel: "WhatsApp",
+            direction: "Outbound",
+          },
+          orderBy: {createdAt: "desc"},
+        })
+      : null;
+
+  const paymentRequestWhatsAppSent = Boolean(latestPaymentWhatsAppMessage);
+  const paymentLinkReady = Boolean(latestPaymentRequest?.paymentUrl);
+  const paymentIsPaid =
+    String(order.paymentStatus || "").toLowerCase().includes("paid") ||
+    String(latestPaymentRequest?.status || "").toLowerCase() === "paid";
+
   const operationalChecklist = [
     {
       title: "Buyer",
@@ -355,6 +375,162 @@ export default async function AdminOrderDetailPage({
               Link buyer
             </Link>
           )}
+        </div>
+      </section>
+
+      <section className="rounded-[2rem] border border-[#1f7a3f]/15 bg-[#eef6ea] p-6 shadow-sm">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
+              WhatsApp sales handoff
+            </p>
+            <h2 className="mt-2 text-2xl font-black text-[#102015]">
+              Next step after WhatsApp order
+            </h2>
+            <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
+              Use this panel to move the buyer from confirmed WhatsApp order to payment link, WhatsApp payment message, receipt and delivery.
+            </p>
+          </div>
+
+          <Link
+            href="/admin/whatsapp"
+            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+          >
+            WhatsApp storefront
+          </Link>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-4">
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Payment request
+            </p>
+            <p className="mt-2 text-lg font-black text-[#102015]">
+              {latestPaymentRequest ? latestPaymentRequest.status : "Not created"}
+            </p>
+            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
+              {latestPaymentRequest ? latestPaymentRequest.reference : "Create a payment request before sending payment instructions."}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Payment link
+            </p>
+            <p className="mt-2 text-lg font-black text-[#102015]">
+              {paymentLinkReady ? "Ready" : "Not generated"}
+            </p>
+            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
+              {latestPaymentRequest?.provider || "Provider not selected"}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              WhatsApp sent
+            </p>
+            <p className="mt-2 text-lg font-black text-[#102015]">
+              {paymentRequestWhatsAppSent ? "Sent" : "Not sent"}
+            </p>
+            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
+              {latestPaymentWhatsAppMessage ? formatDate(latestPaymentWhatsAppMessage.sentAt || latestPaymentWhatsAppMessage.createdAt) : order.phone}
+            </p>
+          </div>
+
+          <div className="rounded-2xl bg-white p-4">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
+              Delivery
+            </p>
+            <p className="mt-2 text-lg font-black text-[#102015]">
+              {order.delivery?.status || "Not assigned"}
+            </p>
+            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
+              {order.delivery?.deliveryPartner?.name || order.delivery?.deliveryPartnerName || "Assign after payment/fulfilment confirmation."}
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3">
+          {!latestPaymentRequest ? (
+            <form action={createPaymentRequestFromOrderAction}>
+              <input type="hidden" name="orderId" value={order.id} />
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+              >
+                Create payment request
+              </button>
+            </form>
+          ) : null}
+
+          {latestPaymentRequest && !paymentLinkReady && !paymentIsPaid ? (
+            <>
+              <form action={generatePaymentLinkAction}>
+                <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                <input type="hidden" name="provider" value="Paystack" />
+                <button
+                  type="submit"
+                  className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+                >
+                  Generate Paystack link
+                </button>
+              </form>
+
+              <form action={generatePaymentLinkAction}>
+                <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                <input type="hidden" name="provider" value="Flutterwave" />
+                <button
+                  type="submit"
+                  className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+                >
+                  Generate Flutterwave link
+                </button>
+              </form>
+            </>
+          ) : null}
+
+          {latestPaymentRequest && !paymentRequestWhatsAppSent && !paymentIsPaid ? (
+            <form action={sendPaymentRequestWhatsAppAction}>
+              <input type="hidden" name="id" value={latestPaymentRequest.id} />
+              <button
+                type="submit"
+                className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white hover:bg-[#1f3426]"
+              >
+                Send WhatsApp payment request
+              </button>
+            </form>
+          ) : null}
+
+          {latestPaymentRequest?.paymentUrl ? (
+            <Link
+              href={latestPaymentRequest.paymentUrl}
+              target="_blank"
+              className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              Open payment link
+            </Link>
+          ) : null}
+
+          <Link
+            href="/admin/payment-requests"
+            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+          >
+            Payment requests
+          </Link>
+
+          <Link
+            href="/admin/deliveries"
+            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+          >
+            Delivery handoff
+          </Link>
+
+          <Link
+            href="/admin/buyer-messages"
+            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+          >
+            Message evidence
+          </Link>
         </div>
       </section>
 
