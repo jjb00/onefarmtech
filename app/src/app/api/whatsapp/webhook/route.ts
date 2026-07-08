@@ -4,6 +4,11 @@ import {prisma} from "@/lib/prisma";
 import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
+import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
+import {
+  buildWhatsAppProductListMessage,
+  isProductAvailableForWhatsApp,
+} from "@/lib/whatsapp/productCatalogue";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -84,6 +89,141 @@ async function findCustomerByWhatsAppPhone(phone: string) {
   });
 
   return contact?.customer || null;
+}
+
+
+function shouldAutoSendCatalogue(intent: string | undefined) {
+  return ["product_price_enquiry", "availability_enquiry"].includes(String(intent || ""));
+}
+
+async function buildCurrentCatalogueMessage() {
+  const products = await prisma.product.findMany({
+    where: {
+      status: "Active",
+    },
+    orderBy: [{category: "asc"}, {name: "asc"}],
+    select: {
+      id: true,
+      name: true,
+      category: true,
+      unit: true,
+      grade: true,
+      basePrice: true,
+      availability: true,
+      status: true,
+    },
+  });
+
+  const availableProducts = products.filter(isProductAvailableForWhatsApp);
+
+  return {
+    body: buildWhatsAppProductListMessage(availableProducts),
+    productCount: availableProducts.length,
+  };
+}
+
+async function logOutboundCatalogueReply(input: {
+  to: string;
+  body: string;
+  productCount: number;
+  result: Awaited<ReturnType<typeof sendWhatsAppTextMessage>>;
+  matchedCustomerId?: string | null;
+}) {
+  let customerId = input.matchedCustomerId || null;
+
+  if (!customerId) {
+    const existingCustomer = await prisma.customer.findFirst({
+      where: {
+        phone: input.to,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    customerId = existingCustomer?.id || null;
+  }
+
+  if (!customerId) {
+    const customer = await prisma.customer.create({
+      data: {
+        name: "WhatsApp buyer",
+        phone: input.to,
+        buyerType: "WhatsApp buyer",
+        accountStatus: "Manual WhatsApp",
+        status: "Active",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    customerId = customer.id;
+  }
+
+  await prisma.buyerMessage.create({
+    data: {
+      customerId,
+      title: "Auto WhatsApp product list reply",
+      body: input.body,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      status: "Sent",
+      recipient: input.to,
+      source: "WhatsApp storefront auto-reply",
+      relatedType: "ProductCatalogue",
+      relatedId: null,
+      sentAt: new Date(),
+      metadata: JSON.stringify({
+        provider: input.result.provider,
+        messageId: input.result.messageId,
+        productCount: input.productCount,
+        autoReply: true,
+      }),
+    },
+  });
+}
+
+async function maybeSendCatalogueAutoReply(input: {
+  from: string;
+  parsedIntent: ReturnType<typeof parseWhatsAppOrderMessage>;
+  matchedCustomerId?: string | null;
+}) {
+  if (!shouldAutoSendCatalogue(input.parsedIntent.intent)) {
+    return {
+      sent: false,
+      reason: "intent-not-catalogue",
+    };
+  }
+
+  if (process.env.WHATSAPP_AUTO_REPLY_CATALOGUE !== "true") {
+    return {
+      sent: false,
+      reason: "auto-reply-disabled",
+    };
+  }
+
+  const catalogue = await buildCurrentCatalogueMessage();
+
+  const result = await sendWhatsAppTextMessage({
+    to: input.from,
+    body: catalogue.body,
+  });
+
+  await logOutboundCatalogueReply({
+    to: input.from,
+    body: catalogue.body,
+    productCount: catalogue.productCount,
+    result,
+    matchedCustomerId: input.matchedCustomerId,
+  });
+
+  return {
+    sent: true,
+    reason: "catalogue-sent",
+    messageId: result.messageId || null,
+    productCount: catalogue.productCount,
+  };
 }
 
 async function logInboundMessage(input: {
@@ -209,7 +349,7 @@ export async function POST(request: NextRequest) {
         body,
       });
 
-      await logInboundMessage({
+      const inboundLog = await logInboundMessage({
         from,
         profileName,
         body,
@@ -225,6 +365,16 @@ export async function POST(request: NextRequest) {
         body,
         messageId,
       });
+
+      try {
+        await maybeSendCatalogueAutoReply({
+          from,
+          parsedIntent,
+          matchedCustomerId: inboundLog.customerId,
+        });
+      } catch (error) {
+        console.error("WhatsApp catalogue auto-reply failed", error);
+      }
 
       logged += 1;
     }
