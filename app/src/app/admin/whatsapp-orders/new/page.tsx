@@ -23,7 +23,8 @@ export default async function WhatsAppAssistedOrderPage({
   await requireStaff();
 
   const resolvedSearchParams = searchParams ? await searchParams : {};
-  const draftId = resolvedSearchParams?.draftId || "";
+  const draftIdParam = resolvedSearchParams?.draftId;
+  const draftId = Array.isArray(draftIdParam) ? draftIdParam[0] || "" : draftIdParam || "";
   const sourceDraft = draftId
     ? await prisma.orderRequest.findUnique({
         where: {id: draftId},
@@ -50,7 +51,16 @@ export default async function WhatsAppAssistedOrderPage({
       subtitle="Create a database order from a WhatsApp buyer conversation using live product prices."
     >
       {error ? (
-        {sourceDraft ? (
+<section className="rounded-[2rem] border border-[#d9471f]/30 bg-[#fff4ef] p-5 text-sm font-bold text-[#9b2f12]">
+          {error === "missing-phone"
+            ? "Enter the buyer WhatsApp phone number."
+            : error === "no-items"
+              ? "Select at least one product quantity."
+              : "The order could not be created. Check the form and try again."}
+        </section>
+      ) : null}
+
+      {sourceDraft ? (
         <section className="rounded-[2rem] border border-[#7a4a00]/20 bg-[#fff6d6] p-6 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-[#7a4a00]">
             Source WhatsApp draft
@@ -71,16 +81,8 @@ export default async function WhatsAppAssistedOrderPage({
         </section>
       ) : null}
 
-      <section className="rounded-[2rem] border border-[#d9471f]/30 bg-[#fff4ef] p-5 text-sm font-bold text-[#9b2f12]">
-          {error === "missing-phone"
-            ? "Enter the buyer WhatsApp phone number."
-            : error === "no-items"
-              ? "Select at least one product quantity."
-              : "The order could not be created. Check the form and try again."}
-        </section>
-      ) : null}
-
-      <form action={createWhatsAppAssistedOrderAction} className="grid gap-6">
+<form action={createWhatsAppAssistedOrderAction} className="grid gap-6">
+            <input type="hidden" name="sourceDraftId" value={sourceDraft?.id || ""} />
         <section className="rounded-[2rem] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>

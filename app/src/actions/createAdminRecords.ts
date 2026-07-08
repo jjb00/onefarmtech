@@ -24,6 +24,38 @@ function readNumber(formData: FormData, key: string) {
   return Number.isFinite(numberValue) && numberValue >= 0 ? Math.round(numberValue) : 0;
 }
 
+
+async function markSourceDraftConverted(sourceDraftId: string, orderId: string, orderCode: string) {
+  if (!sourceDraftId) return;
+
+  const draft = await prisma.orderRequest.findUnique({
+    where: {id: sourceDraftId},
+  });
+
+  if (!draft) return;
+
+  let existingNote = {};
+  try {
+    existingNote = JSON.parse(draft.adminNote || "{}");
+  } catch {
+    existingNote = {previousNote: draft.adminNote || ""};
+  }
+
+  await prisma.orderRequest.update({
+    where: {id: sourceDraftId},
+    data: {
+      status: "Converted to order",
+      adminNote: JSON.stringify({
+        ...existingNote,
+        staffReviewStatus: "Converted to order",
+        convertedOrderId: orderId,
+        convertedOrderCode: orderCode,
+        convertedAt: new Date().toISOString(),
+      }),
+    },
+  });
+}
+
 export async function createCustomerAction(formData: FormData) {
   const name = readText(formData, "name");
   const phone = readText(formData, "phone");
@@ -1097,6 +1129,7 @@ export async function updateDeliveryPartnerStatusAction(formData: FormData) {
 }
 
 export async function createWhatsAppAssistedOrderAction(formData: FormData) {
+  const sourceDraftId = readText(formData, "sourceDraftId");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1278,6 +1311,8 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
   revalidatePath("/admin/deliveries");
   revalidatePath("/admin/buyer-messages");
   revalidatePath("/buyer-account/orders");
+  await markSourceDraftConverted(sourceDraftId, order.id, order.code);
+
   revalidatePath("/buyer-account/inbox");
 
   redirect(`/admin/orders/${order.id}`);
