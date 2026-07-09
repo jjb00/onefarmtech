@@ -85,13 +85,13 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   );
 
   const quickActions = [
-    ["Create order", "/admin/create-order"],
+    ["Order desk", "/admin/operations"],
     ["Add customer", "/admin/customers"],
     ["Buyer accounts", "/admin/buyer-accounts"],
     ["Buyer access", "/admin/buyer-access"],
     ["Profile updates", "/admin/buyer-profile-requests"],
-    ["Buyer messages", "/admin/buyer-messages"],
-    ["Issue receipt", "/admin/receipts"],
+    ["Message centre", "/admin/whatsapp"],
+    ["Payment requests", "/admin/payment-requests"],
     ["Audit log", "/admin/audit-log"],
     ["Staff & roles", "/admin/staff"],
     ["Deployment readiness", "/admin/deployment-readiness"],
@@ -100,11 +100,11 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
 
   return (
     <AdminShell
-      title="Admin dashboard"
-      description="Database-backed operating view for orders, buyers, suppliers, payments, receipts, staff roles, audit logs, and issues."
+      title="Company dashboard"
+      description="High-level operating snapshot for orders, buyers, payments, fulfilment, issues and account readiness."
       action={
         <Link
-          href="/admin/create-order"
+          href="/admin/operations"
           className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
         >
           Create order

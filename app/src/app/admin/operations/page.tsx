@@ -8,106 +8,80 @@ export const runtime = "nodejs";
 
 const operationGroups = [
   {
-    title: "Message-led commerce",
-    description: "Tools for buyer messages, product lists, order drafts and assisted order creation.",
+    title: "New order intake",
+    description: "Start here when buyers send requests, ask for prices or need assisted ordering.",
     items: [
       {
-        title: "Message templates",
-        href: "/admin/whatsapp-tools",
-        description: "Catalogue and update messages generated from live records.",
+        title: "Message inbox",
+        href: "/admin/whatsapp-inbox",
+        description: "Review inbound buyer messages and route the next action.",
+      },
+      {
+        title: "Order drafts",
+        href: "/admin/whatsapp-drafts",
+        description: "Convert buyer order drafts into confirmed orders.",
       },
       {
         title: "Assisted order entry",
         href: "/admin/whatsapp-orders/new",
-        description: "Create database orders from buyer conversations using live prices.",
+        description: "Create an order from a buyer conversation using live catalogue prices.",
       },
       {
-        title: "Guest buyers",
-        href: "/admin/guest-buyers",
-        description: "Review unlinked WhatsApp/event buyers and account conversion candidates.",
-      },
-      {
-        title: "Buyer messages",
-        href: "/admin/buyer-messages",
-        description: "Communication evidence log for WhatsApp, portal, support and account messages.",
+        title: "Create manual order",
+        href: "/admin/create-order",
+        description: "Use for phone, offline, business or exceptional orders.",
       },
     ],
   },
   {
-    title: "Orders, payments and delivery",
-    description: "Operational controls for order fulfilment, payment confirmation and logistics.",
+    title: "Orders needing action",
+    description: "Keep active orders moving through payment and fulfilment.",
     items: [
       {
         title: "Orders",
         href: "/admin/orders",
-        description: "Order list and order control centre.",
+        description: "Open order queue and individual order control centres.",
       },
       {
         title: "Payment requests",
         href: "/admin/payment-requests",
-        description: "Track payment references, manual confirmations, provider details and receipts.",
+        description: "Review unpaid requests, checkout links and buyer payment follow-up.",
       },
       {
         title: "Deliveries",
         href: "/admin/deliveries",
-        description: "Assign delivery partners and track fulfilment progress.",
-      },
-      {
-        title: "Delivery partners",
-        href: "/admin/delivery-partners",
-        description: "Manage logistics partners, access codes and delivery coverage.",
-      },
-    ],
-  },
-  {
-    title: "Buyer accounts",
-    description: "Account approvals, access, profile updates and buyer readiness.",
-    items: [
-      {
-        title: "Buyer account requests",
-        href: "/admin/buyer-account-requests",
-        description: "Review public buyer account applications and convert suitable buyers.",
-      },
-      {
-        title: "Buyer access",
-        href: "/admin/buyer-access",
-        description: "Manage buyer contacts and invite-code access.",
-      },
-      {
-        title: "Buyer profile requests",
-        href: "/admin/buyer-profile-requests",
-        description: "Review account, contact, finance and profile update requests.",
-      },
-      {
-        title: "Customers",
-        href: "/admin/customers",
-        description: "Buyer/customer account records and relationship management.",
-      },
-    ],
-  },
-  {
-    title: "Launch and system checks",
-    description: "Readiness checks, product catalogue, support flows and operational setup.",
-    items: [
-      {
-        title: "Launch readiness",
-        href: "/admin/launch-readiness",
-        description: "Database, workflow and configuration checks before soft launch.",
-      },
-      {
-        title: "Products",
-        href: "/admin/products",
-        description: "Manage produce catalogue, pricing, availability and grades.",
-      },
-      {
-        title: "Receipts",
-        href: "/admin/receipts",
-        description: "Issued receipt records.",
+        description: "Assign delivery partners and update fulfilment progress.",
       },
       {
         title: "Complaints",
         href: "/admin/complaints",
-        description: "Buyer issues, fulfilment problems and complaint tracking.",
+        description: "Resolve quality, delivery and support issues.",
+      },
+    ],
+  },
+  {
+    title: "Order support tools",
+    description: "Open only when an active order requires supporting records.",
+    items: [
+      {
+        title: "Products",
+        href: "/admin/products",
+        description: "Check or update product availability and pricing.",
+      },
+      {
+        title: "Customers",
+        href: "/admin/customers",
+        description: "Check buyer record, account status or contact details.",
+      },
+      {
+        title: "Message templates",
+        href: "/admin/whatsapp-tools",
+        description: "Send catalogue, payment or delivery update messages.",
+      },
+      {
+        title: "Buyer message log",
+        href: "/admin/buyer-messages",
+        description: "Review message evidence linked to buyer follow-up.",
       },
     ],
   },
@@ -164,7 +138,7 @@ export default async function AdminOperationsPage() {
   return (
     <AdminPage
       title="Order desk"
-      subtitle="Control map for order intake, buyer accounts, payments, delivery and launch readiness."
+      subtitle="Daily desk for order intake, open orders, payments, delivery handoff and buyer follow-up."
     >
       <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-[2rem] bg-white p-5 shadow-sm">
@@ -204,7 +178,7 @@ export default async function AdminOperationsPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                    Operations area
+                    Order desk
                   </p>
                   <h2 className="mt-2 text-2xl font-black text-[#102015]">{group.title}</h2>
                   <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">

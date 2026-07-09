@@ -120,14 +120,14 @@ export default async function LaunchReadinessPage() {
     {
       title: "Available product catalogue",
       detail: hasProducts
-        ? `${counts.availableProducts} active available products can be used in WhatsApp ordering.`
-        : "No active available products found. WhatsApp order entry needs available products and prices.",
+        ? `${counts.availableProducts} active available products can be used for buyer ordering and catalogue messages.`
+        : "No active available products found. Order entry and catalogue messages need available products and prices.",
       ok: hasProducts,
       href: "/admin/products",
     },
     {
-      title: "WhatsApp order workflow",
-      detail: "Admin-assisted WhatsApp order entry exists and creates orders, order items, payment requests and delivery records.",
+      title: "Assisted order workflow",
+      detail: "Staff can create orders from buyer conversations and preserve order, payment and delivery context.",
       ok: true,
       href: "/admin/whatsapp-orders/new",
     },
@@ -145,7 +145,7 @@ export default async function LaunchReadinessPage() {
     },
     {
       title: "Payment request workflow",
-      detail: "Manual payment request tracking exists. Paystack/Flutterwave webhook integration is still a later provider step.",
+      detail: "Payment requests, hosted checkout links, buyer follow-up and payment evidence are available. Paystack hosted checkout/webhook flow has been tested; Flutterwave remains optional unless needed.",
       ok: true,
       href: "/admin/payment-requests",
     },
@@ -179,8 +179,9 @@ export default async function LaunchReadinessPage() {
     },
     {
       title: "Payment gateway integration",
-      detail: "Manual payment tracking is ready. Automated Paystack/Flutterwave checkout and webhook handling are not yet connected.",
-      ok: false,
+      detail: "Paystack checkout and webhook handling have been validated in the workflow. Before production, confirm live keys, live webhook URL and settlement/reconciliation process.",
+      ok: true,
+      href: "/admin/integration-readiness",
     },
     {
       title: "Prisma migration history",
@@ -192,13 +193,13 @@ export default async function LaunchReadinessPage() {
   return (
     <AdminPage
       title="Launch readiness"
-      subtitle="Operational checklist for database, WhatsApp ordering, payments, delivery, buyer accounts and production configuration."
+      subtitle="System and launch checklist for database, ordering, payments, delivery, buyer accounts, integrations and production configuration."
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Launch hardening
+              System & launch
             </p>
             <h2 className="mt-2 text-2xl font-black text-[#102015]">
               Readiness checks
@@ -209,7 +210,7 @@ export default async function LaunchReadinessPage() {
           </div>
 
           <Link
-            href="/admin/operations"
+            href="/admin/deployment-readiness"
             className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
           >
             Operations

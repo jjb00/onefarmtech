@@ -110,7 +110,7 @@ export default async function AdminWhatsAppPage() {
 
   const cards = [
     {
-      label: "Send menu / product list",
+      label: "Send product update",
       value: availableProducts,
       caption: "available products",
       href: "/admin/whatsapp-tools",
@@ -181,10 +181,10 @@ export default async function AdminWhatsAppPage() {
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/admin/whatsapp-workflow"
+              href="/admin/operations"
               className="rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
             >
-              Workflow test
+              Order desk
             </Link>
             <Link
               href="/admin/whatsapp-tools"
