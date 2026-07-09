@@ -32,7 +32,7 @@ export function AdminCompactMetric({
   const content = (
     <>
       <p className="text-2xl font-black leading-none">{value}</p>
-      <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] opacity-75">
+      <p className="mt-1 text-[0.68rem] font-black uppercase tracking-[0.14em] opacity-75">
         {label}
       </p>
     </>
@@ -49,18 +49,15 @@ export function AdminCompactMetric({
     );
   }
 
-  return (
-    <div className={`rounded-2xl border px-4 py-3 shadow-sm ${toneClass}`}>
-      {content}
-    </div>
-  );
+  return <div className={`rounded-2xl border px-4 py-3 shadow-sm ${toneClass}`}>{content}</div>;
 }
 
 export function AdminViewBar({
-  title = "View controls",
+  title = "Controls",
   description,
   viewOptions = [],
   filterOptions = [],
+  dateOptions = [],
   sortOptions = [],
   children,
 }: {
@@ -68,16 +65,31 @@ export function AdminViewBar({
   description?: string;
   viewOptions?: Option[];
   filterOptions?: Option[];
+  dateOptions?: Option[];
   sortOptions?: Option[];
   children?: ReactNode;
 }) {
+  const activeLabels = [
+    activeLabel(viewOptions),
+    activeLabel(filterOptions),
+    activeLabel(dateOptions),
+    activeLabel(sortOptions),
+  ].filter(Boolean);
+
   return (
-    <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-            {title}
-          </p>
+    <section className="rounded-2xl border border-[#102015]/10 bg-white p-3 text-[#102015] shadow-sm">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+              {title}
+            </p>
+            {activeLabels.length ? (
+              <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#405348]">
+                {activeLabels.join(" · ")}
+              </span>
+            ) : null}
+          </div>
           {description ? (
             <p className="mt-1 max-w-3xl text-sm leading-6 text-[#405348]">
               {description}
@@ -85,38 +97,50 @@ export function AdminViewBar({
           ) : null}
         </div>
 
-        <div className="grid gap-2 lg:min-w-[34rem]">
-          {viewOptions.length ? <OptionRow label="View" options={viewOptions} /> : null}
-          {filterOptions.length ? <OptionRow label="Filter" options={filterOptions} /> : null}
-          {sortOptions.length ? <OptionRow label="Sort" options={sortOptions} /> : null}
+        <div className="flex flex-wrap items-center gap-2">
+          {viewOptions.length ? <ControlDropdown label="View" options={viewOptions} /> : null}
+          {filterOptions.length ? <ControlDropdown label="Filter" options={filterOptions} /> : null}
+          {dateOptions.length ? <ControlDropdown label="Date" options={dateOptions} /> : null}
+          {sortOptions.length ? <ControlDropdown label="Sort" options={sortOptions} /> : null}
         </div>
       </div>
 
-      {children ? <div className="mt-4">{children}</div> : null}
+      {children ? <div className="mt-3">{children}</div> : null}
     </section>
   );
 }
 
-function OptionRow({label, options}: {label: string; options: Option[]}) {
+function activeLabel(options: Option[]) {
+  return options.find((option) => option.active)?.label;
+}
+
+function ControlDropdown({label, options}: {label: string; options: Option[]}) {
+  const active = options.find((option) => option.active);
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      <span className="min-w-12 text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
-        {label}
-      </span>
-      {options.map((option) => (
-        <Link
-          key={`${label}-${option.label}-${option.href}`}
-          href={option.href}
-          className={`rounded-full px-3 py-1.5 text-xs font-black transition ${
-            option.active
-              ? "bg-[#1f7a3f] text-white"
-              : "border border-[#102015]/10 bg-[#f7f5ec] text-[#102015] hover:bg-[#eef6ea]"
-          }`}
-        >
-          {option.label}
-        </Link>
-      ))}
-    </div>
+    <details className="relative">
+      <summary className="flex cursor-pointer list-none items-center gap-2 rounded-full border border-[#102015]/10 bg-[#fbfff8] px-4 py-2 text-xs font-black text-[#102015] shadow-sm transition hover:bg-[#f3f8ef]">
+        <span>{label}</span>
+        {active ? <span className="text-[#1f7a3f]">· {active.label}</span> : null}
+        <span aria-hidden="true">⌄</span>
+      </summary>
+
+      <div className="absolute right-0 z-40 mt-2 grid min-w-48 gap-1 rounded-2xl border border-[#102015]/10 bg-white p-2 shadow-2xl">
+        {options.map((option) => (
+          <Link
+            key={`${label}-${option.label}-${option.href}`}
+            href={option.href}
+            className={`rounded-xl px-3 py-2 text-sm font-black transition ${
+              option.active
+                ? "bg-[#1f7a3f] text-white"
+                : "text-[#102015] hover:bg-[#f3f8ef]"
+            }`}
+          >
+            {option.label}
+          </Link>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -148,21 +172,28 @@ export function AdminStatusPill({
 export function adminToneFromStatus(status: string | null | undefined) {
   const key = String(status || "").toLowerCase();
 
-  if (key.includes("paid") || key.includes("approved") || key.includes("delivered") || key.includes("ready") || key.includes("complete")) {
+  if (key.includes("paid") || key.includes("approved") || key.includes("delivered") || key.includes("ready") || key.includes("complete") || key.includes("active")) {
     return "green" as const;
   }
 
-  if (key.includes("pending") || key.includes("unpaid") || key.includes("awaiting") || key.includes("review")) {
+  if (key.includes("pending") || key.includes("unpaid") || key.includes("awaiting") || key.includes("review") || key.includes("draft")) {
     return "amber" as const;
   }
 
-  if (key.includes("failed") || key.includes("cancelled") || key.includes("issue") || key.includes("complaint") || key.includes("rejected")) {
+  if (key.includes("failed") || key.includes("cancelled") || key.includes("issue") || key.includes("complaint") || key.includes("rejected") || key.includes("paused") || key.includes("closed")) {
     return "red" as const;
   }
 
-  if (key.includes("transit") || key.includes("assigned") || key.includes("picked")) {
+  if (key.includes("transit") || key.includes("assigned") || key.includes("picked") || key.includes("open")) {
     return "blue" as const;
   }
 
   return "neutral" as const;
+}
+
+export function maskSecret(value: string | null | undefined) {
+  if (!value) return "No code";
+  const trimmed = value.trim();
+  if (trimmed.length <= 4) return "••••";
+  return `•••• ${trimmed.slice(-4)}`;
 }

@@ -50,14 +50,14 @@ export async function createGroupBuyAction(formData: FormData) {
       code,
       title,
       description: description || null,
-      status: "Open",
+      status: "Closed",
       minQuantity,
       targetQuantity,
       reservedQuantity: 0,
       unit,
       closingDate,
       pickupWindow: pickupWindow || null,
-      paymentStatus: "Collecting payments",
+      paymentStatus: "Not collecting",
       fulfilmentStatus: "Planning",
       adminNote: adminNote || null,
       items: {
@@ -123,8 +123,8 @@ export async function createGroupBuyReservationAction(formData: FormData) {
 
 export async function updateGroupBuyAction(formData: FormData) {
   const groupBuyId = readText(formData, "groupBuyId");
-  const status = readText(formData, "status", "Open");
-  const paymentStatus = readText(formData, "paymentStatus", "Collecting payments");
+  const status = readText(formData, "status", "Closed");
+  const paymentStatus = readText(formData, "paymentStatus", "Not collecting");
   const fulfilmentStatus = readText(formData, "fulfilmentStatus", "Planning");
   const adminNote = readText(formData, "adminNote");
 

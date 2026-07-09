@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import {AdminCompactMetric, AdminStatusPill, maskSecret} from "@/components/admin/AdminViewControls";
 import {prisma} from "@/lib/prisma";
 import {
   createBuyerAccountInviteAction,
@@ -46,26 +47,35 @@ export default async function BuyerAccessPage() {
 
   return (
     <AdminPageShell
-      title="Buyer contacts and account invites"
-      description="Prepare approved recurring buyers for real login without exposing fake access. Track who is allowed to place orders, view receipts, see credit, and receive future account invitations."
+      title="Buyer access"
+      description="Manage authorised contacts and buyer portal access."
     >
       <div className="grid gap-6">
 
       <section className="grid gap-4 md:grid-cols-4">
-        <Metric label="Buyer contacts" value={String(contacts.length)} />
-        <Metric label="Account invites" value={String(invites.length)} />
-        <Metric
+        <AdminCompactMetric label="Buyer contacts" value={String(contacts.length)} tone="blue" />
+        <AdminCompactMetric label="Access codes" value={String(invites.length)} tone="amber" />
+        <AdminCompactMetric
           label="Login-ready buyers"
           value={String(customers.filter((customer) => customer.accountLoginReady).length)}
+          tone="green"
         />
-        <Metric
+        <AdminCompactMetric
           label="Approved accounts"
           value={String(customers.filter((customer) => customer.accountStatus.includes("Approved")).length)}
+          tone="green"
         />
       </section>
 
-      <section className="grid gap-8 xl:grid-cols-2">
-        <form action={createBuyerContactAction} className="rounded-[2rem] bg-white p-6 shadow-sm">
+      <section className="grid gap-4 xl:grid-cols-2">
+        <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-black text-[#102015]">Add authorised contact</h2>
+              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">Open</span>
+            </div>
+          </summary>
+        <form action={createBuyerContactAction} className="mt-5">
           <h2 className="text-2xl font-black text-[#102015]">Add authorised buyer contact</h2>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
             Use this for restaurant owners, procurement leads, finance contacts,
@@ -167,8 +177,16 @@ export default async function BuyerAccessPage() {
             Save buyer contact
           </button>
         </form>
+        </details>
 
-        <form action={createBuyerAccountInviteAction} className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-black text-[#102015]">Generate access code</h2>
+              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">Open</span>
+            </div>
+          </summary>
+        <form action={createBuyerAccountInviteAction} className="mt-5">
           <h2 className="text-2xl font-black text-[#102015]">Generate buyer login access code</h2>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
             Use this after a buyer account has been approved. Choose the approved buyer, add the buyer email or phone, then generate the code they will use in the Buyer login pop-up.
@@ -249,10 +267,11 @@ export default async function BuyerAccessPage() {
             Generate access code
           </button>
         </form>
+        </details>
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-black text-[#102015]">Authorised buyer contacts</h2>
+        <h2 className="text-xl font-black text-[#102015]">Authorised contacts</h2>
         <div className="mt-6 overflow-x-auto">
           <table className="min-w-[1000px] border-collapse text-left text-sm">
             <thead>
@@ -306,55 +325,61 @@ export default async function BuyerAccessPage() {
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-2xl font-black text-[#102015]">Generated buyer login access codes</h2>
-        <div className="mt-6 grid gap-4">
+        <h2 className="text-xl font-black text-[#102015]">Access codes</h2>
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-[900px] w-full text-left text-sm">
+            <thead className="bg-[#f7f5ec] text-xs uppercase tracking-[0.14em] text-[#405348]">
+              <tr>
+                <th className="px-4 py-3">Buyer</th>
+                <th className="px-4 py-3">Code</th>
+                <th className="px-4 py-3">Send to</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Message</th>
+              </tr>
+            </thead>
+            <tbody>
           {invites.map((invite) => {
             const buyerName = invite.customer.name;
             const contactTarget = invite.email || invite.phone || "buyer";
             const shareMessage = `Hello ${buyerName}, your OneFarmTech buyer account has been approved. Use this access code to sign in: ${invite.inviteCode}. If you need help, contact the OneFarmTech team.`;
 
+            const canReveal = ["Draft", "Ready to send"].includes(invite.status);
+
             return (
-              <article key={invite.id} className="rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">
-                      Buyer access code
-                    </p>
-                    <p className="mt-2 rounded-2xl bg-white px-4 py-3 font-mono text-2xl font-black text-[#102015] shadow-sm">
-                      {invite.inviteCode}
-                    </p>
-                    <h3 className="mt-4 text-xl font-black">{buyerName}</h3>
-                    <p className="mt-1 text-sm text-[#587063]">
-                      Send to: {contactTarget} · Role: {invite.role}
-                    </p>
-                  </div>
-
-                  <span className="rounded-full bg-[#3E7A4C]/10 px-3 py-1 text-xs font-black text-[#3E7A4C]">
-                    {invite.status}
-                  </span>
-                </div>
-
-                <div className="mt-5 rounded-2xl bg-white p-4">
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#587063]">
-                    Manual WhatsApp/email message
-                  </p>
-                  <p className="mt-3 text-sm leading-7 text-[#405348]">
-                    {shareMessage}
-                  </p>
-                </div>
-
-                <p className="mt-4 text-xs font-semibold leading-6 text-[#587063]">
-                  For now, copy this message and send it manually by WhatsApp or email. Automatic notification can be wired later once the WhatsApp/email provider is ready.
-                </p>
-              </article>
+              <tr key={invite.id} className="border-b border-[#102015]/10 align-top">
+                <td className="px-4 py-3 font-black text-[#102015]">{buyerName}</td>
+                <td className="px-4 py-3 font-mono font-black text-[#102015]">
+                  {canReveal ? invite.inviteCode : maskSecret(invite.inviteCode)}
+                </td>
+                <td className="px-4 py-3 text-[#405348]">{contactTarget}</td>
+                <td className="px-4 py-3 text-[#405348]">{invite.role}</td>
+                <td className="px-4 py-3">
+                  <AdminStatusPill>{invite.status}</AdminStatusPill>
+                </td>
+                <td className="px-4 py-3">
+                  {canReveal ? (
+                    <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
+                      <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Copy message</summary>
+                      <p className="mt-2 text-sm leading-6 text-[#405348]">{shareMessage}</p>
+                    </details>
+                  ) : (
+                    <span className="text-xs font-bold text-[#587063]">Hidden after issue. Regenerate if needed.</span>
+                  )}
+                </td>
+              </tr>
             );
           })}
 
-          {!invites.length ? (
-            <p className="rounded-2xl bg-[#f3f8ef] p-5 text-sm text-[#587063]">
-              No buyer login access codes generated yet.
-            </p>
-          ) : null}
+              {!invites.length ? (
+                <tr>
+                  <td className="px-4 py-8 text-center text-[#587063]" colSpan={6}>
+                    No access codes generated yet.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
       </div>

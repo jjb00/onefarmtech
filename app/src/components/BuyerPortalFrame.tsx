@@ -8,7 +8,6 @@ const navItems = [
   ["Orders", "/buyer-account/orders"],
   ["Payments", "/buyer-account/payments"],
   ["Inbox", "/buyer-account/inbox"],
-  ["Profile", "/buyer-account/profile"],
   ["Support", "/buyer-account/support"],
 ];
 
@@ -133,7 +132,32 @@ export default function BuyerPortalFrame({
           </div>
         </aside>
 
-        <div className="grid gap-6">{children}</div>
+        <div className="grid gap-4">
+          <header className="hidden items-center justify-end gap-3 rounded-2xl border border-[#102015]/10 bg-white/90 px-4 py-3 shadow-sm backdrop-blur lg:flex">
+            <Link
+              href="/buyer-account/inbox"
+              className="relative flex h-11 w-11 items-center justify-center rounded-full border border-[#102015]/10 bg-[#f3f8ef] text-lg font-black text-[#102015] hover:bg-[#e8f2e2]"
+              aria-label="Open inbox"
+            >
+              🔔
+              {unreadMessageCount > 0 ? (
+                <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-[#d9471f] px-1.5 py-0.5 text-[0.65rem] font-black leading-none text-white">
+                  {unreadMessageCount > 9 ? "9+" : unreadMessageCount}
+                </span>
+              ) : null}
+            </Link>
+            <Link
+              href="/buyer-account/profile"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#102015] text-sm font-black text-white hover:bg-[#1f7a3f]"
+              aria-label="Open profile"
+              title={customerName}
+            >
+              {customerName.slice(0, 1).toUpperCase()}
+            </Link>
+          </header>
+
+          {children}
+        </div>
       </div>
     </main>
   );

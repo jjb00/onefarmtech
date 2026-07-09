@@ -1,5 +1,6 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
+import {AdminStatusPill, maskSecret} from "@/components/admin/AdminViewControls";
 import {
   createDeliveryPartnerAction,
   generateDeliveryPartnerAccessCodeAction,
@@ -26,17 +27,20 @@ export default async function DeliveryPartnersPage() {
   return (
     <AdminPage
       title="Delivery partners"
-      subtitle="Manage logistics partners used for order fulfilment and delivery assignment."
+      subtitle="Manage logistics partners, delivery access and assignment readiness."
     >
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-          Add partner
-        </p>
-        <h2 className="mt-2 text-2xl font-black text-[#102015]">
-          New delivery partner
-        </h2>
+      <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
+        <summary className="cursor-pointer list-none">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">Partner setup</p>
+              <h2 className="mt-1 text-xl font-black text-[#102015]">Add delivery partner</h2>
+            </div>
+            <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">Open</span>
+          </div>
+        </summary>
 
-        <form action={createDeliveryPartnerAction} className="mt-6 grid gap-4 lg:grid-cols-2">
+        <form action={createDeliveryPartnerAction} className="mt-5 grid gap-4 lg:grid-cols-2">
           <label className="grid gap-2 text-sm font-bold text-[#405348]">
             Partner name
             <input
@@ -103,9 +107,9 @@ export default async function DeliveryPartnersPage() {
             </button>
           </div>
         </form>
-      </section>
+      </details>
 
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+      <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -166,14 +170,12 @@ export default async function DeliveryPartnersPage() {
                       {partner.deliveries.length}
                     </td>
                     <td className="px-5 py-4">
-                      <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
-                        {partner.status}
-                      </span>
+                      <AdminStatusPill>{partner.status}</AdminStatusPill>
                     </td>
                     <td className="px-5 py-4">
                       <div className="grid gap-2">
-                        <p className="text-xs font-bold text-[#405348]">
-                          {partner.accessCode || "No access code"}
+                        <p className="font-mono text-xs font-black text-[#405348]">
+                          {maskSecret(partner.accessCode)}
                         </p>
                         <form action={generateDeliveryPartnerAccessCodeAction}>
                           <input type="hidden" name="id" value={partner.id} />
@@ -181,7 +183,7 @@ export default async function DeliveryPartnersPage() {
                             type="submit"
                             className="rounded-full border border-[#102015]/15 px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]"
                           >
-                            {partner.accessCode ? "Regenerate" : "Create code"}
+                            {partner.accessCode ? "Reset code" : "Create code"}
                           </button>
                         </form>
                       </div>

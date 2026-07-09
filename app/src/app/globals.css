@@ -215,7 +215,10 @@ body {
   .oft-orb-drift,
   .oft-orb-drift-delay,
   .oft-float-slow,
-  .oft-float-delay {
+  .oft-float-delay,
+  .oft-hero-card-breathe,
+  .oft-highlight-sweep,
+  .oft-progress-stripe {
     animation: none;
   }
 
@@ -256,4 +259,55 @@ body {
 .admin-content-readable select,
 .admin-content-readable textarea {
   color: #102015;
+}
+
+@keyframes oftHeroBreathe {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 30px 80px rgb(16 23 18 / 16%);
+  }
+  50% {
+    transform: translateY(-6px) scale(1.01);
+    box-shadow: 0 38px 92px rgb(16 23 18 / 20%);
+  }
+}
+
+@keyframes oftHighlightSweep {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 180% 50%;
+  }
+}
+
+@keyframes oftProgressStripe {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 42px 0;
+  }
+}
+
+.oft-hero-card-breathe {
+  animation: oftHeroBreathe 5.6s ease-in-out infinite;
+}
+
+.oft-highlight-sweep {
+  background-image: linear-gradient(100deg, #f2b84b 0%, #ffe08a 45%, #f2b84b 90%);
+  background-size: 180% 100%;
+  animation: oftHighlightSweep 4.2s ease-in-out infinite alternate;
+}
+
+.oft-progress-stripe {
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgb(242 184 75) 0,
+    rgb(242 184 75) 12px,
+    rgb(255 224 138) 12px,
+    rgb(255 224 138) 24px
+  );
+  background-size: 42px 42px;
+  animation: oftProgressStripe 1.4s linear infinite;
 }
