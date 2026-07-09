@@ -15,7 +15,7 @@ export default function PublicMobileActions({
       {showWhatsApp ? (
         <a
           href={whatsappOrderHref}
-          className="rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white shadow-sm"
+          className="oft-primary-button rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white"
         >
           WhatsApp order
         </a>
@@ -23,21 +23,21 @@ export default function PublicMobileActions({
 
       <Link
         href="/order-request"
-        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm hover:bg-[#fbfff8]"
       >
         Order form
       </Link>
 
       <Link
         href="/buyer-account-request"
-        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm hover:bg-[#fbfff8]"
       >
         Buyer account
       </Link>
 
       <Link
         href="/faq"
-        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm"
+        className="rounded-full border border-[#101712]/10 bg-white/90 px-4 py-3 text-center text-sm font-black text-[#101712] shadow-sm hover:bg-[#fbfff8]"
       >
         FAQ
       </Link>

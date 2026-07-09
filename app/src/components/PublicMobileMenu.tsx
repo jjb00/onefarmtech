@@ -17,12 +17,12 @@ export default function PublicMobileMenu() {
     <details className="relative md:hidden">
       <summary
         aria-label="Open menu"
-        className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#101712]/10 bg-white text-2xl font-black text-[#101712] shadow-sm"
+        className="flex h-11 w-11 cursor-pointer list-none items-center justify-center rounded-full border border-[#101712]/10 bg-white/95 text-2xl font-black text-[#101712] shadow-sm backdrop-blur"
       >
         ☰
       </summary>
 
-      <div className="absolute right-0 top-14 z-50 w-[min(20rem,calc(100vw-3rem))] rounded-[1.5rem] border border-[#101712]/10 bg-white p-3 shadow-2xl">
+      <div className="absolute right-0 top-14 z-50 w-[min(20rem,calc(100vw-3rem))] rounded-[1.5rem] border border-[#101712]/10 bg-white/95 p-3 shadow-2xl backdrop-blur">
         <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
           OneFarmTech
         </p>
@@ -35,7 +35,7 @@ export default function PublicMobileMenu() {
                 href={item.href}
                 className={
                   item.primary
-                    ? "rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white"
+                    ? "oft-primary-button rounded-full bg-[#1f7a3f] px-4 py-3 text-center text-sm font-black text-white"
                     : "rounded-full bg-[#f3f8ef] px-4 py-3 text-center text-sm font-black text-[#101712]"
                 }
               >

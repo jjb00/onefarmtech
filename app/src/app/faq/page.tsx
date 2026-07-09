@@ -54,11 +54,11 @@ export default function FAQPage() {
         />
 
         <div className="relative mx-auto max-w-4xl px-6 py-16">
-          <p className="text-sm font-semibold text-[#1f7a3f]">FAQ</p>
-          <h1 className="mt-3 text-4xl font-bold md:text-5xl">
-            Frequently Asked Questions
+          <p className="oft-fade-up oft-public-pill">FAQ</p>
+          <h1 className="oft-fade-up-delay-1 mt-5 text-5xl font-black tracking-tight md:text-6xl">
+            Frequently asked questions
           </h1>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-[#405348]">
+          <p className="oft-fade-up-delay-2 mt-5 max-w-2xl text-lg leading-8 text-[#405348]">
             Simple answers about ordering, group-buys, business supply, payments,
             delivery, and how OneFarmTech works.
           </p>
@@ -67,7 +67,7 @@ export default function FAQPage() {
             {faqs.map((faq) => (
               <div
                 key={faq.question}
-                className="rounded-2xl border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur"
+                className="oft-card-lift oft-public-card rounded-[2rem] p-6"
               >
                 <h2 className="text-xl font-bold text-[#101712]">{faq.question}</h2>
                 <p className="mt-3 leading-7 text-[#405348]">{faq.answer}</p>

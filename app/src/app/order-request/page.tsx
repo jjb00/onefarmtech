@@ -14,7 +14,7 @@ export default async function OrderRequestPage({
   const submitted = params?.submitted === "1";
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] text-[#101712]">
+    <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
       <PublicImageCollage
         images={[
           {
@@ -37,6 +37,10 @@ export default async function OrderRequestPage({
           },
         ]}
       />
+
+      <div className="oft-public-topline absolute inset-x-0 top-0 h-2" />
+      <div className="oft-orb-drift pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/14 blur-3xl" />
+      <div className="oft-orb-drift-delay pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/30 blur-3xl" />
 
       <div className="relative mx-auto max-w-6xl px-6 py-8 lg:px-10 lg:py-12">
         <header className="flex items-center justify-between gap-6">
@@ -63,19 +67,19 @@ export default async function OrderRequestPage({
 
         <section className="grid gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.24em] text-[#C95F3D]">
+            <p className="oft-fade-up oft-public-pill">
               Order request
             </p>
 
-            <h1 className="mt-4 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
+            <h1 className="oft-fade-up-delay-1 mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
               Tell us what fresh produce you need.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
+            <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
               Share your items, quantity, location and timing. We will confirm availability, price and fulfilment details before payment or delivery.
             </p>
 
-            <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/90 p-5 text-sm leading-7 text-[#405348] shadow-sm backdrop-blur">
+            <div className="oft-fade-up-delay-3 oft-public-card mt-8 rounded-[2rem] p-5 text-sm leading-7 text-[#405348]">
               <strong className="text-[#102015]">What happens next:</strong>{" "}
               Your request goes to the OneFarmTech team. We check the order, confirm what is available, then follow up by WhatsApp or phone.
             </div>
@@ -83,7 +87,7 @@ export default async function OrderRequestPage({
 
           <form
             action={createOrderRequestAction}
-            className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur"
+            className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6"
           >
             <h2 className="text-2xl font-black">Order details</h2>
 
@@ -210,7 +214,7 @@ export default async function OrderRequestPage({
 
               <button
                 type="submit"
-                className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
               >
                 Send order request
               </button>

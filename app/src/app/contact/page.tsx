@@ -50,7 +50,7 @@ const partnerTypes = [
 
 export default function ContactPage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] text-[#101712]">
+    <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
       <PublicImageCollage
         images={[
           {
@@ -70,9 +70,9 @@ export default function ContactPage() {
           },
         ]}
       />
-      <div className="absolute inset-x-0 top-0 h-2 bg-[#1f7a3f]" />
-      <div className="pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
-      <div className="pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/25 blur-3xl" />
+      <div className="oft-public-topline absolute inset-x-0 top-0 h-2" />
+      <div className="oft-orb-drift pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/14 blur-3xl" />
+      <div className="oft-orb-drift-delay pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/30 blur-3xl" />
 
       <div className="relative mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12">
         <header className="flex items-center justify-between gap-6">
@@ -95,7 +95,7 @@ export default function ContactPage() {
             </Link>
             <Link
               href="/order-request"
-              className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              className="oft-primary-button rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
             >
               Order
             </Link>
@@ -103,24 +103,23 @@ export default function ContactPage() {
                   <PublicMobileMenu />
         </header>
 
-
         <section className="grid gap-10 py-14 lg:grid-cols-[0.95fr_1.05fr] lg:items-start lg:py-20">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.24em] text-[#C95F3D]">
+            <p className="oft-fade-up oft-public-pill">
               Contact
             </p>
 
-            <h1 className="mt-4 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
+            <h1 className="oft-fade-up-delay-1 mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
               Contact OneFarmTech.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
+            <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
               For buyer support, partnerships, media, ecosystem enquiries, and
               organisations interested in adding value around recurring fresh food
               supply.
             </p>
 
-            <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
+            <div className="oft-fade-up-delay-3 oft-public-card mt-8 rounded-[2rem] p-6">
               <h2 className="text-2xl font-black">Partner with OneFarmTech</h2>
               <p className="mt-3 leading-8 text-[#405348]">
                 OneFarmTech works with organisations that can help improve how
@@ -137,7 +136,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          <form action={createContactEnquiryAction} className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur">
+          <form action={createContactEnquiryAction} className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6">
             <h2 className="text-2xl font-black">Send an enquiry</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
               Tell us what you are interested in and the team will review it.
@@ -210,7 +209,7 @@ export default function ContactPage() {
 
               <button
                 type="submit"
-                className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
               >
                 Submit enquiry
               </button>
@@ -227,7 +226,7 @@ export default function ContactPage() {
           {partnerTypes.map((partner) => (
             <article
               key={partner.title}
-              className="oft-card-lift rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur"
+              className="oft-card-lift oft-public-card rounded-[2rem] p-6"
             >
               <h2 className="text-xl font-black">{partner.title}</h2>
               <p className="mt-3 leading-7 text-[#405348]">{partner.body}</p>
@@ -236,7 +235,7 @@ export default function ContactPage() {
         </section>
 
         <section className="mt-10 grid gap-5 lg:grid-cols-2">
-          <div className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
+          <div className="oft-public-card rounded-[2rem] p-6">
             <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
               Our partners
             </p>
@@ -249,7 +248,7 @@ export default function ContactPage() {
             </p>
           </div>
 
-          <div className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
+          <div className="oft-public-card rounded-[2rem] p-6">
             <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
               Featured in
             </p>

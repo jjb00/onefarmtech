@@ -28,7 +28,7 @@ export default async function BuyerAccountRequestPage({
     : null;
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] text-[#101712]">
+    <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
       <PublicImageCollage
         images={[
           {
@@ -52,6 +52,10 @@ export default async function BuyerAccountRequestPage({
         ]}
       />
 
+      <div className="oft-public-topline absolute inset-x-0 top-0 h-2" />
+      <div className="oft-orb-drift pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/14 blur-3xl" />
+      <div className="oft-orb-drift-delay pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/30 blur-3xl" />
+
       <div className="relative mx-auto max-w-6xl px-6 py-8 lg:px-10 lg:py-12">
         <header className="flex items-center justify-between gap-6">
           <Link href="/" aria-label="Go to OneFarmTech homepage">
@@ -62,7 +66,7 @@ export default async function BuyerAccountRequestPage({
             <BuyerLoginModal />
             <Link
               href="/order"
-              className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              className="oft-primary-button rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
             >
               Order
             </Link>
@@ -72,15 +76,15 @@ export default async function BuyerAccountRequestPage({
 
         <section className="grid gap-10 py-14 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:py-20">
           <div>
-            <p className="text-sm font-black uppercase tracking-[0.24em] text-[#C95F3D]">
+            <p className="oft-fade-up oft-public-pill">
               Buyer account request
             </p>
 
-            <h1 className="mt-4 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
+            <h1 className="oft-fade-up-delay-1 mt-5 max-w-4xl text-5xl font-black tracking-tight md:text-6xl">
               Request a OneFarmTech buyer account.
             </h1>
 
-            <p className="mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
+            <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
               For recurring buyers who want order history, receipts, authorised
               contacts, repeat-order support, and structured payment records.
             </p>
@@ -94,14 +98,14 @@ export default async function BuyerAccountRequestPage({
               ].map((item) => (
                 <div
                   key={item}
-                  className="rounded-2xl border border-[#101712]/10 bg-white/90 px-4 py-3 text-sm font-black shadow-sm backdrop-blur"
+                  className="oft-card-lift rounded-2xl border border-[#101712]/10 bg-white/90 px-4 py-3 text-sm font-black shadow-sm backdrop-blur"
                 >
                   {item}
                 </div>
               ))}
             </div>
 
-            <div className="mt-8 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-sm backdrop-blur">
+            <div className="oft-fade-up-delay-3 oft-public-card mt-8 rounded-[2rem] p-5">
               <h2 className="text-xl font-black">What a buyer account helps with</h2>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 {[
@@ -114,7 +118,7 @@ export default async function BuyerAccountRequestPage({
                 ].map((item) => (
                   <div
                     key={item}
-                    className="rounded-2xl bg-[#f3f8ef] p-4 text-sm font-black"
+                    className="rounded-2xl border border-[#1f7a3f]/10 bg-[#f3f8ef] p-4 text-sm font-black"
                   >
                     {item}
                   </div>
@@ -126,10 +130,10 @@ export default async function BuyerAccountRequestPage({
             </div>
           </div>
 
-                    <form
+          <form
             id="buyer-account-request-form"
             action={createBuyerAccountRequestAction}
-            className="rounded-[2rem] border border-[#101712]/10 bg-white/95 p-6 shadow-xl backdrop-blur"
+            className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6"
           >
             <h2 className="text-2xl font-black">Account setup details</h2>
 
@@ -311,7 +315,7 @@ Your account request has been received. We’ll review your details and get back
 
               <button
                 type="submit"
-                className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
               >
                 Submit account request
               </button>
