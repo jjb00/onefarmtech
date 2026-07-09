@@ -5,8 +5,8 @@ import PublicFooter from "@/components/PublicFooter";
 type Role = {
   title: string;
   department: string;
-  locations: string[];
   stages: string[];
+  locations: string[];
   qualification: string;
   summary: string;
   details: string;
@@ -14,97 +14,124 @@ type Role = {
 
 const roles: Role[] = [
   {
-    title: "Supply & Procurement Associate",
-    department: "Supply",
-    locations: [
-      "Plateau",
-      "Jos",
-      "Benue",
-      "Nasarawa",
-      "Kogi",
-      "Kwara",
-      "Niger",
-      "Taraba",
-      "Kaduna",
-      "Kano",
-      "Katsina",
-      "Jigawa",
-      "Bauchi",
-      "Gombe",
-      "Adamawa",
-      "Cross River",
-      "Rivers",
-      "Delta",
-      "Edo",
-      "Enugu",
-      "Anambra",
-      "Imo",
-      "Abia",
-    ],
-    stages: ["Full-time", "Part-time", "Contract", "NYSC", "Internship"],
-    qualification:
-      "OND, HND, degree, cooperative experience, market experience or strong local produce knowledge.",
-    summary:
-      "Help OneFarmTech find reliable growers, aggregators and supply partners across key food-producing regions.",
+    title: "Produce Sourcing Associate",
+    department: "Supply & Procurement",
+    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
+    locations: ["Plateau", "Jos", "Benue", "Nasarawa", "Kogi", "Kwara", "Niger", "Taraba", "Kaduna", "Kano"],
+    qualification: "OND, HND, degree or strong produce-market experience.",
+    summary: "Find reliable growers, aggregators and market suppliers for fresh produce supply.",
     details:
-      "This role is for people who understand food markets, farming communities, aggregation, quality, pricing or local logistics. You may help map suppliers, confirm produce availability, check prices, record quality notes, coordinate pickup readiness and build trusted supply relationships across vegetables, grains, tubers, fruits, fish, livestock-linked produce and seasonal crops.",
+      "This role is suited to someone who understands local produce markets, farming communities or aggregation points. You will help identify dependable supply partners, confirm availability, track market prices, support quality checks and keep OneFarmTech updated on what can be sourced reliably in your region.",
   },
   {
-    title: "Buyer Growth & Fulfilment Associate",
-    department: "Sales & Fulfilment",
-    locations: [
-      "Lagos",
-      "Abuja",
-      "Port Harcourt",
-      "Ibadan",
-      "Enugu",
-      "Onitsha",
-      "Kano",
-      "Kaduna",
-    ],
-    stages: ["Full-time", "Part-time", "Contract", "NYSC", "Internship"],
-    qualification:
-      "OND, HND, degree or strong sales, customer service, dispatch, hospitality, retail or foodservice experience.",
-    summary:
-      "Support buyers from first enquiry through order confirmation, fulfilment, delivery follow-up and repeat purchase.",
+    title: "Supplier Partnerships Associate",
+    department: "Supply & Procurement",
+    stages: ["Full-time", "Part-time", "Contract"],
+    locations: ["Lagos", "Abuja", "Plateau", "Benue", "Kaduna", "Kano", "Rivers", "Enugu", "Cross River"],
+    qualification: "HND, degree or practical experience working with suppliers, cooperatives, farms or aggregators.",
+    summary: "Build and manage relationships with farms, cooperatives, aggregators and supply partners.",
     details:
-      "This combines buyer growth and fulfilment because, at this stage, the buyer experience cannot be split too early. You may speak with restaurants, hotels, caterers, retailers, offices, food vendors and buying groups; help them understand prices and availability; follow up on orders; coordinate fulfilment updates; and make sure buyers receive clear communication from order to delivery.",
+      "You will help onboard supply partners, collect key supplier information, understand capacity, agree communication routines and maintain reliability records. The role requires good judgement, trust-building and the ability to spot suppliers who can consistently meet buyer expectations.",
   },
   {
-    title: "Finance & Operations Associate",
-    department: "Operations",
+    title: "Produce Quality & Reliability Officer",
+    department: "Supply & Procurement",
+    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
+    locations: ["Lagos", "Abuja", "Port Harcourt", "Jos", "Plateau", "Benue", "Kaduna", "Kano"],
+    qualification: "OND, HND, degree or practical experience in food handling, quality control, warehouse, logistics or agriculture.",
+    summary: "Help maintain produce quality before, during and after fulfilment.",
+    details:
+      "You will record quality issues, support grading, flag unreliable suppliers, follow up on rejected items and help reduce buyer complaints. This role is important for keeping trust between buyers, suppliers and OneFarmTech.",
+  },
+  {
+    title: "Buyer Growth Associate",
+    department: "Sales & Buyer Growth",
+    stages: ["Full-time", "Part-time", "Contract", "NYSC", "Internship"],
+    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Onitsha", "Kano", "Kaduna"],
+    qualification: "OND, HND, degree or strong sales, customer service or field marketing experience.",
+    summary: "Introduce OneFarmTech to restaurants, caterers, food vendors, retailers and buying groups.",
+    details:
+      "You will speak with prospective buyers, understand their produce needs, explain how ordering works and help convert interest into repeat orders. This role is best for confident communicators who are comfortable with outreach, follow-up and relationship building.",
+  },
+  {
+    title: "Key Accounts Executive",
+    department: "Sales & Buyer Growth",
+    stages: ["Full-time", "Contract"],
+    locations: ["Lagos", "Abuja", "Port Harcourt"],
+    qualification: "HND, degree or proven B2B sales, account management, hospitality supply or FMCG experience.",
+    summary: "Manage larger recurring buyers and high-value food supply relationships.",
+    details:
+      "You will work with restaurants, hotels, caterers, corporate kitchens and larger recurring buyers. The role involves managing buyer expectations, supporting repeat orders, tracking account needs and helping OneFarmTech become a reliable supply partner.",
+  },
+  {
+    title: "Order Fulfilment Coordinator",
+    department: "Operations & Fulfilment",
+    stages: ["Full-time", "Part-time", "NYSC"],
+    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano", "Kaduna"],
+    qualification: "OND, HND, degree or logistics, dispatch, warehouse or customer operations experience.",
+    summary: "Coordinate confirmed orders from allocation through dispatch and delivery follow-up.",
+    details:
+      "You will help track order readiness, coordinate with internal teams and delivery partners, update buyers, collect delivery evidence and follow up on issues. The role requires calm execution, attention to detail and strong communication.",
+  },
+  {
+    title: "Payments & Reconciliation Officer",
+    department: "Finance & Admin",
+    stages: ["Full-time", "Part-time", "NYSC"],
     locations: ["Remote", "Lagos", "Abuja"],
-    stages: ["Full-time", "Part-time", "NYSC", "Internship"],
-    qualification:
-      "OND, HND, degree or practical experience in admin, bookkeeping, reconciliation, spreadsheets or operations.",
-    summary:
-      "Keep payment, receipt, order and operating records accurate as the business grows.",
+    qualification: "OND, HND, degree or practical bookkeeping, finance admin, payment tracking or reconciliation experience.",
+    summary: "Keep payment requests, receipts and buyer balances accurate.",
     details:
-      "This role supports the operating backbone of OneFarmTech. You may help track payment requests, receipts, buyer balances, order records, supplier notes, fulfilment issues, data quality and weekly reporting. It suits careful people who are organised, numerate and comfortable working with spreadsheets, admin systems and operational follow-up.",
+      "You will help track payment requests, manual transfers, online payment references, receipts and buyer balances. This role requires accuracy, patience and comfort working with spreadsheets, admin systems and payment evidence.",
   },
   {
-    title: "Product & Technology Associate",
+    title: "Operations & Data Associate",
+    department: "Finance & Admin",
+    stages: ["Full-time", "Part-time", "Internship", "NYSC"],
+    locations: ["Remote", "Lagos", "Abuja"],
+    qualification: "HND, degree or strong spreadsheet, data entry, reporting or operations admin skills.",
+    summary: "Support clean operating records, weekly reporting and internal follow-up.",
+    details:
+      "You will help maintain order data, buyer records, supplier notes, fulfilment logs and performance reports. This role suits someone organised, numerate and comfortable turning messy operational information into usable records.",
+  },
+  {
+    title: "Product Engineer",
     department: "Technology",
-    locations: ["Remote", "Lagos", "Abuja"],
     stages: ["Full-time", "Part-time", "Contract", "Internship"],
-    qualification:
-      "Degree not mandatory. Practical product, engineering, UIUX, data or automation skill is more important.",
-    summary:
-      "Help improve the software, workflows and data systems behind OneFarmTech.",
+    locations: ["Remote", "Lagos", "Abuja"],
+    qualification: "Strong practical engineering ability. Degree not mandatory.",
+    summary: "Build and improve the software behind OneFarmTech.",
     details:
-      "This role family covers product engineering, UIUX, data and automation. Depending on skill level, you may work on the buyer portal, admin workflows, payments, WhatsApp operations, reporting, mobile usability, design systems, internal dashboards or workflow automation. Strong judgement matters because this is an operating product, not only a website.",
+      "You may work on the buyer portal, admin tools, payments, WhatsApp workflows, reporting, data models and internal operations systems. We value engineers who care about reliability, clean workflows and how real users actually work.",
   },
   {
-    title: "Content, Community & Internship Associate",
-    department: "Community",
-    locations: ["Remote", "Lagos", "Abuja", "Jos", "Plateau", "Campus-based"],
-    stages: ["Internship", "NYSC", "Part-time"],
-    qualification:
-      "Student, graduate, NYSC member or early-career candidate. Media, theatre arts, agriculture, business and communications backgrounds welcome.",
-    summary:
-      "Tell practical stories about food supply, markets, growers, buyers and the people behind the network.",
+    title: "Product Designer / UIUX Associate",
+    department: "Technology",
+    stages: ["Full-time", "Part-time", "Contract", "Internship"],
+    locations: ["Remote", "Lagos", "Abuja"],
+    qualification: "Portfolio or practical product/design work preferred. Degree not mandatory.",
+    summary: "Design clear, mobile-friendly workflows for buyers, admins and partners.",
     details:
-      "This role is suitable for interns, NYSC members and early-career creatives who can produce useful content and support community activity. Work may include short videos, market visits, buyer stories, grower stories, social posts, product explainers, event support and simple research. A good phone, editing discipline, storytelling ability and consistency can matter more than formal qualifications.",
+      "You will work on buyer journeys, admin pages, forms, tables, dashboards and reusable product patterns. This role is for designers who care about clarity, accessibility and operational products, not only beautiful screens.",
+  },
+  {
+    title: "Digital Content & Video Intern",
+    department: "Content",
+    stages: ["Internship", "NYSC", "Part-time"],
+    locations: ["Remote", "Lagos", "Abuja", "Jos", "Plateau", "Campus-based"],
+    qualification: "Student, graduate or NYSC member. Media, theatre arts, communications, agriculture or business backgrounds welcome.",
+    summary: "Create practical content around markets, growers, buyers and food supply.",
+    details:
+      "You will support short videos, market visits, buyer stories, grower stories, social posts and simple product explainers. A good eye, consistency, editing discipline and storytelling ability matter more than formal experience.",
+  },
+  {
+    title: "Community & Field Marketing Associate",
+    department: "Community",
+    stages: ["Part-time", "Contract", "NYSC", "Internship"],
+    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Onitsha", "Kano", "Kaduna", "Jos"],
+    qualification: "No degree required where local network, communication and reliability are strong.",
+    summary: "Build local awareness with buyers, neighbourhoods, offices and food communities.",
+    details:
+      "You will help introduce OneFarmTech to local buyer communities, support simple field activations, gather buyer feedback and connect interested groups to the ordering process. This role suits people who are trusted locally and can communicate clearly.",
   },
 ];
 
@@ -160,12 +187,11 @@ export default async function CareersPage({
               Careers
             </p>
             <h1 className="mt-6 text-5xl font-black tracking-tight md:text-7xl">
-              Help build a stronger food supply network.
+              Work with us to improve fresh food supply.
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
-              We hire across supply, buyer growth, fulfilment, operations,
-              technology and community roles. Some roles need qualifications.
-              Others need local knowledge, reliability and strong execution.
+              Explore practical roles across supply, sales, fulfilment, finance,
+              technology, content and community.
             </p>
           </div>
         </section>
@@ -182,7 +208,7 @@ export default async function CareersPage({
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-3">
             <p className="text-sm font-bold text-[#405348]">
-              {filtered.length} role area{filtered.length === 1 ? "" : "s"} shown
+              {filtered.length} role{filtered.length === 1 ? "" : "s"} shown
             </p>
             <div className="flex flex-wrap gap-2">
               <Link
@@ -263,7 +289,7 @@ export default async function CareersPage({
 
           {!filtered.length ? (
             <div className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-8 text-center shadow-sm">
-              <h2 className="text-2xl font-black">No role areas match this filter.</h2>
+              <h2 className="text-2xl font-black">No roles match this filter.</h2>
               <p className="mt-2 text-sm text-[#405348]">
                 Reset filters or contact us with your location and area of interest.
               </p>
