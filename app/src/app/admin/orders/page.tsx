@@ -1,10 +1,21 @@
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
 import AdminDisclosure from "@/components/admin/AdminDisclosure";
-import AdminTableShell from "@/components/admin/AdminTableShell";
-import StatCard from "@/components/admin/StatCard";
-import StatusBadge from "@/components/admin/StatusBadge";
+import {
+  AdminCompactMetric,
+  AdminStatusPill,
+  AdminViewBar,
+  adminToneFromStatus,
+} from "@/components/admin/AdminViewControls";
 import {getDbOrders, getOrderItemsSummary, formatOrderTotal} from "@/data/dbOrders";
+
+type OrdersPageProps = {
+  searchParams?: Promise<{
+    view?: string;
+    status?: string;
+    sort?: string;
+  }>;
+};
 
 function groupByFulfilment<T extends {fulfilmentStatus: string}>(orders: T[]) {
   return orders.reduce<Record<string, T[]>>((groups, order) => {
@@ -15,177 +26,203 @@ function groupByFulfilment<T extends {fulfilmentStatus: string}>(orders: T[]) {
   }, {});
 }
 
-export default async function AdminOrdersPage() {
+function hrefFor(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) search.set(key, value);
+  }
+
+  const query = search.toString();
+  return query ? `/admin/orders?${query}` : "/admin/orders";
+}
+
+export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
+  const params = await searchParams;
+  const view = params?.view || "list";
+  const status = params?.status || "all";
+  const sort = params?.sort || "newest";
   const orders = await getDbOrders();
 
   const awaitingPayment = orders.filter((order) =>
-    order.paymentStatus.toLowerCase().includes("unpaid"),
+    order.paymentStatus.toLowerCase().includes("unpaid") ||
+    order.paymentStatus.toLowerCase().includes("pending"),
   );
   const paidOrApproved = orders.filter((order) =>
     ["paid", "approved"].some((word) => order.paymentStatus.toLowerCase().includes(word)),
   );
   const outForDelivery = orders.filter((order) =>
-    ["delivery", "dispatch", "out"].some((word) =>
+    ["delivery", "dispatch", "out", "transit"].some((word) =>
       order.fulfilmentStatus.toLowerCase().includes(word),
     ),
   );
 
-  const orderStats = [
-    {label: "Total orders", value: String(orders.length)},
-    {label: "Awaiting payment", value: String(awaitingPayment.length)},
-    {label: "Paid / approved", value: String(paidOrApproved.length)},
-    {label: "Out for delivery", value: String(outForDelivery.length)},
-  ];
+  const filteredOrders = orders.filter((order) => {
+    const key = `${order.paymentStatus} ${order.fulfilmentStatus}`.toLowerCase();
 
-  const groupedOrders = groupByFulfilment(orders);
+    if (status === "all") return true;
+    if (status === "awaiting-payment") return key.includes("unpaid") || key.includes("pending");
+    if (status === "paid") return key.includes("paid") || key.includes("approved");
+    if (status === "delivery") return key.includes("delivery") || key.includes("dispatch") || key.includes("transit") || key.includes("out");
+    if (status === "issues") return key.includes("issue") || key.includes("failed") || key.includes("cancelled");
+    return true;
+  });
+
+  const sortedOrders = [...filteredOrders].sort((a, b) => {
+    if (sort === "oldest") return a.createdAt.getTime() - b.createdAt.getTime();
+    if (sort === "value-high") return b.estimatedTotal - a.estimatedTotal;
+    if (sort === "value-low") return a.estimatedTotal - b.estimatedTotal;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+  const groupedOrders = groupByFulfilment(sortedOrders);
+
+  const base = {view, status, sort};
 
   return (
     <AdminShell
       title="Orders"
-      description="Track WhatsApp orders, group-buy orders, direct orders, payment status, fulfilment stage, and delivery method."
+      description="Full order database with compact views, filters and sorting for staff operations."
       action={
         <Link
           href="/admin/create-order"
-          className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
+          className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
         >
-          Create new order
+          New order
         </Link>
       }
     >
-      <section className="mt-8 grid gap-4 md:grid-cols-4">
-        {orderStats.map((stat) => (
-          <StatCard key={stat.label} label={stat.label} value={stat.value} />
-        ))}
+      <section className="mt-8 grid gap-3 md:grid-cols-4">
+        <AdminCompactMetric label="Total orders" value={String(orders.length)} tone="blue" />
+        <AdminCompactMetric label="Awaiting payment" value={String(awaitingPayment.length)} tone="amber" href={hrefFor({...base, status: "awaiting-payment"})} />
+        <AdminCompactMetric label="Paid / approved" value={String(paidOrApproved.length)} tone="green" href={hrefFor({...base, status: "paid"})} />
+        <AdminCompactMetric label="Out for delivery" value={String(outForDelivery.length)} tone="blue" href={hrefFor({...base, status: "delivery"})} />
       </section>
 
-      <AdminDisclosure title={`Order queue (${orders.length})`} defaultOpen>
-        <AdminTableShell
-          title="Order list"
-          description="Database-backed order queue for active buyer orders."
-          label="Manual order management"
-        >
-          <table className="w-full min-w-[1000px] border-separate border-spacing-y-3 text-left text-sm">
-            <thead>
-              <tr className="text-[#405348]">
-                <th className="px-4 py-2">Order</th>
-                <th className="px-4 py-2">Buyer</th>
-                <th className="px-4 py-2">Contact</th>
-                <th className="px-4 py-2">Items</th>
-                <th className="px-4 py-2">Type</th>
-                <th className="px-4 py-2">Payment</th>
-                <th className="px-4 py-2">Fulfilment</th>
-                <th className="px-4 py-2">Total</th>
-                <th className="px-4 py-2">Delivery</th>
-                <th className="px-4 py-2">Date</th>
-              </tr>
-            </thead>
+      <AdminViewBar
+        title="Order controls"
+        description={`${sortedOrders.length} order${sortedOrders.length === 1 ? "" : "s"} shown. Use filters before scrolling.`}
+        viewOptions={[
+          {label: "List", href: hrefFor({...base, view: "list"}), active: view === "list"},
+          {label: "Compact", href: hrefFor({...base, view: "compact"}), active: view === "compact"},
+          {label: "Board", href: hrefFor({...base, view: "board"}), active: view === "board"},
+        ]}
+        filterOptions={[
+          {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
+          {label: "Awaiting payment", href: hrefFor({...base, status: "awaiting-payment"}), active: status === "awaiting-payment"},
+          {label: "Paid", href: hrefFor({...base, status: "paid"}), active: status === "paid"},
+          {label: "Delivery", href: hrefFor({...base, status: "delivery"}), active: status === "delivery"},
+          {label: "Issues", href: hrefFor({...base, status: "issues"}), active: status === "issues"},
+        ]}
+        sortOptions={[
+          {label: "Newest", href: hrefFor({...base, sort: "newest"}), active: sort === "newest"},
+          {label: "Oldest", href: hrefFor({...base, sort: "oldest"}), active: sort === "oldest"},
+          {label: "Value high", href: hrefFor({...base, sort: "value-high"}), active: sort === "value-high"},
+          {label: "Value low", href: hrefFor({...base, sort: "value-low"}), active: sort === "value-low"},
+        ]}
+      />
 
-            <tbody>
-              {orders.map((order) => (
-                <tr key={order.code} className="rounded-2xl bg-[#f7f5ec]">
-                  <td className="rounded-l-2xl px-4 py-4 font-bold">
-                    <Link
-                      href={`/admin/orders/${order.code}`}
-                      className="underline decoration-[#1f7a3f] underline-offset-4"
-                    >
-                      {order.code}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-4">
-                    <p className="font-semibold">{order.buyerName}</p>
-                    <p className="text-xs text-[#405348]">{order.buyerType}</p>
-                  </td>
-                  <td className="px-4 py-4">{order.phone}</td>
-                  <td className="px-4 py-4">{getOrderItemsSummary(order.items)}</td>
-                  <td className="px-4 py-4">{order.orderType}</td>
-                  <td className="px-4 py-4">
-                    <StatusBadge status={order.paymentStatus} />
-                  </td>
-                  <td className="px-4 py-4">{order.fulfilmentStatus}</td>
-                  <td className="px-4 py-4 font-semibold">
-                    {formatOrderTotal(order.estimatedTotal)}
-                  </td>
-                  <td className="px-4 py-4">{order.deliveryMethod}</td>
-                  <td className="rounded-r-2xl px-4 py-4">
-                    {order.createdAt.toLocaleDateString("en-GB")}
-                  </td>
-                </tr>
-              ))}
+      {view === "board" ? (
+        <section className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+          {Object.entries(groupedOrders).map(([groupStatus, statusOrders]) => (
+            <div key={groupStatus} className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="font-black text-[#102015]">{groupStatus}</h2>
+                <AdminStatusPill tone={adminToneFromStatus(groupStatus)}>
+                  {statusOrders.length}
+                </AdminStatusPill>
+              </div>
 
-              {orders.length === 0 ? (
-                <tr>
-                  <td className="rounded-2xl bg-[#f7f5ec] px-4 py-6 text-sm text-[#405348]" colSpan={10}>
-                    No orders yet. Use Create order to add the first database-backed order.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
-        </AdminTableShell>
-      </AdminDisclosure>
-
-      <AdminDisclosure
-        title={`Orders by fulfilment status (${Object.keys(groupedOrders).length})`}
-        defaultOpen={false}
-      >
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-          <h2 className="text-2xl font-black">Fulfilment status view</h2>
-          <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-            Use this grouped view to scan operational movement from new order to sourcing, delivery, pickup or completion.
-          </p>
-
-          <div className="mt-6 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-            {Object.entries(groupedOrders).map(([status, statusOrders]) => (
-              <div
-                key={status}
-                className="rounded-3xl border border-[#102015]/10 bg-[#f7f5ec] p-5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-black">{status}</h3>
-                    <p className="mt-1 text-sm text-[#405348]">
-                      {statusOrders.length} order{statusOrders.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid gap-3">
-                  {statusOrders.slice(0, 8).map((order) => (
-                    <Link
-                      key={order.code}
-                      href={`/admin/orders/${order.code}`}
-                      className="rounded-2xl bg-white p-4 text-sm transition hover:shadow-sm"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-black text-[#1f7a3f]">{order.code}</p>
-                          <p className="mt-1 font-semibold text-[#102015]">{order.buyerName}</p>
-                          <p className="mt-1 text-xs text-[#405348]">
-                            {order.deliveryMethod} · {formatOrderTotal(order.estimatedTotal)}
-                          </p>
-                        </div>
-                        <StatusBadge status={order.paymentStatus} />
+              <div className="mt-4 grid gap-2">
+                {statusOrders.slice(0, 12).map((order) => (
+                  <Link
+                    key={order.code}
+                    href={`/admin/orders/${order.code}`}
+                    className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-3 text-sm transition hover:bg-[#f3f8ef]"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="font-black text-[#1f7a3f]">{order.code}</p>
+                        <p className="mt-1 font-semibold text-[#102015]">{order.buyerName}</p>
+                        <p className="mt-1 text-xs text-[#405348]">
+                          {order.deliveryMethod} · {formatOrderTotal(order.estimatedTotal)}
+                        </p>
                       </div>
-                    </Link>
+                      <AdminStatusPill tone={adminToneFromStatus(order.paymentStatus)}>
+                        {order.paymentStatus}
+                      </AdminStatusPill>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+        </section>
+      ) : (
+        <AdminDisclosure title={`Order queue (${sortedOrders.length})`} defaultOpen>
+          <section className="overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[980px] border-collapse text-left text-sm">
+                <thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.14em] text-[#405348]">
+                  <tr>
+                    <th className="px-4 py-3">Order</th>
+                    <th className="px-4 py-3">Buyer</th>
+                    {view === "list" ? <th className="px-4 py-3">Contact</th> : null}
+                    {view === "list" ? <th className="px-4 py-3">Items</th> : null}
+                    <th className="px-4 py-3">Payment</th>
+                    <th className="px-4 py-3">Fulfilment</th>
+                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3">Delivery</th>
+                    <th className="px-4 py-3">Date</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {sortedOrders.map((order) => (
+                    <tr key={order.code} className="border-t border-[#102015]/10 text-[#405348]">
+                      <td className="px-4 py-3 font-black text-[#102015]">
+                        <Link href={`/admin/orders/${order.code}`} className="text-[#1f7a3f] underline-offset-4 hover:underline">
+                          {order.code}
+                        </Link>
+                        {view === "list" ? <p className="mt-1 text-xs text-[#587063]">{order.orderType}</p> : null}
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-[#102015]">{order.buyerName}</p>
+                        <p className="text-xs text-[#587063]">{order.buyerType}</p>
+                      </td>
+                      {view === "list" ? <td className="px-4 py-3">{order.phone}</td> : null}
+                      {view === "list" ? <td className="max-w-[18rem] truncate px-4 py-3">{getOrderItemsSummary(order.items)}</td> : null}
+                      <td className="px-4 py-3">
+                        <AdminStatusPill tone={adminToneFromStatus(order.paymentStatus)}>
+                          {order.paymentStatus}
+                        </AdminStatusPill>
+                      </td>
+                      <td className="px-4 py-3">
+                        <AdminStatusPill tone={adminToneFromStatus(order.fulfilmentStatus)}>
+                          {order.fulfilmentStatus}
+                        </AdminStatusPill>
+                      </td>
+                      <td className="px-4 py-3 font-black text-[#102015]">
+                        {formatOrderTotal(order.estimatedTotal)}
+                      </td>
+                      <td className="px-4 py-3">{order.deliveryMethod}</td>
+                      <td className="px-4 py-3">{order.createdAt.toLocaleDateString("en-GB")}</td>
+                    </tr>
                   ))}
 
-                  {statusOrders.length > 8 ? (
-                    <p className="rounded-2xl bg-white p-4 text-xs font-bold text-[#405348]">
-                      +{statusOrders.length - 8} more orders in this status.
-                    </p>
+                  {sortedOrders.length === 0 ? (
+                    <tr>
+                      <td className="px-4 py-8 text-center text-[#587063]" colSpan={view === "list" ? 9 : 7}>
+                        No orders match this view.
+                      </td>
+                    </tr>
                   ) : null}
-                </div>
-              </div>
-            ))}
-
-            {orders.length === 0 ? (
-              <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm font-semibold text-[#405348]">
-                No orders yet.
-              </p>
-            ) : null}
-          </div>
-        </section>
-      </AdminDisclosure>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </AdminDisclosure>
+      )}
     </AdminShell>
   );
 }
