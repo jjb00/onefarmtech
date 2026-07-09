@@ -504,6 +504,40 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
   redirect("/admin/buyer-access");
 }
 
+export async function updateBuyerAccountInviteStatusAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {redirect} = await import("next/navigation");
+  const {requireStaff} = await import("@/lib/auth");
+  const {prisma} = await import("@/lib/prisma");
+
+  await requireStaff();
+
+  const id = String(formData.get("id") || "").trim();
+  const status = String(formData.get("status") || "").trim();
+
+  const allowedStatuses = [
+    "Draft",
+    "Ready to send",
+    "Sent manually",
+    "Accepted later",
+    "Cancelled",
+  ];
+
+  if (!id || !allowedStatuses.includes(status)) {
+    throw new Error("Valid buyer invite and status are required.");
+  }
+
+  await prisma.buyerAccountInvite.update({
+    where: {id},
+    data: {status},
+  });
+
+  revalidatePath("/admin/buyer-access");
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/buyer-access?inviteStatus=updated");
+}
+
+
 export async function createContactEnquiryAction(formData: FormData) {
   const name = readText(formData, "name");
   const organisation = readText(formData, "organisation");

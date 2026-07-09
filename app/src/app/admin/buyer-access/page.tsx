@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import {
   createBuyerAccountInviteAction,
   createBuyerContactAction,
+  updateBuyerAccountInviteStatusAction,
 } from "@/actions/createAdminRecords";
 
 export const dynamic = "force-dynamic";
@@ -355,7 +356,29 @@ export default async function BuyerAccessPage() {
                 <td className="px-4 py-3 text-[#405348]">{contactTarget}</td>
                 <td className="px-4 py-3 text-[#405348]">{invite.role}</td>
                 <td className="px-4 py-3">
-                  <AdminStatusPill>{invite.status}</AdminStatusPill>
+                  <div className="grid gap-2">
+                    <AdminStatusPill>{invite.status}</AdminStatusPill>
+                    <form action={updateBuyerAccountInviteStatusAction} className="flex flex-wrap gap-2">
+                      <input type="hidden" name="id" value={invite.id} />
+                      <select
+                        name="status"
+                        defaultValue={invite.status}
+                        className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
+                      >
+                        <option>Draft</option>
+                        <option>Ready to send</option>
+                        <option>Sent manually</option>
+                        <option>Accepted later</option>
+                        <option>Cancelled</option>
+                      </select>
+                      <button
+                        type="submit"
+                        className="rounded-full border border-[#102015]/15 bg-white px-3 py-2 text-xs font-black text-[#102015]"
+                      >
+                        Save
+                      </button>
+                    </form>
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   {canReveal ? (
