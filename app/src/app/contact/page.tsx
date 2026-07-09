@@ -4,6 +4,7 @@ import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import {createContactEnquiryAction} from "@/actions/createAdminRecords";
 import {enquiryTypeOptions} from "@/lib/formOptions";
+import PublicFooter from "@/components/PublicFooter";
 
 const partnerTypes = [
   {
@@ -260,6 +261,7 @@ export default function ContactPage() {
           </div>
         </section>
       </div>
+      <PublicFooter />
     </main>
   );
 }

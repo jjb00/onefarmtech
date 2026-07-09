@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
+import PublicFooter from "@/components/PublicFooter";
 
 const whatsappOrderHref =
   "https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___";
@@ -114,6 +115,7 @@ export default function OrderPage() {
           </div>
         </section>
       </div>
+      <PublicFooter />
     </main>
   );
 }

@@ -1,5 +1,6 @@
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicPageShell from "@/components/PublicPageShell";
+import PublicFooter from "@/components/PublicFooter";
 
 const faqs = [
   {

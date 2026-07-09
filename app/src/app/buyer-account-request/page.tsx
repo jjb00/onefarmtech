@@ -5,6 +5,7 @@ import PublicMobileMenu from "@/components/PublicMobileMenu";
 import BuyerLoginModal from "@/components/BuyerLoginModal";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
+import PublicFooter from "@/components/PublicFooter";
 
 const buyerLoginMessages: Record<string, string> = {
   missing: "Please enter both your email/phone and buyer access code.",
@@ -323,6 +324,7 @@ Your account request has been received. We’ll review your details and get back
           </form>
         </section>
       </div>
+      <PublicFooter />
     </main>
   );
 }

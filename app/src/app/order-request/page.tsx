@@ -4,6 +4,7 @@ import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import {createOrderRequestAction} from "@/actions/createAdminRecords";
 import {deliveryPreferenceOptions, orderBuyerTypeOptions, timingOptions} from "@/lib/formOptions";
+import PublicFooter from "@/components/PublicFooter";
 
 export default async function OrderRequestPage({
   searchParams,
@@ -222,6 +223,7 @@ export default async function OrderRequestPage({
           </form>
         </section>
       </div>
+      <PublicFooter />
     </main>
   );
 }

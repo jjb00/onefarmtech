@@ -134,9 +134,7 @@ export default async function HomePage() {
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
                 Fresh food supply for buyers who need{" "}
-                <span className="oft-yellow-text">
-                  better prices, quality and reliability.
-                </span>
+better prices, quality and reliability.
               </h1>
 
               <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
@@ -176,7 +174,7 @@ export default async function HomePage() {
               </div>
             </section>
 
-            <section className="oft-fade-up-delay-3 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_22px_56px_rgba(16,23,18,0.12)] backdrop-blur">
+            <section className="oft-fade-up-delay-3 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_18px_48px_rgba(16,23,18,0.10)] backdrop-blur">
               <div className="relative overflow-hidden rounded-[1.5rem] bg-[#101712] p-5 text-white">
                 <div className="absolute right-[-80px] top-[-90px] h-56 w-56 rounded-full bg-[#1f7a3f]/35 blur-3xl" />
                 <div className="absolute bottom-[-110px] left-[-90px] h-64 w-64 rounded-full bg-[#F2B84B]/20 blur-3xl" />
