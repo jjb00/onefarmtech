@@ -14,7 +14,7 @@ const sections = [
     ],
   },
   {
-    title: "Support",
+    title: "Help",
     links: [
       {label: "FAQ", href: "/faq"},
       {label: "Contact", href: "/contact"},
@@ -89,10 +89,6 @@ export default function PublicMobileMenu() {
             </section>
           ))}
         </div>
-
-        <p className="mt-3 px-3 text-[0.68rem] font-semibold leading-5 text-[#587063]">
-          Legal links are available in the footer.
-        </p>
       </div>
     </details>
   );

@@ -6,7 +6,6 @@ type Role = {
   title: string;
   department: string;
   stage: string;
-  workArea: string;
   locationLabel: string;
   locations: string[];
   qualification: string;
@@ -16,62 +15,44 @@ type Role = {
 
 const roles: Role[] = [
   {
-    title: "Procurement Field Associate — Plateau / Jos",
+    title: "Procurement Field Associate",
     department: "Procurement",
     stage: "Entry / Associate",
-    workArea: "Procurement regions",
-    locationLabel: "Jos, Barkin Ladi, Bokkos, Mangu and nearby farming clusters",
-    locations: ["Plateau", "Jos", "Barkin Ladi", "Bokkos", "Mangu"],
+    locationLabel: "Plateau / Jos, Middle Belt and selected grower clusters",
+    locations: ["Plateau", "Jos", "Benue", "Nasarawa", "Kogi", "Kwara", "Niger", "Taraba"],
     qualification: "OND, HND, degree or strong field/market experience.",
-    summary: "Source quality produce and build grower relationships around Plateau farming clusters.",
+    summary: "Source quality produce and build reliable grower and aggregator relationships.",
     details: [
-      "Work with growers, aggregators and local markets across vegetables, potatoes, fruits and grains.",
+      "Work with growers, aggregators, cooperatives and local markets.",
       "Support price checks, availability updates, quality notes and pickup coordination.",
-      "Useful for candidates who know local farming communities, produce markets or field operations.",
-    ],
-  },
-  {
-    title: "Middle Belt Sourcing Officer",
-    department: "Procurement",
-    stage: "Associate / Lead",
-    workArea: "Procurement regions",
-    locationLabel: "Benue, Nasarawa, Kogi, Kwara, Niger and Taraba",
-    locations: ["Benue", "Nasarawa", "Kogi", "Kwara", "Niger", "Taraba"],
-    qualification: "OND, HND, degree, cooperative experience or produce sourcing experience.",
-    summary: "Build supply relationships across major Middle Belt food-producing states.",
-    details: [
-      "Focus on yam, cassava, maize, soybeans, grains, vegetables and seasonal produce.",
-      "Map reliable growers, cooperatives, aggregators, transport routes and local price movement.",
-      "Good fit for someone with agriculture, cooperative, market, logistics or field sales experience.",
+      "Relevant produce includes vegetables, potatoes, yam, cassava, maize, soybeans, grains and seasonal crops.",
     ],
   },
   {
     title: "Northern Produce Procurement Lead",
     department: "Procurement",
     stage: "Lead",
-    workArea: "Procurement regions",
     locationLabel: "Kaduna, Kano, Katsina, Jigawa, Bauchi, Gombe, Adamawa and Borno",
     locations: ["Kaduna", "Kano", "Katsina", "Jigawa", "Bauchi", "Gombe", "Adamawa", "Borno"],
     qualification: "HND, degree or 3+ years sourcing, aggregation or logistics experience.",
-    summary: "Coordinate sourcing, quality checks and movement of produce from Northern supply clusters.",
+    summary: "Coordinate supplier relationships, produce movement and quality checks across Northern supply clusters.",
     details: [
-      "Relevant produce includes tomatoes, onions, grains, millet, sorghum, sesame, groundnuts and dry goods.",
-      "Own supplier relationships, pickup readiness, pricing intelligence and reliability notes.",
-      "This is a stronger role for someone with existing market, farmer, transport or commodity relationships.",
+      "Focus on tomatoes, onions, grains, millet, sorghum, sesame, groundnuts and dry goods.",
+      "Own supplier relationships, pickup readiness, price intelligence and reliability notes.",
+      "Best suited to someone with existing market, farmer, transport or commodity relationships.",
     ],
   },
   {
     title: "South & East Supply Partner Associate",
     department: "Procurement",
     stage: "Associate",
-    workArea: "Procurement regions",
     locationLabel: "Cross River, Rivers, Delta, Edo, Enugu, Anambra, Imo and Abia",
     locations: ["Cross River", "Rivers", "Delta", "Edo", "Enugu", "Anambra", "Imo", "Abia"],
     qualification: "OND, HND, degree or relevant supplier/market experience.",
     summary: "Support supplier partnerships across South and East produce corridors.",
     details: [
       "Focus on plantain, cassava, palm produce, fish, fruits, vegetables and regional supply partners.",
-      "Help identify dependable producers, processors, market suppliers and logistics partners.",
+      "Identify dependable producers, processors, market suppliers and logistics partners.",
       "Good fit for candidates with strong local networks and practical operating discipline.",
     ],
   },
@@ -79,7 +60,6 @@ const roles: Role[] = [
     title: "Supplier Quality & Reliability Officer",
     department: "Operations",
     stage: "Associate",
-    workArea: "Mixed",
     locationLabel: "Procurement regions and fulfilment hubs",
     locations: ["Plateau", "Benue", "Nasarawa", "Kogi", "Kwara", "Niger", "Taraba", "Lagos", "Abuja", "Port Harcourt"],
     qualification: "OND, HND, degree or agriculture/food handling experience.",
@@ -94,7 +74,6 @@ const roles: Role[] = [
     title: "Buyer Growth Associate",
     department: "Sales",
     stage: "Entry / Associate",
-    workArea: "Buyer cities",
     locationLabel: "Lagos, Abuja, Port Harcourt, Ibadan, Enugu, Onitsha, Kano and Kaduna",
     locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Onitsha", "Kano", "Kaduna"],
     qualification: "OND, HND, degree or strong sales/customer experience.",
@@ -109,7 +88,6 @@ const roles: Role[] = [
     title: "Key Account Executive",
     department: "Sales",
     stage: "Lead",
-    workArea: "Buyer cities",
     locationLabel: "Lagos, Abuja and Port Harcourt",
     locations: ["Lagos", "Abuja", "Port Harcourt"],
     qualification: "HND, degree or proven B2B sales/account management experience.",
@@ -124,7 +102,6 @@ const roles: Role[] = [
     title: "Fulfilment Coordinator",
     department: "Fulfilment",
     stage: "Associate",
-    workArea: "Buyer cities",
     locationLabel: "Lagos, Abuja, Port Harcourt and major city hubs",
     locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano", "Kaduna"],
     qualification: "OND, HND, degree or logistics/customer operations experience.",
@@ -136,25 +113,9 @@ const roles: Role[] = [
     ],
   },
   {
-    title: "Group Buy Community Lead",
-    department: "Sales",
-    stage: "Entry / Associate",
-    workArea: "Buyer cities",
-    locationLabel: "Cities, estates, offices, churches, schools and neighbourhood clusters",
-    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano", "Kaduna"],
-    qualification: "No degree required where community reach, trust and reliability are strong.",
-    summary: "Organise group-buy demand across communities and buyer clusters.",
-    details: [
-      "Help offices, estates, churches, schools and neighbourhoods coordinate produce demand.",
-      "Support group-buy interest, buyer communication and order follow-up.",
-      "Strong fit for community organisers, student leaders, market connectors and reliable local operators.",
-    ],
-  },
-  {
     title: "Payments & Receipts Officer",
     department: "Finance",
     stage: "Associate",
-    workArea: "Remote / HQ",
     locationLabel: "Remote, Lagos or Abuja",
     locations: ["Remote", "Lagos", "Abuja"],
     qualification: "OND, HND, degree or bookkeeping/admin experience.",
@@ -169,7 +130,6 @@ const roles: Role[] = [
     title: "Operations Analyst",
     department: "Operations",
     stage: "Associate",
-    workArea: "Remote / HQ",
     locationLabel: "Remote, Lagos or Abuja",
     locations: ["Remote", "Lagos", "Abuja"],
     qualification: "HND, degree or strong spreadsheet/data skills.",
@@ -181,10 +141,9 @@ const roles: Role[] = [
     ],
   },
   {
-    title: "Full-Stack Product Engineer",
+    title: "Product Engineer",
     department: "Technology",
     stage: "Experienced",
-    workArea: "Remote / HQ",
     locationLabel: "Remote / hybrid",
     locations: ["Remote", "Lagos", "Abuja"],
     qualification: "Strong Next.js, TypeScript, database and product judgement. Degree not mandatory.",
@@ -199,7 +158,6 @@ const roles: Role[] = [
     title: "Product Designer / UIUX Associate",
     department: "Technology",
     stage: "Associate",
-    workArea: "Remote / HQ",
     locationLabel: "Remote / hybrid",
     locations: ["Remote", "Lagos", "Abuja"],
     qualification: "Portfolio preferred. Degree not mandatory.",
@@ -211,10 +169,9 @@ const roles: Role[] = [
     ],
   },
   {
-    title: "Digital Content & Video Intern",
+    title: "Content & Community Intern",
     department: "Content",
     stage: "Internship",
-    workArea: "Internship / NYSC",
     locationLabel: "Remote, Lagos, Abuja, Jos or campus-based",
     locations: ["Remote", "Lagos", "Abuja", "Jos", "Plateau"],
     qualification: "Student or graduate. Media, theatre arts, communications, agriculture or business backgrounds welcome.",
@@ -229,7 +186,6 @@ const roles: Role[] = [
     title: "NYSC Operations Associate",
     department: "Operations",
     stage: "NYSC",
-    workArea: "Internship / NYSC",
     locationLabel: "Lagos, Abuja, Jos, Kaduna, Kano, Port Harcourt and other operating cities",
     locations: ["Lagos", "Abuja", "Jos", "Plateau", "Kaduna", "Kano", "Port Harcourt"],
     qualification: "NYSC member with strong reliability and communication skills.",
@@ -244,7 +200,6 @@ const roles: Role[] = [
 
 const departments = ["All", ...Array.from(new Set(roles.map((role) => role.department)))];
 const stages = ["All", ...Array.from(new Set(roles.map((role) => role.stage)))];
-const workAreas = ["All", ...Array.from(new Set(roles.map((role) => role.workArea)))];
 const locations = ["All", ...Array.from(new Set(roles.flatMap((role) => role.locations)))].sort((a, b) => {
   if (a === "All") return -1;
   if (b === "All") return 1;
@@ -258,7 +213,6 @@ export default async function CareersPage({
     department?: string;
     location?: string;
     stage?: string;
-    workArea?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -266,14 +220,12 @@ export default async function CareersPage({
   const department = params?.department || "All";
   const location = params?.location || "All";
   const stage = params?.stage || "All";
-  const workArea = params?.workArea || "All";
 
   const filtered = roles.filter((role) => {
     return (
       (department === "All" || role.department === department) &&
       (location === "All" || role.locations.includes(location)) &&
-      (stage === "All" || role.stage === stage) &&
-      (workArea === "All" || role.workArea === workArea)
+      (stage === "All" || role.stage === stage)
     );
   });
 
@@ -311,11 +263,10 @@ export default async function CareersPage({
           action="/careers"
           className="rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur"
         >
-          <div className="grid gap-3 lg:grid-cols-4">
+          <div className="grid gap-3 lg:grid-cols-3">
             <FilterSelect label="Department" name="department" value={department} options={departments} />
             <FilterSelect label="Location" name="location" value={location} options={locations} />
             <FilterSelect label="Stage" name="stage" value={stage} options={stages} />
-            <FilterSelect label="Work area" name="workArea" value={workArea} options={workAreas} />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-3">
@@ -350,7 +301,6 @@ export default async function CareersPage({
                   <div className="flex flex-wrap gap-2">
                     <Badge>{role.department}</Badge>
                     <Badge>{role.stage}</Badge>
-                    <Badge>{role.workArea}</Badge>
                   </div>
 
                   <h2 className="mt-4 text-2xl font-black text-[#102015]">
