@@ -92,28 +92,10 @@ export default async function HomePage() {
             </Link>
             <nav className="hidden items-center gap-3 md:flex">
               <Link
-                href="/faq"
-                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white md:inline-flex"
-              >
-                FAQ
-              </Link>
-              <Link
                 href="/buyer-account-request"
                 className="hidden rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef] md:inline-flex"
               >
                 Create buyer account
-              </Link>
-              <Link
-                href="/contact"
-                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white lg:inline-flex"
-              >
-                Contact
-              </Link>
-              <Link
-                href="/delivery-partner/login"
-                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white lg:inline-flex"
-              >
-                Partner login
               </Link>
               <a
                 href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
