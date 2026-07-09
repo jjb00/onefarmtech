@@ -75,16 +75,62 @@ body {
   animation: oftSoftPulse 2.8s ease-in-out infinite;
 }
 
+@keyframes oftOrbDrift {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -14px, 0) scale(1.04);
+  }
+}
+
+.oft-orb-drift {
+  animation: oftOrbDrift 7s ease-in-out infinite;
+}
+
+.oft-orb-drift-delay {
+  animation: oftOrbDrift 8s ease-in-out infinite;
+  animation-delay: 700ms;
+}
+
+.oft-fade-up-delay-3 {
+  animation: oftFadeUp 880ms ease both;
+  animation-delay: 240ms;
+}
+
+.oft-fade-up-delay-4 {
+  animation: oftFadeUp 940ms ease both;
+  animation-delay: 320ms;
+}
+
+.oft-button-pop {
+  transition:
+    transform 200ms ease,
+    box-shadow 200ms ease,
+    background-color 200ms ease,
+    border-color 200ms ease;
+}
+
+.oft-button-pop:hover {
+  transform: translateY(-2px);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .oft-fade-up,
   .oft-fade-up-delay-1,
   .oft-fade-up-delay-2,
-  .oft-soft-pulse {
+  .oft-fade-up-delay-3,
+  .oft-fade-up-delay-4,
+  .oft-soft-pulse,
+  .oft-orb-drift,
+  .oft-orb-drift-delay {
     animation: none;
   }
 
   .oft-card-lift,
-  .oft-card-lift:hover {
+  .oft-card-lift:hover,
+  .oft-button-pop,
+  .oft-button-pop:hover {
     transition: none;
     transform: none;
   }
