@@ -2,6 +2,7 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
+import PublicFooter from "@/components/PublicFooter";
 import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -250,6 +251,7 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+      <PublicFooter />
     </main>
   );
 }
