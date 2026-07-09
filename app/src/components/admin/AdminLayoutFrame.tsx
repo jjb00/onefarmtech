@@ -66,8 +66,8 @@ export default async function AdminLayoutFrame({
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
             <p className="text-sm font-bold text-[#9ee6ad]">Internal console</p>
             <p className="mt-2 text-xs leading-5 text-white/60">
-              Orders, suppliers, payments, receipts, complaints, group buys,
-              pickup points and WhatsApp operations.
+              Start with Today’s work for daily WhatsApp orders, payment follow-up,
+              delivery handoff and support routing. Secondary tools stay grouped below.
             </p>
             <Link
               href="/admin/logout"
@@ -100,7 +100,7 @@ export default async function AdminLayoutFrame({
                       Admin menu
                     </span>
                     <span className="mt-1 block text-xs font-semibold text-white/65">
-                      Open pages, orders, buyers, finance and support tools
+                      Daily work, WhatsApp storefront, commerce, buyers and settings
                     </span>
                   </span>
                   <span

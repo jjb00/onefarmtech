@@ -20,7 +20,7 @@ export default function AdminPageShell({
     actionHref && actionLabel ? (
       <Link
         href={actionHref}
-        className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
+        className="rounded-full bg-[#1f7a3f] px-6 py-4 text-center font-black text-white shadow-sm hover:bg-[#155c2f]"
       >
         {actionLabel}
       </Link>
