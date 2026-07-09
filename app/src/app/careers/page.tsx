@@ -2,251 +2,342 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
 
-const roleGroups = [
+type Role = {
+  title: string;
+  department: string;
+  location: string;
+  locationGroup: string;
+  stage: string;
+  type: string;
+  qualification: string;
+  focus: string;
+};
+
+const roles: Role[] = [
   {
-    department: "Procurement & Grower Network",
-    summary: "Source quality produce, onboard growers and coordinate supply from farming regions.",
-    roles: [
-      {
-        title: "Procurement Field Associate — Plateau / Jos",
-        location: "Jos, Barkin Ladi, Bokkos, Mangu and nearby farming clusters",
-        focus: "Vegetables, potatoes, fruits, grains, grower relationships and quality checks.",
-        qualification: "OND, HND, degree or strong field experience.",
-      },
-      {
-        title: "Middle Belt Sourcing Officer",
-        location: "Benue, Nasarawa, Kogi, Kwara, Niger and Taraba",
-        focus: "Yam, cassava, maize, soybeans, grains, vegetables and seasonal produce aggregation.",
-        qualification: "OND, HND, degree, cooperative experience or local market experience.",
-      },
-      {
-        title: "Northern Produce Procurement Lead",
-        location: "Kaduna, Kano, Katsina, Jigawa, Bauchi, Gombe, Adamawa and Borno",
-        focus: "Tomatoes, onions, grains, millet, sorghum, sesame, groundnuts, livestock-linked produce and dry goods.",
-        qualification: "HND, degree or 3+ years sourcing/logistics experience.",
-      },
-      {
-        title: "South & East Supply Partner Associate",
-        location: "Cross River, Rivers, Delta, Edo, Enugu, Anambra, Imo and Abia",
-        focus: "Plantain, cassava, palm produce, fish, fruits, vegetables and regional supplier partnerships.",
-        qualification: "OND, HND, degree or relevant market/supplier experience.",
-      },
-    ],
+    title: "Procurement Field Associate",
+    department: "Procurement",
+    location: "Plateau / Jos and nearby farming clusters",
+    locationGroup: "Grower regions",
+    stage: "Entry / Associate",
+    type: "Field",
+    qualification: "OND, HND, degree or strong local market experience",
+    focus: "Source vegetables, potatoes, grains and seasonal produce from growers and aggregators.",
   },
   {
-    department: "Sales, Buyer Growth & Fulfilment",
-    summary: "Win and support buyers in major consumption cities and trading hubs.",
-    roles: [
-      {
-        title: "Buyer Growth Associate",
-        location: "Lagos, Abuja, Port Harcourt, Ibadan, Enugu, Onitsha, Kano and Kaduna",
-        focus: "Restaurants, hotels, caterers, food vendors, retailers, households and buying groups.",
-        qualification: "OND, HND, degree or strong sales/customer experience.",
-      },
-      {
-        title: "Fulfilment Coordinator",
-        location: "Lagos, Abuja, Port Harcourt and major city hubs",
-        focus: "Order allocation, dispatch follow-up, delivery evidence and buyer issue resolution.",
-        qualification: "OND, HND, degree or logistics/customer operations experience.",
-      },
-      {
-        title: "Group Buy Community Lead",
-        location: "Cities, estates, offices, churches, schools and neighbourhood clusters",
-        focus: "Organise group-buy windows, collect buyer interest and support community orders.",
-        qualification: "No degree required where community reach and reliability are strong.",
-      },
-      {
-        title: "Key Account Executive",
-        location: "Lagos, Abuja and Port Harcourt",
-        focus: "Restaurants, hotels, corporate kitchens, caterers and large recurring buyers.",
-        qualification: "HND, degree or proven B2B sales experience.",
-      },
-    ],
+    title: "Middle Belt Sourcing Officer",
+    department: "Procurement",
+    location: "Benue, Nasarawa, Kogi, Kwara, Niger and Taraba",
+    locationGroup: "Grower regions",
+    stage: "Associate / Lead",
+    type: "Field",
+    qualification: "OND, HND, degree, cooperative or produce sourcing experience",
+    focus: "Build supply relationships for yam, cassava, maize, soybeans, grains and vegetables.",
   },
   {
-    department: "Operations, Finance & Risk",
-    summary: "Keep payments, receipts, buyer accounts, supplier reliability and controls tight.",
-    roles: [
-      {
-        title: "Payments & Receipts Officer",
-        location: "Remote / Lagos / Abuja",
-        focus: "Payment requests, Paystack/Flutterwave follow-up, receipts, reconciliation and buyer evidence.",
-        qualification: "OND, HND, degree or bookkeeping/admin experience.",
-      },
-      {
-        title: "Operations Analyst",
-        location: "Remote / Lagos / Abuja",
-        focus: "Order data, fulfilment metrics, buyer behaviour, supplier performance and reporting.",
-        qualification: "HND, degree or strong spreadsheet/data skills.",
-      },
-      {
-        title: "Quality & Supplier Reliability Officer",
-        location: "Procurement regions and fulfilment hubs",
-        focus: "Produce quality checks, supplier scoring, issue logs and corrective actions.",
-        qualification: "OND, HND, degree or agriculture/food handling experience.",
-      },
-    ],
+    title: "Northern Produce Procurement Lead",
+    department: "Procurement",
+    location: "Kaduna, Kano, Katsina, Jigawa, Bauchi, Gombe and Adamawa",
+    locationGroup: "Grower regions",
+    stage: "Lead",
+    type: "Field",
+    qualification: "HND, degree or 3+ years sourcing/logistics experience",
+    focus: "Coordinate sourcing for tomatoes, onions, grains, millet, sorghum, sesame and dry goods.",
   },
   {
-    department: "Technology, Product & Data",
-    summary: "Build and improve the operating system behind OneFarmTech.",
-    roles: [
-      {
-        title: "Full-Stack Product Engineer",
-        location: "Remote / hybrid",
-        focus: "Buyer portal, admin operations, payments, WhatsApp workflows and internal tools.",
-        qualification: "Degree not mandatory. Strong Next.js, TypeScript, database and product judgement required.",
-      },
-      {
-        title: "Product Designer / UIUX Associate",
-        location: "Remote / hybrid",
-        focus: "Mobile-first buyer flows, admin workflows, design systems and accessibility.",
-        qualification: "Portfolio preferred. Degree not mandatory.",
-      },
-      {
-        title: "Data & Automation Associate",
-        location: "Remote / hybrid",
-        focus: "Dashboards, data quality, workflow automation, buyer segmentation and operational reporting.",
-        qualification: "HND, degree, bootcamp or strong practical data skills.",
-      },
-    ],
+    title: "Supplier Reliability Officer",
+    department: "Operations",
+    location: "Procurement regions and fulfilment hubs",
+    locationGroup: "Mixed",
+    stage: "Associate",
+    type: "Field / Hybrid",
+    qualification: "OND, HND, degree or agriculture/food handling experience",
+    focus: "Track produce quality, supplier performance, issue logs and corrective actions.",
   },
   {
-    department: "Content, Community & Internships",
-    summary: "Tell the story, support users and build talent pipelines.",
-    roles: [
-      {
-        title: "Digital Content & Video Intern",
-        location: "Remote / Lagos / Abuja / campus-based",
-        focus: "Short videos, market visits, buyer stories, grower stories, social content and product explainers.",
-        qualification: "Student or graduate. Theatre arts, media, communications, agriculture or business backgrounds welcome.",
-      },
-      {
-        title: "NYSC Operations Associate",
-        location: "Lagos, Abuja, Jos, Kaduna, Kano, Port Harcourt and other operating cities",
-        focus: "Buyer support, order follow-up, supplier mapping, data entry and community operations.",
-        qualification: "NYSC member with strong reliability and communication skills.",
-      },
-      {
-        title: "Agribusiness Research Intern",
-        location: "Remote / field-based",
-        focus: "Map crop clusters, markets, suppliers, logistics routes and buyer demand.",
-        qualification: "Student, graduate, NYSC or practical field researcher.",
-      },
-    ],
+    title: "Buyer Growth Associate",
+    department: "Sales",
+    location: "Lagos, Abuja, Port Harcourt, Ibadan, Enugu, Onitsha, Kano and Kaduna",
+    locationGroup: "Buyer cities",
+    stage: "Entry / Associate",
+    type: "City operations",
+    qualification: "OND, HND, degree or strong sales/customer experience",
+    focus: "Acquire restaurants, hotels, caterers, retailers, food vendors and buying groups.",
+  },
+  {
+    title: "Key Account Executive",
+    department: "Sales",
+    location: "Lagos, Abuja and Port Harcourt",
+    locationGroup: "Buyer cities",
+    stage: "Lead",
+    type: "City operations",
+    qualification: "HND, degree or proven B2B sales experience",
+    focus: "Manage larger recurring buyers, repeat orders, account readiness and buyer retention.",
+  },
+  {
+    title: "Fulfilment Coordinator",
+    department: "Fulfilment",
+    location: "Lagos, Abuja, Port Harcourt and major city hubs",
+    locationGroup: "Buyer cities",
+    stage: "Associate",
+    type: "City operations",
+    qualification: "OND, HND, degree or logistics/customer operations experience",
+    focus: "Coordinate order allocation, dispatch, delivery evidence and buyer issue follow-up.",
+  },
+  {
+    title: "Payments & Receipts Officer",
+    department: "Finance",
+    location: "Remote, Lagos or Abuja",
+    locationGroup: "Remote / HQ",
+    stage: "Associate",
+    type: "Remote / Hybrid",
+    qualification: "OND, HND, degree or bookkeeping/admin experience",
+    focus: "Manage payment requests, receipts, reconciliation and buyer payment evidence.",
+  },
+  {
+    title: "Full-Stack Product Engineer",
+    department: "Technology",
+    location: "Remote / hybrid",
+    locationGroup: "Remote / HQ",
+    stage: "Experienced",
+    type: "Remote / Hybrid",
+    qualification: "Strong Next.js, TypeScript, database and product judgement. Degree not mandatory.",
+    focus: "Build buyer portal, admin operations, payments, WhatsApp workflows and internal tools.",
+  },
+  {
+    title: "Product Designer / UIUX Associate",
+    department: "Technology",
+    location: "Remote / hybrid",
+    locationGroup: "Remote / HQ",
+    stage: "Associate",
+    type: "Remote / Hybrid",
+    qualification: "Portfolio preferred. Degree not mandatory.",
+    focus: "Design mobile-first buyer flows, admin workflows, design systems and accessibility.",
+  },
+  {
+    title: "Digital Content & Video Intern",
+    department: "Content",
+    location: "Remote, Lagos, Abuja or campus-based",
+    locationGroup: "Internship / NYSC",
+    stage: "Internship",
+    type: "Internship",
+    qualification: "Student or graduate. Media, theatre arts, communications, agriculture or business welcome.",
+    focus: "Create short videos, market visits, buyer stories, grower stories and product explainers.",
+  },
+  {
+    title: "NYSC Operations Associate",
+    department: "Operations",
+    location: "Lagos, Abuja, Jos, Kaduna, Kano, Port Harcourt and other operating cities",
+    locationGroup: "Internship / NYSC",
+    stage: "NYSC",
+    type: "NYSC",
+    qualification: "NYSC member with strong reliability and communication skills",
+    focus: "Support buyer follow-up, order tracking, supplier mapping, data entry and community operations.",
   },
 ];
 
-const hiringNotes = [
-  "Field roles can be part-time, full-time, contract, internship or NYSC depending on location.",
-  "Local language, market knowledge and reliability can be more important than formal qualifications for some field roles.",
-  "Tech, finance and data roles require stronger technical accuracy and documentation discipline.",
-  "OneFarmTech values people who can work with buyers, growers, suppliers and operators respectfully.",
-];
+const departments = ["All", ...Array.from(new Set(roles.map((role) => role.department)))];
+const locations = ["All", ...Array.from(new Set(roles.map((role) => role.locationGroup)))];
+const stages = ["All", ...Array.from(new Set(roles.map((role) => role.stage)))];
+const types = ["All", ...Array.from(new Set(roles.map((role) => role.type)))];
 
-export default function CareersPage() {
+function optionHref(key: string, value: string) {
+  if (value === "All") return "/careers";
+  return `/careers?${key}=${encodeURIComponent(value)}`;
+}
+
+export default function CareersPage({
+  searchParams,
+}: {
+  searchParams?: {
+    department?: string;
+    location?: string;
+    stage?: string;
+    type?: string;
+    sort?: string;
+  };
+}) {
+  const department = searchParams?.department || "All";
+  const location = searchParams?.location || "All";
+  const stage = searchParams?.stage || "All";
+  const type = searchParams?.type || "All";
+  const sort = searchParams?.sort || "department";
+
+  const filtered = roles.filter((role) => {
+    return (
+      (department === "All" || role.department === department) &&
+      (location === "All" || role.locationGroup === location) &&
+      (stage === "All" || role.stage === stage) &&
+      (type === "All" || role.type === type)
+    );
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "location") return a.locationGroup.localeCompare(b.locationGroup);
+    if (sort === "stage") return a.stage.localeCompare(b.stage);
+    return a.department.localeCompare(b.department) || a.title.localeCompare(b.title);
+  });
+
   return (
-    <main className="min-h-screen bg-[#fbfff8] text-[#102015]">
-      <section className="bg-[radial-gradient(circle_at_16%_16%,rgba(242,184,75,0.18),transparent_30%),linear-gradient(180deg,#fbfff8_0%,#f7f5ec_100%)]">
-        <div className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
-          <header className="flex items-center justify-between gap-4">
-            <Link href="/" aria-label="Go to OneFarmTech homepage">
-              <BrandMark />
-            </Link>
-            <div className="flex flex-wrap items-center gap-2">
-              <Link href="/contact" className="rounded-full border border-[#102015]/10 bg-white px-4 py-2 text-sm font-black text-[#102015]">
-                Contact
-              </Link>
-              <Link href="/" className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white">
-                Home
-              </Link>
-            </div>
-          </header>
+    <main className="oft-product-shell min-h-screen bg-[#fbfff8] text-[#102015]">
+      <section className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
+        <header className="flex items-center justify-between gap-4">
+          <Link href="/" aria-label="Go to OneFarmTech homepage">
+            <BrandMark />
+          </Link>
+          <Link
+            href="/contact"
+            className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white shadow-sm"
+          >
+            Contact
+          </Link>
+        </header>
 
-          <div className="grid gap-8 py-14 lg:grid-cols-[1fr_0.72fr] lg:items-end">
-            <div>
-              <p className="inline-flex rounded-full border border-[#1f7a3f]/15 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-                Careers
-              </p>
-              <h1 className="mt-6 max-w-4xl text-5xl font-black tracking-tight md:text-7xl">
-                Build the food supply network buyers can rely on.
-              </h1>
-              <p className="mt-6 max-w-3xl text-lg leading-8 text-[#405348]">
-                We work across sourcing, logistics, sales, finance, product, data and community operations. Some roles need degrees. Some need field experience, local knowledge and strong execution.
-              </p>
-            </div>
-
-            <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 shadow-sm">
-              <h2 className="text-xl font-black">Open talent areas</h2>
-              <div className="mt-4 grid gap-3">
-                {["Procurement", "Logistics", "Sales", "Fulfilment", "Technology", "Finance", "Content", "Internships", "NYSC"].map((item) => (
-                  <span key={item} className="rounded-2xl bg-[#f3f8ef] px-4 py-3 text-sm font-black text-[#102015]">
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mx-auto grid max-w-7xl gap-6 px-6 py-10 lg:px-10">
-        {roleGroups.map((group) => (
-          <section key={group.department} className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 shadow-sm">
-            <div className="flex flex-col gap-2 border-b border-[#102015]/10 pb-4 md:flex-row md:items-end md:justify-between">
-              <div>
-                <h2 className="text-2xl font-black">{group.department}</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">{group.summary}</p>
-              </div>
-            </div>
-
-            <div className="mt-5 grid gap-4 lg:grid-cols-2">
-              {group.roles.map((role) => (
-                <article key={role.title} className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-4">
-                  <h3 className="text-lg font-black text-[#102015]">{role.title}</h3>
-                  <p className="mt-2 text-sm font-bold text-[#1f7a3f]">{role.location}</p>
-                  <p className="mt-3 text-sm leading-7 text-[#405348]">{role.focus}</p>
-                  <p className="mt-3 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#102015]">
-                    Qualification: {role.qualification}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
-
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-[#102015] p-6 text-white shadow-sm">
-          <div className="grid gap-6 lg:grid-cols-[1fr_0.8fr] lg:items-center">
-            <div>
-              <h2 className="text-3xl font-black">Interested in working with OneFarmTech?</h2>
-              <p className="mt-3 max-w-3xl text-sm leading-7 text-white/70">
-                Send a short note with your location, role interest, experience and availability.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-3 lg:justify-end">
-              <Link href="/contact" className="rounded-full bg-[#F2B84B] px-5 py-3 text-sm font-black text-[#102015]">
-                Contact us
-              </Link>
-              <a
-                href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20am%20interested%20in%20a%20career%20or%20internship%20role.%20My%20location%20is%3A%20___"
-                className="rounded-full border border-white/15 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
-              >
-                Message on WhatsApp
-              </a>
-            </div>
+        <section className="py-12">
+          <div className="max-w-4xl">
+            <p className="inline-flex rounded-full border border-[#1f7a3f]/15 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+              Careers
+            </p>
+            <h1 className="mt-6 text-5xl font-black tracking-tight md:text-7xl">
+              Work on food supply that moves.
+            </h1>
+            <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
+              Explore roles across procurement, logistics, sales, fulfilment, technology, finance, content, internships and NYSC.
+            </p>
           </div>
         </section>
 
-        <section className="grid gap-3 md:grid-cols-2">
-          {hiringNotes.map((note) => (
-            <div key={note} className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-sm font-semibold leading-7 text-[#405348] shadow-sm">
-              {note}
-            </div>
+        <section className="sticky top-3 z-20 rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur">
+          <div className="grid gap-3 lg:grid-cols-5">
+            <Filter label="Department" options={departments} queryKey="department" active={department} />
+            <Filter label="Location" options={locations} queryKey="location" active={location} />
+            <Filter label="Stage" options={stages} queryKey="stage" active={stage} />
+            <Filter label="Type" options={types} queryKey="type" active={type} />
+
+            <label className="grid gap-1 text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
+              Sort
+              <select
+                defaultValue={sort}
+                className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-2 text-sm font-black normal-case tracking-normal text-[#102015]"
+                onChange={undefined}
+              >
+                <option value="department">Department</option>
+                <option value="location">Location</option>
+                <option value="stage">Stage</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-3">
+            <p className="text-sm font-bold text-[#405348]">
+              {sorted.length} role{sorted.length === 1 ? "" : "s"} shown
+            </p>
+            <Link href="/careers" className="rounded-full border border-[#102015]/10 px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]">
+              Reset filters
+            </Link>
+          </div>
+        </section>
+
+        <section className="mt-6 grid gap-4">
+          {sorted.map((role) => (
+            <article
+              key={role.title}
+              className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(16,23,18,0.08)]"
+            >
+              <div className="grid gap-4 lg:grid-cols-[1fr_0.34fr] lg:items-start">
+                <div>
+                  <div className="flex flex-wrap gap-2">
+                    <Badge>{role.department}</Badge>
+                    <Badge>{role.stage}</Badge>
+                    <Badge>{role.type}</Badge>
+                  </div>
+
+                  <h2 className="mt-4 text-2xl font-black text-[#102015]">
+                    {role.title}
+                  </h2>
+                  <p className="mt-2 text-sm font-black text-[#1f7a3f]">
+                    {role.location}
+                  </p>
+                  <p className="mt-3 max-w-3xl text-sm leading-7 text-[#405348]">
+                    {role.focus}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-[#f3f8ef] p-4">
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
+                    Qualification
+                  </p>
+                  <p className="mt-2 text-sm font-semibold leading-6 text-[#102015]">
+                    {role.qualification}
+                  </p>
+                  <Link
+                    href={`/contact?role=${encodeURIComponent(role.title)}`}
+                    className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
+                  >
+                    Express interest
+                  </Link>
+                </div>
+              </div>
+            </article>
           ))}
+
+          {!sorted.length ? (
+            <div className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-8 text-center shadow-sm">
+              <h2 className="text-2xl font-black">No roles match this filter.</h2>
+              <p className="mt-2 text-sm text-[#405348]">Reset filters or contact us with your location and area of interest.</p>
+            </div>
+          ) : null}
         </section>
       </section>
 
       <PublicFooter />
     </main>
+  );
+}
+
+function Filter({
+  label,
+  options,
+  queryKey,
+  active,
+}: {
+  label: string;
+  options: string[];
+  queryKey: string;
+  active: string;
+}) {
+  return (
+    <details className="relative">
+      <summary className="grid cursor-pointer list-none gap-1 rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-2">
+        <span className="text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
+          {label}
+        </span>
+        <span className="text-sm font-black text-[#102015]">{active}</span>
+      </summary>
+
+      <div className="absolute left-0 z-30 mt-2 grid max-h-72 w-full min-w-56 gap-1 overflow-auto rounded-2xl border border-[#102015]/10 bg-white p-2 shadow-2xl">
+        {options.map((option) => (
+          <Link
+            key={`${queryKey}-${option}`}
+            href={optionHref(queryKey, option)}
+            className={`rounded-xl px-3 py-2 text-sm font-black ${
+              active === option
+                ? "bg-[#1f7a3f] text-white"
+                : "text-[#102015] hover:bg-[#f3f8ef]"
+            }`}
+          >
+            {option}
+          </Link>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+function Badge({children}: {children: string}) {
+  return (
+    <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#1f7a3f]">
+      {children}
+    </span>
   );
 }
