@@ -90,7 +90,7 @@ export default async function BuyerProfilePage() {
       </section>
 
       <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
-        <details open>
+        <details>
           <summary className="cursor-pointer list-none">
             <div className="max-w-3xl">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">

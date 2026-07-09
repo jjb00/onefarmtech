@@ -226,14 +226,23 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 text-[#102015] shadow-sm backdrop-blur">
-      <div className="flex items-center justify-between gap-4">
-        <h2 className="text-2xl font-black">{title}</h2>
-        <Link href={href} className="text-sm font-black text-[#1f7a3f]">
-          View all
-        </Link>
+    <details className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 text-[#102015] shadow-sm backdrop-blur">
+      <summary className="cursor-pointer list-none">
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="text-2xl font-black">{title}</h2>
+          <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
+            Open
+          </span>
+        </div>
+      </summary>
+      <div className="mt-5">
+        <div className="mb-4">
+          <Link href={href} className="text-sm font-black text-[#1f7a3f]">
+            View all
+          </Link>
+        </div>
+        {children}
       </div>
-      <div className="mt-5">{children}</div>
-    </section>
+    </details>
   );
 }

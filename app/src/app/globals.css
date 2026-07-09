@@ -116,6 +116,25 @@ body {
 }
 
 
+@keyframes oftFloatVisible {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -18px, 0) rotate(1.2deg) scale(1.035);
+  }
+}
+
+.oft-float-slow {
+  animation: oftFloatVisible 8s ease-in-out infinite;
+}
+
+.oft-float-delay {
+  animation: oftFloatVisible 9s ease-in-out infinite;
+  animation-delay: 900ms;
+}
+
+
 .oft-public-surface {
   background:
     radial-gradient(circle at 18% 18%, rgba(242, 184, 75, 0.18), transparent 30%),
@@ -194,7 +213,9 @@ body {
   .oft-fade-up-delay-4,
   .oft-soft-pulse,
   .oft-orb-drift,
-  .oft-orb-drift-delay {
+  .oft-orb-drift-delay,
+  .oft-float-slow,
+  .oft-float-delay {
     animation: none;
   }
 

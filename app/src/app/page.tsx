@@ -60,22 +60,22 @@ export default async function HomePage() {
             {
               src: "/backgrounds/produce.png",
               alt: "",
-              className: "left-[-120px] top-24 h-80 w-80 opacity-[0.36] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
+              className: "oft-float-slow left-[-120px] top-24 h-80 w-80 opacity-[0.46] blur-[0.2px] md:h-[28rem] md:w-[28rem]",
             },
             {
               src: "/backgrounds/trolley.png",
               alt: "",
-              className: "right-[-150px] top-28 h-80 w-80 opacity-[0.38] md:h-[30rem] md:w-[30rem]",
+              className: "oft-float-delay right-[-150px] top-28 h-80 w-80 opacity-[0.48] md:h-[30rem] md:w-[30rem]",
             },
             {
               src: "/backgrounds/buyers.png",
               alt: "",
-              className: "bottom-[-120px] left-[32%] hidden h-[28rem] w-[28rem] opacity-[0.38] lg:block",
+              className: "oft-float-slow bottom-[-120px] left-[32%] hidden h-[28rem] w-[28rem] opacity-[0.46] lg:block",
             },
             {
               src: "/backgrounds/delivery.png",
               alt: "",
-              className: "bottom-[-130px] right-[8%] hidden h-[24rem] w-[24rem] opacity-[0.37] xl:block",
+              className: "oft-float-delay bottom-[-130px] right-[8%] hidden h-[24rem] w-[24rem] opacity-[0.44] xl:block",
             },
           ]}
         />
@@ -108,6 +108,12 @@ export default async function HomePage() {
               >
                 Contact
               </Link>
+              <Link
+                href="/delivery-partner/login"
+                className="hidden rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white lg:inline-flex"
+              >
+                Partner login
+              </Link>
               <a
                 href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
                 className="hidden rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] md:inline-flex"
@@ -122,7 +128,7 @@ export default async function HomePage() {
             <section>
               <div className="oft-fade-up inline-flex items-center gap-2 rounded-full border border-[#1f7a3f]/15 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f] shadow-sm backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-[#F2B84B]" />
-                WhatsApp-first fresh produce ordering
+                Fresh produce ordering, made simpler
               </div>
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
@@ -174,19 +180,19 @@ export default async function HomePage() {
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F2B84B]">
-                      Live group-buy progress
+                      Group-buy window
                     </p>
                     <h2 className="mt-2 text-3xl font-black">
-                      {activity.activeGroupBuy?.title || "Next bulk buy opening soon"}
+                      {activity.activeGroupBuy?.title || "Next group-buy window opening soon"}
                     </h2>
                     <p className="mt-2 text-sm leading-6 text-white/60">
                       {activity.item
                         ? `${activity.item.name} · ${activity.item.grade} · ${activity.item.unit}`
-                        : "City, family, friends and business group buying."}
+                        : "Group buys open manually on selected buying days."}
                     </p>
                   </div>
                   <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
-                    {activity.activeGroupBuy?.status || "Open"}
+                    {activity.activeGroupBuy?.status || "Closed"}
                   </span>
                 </div>
 
@@ -204,13 +210,13 @@ export default async function HomePage() {
                   <p className="mt-3 text-sm font-semibold text-white/65">
                     {activity.targetQuantity > 0
                       ? `${activity.reservedQuantity} of ${activity.targetQuantity} reserved`
-                      : "Reservations will show here once a group buy is active."}
+                      : "Group-buy reservations stay closed until the team opens the next buying window."}
                   </p>
                 </div>
 
                 <div className="mt-6 grid grid-cols-2 gap-3">
                   <LiveMetric label="buyers joined" value={String(activity.reservationCount)} />
-                  <LiveMetric label="active group buys" value={String(activity.activeGroupBuyCount)} />
+                  <LiveMetric label="open group buys" value={String(activity.activeGroupBuyCount)} />
                 </div>
                 </div>
               </div>
@@ -228,7 +234,7 @@ export default async function HomePage() {
                   href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20join%20or%20create%20a%20group%20buy."
                   className="oft-button-pop inline-flex items-center justify-center rounded-full bg-[#F2B84B] px-6 py-3 text-sm font-black text-[#101712] shadow-[0_18px_44px_rgba(242,184,75,0.32)] hover:bg-[#e4a833]"
                 >
-                  Ask about group buying
+                  Register group-buy interest
                 </a>
                 <Link
                   href="/order"

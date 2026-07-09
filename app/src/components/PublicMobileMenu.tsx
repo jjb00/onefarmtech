@@ -8,6 +8,7 @@ const navItems = [
   {label: "Order form", href: "/order-request"},
   {label: "Request buyer account", href: "/buyer-account-request"},
   {label: "Buyer login", href: "/buyer-login"},
+  {label: "Partner login", href: "/delivery-partner/login"},
   {label: "FAQ", href: "/faq"},
   {label: "Contact", href: "/contact"},
 ];

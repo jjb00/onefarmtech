@@ -248,13 +248,13 @@ export default async function AdminWhatsAppWorkflowPage() {
       value: activeProducts,
       caption: "active products",
       href: "/admin/whatsapp-tools",
-      action: "Send menu/list",
+      action: "Send update",
       tone: "green" as const,
     },
     {
       title: "New inbound",
       value: inboundBuyerMessages.length + inboundUnknownMessages.length,
-      caption: "recent WhatsApp messages",
+      caption: "recent buyer messages",
       href: "/admin/whatsapp-inbox",
       action: "Open inbox",
       tone: "neutral" as const,
@@ -302,7 +302,7 @@ export default async function AdminWhatsAppWorkflowPage() {
     {
       title: "Evidence",
       value: latestPaymentMessages.length,
-      caption: "recent payment WhatsApps",
+      caption: "recent payment messages",
       href: "/admin/buyer-messages",
       action: "Message log",
       tone: "neutral" as const,
@@ -321,7 +321,7 @@ export default async function AdminWhatsAppWorkflowPage() {
       step: "2",
       title: "Test menu replies",
       check: "Reply as buyer with 1, 2, 3, 4, 5 or 6.",
-      expected: "Inbound WhatsApp inbox classifies intent correctly.",
+      expected: "Inbound Message inbox classifies intent correctly.",
       href: "/admin/whatsapp-inbox",
     },
     {
@@ -384,8 +384,8 @@ export default async function AdminWhatsAppWorkflowPage() {
 
   return (
     <AdminPage
-      title="WhatsApp workflow"
-      subtitle="Daily operating checklist for WhatsApp-first product discovery, ordering, payment, delivery and support."
+      title="Workflow test"
+      subtitle="Launch QA checklist for product discovery, ordering, payment, delivery and support."
     >
       <section className="rounded-[2rem] bg-[#102015] p-6 text-white shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
@@ -394,7 +394,7 @@ export default async function AdminWhatsAppWorkflowPage() {
               Staff operating view
             </p>
             <h2 className="mt-3 text-3xl font-black">
-              Today’s WhatsApp work
+              End-to-end workflow test
             </h2>
             <p className="mt-3 max-w-4xl text-sm leading-7 text-white/75">
               Start with new inbound messages, convert drafts, collect payments, assign delivery, and keep complaint/follow-up work visible.
@@ -449,7 +449,7 @@ export default async function AdminWhatsAppWorkflowPage() {
                 End-to-end test harness
               </p>
               <h3 className="mt-2 text-2xl font-black text-[#102015]">
-                WhatsApp workflow checklist
+                Workflow test checklist
               </h3>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
                 Use this checklist before handover or demo. Each row links to the relevant operating page.

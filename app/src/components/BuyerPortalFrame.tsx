@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandMark from "@/components/BrandMark";
 import type {ReactNode} from "react";
 import {buyerLogoutAction} from "@/actions/auth";
 
@@ -75,6 +76,9 @@ export default function BuyerPortalFrame({
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-5 shadow-sm backdrop-blur lg:hidden">
           <div className="flex items-start justify-between gap-4">
             <div>
+              <Link href="/buyer-account" className="mb-4 inline-flex" aria-label="Go to buyer dashboard">
+                <BrandMark />
+              </Link>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
                 Buyer portal
               </p>
@@ -105,6 +109,9 @@ export default function BuyerPortalFrame({
 
         <aside className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
           <div className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-5 shadow-sm backdrop-blur">
+            <Link href="/buyer-account" className="mb-5 inline-flex" aria-label="Go to buyer dashboard">
+              <BrandMark />
+            </Link>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
               Buyer portal
             </p>

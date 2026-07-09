@@ -117,7 +117,7 @@ export default async function AdminWhatsAppPage() {
       tone: "green",
     },
     {
-      label: "WhatsApp inbox",
+      label: "Message inbox",
       value: inboundBuyerMessages.length + inboundUnknownMessages.length,
       caption: "recent inbound messages",
       href: "/admin/whatsapp-inbox",
@@ -162,20 +162,20 @@ export default async function AdminWhatsAppPage() {
 
   return (
     <AdminPage
-      title="WhatsApp storefront"
-      subtitle="Main command centre for WhatsApp-first product discovery, ordering, payment, delivery and support."
+      title="Message centre"
+      subtitle="Buyer messaging hub for product enquiries, order drafts, payment follow-up, delivery updates and support."
     >
       <section className="rounded-[2rem] bg-[#102015] p-6 text-white shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-white/60">
-              Mobile-first storefront
+              Buyer communications
             </p>
             <h2 className="mt-3 text-3xl font-black">
-              Run the buyer journey from WhatsApp
+              Manage buyer messages and follow-up
             </h2>
             <p className="mt-3 max-w-4xl text-sm leading-7 text-white/75">
-              Use this hub to send the storefront menu, share live product availability, review inbound messages, convert order drafts, follow payments, assign deliveries and handle complaints.
+              Use this hub to share product availability, review inbound messages, convert order drafts, follow payments, assign deliveries and handle complaints.
             </p>
           </div>
 
@@ -184,13 +184,13 @@ export default async function AdminWhatsAppPage() {
               href="/admin/whatsapp-workflow"
               className="rounded-full bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
             >
-              Workflow checklist
+              Workflow test
             </Link>
             <Link
               href="/admin/whatsapp-tools"
               className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
             >
-              Send menu/list
+              Send update
             </Link>
             <Link
               href="/admin/whatsapp-inbox"
@@ -224,13 +224,13 @@ export default async function AdminWhatsAppPage() {
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-          Storefront intent mix
+          Message intent mix
         </p>
         <h3 className="mt-2 text-2xl font-black text-[#102015]">
-          What buyers are doing in WhatsApp
+          What buyers are asking about
         </h3>
         <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-          These counts come from recent inbound WhatsApp messages and help staff see whether buyers are discovering products, placing orders, chasing payments/delivery or raising complaints.
+          These counts come from recent inbound buyer messages and help staff see whether buyers are checking products, placing orders, chasing payments or raising delivery/support issues.
         </p>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-4">
@@ -266,7 +266,7 @@ export default async function AdminWhatsAppPage() {
             Product catalogue
           </h3>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Update products, prices, grades and availability here. WhatsApp product messages pull from this source.
+            Update products, prices, grades and availability here. Buyer product messages pull from this source.
           </p>
         </Link>
 
@@ -278,10 +278,10 @@ export default async function AdminWhatsAppPage() {
             Manual conversion
           </p>
           <h3 className="mt-2 text-xl font-black text-[#102015]">
-            Create WhatsApp order
+            Create assisted order
           </h3>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Use when staff need to create a confirmed order directly from a WhatsApp conversation.
+            Use when staff need to create a confirmed order directly from a buyer conversation.
           </p>
         </Link>
 

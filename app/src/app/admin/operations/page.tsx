@@ -8,18 +8,18 @@ export const runtime = "nodejs";
 
 const operationGroups = [
   {
-    title: "WhatsApp commerce",
-    description: "Tools for WhatsApp-first ordering, product lists, guest buyers and manual order creation.",
+    title: "Message-led commerce",
+    description: "Tools for buyer messages, product lists, order drafts and assisted order creation.",
     items: [
       {
-        title: "WhatsApp tools",
+        title: "Message templates",
         href: "/admin/whatsapp-tools",
-        description: "Copy-ready product list messages generated from the live catalogue.",
+        description: "Catalogue and update messages generated from live records.",
       },
       {
-        title: "WhatsApp order entry",
+        title: "Assisted order entry",
         href: "/admin/whatsapp-orders/new",
-        description: "Create database orders from WhatsApp conversations using live prices.",
+        description: "Create database orders from buyer conversations using live prices.",
       },
       {
         title: "Guest buyers",
@@ -163,8 +163,8 @@ export default async function AdminOperationsPage() {
 
   return (
     <AdminPage
-      title="Operations"
-      subtitle="Control map for WhatsApp ordering, buyer accounts, payments, delivery and launch readiness."
+      title="Order desk"
+      subtitle="Control map for order intake, buyer accounts, payments, delivery and launch readiness."
     >
       <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         <div className="rounded-[2rem] bg-white p-5 shadow-sm">
