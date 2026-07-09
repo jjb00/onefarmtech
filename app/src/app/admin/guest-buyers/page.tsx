@@ -1,5 +1,11 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
+import {
+  AdminCompactMetric,
+  AdminStatusPill,
+  AdminViewBar,
+  adminToneFromStatus,
+} from "@/components/admin/AdminViewControls";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 
@@ -72,8 +78,45 @@ function recommendation(group: GuestBuyerGroup) {
   };
 }
 
-export default async function GuestBuyersPage() {
+type GuestBuyersPageProps = {
+  searchParams?: Promise<{
+    status?: string;
+    date?: string;
+    sort?: string;
+  }>;
+};
+
+function hrefFor(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) search.set(key, value);
+  }
+  const query = search.toString();
+  return query ? `/admin/guest-buyers?${query}` : "/admin/guest-buyers";
+}
+
+function inDateRange(value: Date, range: string) {
+  if (range === "all") return true;
+  const now = new Date();
+  const date = new Date(value);
+  if (range === "today") return date.toDateString() === now.toDateString();
+  if (range === "week") {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+    return date >= weekAgo;
+  }
+  if (range === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  if (range === "year") return date.getFullYear() === now.getFullYear();
+  return true;
+}
+
+export default async function GuestBuyersPage({searchParams}: GuestBuyersPageProps) {
   await requireStaff();
+
+  const params = await searchParams;
+  const status = params?.status || "all";
+  const date = params?.date || "all";
+  const sort = params?.sort || "value";
 
   const orders = await prisma.order.findMany({
     where: {
@@ -131,8 +174,21 @@ export default async function GuestBuyersPage() {
     }
   }
 
-  const guestGroups = Array.from(groups.values()).sort((a, b) => {
-    if (b.orderCount !== a.orderCount) return b.orderCount - a.orderCount;
+  const guestGroups = Array.from(groups.values());
+
+  const filteredGroups = guestGroups.filter((group) => {
+    const rec = recommendation(group);
+    const statusMatch =
+      status === "all" ||
+      rec.label.toLowerCase().includes(status) ||
+      group.buyerType.toLowerCase().includes(status);
+    return statusMatch && inDateRange(group.latestOrderAt, date);
+  });
+
+  const sortedGroups = [...filteredGroups].sort((a, b) => {
+    if (sort === "orders") return b.orderCount - a.orderCount;
+    if (sort === "latest") return b.latestOrderAt.getTime() - a.latestOrderAt.getTime();
+    if (sort === "name") return a.buyerName.localeCompare(b.buyerName);
     return b.totalSpend - a.totalSpend;
   });
 
@@ -141,40 +197,44 @@ export default async function GuestBuyersPage() {
   );
 
   const totalGuestSpend = guestGroups.reduce((sum, group) => sum + group.totalSpend, 0);
+  const base = {status, date, sort};
 
   return (
     <AdminPage
       title="Guest buyers"
       subtitle="Unlinked WhatsApp, event and one-off buyers grouped by phone number."
     >
-      <section className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a7d55]">
-            Guest phones
-          </p>
-          <p className="mt-3 text-3xl font-black text-[#102015]">{guestGroups.length}</p>
-        </div>
-
-        <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a7d55]">
-            Guest order value
-          </p>
-          <p className="mt-3 text-3xl font-black text-[#102015]">
-            {formatNaira(totalGuestSpend)}
-          </p>
-        </div>
-
-        <div className="rounded-[2rem] bg-white p-6 shadow-sm">
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a7d55]">
-            Account candidates
-          </p>
-          <p className="mt-3 text-3xl font-black text-[#102015]">
-            {accountCandidates.length}
-          </p>
-        </div>
+      <section className="grid gap-3 md:grid-cols-3">
+        <AdminCompactMetric label="Guest phones" value={String(guestGroups.length)} tone="blue" />
+        <AdminCompactMetric label="Guest value" value={formatNaira(totalGuestSpend)} tone="green" />
+        <AdminCompactMetric label="Account candidates" value={String(accountCandidates.length)} tone="amber" href={hrefFor({...base, status: "account"})} />
       </section>
 
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+      <AdminViewBar
+        title="Guest buyer controls"
+        description={`${sortedGroups.length} guest buyer group${sortedGroups.length === 1 ? "" : "s"} shown.`}
+        filterOptions={[
+          {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
+          {label: "Account candidates", href: hrefFor({...base, status: "account"}), active: status === "account"},
+          {label: "Watch", href: hrefFor({...base, status: "watch"}), active: status === "watch"},
+          {label: "Guest", href: hrefFor({...base, status: "guest"}), active: status === "guest"},
+        ]}
+        dateOptions={[
+          {label: "All time", href: hrefFor({...base, date: "all"}), active: date === "all"},
+          {label: "Today", href: hrefFor({...base, date: "today"}), active: date === "today"},
+          {label: "7 days", href: hrefFor({...base, date: "week"}), active: date === "week"},
+          {label: "This month", href: hrefFor({...base, date: "month"}), active: date === "month"},
+          {label: "This year", href: hrefFor({...base, date: "year"}), active: date === "year"},
+        ]}
+        sortOptions={[
+          {label: "Value", href: hrefFor({...base, sort: "value"}), active: sort === "value"},
+          {label: "Orders", href: hrefFor({...base, sort: "orders"}), active: sort === "orders"},
+          {label: "Latest", href: hrefFor({...base, sort: "latest"}), active: sort === "latest"},
+          {label: "Name", href: hrefFor({...base, sort: "name"}), active: sort === "name"},
+        ]}
+      />
+
+      <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -204,23 +264,23 @@ export default async function GuestBuyersPage() {
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4">
+        <div className="mt-5 grid gap-3">
           {guestGroups.length === 0 ? (
             <div className="rounded-2xl bg-[#f7f5ec] p-5 text-sm leading-7 text-[#405348]">
               No unlinked guest orders yet.
             </div>
           ) : (
-            guestGroups.map((group) => {
+            sortedGroups.map((group) => {
               const rec = recommendation(group);
 
               return (
-                <article key={group.phone} className="rounded-[1.5rem] border border-[#102015]/10 p-5">
+                <article key={group.phone} className="rounded-2xl border border-[#102015]/10 p-4">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className={`rounded-full px-3 py-1 text-xs font-black ${rec.className}`}>
+                        <AdminStatusPill tone={adminToneFromStatus(rec.label)}>
                           {rec.label}
-                        </span>
+                        </AdminStatusPill>
                         <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#405348]">
                           {Array.from(group.sources).join(", ")}
                         </span>
@@ -244,9 +304,10 @@ export default async function GuestBuyersPage() {
                     </div>
                   </div>
 
-                  <p className="mt-4 rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#405348]">
-                    {rec.note}
-                  </p>
+                  <details className="mt-4 rounded-xl border border-[#102015]/10 bg-[#f7f5ec] p-3">
+                    <summary className="cursor-pointer text-xs font-black text-[#102015]">Recommendation</summary>
+                    <p className="mt-2 text-sm leading-6 text-[#405348]">{rec.note}</p>
+                  </details>
 
                   <div className="mt-5 overflow-x-auto">
                     <table className="min-w-full text-left text-sm">

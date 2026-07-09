@@ -1,5 +1,11 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
+import {
+  AdminCompactMetric,
+  AdminStatusPill,
+  AdminViewBar,
+  adminToneFromStatus,
+} from "@/components/admin/AdminViewControls";
 import {prisma} from "@/lib/prisma";
 import {createCustomerAction} from "@/actions/createAdminRecords";
 import {buyerTypes} from "@/constants/orderOptions";
@@ -11,7 +17,44 @@ function money(value: number) {
   return `₦${value.toLocaleString()}`;
 }
 
-export default async function CustomersPage() {
+type CustomersPageProps = {
+  searchParams?: Promise<{
+    status?: string;
+    date?: string;
+    sort?: string;
+  }>;
+};
+
+function hrefFor(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) search.set(key, value);
+  }
+  const query = search.toString();
+  return query ? `/admin/customers?${query}` : "/admin/customers";
+}
+
+function inDateRange(value: Date, range: string) {
+  if (range === "all") return true;
+  const now = new Date();
+  const date = new Date(value);
+  if (range === "today") return date.toDateString() === now.toDateString();
+  if (range === "week") {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+    return date >= weekAgo;
+  }
+  if (range === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  if (range === "year") return date.getFullYear() === now.getFullYear();
+  return true;
+}
+
+export default async function CustomersPage({searchParams}: CustomersPageProps) {
+  const params = await searchParams;
+  const status = params?.status || "all";
+  const date = params?.date || "all";
+  const sort = params?.sort || "newest";
+
   const customers = await prisma.customer.findMany({
     orderBy: {createdAt: "desc"},
     include: {
@@ -31,22 +74,80 @@ export default async function CustomersPage() {
     },
   });
 
+  const filtered = customers.filter((customer) => {
+    const key = `${customer.status} ${customer.accountStatus}`.toLowerCase();
+    const statusMatch =
+      status === "all" ||
+      (status === "login-ready" && customer.accountLoginReady) ||
+      key.includes(status);
+    return statusMatch && inDateRange(customer.createdAt, date);
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const aOrderValue = a.orders.reduce((sum, order) => sum + order.estimatedTotal, 0);
+    const bOrderValue = b.orders.reduce((sum, order) => sum + order.estimatedTotal, 0);
+
+    if (sort === "oldest") return a.createdAt.getTime() - b.createdAt.getTime();
+    if (sort === "balance-high") return b.outstandingBalance - a.outstandingBalance;
+    if (sort === "order-value") return bOrderValue - aOrderValue;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+  const activeCount = customers.filter((customer) => customer.status === "Active").length;
+  const loginReadyCount = customers.filter((customer) => customer.accountLoginReady).length;
+  const outstandingBalance = customers.reduce((sum, customer) => sum + customer.outstandingBalance, 0);
+  const base = {status, date, sort};
+
   return (
     <AdminPageShell
       title="Customers"
-      description="View buyer accounts, payment terms, credit limits, receipt readiness, and customer readiness for WhatsApp-first fresh food supply."
+      description="Buyer master records, contact details and account status."
     >
-      <div className="grid gap-8">
+      <div className="grid gap-5">
+        <section className="grid gap-3 md:grid-cols-4">
+          <AdminCompactMetric label="Customers" value={String(customers.length)} tone="blue" />
+          <AdminCompactMetric label="Active" value={String(activeCount)} tone="green" />
+          <AdminCompactMetric label="Login ready" value={String(loginReadyCount)} tone="green" />
+          <AdminCompactMetric label="Outstanding" value={money(outstandingBalance)} tone={outstandingBalance > 0 ? "amber" : "neutral"} />
+        </section>
+
+        <AdminViewBar
+          title="Customer controls"
+          description={`${sorted.length} customer${sorted.length === 1 ? "" : "s"} shown.`}
+          filterOptions={[
+            {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
+            {label: "Active", href: hrefFor({...base, status: "active"}), active: status === "active"},
+            {label: "Login ready", href: hrefFor({...base, status: "login-ready"}), active: status === "login-ready"},
+            {label: "Review", href: hrefFor({...base, status: "review"}), active: status === "review"},
+            {label: "Paused", href: hrefFor({...base, status: "paused"}), active: status === "paused"},
+          ]}
+          dateOptions={[
+            {label: "All time", href: hrefFor({...base, date: "all"}), active: date === "all"},
+            {label: "Today", href: hrefFor({...base, date: "today"}), active: date === "today"},
+            {label: "7 days", href: hrefFor({...base, date: "week"}), active: date === "week"},
+            {label: "This month", href: hrefFor({...base, date: "month"}), active: date === "month"},
+            {label: "This year", href: hrefFor({...base, date: "year"}), active: date === "year"},
+          ]}
+          sortOptions={[
+            {label: "Newest", href: hrefFor({...base, sort: "newest"}), active: sort === "newest"},
+            {label: "Oldest", href: hrefFor({...base, sort: "oldest"}), active: sort === "oldest"},
+            {label: "Balance high", href: hrefFor({...base, sort: "balance-high"}), active: sort === "balance-high"},
+            {label: "Order value", href: hrefFor({...base, sort: "order-value"}), active: sort === "order-value"},
+          ]}
+        />
+
+        <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-black">Create customer</h2>
+              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">Open</span>
+            </div>
+          </summary>
+
         <form
           action={createCustomerAction}
-          className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"
+          className="mt-5"
         >
-          <h2 className="text-2xl font-bold">Create customer</h2>
-          <p className="mt-2 text-sm text-[#405348]">
-            Add a buyer record for restaurants, hotels, caterers, retailers,
-            households, or buying groups. Recurring buyers can later be upgraded
-            into approved account-login users.
-          </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-semibold">
@@ -184,8 +285,9 @@ export default async function CustomersPage() {
             Save customer
           </button>
         </form>
+        </details>
 
-        <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
+        <div className="overflow-x-auto rounded-2xl border border-[#102015]/10 bg-white shadow-sm">
           <table className="min-w-[1100px] divide-y divide-[#102015]/10 text-sm">
             <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
               <tr>
@@ -202,7 +304,7 @@ export default async function CustomersPage() {
             </thead>
 
             <tbody className="divide-y divide-[#102015]/10">
-              {customers.map((customer) => {
+              {sorted.map((customer) => {
                 const receiptTotal = customer.receipts.reduce(
                   (sum, receipt) => sum + receipt.amount,
                   0,
@@ -235,18 +337,18 @@ export default async function CustomersPage() {
                     <td className="px-5 py-4">{money(receiptTotal)}</td>
                     <td className="px-5 py-4">{customer.orders.length}</td>
                     <td className="px-5 py-4">
-                      <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
+                      <AdminStatusPill tone={adminToneFromStatus(customer.status)}>
                         {customer.status}
-                      </span>
+                      </AdminStatusPill>
                     </td>
                   </tr>
                 );
               })}
 
-              {!customers.length ? (
+              {!sorted.length ? (
                 <tr>
                   <td className="px-5 py-8 text-center text-[#587063]" colSpan={9}>
-                    No customers yet.
+                    No customers match this view.
                   </td>
                 </tr>
               ) : null}

@@ -1,6 +1,12 @@
-// @ts-nocheck -- temporary build stabilisation for new commerce pages
+// @ts-nocheck -- commerce actions are server-validated at runtime
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
+import {
+  AdminCompactMetric,
+  AdminStatusPill,
+  AdminViewBar,
+  adminToneFromStatus,
+} from "@/components/admin/AdminViewControls";
 import {
   generatePaymentLinkAction,
   issueReceiptFromPaymentRequestAction,
@@ -13,6 +19,15 @@ import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTempla
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+
+type PageProps = {
+  searchParams?: Promise<{
+    status?: string;
+    provider?: string;
+    date?: string;
+    sort?: string;
+  }>;
+};
 
 function formatNaira(amount: number | null | undefined) {
   return new Intl.NumberFormat("en-NG", {
@@ -33,20 +48,54 @@ function formatDate(value: Date | string | null | undefined) {
   }).format(new Date(value));
 }
 
-function statusClass(status: string) {
-  const key = status.toLowerCase();
-
-  if (key === "paid") return "bg-[#eef6ea] text-[#1f7a3f]";
-  if (key === "failed" || key === "cancelled") return "bg-[#ffe8e5] text-[#9b1c1c]";
-  return "bg-[#fff6d6] text-[#7a4a00]";
+function hrefFor(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) search.set(key, value);
+  }
+  const query = search.toString();
+  return query ? `/admin/payment-requests?${query}` : "/admin/payment-requests";
 }
 
-export default async function AdminPaymentRequestsPage() {
+function inDateRange(value: Date, range: string) {
+  if (range === "all") return true;
+
+  const now = new Date();
+  const date = new Date(value);
+
+  if (range === "today") {
+    return date.toDateString() === now.toDateString();
+  }
+
+  if (range === "week") {
+    const weekAgo = new Date(now);
+    weekAgo.setDate(now.getDate() - 7);
+    return date >= weekAgo;
+  }
+
+  if (range === "month") {
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  }
+
+  if (range === "year") {
+    return date.getFullYear() === now.getFullYear();
+  }
+
+  return true;
+}
+
+export default async function AdminPaymentRequestsPage({searchParams}: PageProps) {
   await requireStaff();
+
+  const params = await searchParams;
+  const status = params?.status || "all";
+  const provider = params?.provider || "all";
+  const date = params?.date || "all";
+  const sort = params?.sort || "newest";
 
   const paymentRequests = await prisma.paymentRequest.findMany({
     orderBy: {createdAt: "desc"},
-    take: 100,
+    take: 200,
     include: {
       order: {
         select: {
@@ -97,290 +146,257 @@ export default async function AdminPaymentRequestsPage() {
       .map((message) => [message.relatedId, message]),
   );
 
+  const pending = paymentRequests.filter((request) => request.status === "Pending");
+  const paid = paymentRequests.filter((request) => request.status === "Paid");
+  const failed = paymentRequests.filter((request) => ["Failed", "Cancelled"].includes(request.status));
+  const totalPendingValue = pending.reduce((sum, request) => sum + request.amount, 0);
+
+  const filtered = paymentRequests.filter((request) => {
+    const statusMatch = status === "all" || request.status.toLowerCase() === status;
+    const providerMatch = provider === "all" || request.provider.toLowerCase() === provider;
+    const dateMatch = inDateRange(request.createdAt, date);
+    return statusMatch && providerMatch && dateMatch;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "oldest") return a.createdAt.getTime() - b.createdAt.getTime();
+    if (sort === "amount-high") return b.amount - a.amount;
+    if (sort === "amount-low") return a.amount - b.amount;
+    return b.createdAt.getTime() - a.createdAt.getTime();
+  });
+
+  const base = {status, provider, date, sort};
+
   return (
     <AdminPage
       title="Payment requests"
-      subtitle="Track order payment references, manual confirmations, gateway references and receipt issuance."
+      subtitle="Payment links, buyer follow-up, status updates and receipt actions."
     >
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Payment operations
-            </p>
-            <h2 className="mt-2 text-2xl font-black text-[#102015]">
-              Order payment requests
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              Use the method that is easiest for the buyer: Paystack link for quick checkout, Flutterwave link for an alternate gateway, or manual bank details for buyers who prefer direct transfer.
-            </p>
-          </div>
+      <section className="grid gap-3 md:grid-cols-4">
+        <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
+        <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
+        <AdminCompactMetric label="Paid" value={String(paid.length)} tone="green" href={hrefFor({...base, status: "paid"})} />
+        <AdminCompactMetric label="Failed / cancelled" value={String(failed.length)} tone="red" href={hrefFor({...base, status: "failed"})} />
+      </section>
 
-          <Link
-            href="/admin/whatsapp-orders/new"
-            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-          >
-            New WhatsApp order
-          </Link>
+      <AdminViewBar
+        title="Payment request controls"
+        description={`${sorted.length} request${sorted.length === 1 ? "" : "s"} shown.`}
+        filterOptions={[
+          {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
+          {label: "Pending", href: hrefFor({...base, status: "pending"}), active: status === "pending"},
+          {label: "Paid", href: hrefFor({...base, status: "paid"}), active: status === "paid"},
+          {label: "Failed", href: hrefFor({...base, status: "failed"}), active: status === "failed"},
+          {label: "Cancelled", href: hrefFor({...base, status: "cancelled"}), active: status === "cancelled"},
+        ]}
+        dateOptions={[
+          {label: "All time", href: hrefFor({...base, date: "all"}), active: date === "all"},
+          {label: "Today", href: hrefFor({...base, date: "today"}), active: date === "today"},
+          {label: "7 days", href: hrefFor({...base, date: "week"}), active: date === "week"},
+          {label: "This month", href: hrefFor({...base, date: "month"}), active: date === "month"},
+          {label: "This year", href: hrefFor({...base, date: "year"}), active: date === "year"},
+        ]}
+        sortOptions={[
+          {label: "Newest", href: hrefFor({...base, sort: "newest"}), active: sort === "newest"},
+          {label: "Oldest", href: hrefFor({...base, sort: "oldest"}), active: sort === "oldest"},
+          {label: "Amount high", href: hrefFor({...base, sort: "amount-high"}), active: sort === "amount-high"},
+          {label: "Amount low", href: hrefFor({...base, sort: "amount-low"}), active: sort === "amount-low"},
+        ]}
+      >
+        <div className="flex flex-wrap gap-2">
+          {["all", "manual", "bank transfer", "paystack", "flutterwave"].map((option) => (
+            <Link
+              key={option}
+              href={hrefFor({...base, provider: option})}
+              className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                provider === option
+                  ? "bg-[#102015] text-white"
+                  : "border border-[#102015]/10 bg-[#f7f5ec] text-[#102015] hover:bg-[#eef6ea]"
+              }`}
+            >
+              {option === "all" ? "All providers" : option}
+            </Link>
+          ))}
         </div>
+      </AdminViewBar>
 
-        <div className="mt-6 grid gap-4">
-          {paymentRequests.length === 0 ? (
-            <div className="rounded-2xl bg-[#f7f5ec] p-5 text-sm leading-7 text-[#405348]">
-              No payment requests yet. WhatsApp-assisted orders will create payment requests automatically.
-            </div>
-          ) : (
-            paymentRequests.map((request) => (
-              <article key={request.id} className="rounded-[1.5rem] border border-[#102015]/10 p-5">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className={`rounded-full px-3 py-1 text-xs font-black ${statusClass(request.status)}`}>
-                        {request.status}
-                      </span>
-                      <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#405348]">
-                        {request.provider}
-                      </span>
-                    </div>
+      <section className="overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1180px] border-collapse text-left text-sm">
+            <thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.14em] text-[#405348]">
+              <tr>
+                <th className="px-4 py-3">Reference</th>
+                <th className="px-4 py-3">Buyer / order</th>
+                <th className="px-4 py-3">Amount</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Provider</th>
+                <th className="px-4 py-3">Link</th>
+                <th className="px-4 py-3">Message</th>
+                <th className="px-4 py-3">Created</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
 
-                    <h3 className="mt-3 text-xl font-black text-[#102015]">
-                      {request.reference}
-                    </h3>
+            <tbody>
+              {sorted.map((request) => {
+                const buyerName = request.customer?.name || request.order.buyerName;
+                const paymentMessage = buildPaymentInstructionMessage({
+                  orderCode: request.order.code,
+                  buyerName,
+                  amount: request.amount,
+                  currency: request.currency,
+                  reference: request.reference,
+                  provider: request.provider,
+                  paymentUrl: request.paymentUrl,
+                  bankName: request.bankName,
+                  accountNumber: request.accountNumber,
+                  accountName: request.accountName,
+                });
 
-                    <p className="mt-1 text-sm leading-7 text-[#405348]">
-                      Order{" "}
-                      <Link
-                        href={`/admin/orders/${request.orderId}`}
-                        className="font-black text-[#1f7a3f] underline underline-offset-4"
-                      >
+                return (
+                  <tr key={request.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
+                    <td className="px-4 py-3 font-black text-[#102015]">{request.reference}</td>
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-[#102015]">{buyerName}</p>
+                      <Link href={`/admin/orders/${request.orderId}`} className="text-xs font-black text-[#1f7a3f] underline-offset-4 hover:underline">
                         {request.order.code}
-                      </Link>{" "}
-                      · {request.customer?.name || request.order.buyerName} · {request.order.phone}
-                    </p>
-                  </div>
+                      </Link>
+                      <p className="text-xs">{request.order.phone}</p>
+                    </td>
+                    <td className="px-4 py-3 font-black text-[#102015]">{formatNaira(request.amount)}</td>
+                    <td className="px-4 py-3">
+                      <AdminStatusPill tone={adminToneFromStatus(request.status)}>
+                        {request.status}
+                      </AdminStatusPill>
+                    </td>
+                    <td className="px-4 py-3">{request.provider}</td>
+                    <td className="px-4 py-3">
+                      {request.paymentUrl ? (
+                        <a href={request.paymentUrl} target="_blank" rel="noreferrer" className="font-black text-[#1f7a3f] underline-offset-4 hover:underline">
+                          Open link
+                        </a>
+                      ) : (
+                        <span className="text-xs font-bold text-[#587063]">No link</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {whatsappSentByRequest.has(request.id) ? (
+                        <AdminStatusPill tone="green">Sent</AdminStatusPill>
+                      ) : (
+                        <AdminStatusPill tone="amber">Not sent</AdminStatusPill>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">{formatDate(request.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
+                        <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">
+                          Manage
+                        </summary>
 
-                  <div className="text-right">
-                    <p className="text-2xl font-black text-[#102015]">
-                      {formatNaira(request.amount)}
-                    </p>
-                    <p className="text-sm text-[#405348]">
-                      Created {formatDate(request.createdAt)}
-                    </p>
-                    <p className="text-sm text-[#405348]">
-                      Paid {formatDate(request.paidAt)}
-                    </p>
-                  </div>
-                </div>
+                        <div className="mt-3 grid min-w-[26rem] gap-4">
+                          <form action={updatePaymentRequestStatusAction} className="grid gap-3">
+                            <input type="hidden" name="id" value={request.id} />
 
-                <div className="mt-4 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4 text-sm text-[#405348] md:grid-cols-2">
-                  <p>
-                    <span className="font-black text-[#102015]">Gateway ref:</span>{" "}
-                    {request.gatewayReference || "Not set"}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Payment URL:</span>{" "}
-                    {request.paymentUrl || "Not set"}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Bank:</span>{" "}
-                    {request.bankName || "Not set"}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Account:</span>{" "}
-                    {request.accountNumber || "Not set"} {request.accountName ? `· ${request.accountName}` : ""}
-                  </p>
-                </div>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <select name="status" defaultValue={request.status} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-[#102015]">
+                                <option>Pending</option>
+                                <option>Paid</option>
+                                <option>Failed</option>
+                                <option>Cancelled</option>
+                              </select>
 
-                <details className="mt-4 rounded-2xl border border-[#102015]/10 bg-white p-4">
-                  <summary className="cursor-pointer text-sm font-black text-[#102015]">
-                    WhatsApp payment message
-                  </summary>
-                  <textarea
-                    readOnly
-                    rows={10}
-                    value={buildPaymentInstructionMessage({
-                      orderCode: request.order.code,
-                      buyerName: request.customer?.name || request.order.buyerName,
-                      amount: request.amount,
-                      currency: request.currency,
-                      reference: request.reference,
-                      provider: request.provider,
-                      paymentUrl: request.paymentUrl,
-                      bankName: request.bankName,
-                      accountNumber: request.accountNumber,
-                      accountName: request.accountName,
-                    })}
-                    className="mt-4 w-full rounded-2xl border border-[#102015]/15 bg-[#f7f5ec] px-4 py-3 text-sm leading-6 text-[#102015]"
-                  />
-                  <p className="mt-2 text-xs font-bold text-[#405348]">
-                    Copy this into WhatsApp after generating a link or entering bank details.
-                  </p>
-                </details>
+                              <select name="provider" defaultValue={request.provider} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-[#102015]">
+                                <option>Manual</option>
+                                <option>Bank transfer</option>
+                                <option>Paystack</option>
+                                <option>Flutterwave</option>
+                              </select>
+                            </div>
 
-                <form action={updatePaymentRequestStatusAction} className="mt-5 grid gap-4 lg:grid-cols-3">
-                  <input type="hidden" name="id" value={request.id} />
+                            <input name="gatewayReference" defaultValue={request.gatewayReference || ""} className="rounded-xl border border-[#102015]/15 px-3 py-2 text-[#102015]" placeholder="Gateway reference" />
+                            <input name="paymentUrl" defaultValue={request.paymentUrl || ""} className="rounded-xl border border-[#102015]/15 px-3 py-2 text-[#102015]" placeholder="Payment URL" />
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Status
-                    <select
-                      name="status"
-                      defaultValue={request.status}
-                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                    >
-                      <option>Pending</option>
-                      <option>Paid</option>
-                      <option>Failed</option>
-                      <option>Cancelled</option>
-                    </select>
-                  </label>
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              <input name="bankName" defaultValue={request.bankName || ""} className="rounded-xl border border-[#102015]/15 px-3 py-2 text-[#102015]" placeholder="Bank name" />
+                              <input name="accountNumber" defaultValue={request.accountNumber || ""} className="rounded-xl border border-[#102015]/15 px-3 py-2 text-[#102015]" placeholder="Account number" />
+                            </div>
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Provider
-                    <select
-                      name="provider"
-                      defaultValue={request.provider}
-                      className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                    >
-                      <option>Manual</option>
-                      <option>Bank transfer</option>
-                      <option>Paystack</option>
-                      <option>Flutterwave</option>
-                    </select>
-                  </label>
+                            <input name="accountName" defaultValue={request.accountName || ""} className="rounded-xl border border-[#102015]/15 px-3 py-2 text-[#102015]" placeholder="Account name" />
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Gateway reference
-                    <input
-                      name="gatewayReference"
-                      defaultValue={request.gatewayReference || ""}
-                      className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
-                    />
-                  </label>
+                            <button type="submit" className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">
+                              Save status
+                            </button>
+                          </form>
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Payment URL
-                    <input
-                      name="paymentUrl"
-                      defaultValue={request.paymentUrl || ""}
-                      className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
-                    />
-                  </label>
+                          <details className="rounded-xl border border-[#102015]/10 bg-white p-3">
+                            <summary className="cursor-pointer text-xs font-black text-[#102015]">Payment message</summary>
+                            <textarea
+                              readOnly
+                              rows={8}
+                              value={paymentMessage}
+                              className="mt-3 w-full rounded-xl border border-[#102015]/15 bg-[#f7f5ec] px-3 py-2 text-sm leading-6 text-[#102015]"
+                            />
+                          </details>
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Bank name
-                    <input
-                      name="bankName"
-                      defaultValue={request.bankName || ""}
-                      className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
-                    />
-                  </label>
+                          <div className="flex flex-wrap gap-2 border-t border-[#102015]/10 pt-3">
+                            {!request.paymentUrl ? (
+                              <>
+                                <form action={generatePaymentLinkAction}>
+                                  <input type="hidden" name="id" value={request.id} />
+                                  <input type="hidden" name="provider" value="Paystack" />
+                                  <button type="submit" disabled={request.status === "Paid"} className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
+                                    Paystack link
+                                  </button>
+                                </form>
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                    Account number
-                    <input
-                      name="accountNumber"
-                      defaultValue={request.accountNumber || ""}
-                      className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
-                    />
-                  </label>
+                                <form action={generatePaymentLinkAction}>
+                                  <input type="hidden" name="id" value={request.id} />
+                                  <input type="hidden" name="provider" value="Flutterwave" />
+                                  <button type="submit" disabled={request.status === "Paid"} className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-xs font-black text-[#102015] disabled:cursor-not-allowed disabled:opacity-40">
+                                    Flutterwave link
+                                  </button>
+                                </form>
+                              </>
+                            ) : null}
 
-                  <label className="grid gap-2 text-sm font-bold text-[#405348] lg:col-span-2">
-                    Account name
-                    <input
-                      name="accountName"
-                      defaultValue={request.accountName || ""}
-                      className="rounded-2xl border border-[#102015]/15 px-4 py-3 text-[#102015]"
-                    />
-                  </label>
+                            {!whatsappSentByRequest.has(request.id) ? (
+                              <form action={sendPaymentRequestWhatsAppAction}>
+                                <input type="hidden" name="id" value={request.id} />
+                                <button type="submit" disabled={!request.order.phone} className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-4 py-2 text-xs font-black text-[#1f7a3f] disabled:cursor-not-allowed disabled:opacity-40">
+                                  Send message
+                                </button>
+                              </form>
+                            ) : null}
 
-                  <div className="flex items-end">
-                    <button
-                      type="submit"
-                      className="w-full rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-                    >
-                      Save payment status
-                    </button>
-                  </div>
-                </form>
+                            <form action={issueReceiptFromPaymentRequestAction}>
+                              <input type="hidden" name="id" value={request.id} />
+                              <button type="submit" disabled={request.status !== "Paid"} className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-xs font-black text-[#102015] disabled:cursor-not-allowed disabled:opacity-40">
+                                Issue receipt
+                              </button>
+                            </form>
 
-                <div className="mt-4 flex flex-wrap gap-3 border-t border-[#102015]/10 pt-4">
-                  {request.paymentUrl ? (
-                    <a
-                      href={request.paymentUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-                    >
-                      Open payment link
-                    </a>
-                  ) : (
-                    <>
-                      <form action={generatePaymentLinkAction}>
-                        <input type="hidden" name="id" value={request.id} />
-                        <input type="hidden" name="provider" value="Paystack" />
-                        <button
-                          type="submit"
-                          disabled={request.status === "Paid"}
-                          className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          Generate Paystack link
-                        </button>
-                      </form>
+                            {request.customerId ? (
+                              <Link href={`/admin/customers/${request.customerId}`} className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-xs font-black text-[#102015]">
+                                Open buyer
+                              </Link>
+                            ) : null}
+                          </div>
+                        </div>
+                      </details>
+                    </td>
+                  </tr>
+                );
+              })}
 
-                      <form action={generatePaymentLinkAction}>
-                        <input type="hidden" name="id" value={request.id} />
-                        <input type="hidden" name="provider" value="Flutterwave" />
-                        <button
-                          type="submit"
-                          disabled={request.status === "Paid"}
-                          className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef] disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          Generate Flutterwave link
-                        </button>
-                      </form>
-                    </>
-                  )}
-
-                  {whatsappSentByRequest.has(request.id) ? (
-                    <span className="rounded-full bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f]">
-                      WhatsApp sent
-                    </span>
-                  ) : (
-                    <form action={sendPaymentRequestWhatsAppAction}>
-                      <input type="hidden" name="id" value={request.id} />
-                      <button
-                        type="submit"
-                        disabled={!request.order.phone}
-                        className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-5 py-3 text-sm font-black text-[#1f7a3f] hover:bg-[#dff0d8] disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Send WhatsApp payment request
-                      </button>
-                    </form>
-                  )}
-
-                  <form action={issueReceiptFromPaymentRequestAction}>
-                    <input type="hidden" name="id" value={request.id} />
-                    <button
-                      type="submit"
-                      disabled={request.status !== "Paid"}
-                      className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef] disabled:cursor-not-allowed disabled:opacity-40"
-                    >
-                      Issue receipt
-                    </button>
-                  </form>
-
-                  {request.customerId ? (
-                    <Link
-                      href={`/admin/customers/${request.customerId}`}
-                      className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-                    >
-                      Open buyer
-                    </Link>
-                  ) : null}
-                </div>
-              </article>
-            ))
-          )}
+              {!sorted.length ? (
+                <tr>
+                  <td className="px-4 py-8 text-center text-[#587063]" colSpan={9}>
+                    No payment requests match this view.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
       </section>
     </AdminPage>
