@@ -110,7 +110,7 @@ export default async function AdminWhatsAppPage() {
 
   const cards = [
     {
-      label: "Send product update",
+      label: "Templates",
       value: availableProducts,
       caption: "available products",
       href: "/admin/whatsapp-tools",
@@ -119,14 +119,14 @@ export default async function AdminWhatsAppPage() {
     {
       label: "Message inbox",
       value: inboundBuyerMessages.length + inboundUnknownMessages.length,
-      caption: "recent inbound messages",
+      caption: "new messages",
       href: "/admin/whatsapp-inbox",
       tone: "neutral",
     },
     {
       label: "Draft orders",
       value: whatsappDrafts,
-      caption: "awaiting conversion",
+      caption: "drafts",
       href: "/admin/whatsapp-drafts",
       tone: "amber",
     },
@@ -190,7 +190,7 @@ export default async function AdminWhatsAppPage() {
               href="/admin/whatsapp-tools"
               className="rounded-full border border-white/20 px-5 py-3 text-sm font-black text-white hover:bg-white/10"
             >
-              Send update
+              Templates
             </Link>
             <Link
               href="/admin/whatsapp-inbox"

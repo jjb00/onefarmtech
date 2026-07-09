@@ -385,7 +385,7 @@ export default async function AdminWhatsAppWorkflowPage() {
   return (
     <AdminPage
       title="Workflow test"
-      subtitle="Launch QA checklist for product discovery, ordering, payment, delivery and support."
+      subtitle="System QA page for validating the full order path before handover or production launch."
     >
       <section className="rounded-[2rem] bg-[#102015] p-6 text-white shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-5">
@@ -470,7 +470,7 @@ export default async function AdminWhatsAppWorkflowPage() {
                 End-to-end test harness
               </p>
               <h3 className="mt-2 text-2xl font-black text-[#102015]">
-                Workflow test checklist
+                QA checklist
               </h3>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
                 Use this checklist before handover or demo. Each row links to the relevant operating page.

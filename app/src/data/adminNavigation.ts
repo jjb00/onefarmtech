@@ -1,29 +1,52 @@
 export const adminNavigationGroups = [
   {
-    title: "Sales & orders",
+    title: "Dashboard",
     links: [
       {
-        title: "Dashboard",
+        title: "Company dashboard",
         href: "/admin",
-        description: "Company operating snapshot, alerts and priority actions.",
+        description: "Senior snapshot of orders, buyers, finance, fulfilment and issues.",
         priority: true,
       },
+    ],
+  },
+  {
+    title: "Operations",
+    links: [
       {
         title: "Order desk",
         href: "/admin/operations",
-        description: "Daily order intake, open orders, payment follow-up and fulfilment queue.",
+        description: "Daily workbench for order intake, payments, delivery handoff and urgent issues.",
         priority: true,
       },
       {
         title: "Orders",
         href: "/admin/orders",
-        description: "Order queue and transaction control centre.",
+        description: "All order records and order control pages.",
         priority: true,
       },
       {
-        title: "Create order",
+        title: "Deliveries",
+        href: "/admin/deliveries",
+        description: "Delivery queue, status updates and handoff tracking.",
+        priority: true,
+      },
+      {
+        title: "Complaints",
+        href: "/admin/complaints",
+        description: "Quality, delivery and buyer issue resolution.",
+        priority: true,
+      },
+    ],
+  },
+  {
+    title: "Sales",
+    links: [
+      {
+        title: "New order",
         href: "/admin/create-order",
-        description: "Manual order entry for phone, offline, business or exceptional orders.",
+        description: "Create an order manually when staff need direct entry.",
+        priority: true,
       },
       {
         title: "Order drafts",
@@ -31,10 +54,37 @@ export const adminNavigationGroups = [
         description: "Buyer order drafts awaiting review or conversion.",
       },
       {
-        title: "Create assisted order",
-        href: "/admin/whatsapp-orders/new",
-        description: "Create an order from a buyer conversation using live catalogue records.",
-        secondary: true,
+        title: "Message centre",
+        href: "/admin/whatsapp",
+        description: "Buyer enquiries, message inbox, templates and communication follow-up.",
+        priority: true,
+      },
+    ],
+  },
+  {
+    title: "Finance",
+    links: [
+      {
+        title: "Payment requests",
+        href: "/admin/payment-requests",
+        description: "Payment links, references and buyer payment follow-up.",
+        priority: true,
+      },
+      {
+        title: "Payments",
+        href: "/admin/payments",
+        description: "Confirmed payments and reconciliation records.",
+        priority: true,
+      },
+      {
+        title: "Receipts",
+        href: "/admin/receipts",
+        description: "Issued receipt records.",
+      },
+      {
+        title: "Reports",
+        href: "/admin/reports",
+        description: "Company metrics and investor-ready reporting.",
       },
     ],
   },
@@ -42,32 +92,33 @@ export const adminNavigationGroups = [
     title: "Buyer accounts",
     links: [
       {
-        title: "Customers",
-        href: "/admin/customers",
-        description: "Buyer records and relationship management.",
-        priority: true,
-      },
-      {
         title: "Buyer accounts",
         href: "/admin/buyer-accounts",
-        description: "Approved buyer accounts, balances, receipts and login readiness.",
+        description: "Approved buyers, credit, balances, receipts and login readiness.",
         priority: true,
       },
       {
         title: "Account requests",
         href: "/admin/buyer-account-requests",
-        description: "Public buyer onboarding requests awaiting review.",
+        description: "New buyer applications awaiting review.",
         priority: true,
       },
       {
         title: "Buyer access",
         href: "/admin/buyer-access",
-        description: "Contacts, invite codes and buyer portal access.",
+        description: "Contacts, invite codes and portal access.",
+      },
+      {
+        title: "Customers",
+        href: "/admin/customers",
+        description: "Underlying buyer/customer master records.",
+        secondary: true,
       },
       {
         title: "Profile updates",
         href: "/admin/buyer-profile-requests",
         description: "Buyer-submitted company, contact and finance update requests.",
+        secondary: true,
       },
       {
         title: "Guest buyers",
@@ -106,125 +157,24 @@ export const adminNavigationGroups = [
     ],
   },
   {
-    title: "Payments & receipts",
+    title: "System",
     links: [
       {
-        title: "Payment requests",
-        href: "/admin/payment-requests",
-        description: "Payment links, references, buyer follow-up and provider status.",
-        priority: true,
-      },
-      {
-        title: "Payments",
-        href: "/admin/payments",
-        description: "Recorded payments, references and reconciliation status.",
-        priority: true,
-      },
-      {
-        title: "Receipts",
-        href: "/admin/receipts",
-        description: "Electronic receipt issue log.",
-      },
-      {
-        title: "Reports",
-        href: "/admin/reports",
-        description: "Company metrics and investor update snapshot.",
-        secondary: true,
-      },
-    ],
-  },
-  {
-    title: "Fulfilment & issues",
-    links: [
-      {
-        title: "Deliveries",
-        href: "/admin/deliveries",
-        description: "Dispatch, tracking and fulfilment progress.",
-        priority: true,
-      },
-      {
-        title: "Delivery partners",
-        href: "/admin/delivery-partners",
-        description: "Logistics partners, access codes and delivery assignment readiness.",
-        priority: true,
-      },
-      {
-        title: "Complaints",
-        href: "/admin/complaints",
-        description: "Buyer issues, fulfilment problems and resolution tracking.",
-        priority: true,
-      },
-    ],
-  },
-  {
-    title: "Communications",
-    links: [
-      {
-        title: "Message centre",
-        href: "/admin/whatsapp",
-        description: "Buyer messaging hub for inbound messages, order drafts and follow-up.",
-        priority: true,
-      },
-      {
-        title: "Message inbox",
-        href: "/admin/whatsapp-inbox",
-        description: "Inbound buyer messages, intent routing and next actions.",
-        priority: true,
-      },
-      {
-        title: "Message templates",
-        href: "/admin/whatsapp-tools",
-        description: "Send catalogue, menu, payment and buyer update messages.",
-        priority: true,
-      },
-      {
-        title: "Buyer message log",
-        href: "/admin/buyer-messages",
-        description: "Evidence log for buyer messages across channels.",
-      },
-      {
-        title: "Contact enquiries",
-        href: "/admin/contact-enquiries",
-        description: "Public form, support, media and partnership enquiries.",
-        secondary: true,
-      },
-      {
-        title: "Launch inbox",
-        href: "/admin/launch-inbox",
-        description: "Legacy launch request and follow-up inbox.",
-        secondary: true,
-      },
-    ],
-  },
-  {
-    title: "System & launch",
-    links: [
-      {
-        title: "Launch readiness",
+        title: "Launch & system checks",
         href: "/admin/launch-readiness",
-        description: "Operational, configuration and production readiness checks.",
-        priority: true,
-      },
-      {
-        title: "Integration readiness",
-        href: "/admin/integration-readiness",
-        description: "Payment, messaging and external integration checks.",
-      },
-      {
-        title: "Deployment",
-        href: "/admin/deployment-readiness",
-        description: "Environment and deployment checks.",
-      },
-      {
-        title: "Security",
-        href: "/admin/security",
-        description: "Auth readiness and access controls.",
+        description: "Launch, integration, deployment and production readiness.",
         priority: true,
       },
       {
         title: "Staff & roles",
         href: "/admin/staff",
         description: "Staff access and role planning.",
+        priority: true,
+      },
+      {
+        title: "Security",
+        href: "/admin/security",
+        description: "Auth readiness and access controls.",
         priority: true,
       },
       {
@@ -238,21 +188,21 @@ export const adminNavigationGroups = [
         description: "Staff SOP guide.",
       },
       {
+        title: "Deployment",
+        href: "/admin/deployment-readiness",
+        description: "Environment and deployment checks.",
+        secondary: true,
+      },
+      {
+        title: "Integration readiness",
+        href: "/admin/integration-readiness",
+        description: "Payment, messaging and external integration checks.",
+        secondary: true,
+      },
+      {
         title: "Workflow test",
         href: "/admin/whatsapp-workflow",
-        description: "End-to-end launch QA checklist for order, payment, delivery and support flow.",
-        secondary: true,
-      },
-      {
-        title: "Launch smoke test",
-        href: "/admin/launch-smoke-test",
-        description: "Technical launch smoke-test page.",
-        secondary: true,
-      },
-      {
-        title: "Workflows",
-        href: "/admin/workflows",
-        description: "SOPs, rules and operating process notes.",
+        description: "End-to-end QA checklist for order, payment, delivery and support flow.",
         secondary: true,
       },
       {
@@ -269,22 +219,22 @@ export const adminQuickActions = [
   {
     title: "Open order desk",
     href: "/admin/operations",
-    description: "Review daily order intake, payment follow-up, delivery and issue queues.",
-  },
-  {
-    title: "Open message centre",
-    href: "/admin/whatsapp",
-    description: "Review buyer messages, drafts and communication follow-up.",
+    description: "Review daily order intake, payments, delivery and urgent issues.",
   },
   {
     title: "Review orders",
     href: "/admin/orders",
-    description: "Open the order queue and transaction control centre.",
+    description: "Open all orders and transaction control pages.",
   },
   {
     title: "Check payment requests",
     href: "/admin/payment-requests",
     description: "Review payment links, buyer follow-up and provider status.",
+  },
+  {
+    title: "Open message centre",
+    href: "/admin/whatsapp",
+    description: "Review buyer enquiries, inbox, templates and message evidence.",
   },
   {
     title: "Review buyer requests",
@@ -295,78 +245,72 @@ export const adminQuickActions = [
 
 export const adminOperationalTimeline = [
   {
-    stage: "Product catalogue",
-    owner: "Catalogue / supply team",
+    stage: "Catalogue",
+    owner: "Catalogue & supply",
     status: "Operational",
-    note: "Products, prices, grades and availability are managed from the catalogue and used in buyer-facing messages.",
+    note: "Products, prices, grades and availability are managed from the catalogue.",
   },
   {
     stage: "Order intake",
-    owner: "Sales / order desk",
+    owner: "Sales / operations",
     status: "Operational",
-    note: "Orders can be captured from buyer conversations, forms, assisted entry or direct manual entry.",
+    note: "Orders can be captured from buyer conversations, forms or direct staff entry.",
   },
   {
-    stage: "Buyer account readiness",
-    owner: "Buyer accounts team",
+    stage: "Buyer account setup",
+    owner: "Buyer accounts",
     status: "Live foundation",
-    note: "Recurring buyer accounts track access, contacts, balances, receipts and profile update requests.",
+    note: "Buyer accounts track access, contacts, balances, receipts and profile updates.",
   },
   {
     stage: "Payment confirmation",
     owner: "Finance",
     status: "Integrated",
-    note: "Payment requests, hosted checkout links, Paystack webhook confirmation and buyer message evidence are connected.",
+    note: "Payment requests, checkout links, Paystack webhook confirmation and buyer evidence are connected.",
   },
   {
     stage: "Group buying",
-    owner: "Sales / supply team",
+    owner: "Sales / supply",
     status: "Manual windows",
     note: "Group-buy windows stay closed by default and are opened manually on selected order days.",
   },
   {
-    stage: "Delivery / pickup",
-    owner: "Fulfilment",
+    stage: "Fulfilment",
+    owner: "Operations / delivery",
     status: "Operational",
-    note: "Delivery handoff, partner assignment, status tracking and buyer update messages are supported.",
-  },
-  {
-    stage: "Accountability",
-    owner: "Admin / super admin",
-    status: "Evidence-backed",
-    note: "Buyer messages, receipts, complaints and audit logs preserve operational evidence.",
+    note: "Delivery handoff, partner assignment and buyer update messages are supported.",
   },
 ];
 
 export const adminHealthCards = [
   {
-    title: "Production database",
+    title: "Database",
     status: "Healthy",
-    description: "Orders, customers, products, suppliers, payments, complaints, group-buys, receipts, buyer messages and audit logs are database-backed.",
+    description: "Orders, buyers, products, payments, complaints, receipts, messages and audit records are database-backed.",
   },
   {
     title: "Order operations",
     status: "Operational",
-    description: "Order intake, order details, payment requests, complaints and fulfilment status changes are connected to the database.",
+    description: "Order intake, order details, payment requests, complaints and fulfilment status are connected.",
   },
   {
     title: "Buyer accounts",
     status: "Foundation added",
-    description: "Recurring buyers can carry access codes, contacts, credit limits, balances, receipt emails and login-readiness flags.",
+    description: "Buyer accounts support contacts, access codes, credit, balances, receipts and profile requests.",
   },
   {
     title: "Payments",
     status: "Paystack tested",
-    description: "Payment links, Paystack hosted checkout and webhook confirmation have been validated. Flutterwave remains lower-priority unless needed.",
+    description: "Payment links, hosted checkout and webhook confirmation have been validated.",
   },
   {
     title: "Communications",
     status: "Operational foundation",
-    description: "Buyer messaging, catalogue sending, inbound routing, draft conversion and follow-up evidence are in place.",
+    description: "Buyer messaging, catalogue sending, inbound routing and follow-up evidence are in place.",
   },
   {
     title: "Role access",
     status: "Department-ready",
-    description: "Admin navigation is grouped by operating departments so future role access can expose only the relevant sections.",
+    description: "Navigation is grouped by departments so future roles can see only relevant areas.",
   },
 ];

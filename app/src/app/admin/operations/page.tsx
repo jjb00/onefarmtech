@@ -8,80 +8,70 @@ export const runtime = "nodejs";
 
 const operationGroups = [
   {
-    title: "New order intake",
-    description: "Start here when buyers send requests, ask for prices or need assisted ordering.",
+    title: "Intake",
+    description: "Capture new requests and convert buyer drafts.",
     items: [
       {
         title: "Message inbox",
         href: "/admin/whatsapp-inbox",
-        description: "Review inbound buyer messages and route the next action.",
+        description: "Review buyer enquiries and order-intent messages.",
       },
       {
         title: "Order drafts",
         href: "/admin/whatsapp-drafts",
-        description: "Convert buyer order drafts into confirmed orders.",
+        description: "Convert draft requests into confirmed orders.",
       },
       {
-        title: "Assisted order entry",
-        href: "/admin/whatsapp-orders/new",
-        description: "Create an order from a buyer conversation using live catalogue prices.",
-      },
-      {
-        title: "Create manual order",
+        title: "New order",
         href: "/admin/create-order",
-        description: "Use for phone, offline, business or exceptional orders.",
+        description: "Create a manual order for phone, offline or exceptional cases.",
       },
     ],
   },
   {
-    title: "Orders needing action",
-    description: "Keep active orders moving through payment and fulfilment.",
+    title: "Active work",
+    description: "Move current orders through payment, delivery and issue resolution.",
     items: [
       {
         title: "Orders",
         href: "/admin/orders",
-        description: "Open order queue and individual order control centres.",
+        description: "Open order records and transaction control pages.",
       },
       {
         title: "Payment requests",
         href: "/admin/payment-requests",
-        description: "Review unpaid requests, checkout links and buyer payment follow-up.",
+        description: "Review unpaid requests and checkout links.",
       },
       {
         title: "Deliveries",
         href: "/admin/deliveries",
-        description: "Assign delivery partners and update fulfilment progress.",
+        description: "Assign and update delivery handoff.",
       },
       {
         title: "Complaints",
         href: "/admin/complaints",
-        description: "Resolve quality, delivery and support issues.",
+        description: "Resolve buyer, quality and delivery issues.",
       },
     ],
   },
   {
-    title: "Order support tools",
-    description: "Open only when an active order requires supporting records.",
+    title: "Reference",
+    description: "Use only when an order needs supporting data.",
     items: [
       {
         title: "Products",
         href: "/admin/products",
-        description: "Check or update product availability and pricing.",
+        description: "Check product availability and pricing.",
       },
       {
-        title: "Customers",
-        href: "/admin/customers",
-        description: "Check buyer record, account status or contact details.",
+        title: "Buyer accounts",
+        href: "/admin/buyer-accounts",
+        description: "Check buyer account status and balances.",
       },
       {
         title: "Message templates",
         href: "/admin/whatsapp-tools",
-        description: "Send catalogue, payment or delivery update messages.",
-      },
-      {
-        title: "Buyer message log",
-        href: "/admin/buyer-messages",
-        description: "Review message evidence linked to buyer follow-up.",
+        description: "Send catalogue, payment or delivery updates.",
       },
     ],
   },
@@ -138,30 +128,30 @@ export default async function AdminOperationsPage() {
   return (
     <AdminPage
       title="Order desk"
-      subtitle="Daily desk for order intake, open orders, payments, delivery handoff and buyer follow-up."
+      subtitle="Daily workbench for intake, open orders, payments, delivery handoff and urgent issues."
     >
-      <section className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+      <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Open orders</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{openOrders}</p>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Pending payments</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{pendingPayments}</p>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Active deliveries</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{pendingDeliveries}</p>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Guest orders</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{guestOrders}</p>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Messages</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{buyerMessages}</p>
         </div>
-        <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.16em] text-[#8a7d55]">Available products</p>
           <p className="mt-3 text-3xl font-black text-[#102015]">{availableProducts}</p>
         </div>
@@ -172,7 +162,7 @@ export default async function AdminOperationsPage() {
           <details
             key={group.title}
             open={index === 0}
-            className="rounded-[2rem] bg-white p-6 shadow-sm"
+            className="rounded-2xl bg-white p-4 shadow-sm"
           >
             <summary className="cursor-pointer list-none">
               <div className="flex flex-wrap items-start justify-between gap-4">
@@ -185,24 +175,21 @@ export default async function AdminOperationsPage() {
                     {group.description}
                   </p>
                 </div>
-                <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
-                  {group.items.length} links
+                <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
+                  {group.items.length}
                 </span>
               </div>
             </summary>
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
               {group.items.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="rounded-[1.5rem] border border-[#102015]/10 p-5 transition hover:-translate-y-0.5 hover:bg-[#f7f5ec]"
+                  className="rounded-2xl border border-[#102015]/10 p-4 transition hover:-translate-y-0.5 hover:bg-[#f7f5ec]"
                 >
-                  <p className="text-xs font-black uppercase tracking-[0.18em] text-[#8a7d55]">
-                    Open
-                  </p>
-                  <h3 className="mt-3 text-lg font-black text-[#102015]">{item.title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-[#405348]">{item.description}</p>
+                  <h3 className="text-base font-black text-[#102015]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#405348]">{item.description}</p>
                 </Link>
               ))}
             </div>

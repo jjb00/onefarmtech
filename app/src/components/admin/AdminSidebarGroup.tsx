@@ -35,9 +35,9 @@ export default function AdminSidebarGroup({title, links}: AdminSidebarGroupProps
     <details
       open={open}
       onToggle={(event) => handleToggle(event.currentTarget.open)}
-      className="group rounded-3xl border border-white/10 bg-white/[0.03] p-3"
+      className="group rounded-2xl border border-white/10 bg-white/[0.03] p-2"
     >
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-2 py-2">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 rounded-xl px-2 py-2">
         <p className="text-xs font-black uppercase tracking-[0.28em] text-[#9ee6ad]">
           {title}
         </p>
@@ -54,10 +54,10 @@ export default function AdminSidebarGroup({title, links}: AdminSidebarGroupProps
           <Link
             key={item.href}
             href={item.href}
-            className="rounded-2xl px-4 py-3 transition hover:bg-white/[0.08]"
+            className="rounded-xl px-3 py-2 transition hover:bg-white/[0.08]"
           >
             <p className="font-bold text-white">{item.title}</p>
-            <p className="mt-1 text-sm text-white/60">{item.description}</p>
+            <p className="mt-1 line-clamp-2 text-xs leading-5 text-white/55">{item.description}</p>
           </Link>
         ))}
       </div>

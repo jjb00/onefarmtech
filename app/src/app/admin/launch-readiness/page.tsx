@@ -192,7 +192,7 @@ export default async function LaunchReadinessPage() {
 
   return (
     <AdminPage
-      title="Launch readiness"
+      title="Launch & system checks"
       subtitle="System and launch checklist for database, ordering, payments, delivery, buyer accounts, integrations and production configuration."
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
@@ -205,7 +205,7 @@ export default async function LaunchReadinessPage() {
               Readiness checks
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              This page separates what is usable now from what still needs configuration or integration before launch.
+              This page combines launch, deployment, integration and production checks so the team does not need to use separate readiness pages day to day.
             </p>
           </div>
 
