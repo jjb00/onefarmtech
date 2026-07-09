@@ -2,16 +2,27 @@ import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {createBuyerProfileUpdateRequestAction} from "@/actions/createAdminRecords";
 import {requireBuyer} from "@/lib/currentBuyer";
+import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerProfilePage() {
   const {buyer, customer} = await requireBuyer();
+  const unreadMessageCount = await prisma.buyerMessage.count({
+    where: {
+      customerId: customer.id,
+      OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
+    },
+  });
 
   return (
-    <BuyerPortalFrame customerName={customer.name} buyerType={customer.buyerType}>
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+    <BuyerPortalFrame
+      customerName={customer.name}
+      buyerType={customer.buyerType}
+      unreadMessageCount={unreadMessageCount}
+    >
+      <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -19,7 +30,7 @@ export default async function BuyerProfilePage() {
             </p>
             <h2 className="mt-2 text-3xl font-black">{customer.name}</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Buyer details, authorised contacts and change requests.
+              One place for company details, authorised contacts and profile change requests.
             </p>
           </div>
 
@@ -78,8 +89,8 @@ export default async function BuyerProfilePage() {
         </div>
       </section>
 
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <details>
+      <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
+        <details open>
           <summary className="cursor-pointer list-none">
             <div className="max-w-3xl">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">
@@ -87,7 +98,7 @@ export default async function BuyerProfilePage() {
               </p>
               <h2 className="mt-2 text-2xl font-black">Update profile or contacts</h2>
               <p className="mt-2 text-sm leading-7 text-[#405348]">
-                Submit changes only when account, contact, buying or finance details need admin review.
+                Use this form for company details, contact changes, buying profile updates or payment-term review requests.
               </p>
             </div>
           </summary>

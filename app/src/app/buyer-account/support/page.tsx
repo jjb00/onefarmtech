@@ -1,16 +1,27 @@
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyer} from "@/lib/currentBuyer";
+import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerSupportPage() {
   const {customer} = await requireBuyer();
+  const unreadMessageCount = await prisma.buyerMessage.count({
+    where: {
+      customerId: customer.id,
+      OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
+    },
+  });
 
   return (
-    <BuyerPortalFrame customerName={customer.name} buyerType={customer.buyerType}>
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+    <BuyerPortalFrame
+      customerName={customer.name}
+      buyerType={customer.buyerType}
+      unreadMessageCount={unreadMessageCount}
+    >
+      <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <h2 className="text-3xl font-black">Support</h2>
         <p className="mt-2 text-sm leading-7 text-[#405348]">
           Get help with orders, receipts, payments, credit, contacts or account details.
@@ -37,7 +48,7 @@ function SupportTile({
   context: string;
 }) {
   return (
-    <div className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-5">
+    <div className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-5 shadow-sm">
       <h3 className="text-lg font-black">{label}</h3>
       <div className="mt-4">
         <SupportChatLauncher label={label} defaultMessage={message} context={context} />

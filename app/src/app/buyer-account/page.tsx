@@ -3,6 +3,7 @@ import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
+import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,12 +18,22 @@ export default async function BuyerAccountPage({
   const profileSubmitted = params?.profileSubmitted === "1";
 
   const {customer} = await requireBuyer();
+  const unreadMessageCount = await prisma.buyerMessage.count({
+    where: {
+      customerId: customer.id,
+      OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
+    },
+  });
   const availableCredit = Math.max(customer.creditLimit - customer.outstandingBalance, 0);
   const recentOrders = customer.orders.slice(0, 3);
   const recentReceipts = customer.receipts.slice(0, 3);
 
   return (
-    <BuyerPortalFrame customerName={customer.name} buyerType={customer.buyerType}>
+    <BuyerPortalFrame
+      customerName={customer.name}
+      buyerType={customer.buyerType}
+      unreadMessageCount={unreadMessageCount}
+    >
       {orderSubmitted ? (
         <Alert>
           Your buyer-linked order request has been submitted and added to this account.
@@ -43,7 +54,7 @@ export default async function BuyerAccountPage({
               {customer.name}
             </h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
-              View recent account activity and use the main actions below for orders or profile changes.
+              Check what needs attention, place a new order, review payments, and keep your buyer details up to date.
             </p>
           </div>
 
@@ -63,17 +74,29 @@ export default async function BuyerAccountPage({
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2">
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <ActionCard
           title="Place buyer order"
-          body="Submit an order linked to this account."
+          body="Send a fresh produce request linked to this account."
           href="/buyer-account/order"
           label="New order"
           primary
         />
         <ActionCard
-          title="Profile and account settings"
-          body="View company details, authorised contacts, credit readiness and request changes."
+          title="Payments and receipts"
+          body="Open payment requests, confirmed payments and receipt records."
+          href="/buyer-account/payments"
+          label="View payments"
+        />
+        <ActionCard
+          title="Inbox"
+          body="Read order, payment, receipt and account messages from OneFarmTech."
+          href="/buyer-account/inbox"
+          label={unreadMessageCount > 0 ? `${unreadMessageCount} unread` : "Open inbox"}
+        />
+        <ActionCard
+          title="Profile"
+          body="View company details, authorised contacts and request account changes."
           href="/buyer-account/profile"
           label="Open profile"
         />
@@ -203,7 +226,7 @@ function Panel({
   children: React.ReactNode;
 }) {
   return (
-    <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+    <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 text-[#102015] shadow-sm backdrop-blur">
       <div className="flex items-center justify-between gap-4">
         <h2 className="text-2xl font-black">{title}</h2>
         <Link href={href} className="text-sm font-black text-[#1f7a3f]">

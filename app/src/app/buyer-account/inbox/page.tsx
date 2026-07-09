@@ -55,10 +55,11 @@ export default async function BuyerInboxPage() {
 
   return (
     <BuyerPortalFrame
+      customerName={customer.name}
       buyerType={customer.buyerType || "Buyer account"}
       unreadMessageCount={unreadMessageCount}
     >
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+      <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">

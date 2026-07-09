@@ -3,16 +3,27 @@ import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
+import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerOrdersPage() {
   const {customer} = await requireBuyer();
+  const unreadMessageCount = await prisma.buyerMessage.count({
+    where: {
+      customerId: customer.id,
+      OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
+    },
+  });
 
   return (
-    <BuyerPortalFrame customerName={customer.name} buyerType={customer.buyerType}>
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+    <BuyerPortalFrame
+      customerName={customer.name}
+      buyerType={customer.buyerType}
+      unreadMessageCount={unreadMessageCount}
+    >
+      <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-3xl font-black">Orders</h2>
@@ -22,7 +33,7 @@ export default async function BuyerOrdersPage() {
           </div>
           <Link
             href="/buyer-account/order"
-            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white"
+            className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
           >
             New buyer order
           </Link>

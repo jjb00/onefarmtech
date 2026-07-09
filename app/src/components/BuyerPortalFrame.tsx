@@ -4,10 +4,10 @@ import {buyerLogoutAction} from "@/actions/auth";
 
 const navItems = [
   ["Overview", "/buyer-account"],
-  ["Inbox", "/buyer-account/inbox"],
-  ["Profile", "/buyer-account/profile"],
   ["Orders", "/buyer-account/orders"],
   ["Payments", "/buyer-account/payments"],
+  ["Inbox", "/buyer-account/inbox"],
+  ["Profile", "/buyer-account/profile"],
   ["Support", "/buyer-account/support"],
 ];
 
@@ -18,7 +18,7 @@ function BuyerNavLinks({unreadMessageCount = 0}: {unreadMessageCount?: number}) 
         <Link
           key={href}
           href={href}
-          className="flex items-center justify-between rounded-2xl bg-[#f3f8ef] px-4 py-3 text-sm font-black text-[#102015] hover:bg-[#e8f2e2]"
+          className="flex items-center justify-between rounded-2xl border border-[#102015]/10 bg-[#f3f8ef] px-4 py-3 text-sm font-black text-[#102015] transition hover:-translate-y-0.5 hover:bg-[#e8f2e2]"
         >
           <span>{label}</span>
           {label === "Inbox" ? (
@@ -43,7 +43,7 @@ function BuyerAccountActions() {
         href="/buyer-account/order"
         className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
       >
-        New buyer order
+        Place order
       </Link>
 
       <form action={buyerLogoutAction}>
@@ -70,9 +70,9 @@ export default function BuyerPortalFrame({
   children: ReactNode;
 }) {
   return (
-    <main className="min-h-screen bg-[#f7f5ec] px-4 py-6 text-[#102015] sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[radial-gradient(circle_at_12%_10%,rgba(242,184,75,0.16),transparent_28%),radial-gradient(circle_at_88%_8%,rgba(31,122,63,0.12),transparent_32%),linear-gradient(180deg,#fbfff8_0%,#f7f5ec_58%,#fbfff8_100%)] px-4 py-6 text-[#102015] sm:px-6 lg:px-8">
       <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[17rem_1fr]">
-        <section className="rounded-[2rem] bg-white p-5 shadow-sm lg:hidden">
+        <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-5 shadow-sm backdrop-blur lg:hidden">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -90,7 +90,7 @@ export default function BuyerPortalFrame({
                 ☰
               </summary>
 
-              <div className="absolute right-0 top-14 z-50 w-[min(21rem,calc(100vw-3rem))] rounded-[1.5rem] border border-[#102015]/10 bg-white p-3 shadow-2xl">
+              <div className="absolute right-0 top-14 z-50 w-[min(21rem,calc(100vw-3rem))] rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-3 shadow-2xl backdrop-blur">
                 <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
                   Buyer menu
                 </p>
@@ -104,7 +104,7 @@ export default function BuyerPortalFrame({
         </section>
 
         <aside className="hidden lg:sticky lg:top-6 lg:block lg:self-start">
-          <div className="rounded-[2rem] bg-white p-5 shadow-sm">
+          <div className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-5 shadow-sm backdrop-blur">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
               Buyer portal
             </p>
@@ -115,7 +115,7 @@ export default function BuyerPortalFrame({
               <BuyerNavLinks unreadMessageCount={unreadMessageCount} />
             </div>
 
-            <details className="mt-5 rounded-2xl border border-[#102015]/10 bg-white p-3">
+            <details className="mt-5 rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-3">
               <summary className="cursor-pointer text-sm font-black text-[#102015]">
                 Account actions
               </summary>
