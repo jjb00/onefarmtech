@@ -80,7 +80,7 @@ body {
     transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(18px, -14px, 0) scale(1.04);
+    transform: translate3d(6px, -5px, 0) scale(1.01);
   }
 }
 
@@ -118,10 +118,10 @@ body {
 
 @keyframes oftFloatVisible {
   0%, 100% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    transform: translate3d(0, 0, 0) scale(1);
   }
   50% {
-    transform: translate3d(0, -18px, 0) rotate(1.2deg) scale(1.035);
+    transform: translate3d(0, -8px, 0) scale(1.01);
   }
 }
 
@@ -218,7 +218,8 @@ body {
   .oft-float-delay,
   .oft-hero-card-breathe,
   .oft-highlight-sweep,
-  .oft-progress-stripe {
+  .oft-progress-stripe,
+  .oft-yellow-text {
     animation: none;
   }
 
@@ -310,4 +311,10 @@ body {
   );
   background-size: 42px 42px;
   animation: oftProgressStripe 1.4s linear infinite;
+}
+
+
+.oft-yellow-text {
+  color: #d99a10;
+  text-shadow: 0 10px 32px rgb(242 184 75 / 18%);
 }

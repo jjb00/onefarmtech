@@ -80,8 +80,8 @@ export default async function HomePage() {
           ]}
         />
         <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-[#1f7a3f] via-[#F2B84B] to-[#1f7a3f]" />
-        <div className="oft-orb-drift absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/14 blur-3xl" />
-        <div className="oft-orb-drift-delay absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/30 blur-3xl" />
+        <div className="absolute right-[-140px] top-20 h-[22rem] w-[22rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
+        <div className="absolute left-[-160px] bottom-[-180px] h-[24rem] w-[24rem] rounded-full bg-[#F2B84B]/20 blur-3xl" />
         <div className="absolute left-1/2 top-24 h-40 w-[44rem] -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12">
@@ -133,7 +133,7 @@ export default async function HomePage() {
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
                 Fresh food supply for buyers who need{" "}
-                <span className="oft-highlight-sweep rounded-[1rem] bg-[#F2B84B] px-2 text-[#101712]">
+                <span className="oft-yellow-text">
                   better prices, quality and reliability.
                 </span>
               </h1>
@@ -175,7 +175,7 @@ export default async function HomePage() {
               </div>
             </section>
 
-            <section className="oft-fade-up-delay-3 oft-hero-card-breathe rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_30px_80px_rgba(16,23,18,0.16)] backdrop-blur">
+            <section className="oft-fade-up-delay-3 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_22px_56px_rgba(16,23,18,0.12)] backdrop-blur">
               <div className="relative overflow-hidden rounded-[1.5rem] bg-[#101712] p-5 text-white">
                 <div className="absolute right-[-80px] top-[-90px] h-56 w-56 rounded-full bg-[#1f7a3f]/35 blur-3xl" />
                 <div className="absolute bottom-[-110px] left-[-90px] h-64 w-64 rounded-full bg-[#F2B84B]/20 blur-3xl" />

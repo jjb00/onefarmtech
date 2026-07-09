@@ -1,9 +1,31 @@
 import AdminPageShell from "@/components/AdminPageShell";
-import AdminDisclosure from "@/components/admin/AdminDisclosure";
+import {
+  AdminCompactMetric,
+  AdminStatusPill,
+  AdminViewBar,
+  adminToneFromStatus,
+} from "@/components/admin/AdminViewControls";
 import { getDbProducts } from "@/data/dbAdmin";
-import { createProductAction, seedBaselineProductsAction, updateProductCatalogueStatusAction } from "@/actions/createAdminRecords";
+import {
+  createProductAction,
+  seedBaselineProductsAction,
+  updateProductDetailsAction,
+} from "@/actions/createAdminRecords";
 import { produceGrades } from "@/constants/orderOptions";
-import {productAvailabilityOptions, productCategoryOptions, productStatusOptions, productUnitOptions} from "@/lib/formOptions";
+import {
+  productAvailabilityOptions,
+  productCategoryOptions,
+  productStatusOptions,
+  productUnitOptions,
+} from "@/lib/formOptions";
+
+type ProductsPageProps = {
+  searchParams?: Promise<{
+    status?: string;
+    category?: string;
+    sort?: string;
+  }>;
+};
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -13,433 +35,304 @@ function formatNaira(amount: number) {
   }).format(amount);
 }
 
-export default async function ProductsPage() {
+function hrefFor(params: Record<string, string | undefined>) {
+  const search = new URLSearchParams();
+
+  for (const [key, value] of Object.entries(params)) {
+    if (value) search.set(key, value);
+  }
+
+  const query = search.toString();
+  return query ? `/admin/products?${query}` : "/admin/products";
+}
+
+export default async function ProductsPage({searchParams}: ProductsPageProps) {
+  const params = await searchParams;
+  const status = params?.status || "all";
+  const category = params?.category || "all";
+  const sort = params?.sort || "name";
+
   const products = await getDbProducts();
-  const groupedProducts = products.reduce<Record<string, typeof products>>((groups, product) => {
-    const category = product.category || "Uncategorised";
-    groups[category] = groups[category] || [];
-    groups[category].push(product);
-    return groups;
-  }, {});
+
+  const activeProducts = products.filter((product) => product.status === "Active");
+  const availableProducts = products.filter((product) => product.availability === "Available");
+  const unavailableProducts = products.filter(
+    (product) => product.availability !== "Available" || product.status !== "Active",
+  );
+
+  const filtered = products.filter((product) => {
+    const statusMatch =
+      status === "all" ||
+      `${product.status} ${product.availability}`.toLowerCase().includes(status);
+
+    const categoryMatch = category === "all" || product.category === category;
+
+    return statusMatch && categoryMatch;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "price-high") return b.basePrice - a.basePrice;
+    if (sort === "price-low") return a.basePrice - b.basePrice;
+    if (sort === "orders") return b.orderItems.length - a.orderItems.length;
+    return a.name.localeCompare(b.name);
+  });
+
+  const base = {status, category, sort};
 
   return (
     <AdminPageShell
       title="Products"
-      description="Manage produce, pricing, grades, availability, and the internal product catalogue."
+      description="Catalogue, prices, grades and availability."
     >
-      <div className="grid gap-8">
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                Product catalogue
-              </p>
-              <h2 className="mt-3 text-2xl font-black">Baseline product list</h2>
-              <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
-                Seed regular and seasonal products across vegetables, fruits, poultry, meat, fish, grains, seeds, tubers and spices.
-                Existing matching products are skipped, so the action is safe to run more than once.
-              </p>
-            </div>
+      <div className="grid gap-5">
+        <section className="grid gap-3 md:grid-cols-4">
+          <AdminCompactMetric label="Products" value={String(products.length)} tone="blue" />
+          <AdminCompactMetric label="Active" value={String(activeProducts.length)} tone="green" href={hrefFor({...base, status: "active"})} />
+          <AdminCompactMetric label="Available" value={String(availableProducts.length)} tone="green" href={hrefFor({...base, status: "available"})} />
+          <AdminCompactMetric label="Unavailable / paused" value={String(unavailableProducts.length)} tone="amber" href={hrefFor({...base, status: "unavailable"})} />
+        </section>
 
+        <AdminViewBar
+          title="Product controls"
+          description={`${sorted.length} product${sorted.length === 1 ? "" : "s"} shown.`}
+          filterOptions={[
+            {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
+            {label: "Active", href: hrefFor({...base, status: "active"}), active: status === "active"},
+            {label: "Available", href: hrefFor({...base, status: "available"}), active: status === "available"},
+            {label: "Unavailable", href: hrefFor({...base, status: "unavailable"}), active: status === "unavailable"},
+            {label: "Paused", href: hrefFor({...base, status: "paused"}), active: status === "paused"},
+          ]}
+          sortOptions={[
+            {label: "Name", href: hrefFor({...base, sort: "name"}), active: sort === "name"},
+            {label: "Price high", href: hrefFor({...base, sort: "price-high"}), active: sort === "price-high"},
+            {label: "Price low", href: hrefFor({...base, sort: "price-low"}), active: sort === "price-low"},
+            {label: "Orders", href: hrefFor({...base, sort: "orders"}), active: sort === "orders"},
+          ]}
+        >
+          <div className="flex flex-wrap gap-2">
+            <a
+              href={hrefFor({...base, category: "all"})}
+              className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                category === "all"
+                  ? "bg-[#102015] text-white"
+                  : "border border-[#102015]/10 bg-[#f7f5ec] text-[#102015] hover:bg-[#eef6ea]"
+              }`}
+            >
+              All categories
+            </a>
+            {productCategoryOptions.map((option) => (
+              <a
+                key={option}
+                href={hrefFor({...base, category: option})}
+                className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                  category === option
+                    ? "bg-[#102015] text-white"
+                    : "border border-[#102015]/10 bg-[#f7f5ec] text-[#102015] hover:bg-[#eef6ea]"
+                }`}
+              >
+                {option}
+              </a>
+            ))}
+          </div>
+        </AdminViewBar>
+
+        <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
+          <summary className="cursor-pointer list-none">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-xl font-black">Add product</h2>
+              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
+                Open
+              </span>
+            </div>
+          </summary>
+
+          <div className="mt-5 flex flex-wrap gap-3">
             <form action={seedBaselineProductsAction}>
               <button
                 type="submit"
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                className="rounded-full border border-[#102015]/10 bg-[#fbfff8] px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
               >
                 Seed baseline catalogue
               </button>
             </form>
           </div>
-        </section>
 
-        <form
-          action={createProductAction}
-          className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm"
-        >
-          <h2 className="text-2xl font-bold">Create product</h2>
-          <p className="mt-2 text-sm text-[#405348]">
-            Add produce items that admins can use when creating orders. Items marked unavailable or paused should be hidden from future client-facing product lists.
-          </p>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <form action={createProductAction} className="mt-5 grid gap-4 md:grid-cols-2">
             <label className="grid gap-2 text-sm font-semibold">
               Product name
-              <input
-                name="name"
-                required
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                placeholder="e.g. Tomatoes"
-              />
+              <input name="name" required className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]" placeholder="e.g. Tomatoes" />
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Category
-              <select
-                name="category"
-                defaultValue="Vegetables"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              >
-                {productCategoryOptions.map((category) => (
-                  <option key={category}>{category}</option>
-                ))}
+              <select name="category" defaultValue="Vegetables" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {productCategoryOptions.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Unit
-              <select
-                name="unit"
-                defaultValue="kg"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              >
-                {productUnitOptions.map((unit) => (
-                  <option key={unit}>{unit}</option>
-                ))}
+              <select name="unit" defaultValue="kg" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {productUnitOptions.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Grade
-              <select
-                name="grade"
-                defaultValue="Standard"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              >
-                {produceGrades.map((grade) => (
-                  <option key={grade}>{grade}</option>
-                ))}
+              <select name="grade" defaultValue="Standard" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {produceGrades.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Base price
-              <input
-                name="basePrice"
-                type="number"
-                min="0"
-                defaultValue="0"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              />
+              <input name="basePrice" type="number" min="0" defaultValue="0" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]" />
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Availability
-              <select
-                name="availability"
-                defaultValue="Available"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              >
-                {productAvailabilityOptions.map((availability) => (
-                  <option key={availability}>{availability}</option>
-                ))}
+              <select name="availability" defaultValue="Available" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
               Status
-              <select
-                name="status"
-                defaultValue="Active"
-                className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-              >
-                {productStatusOptions.map((status) => (
-                  <option key={status}>{status}</option>
-                ))}
+              <select name="status" defaultValue="Active" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {productStatusOptions.map((item) => <option key={item}>{item}</option>)}
               </select>
             </label>
-          </div>
 
-          <button
-            type="submit"
-            className="mt-6 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
-          >
-            Save product
-          </button>
-        </form>
+            <div className="md:col-span-2">
+              <button type="submit" className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]">
+                Save product
+              </button>
+            </div>
+          </form>
+        </details>
 
-        <AdminDisclosure
-          title={`Product list (${products.length})`}
-          defaultOpen={false}
-        >
-          <div className="overflow-x-auto rounded-3xl border border-[#102015]/10 bg-white">
-            {products.length === 0 ? (
-              <div className="p-6 text-sm font-semibold text-[#405348]">
-                No products yet. Click Seed baseline catalogue to create the starter catalogue.
-              </div>
-            ) : (
-              <table className="min-w-full divide-y divide-[#102015]/10 text-sm">
-                <thead className="bg-[#f3f8ef] text-left text-xs uppercase tracking-[0.18em] text-[#405348]">
-                  <tr>
-                    <th className="px-5 py-4 font-semibold">Product</th>
-                    <th className="px-5 py-4 font-semibold">Category</th>
-                    <th className="px-5 py-4 font-semibold">Unit</th>
-                    <th className="px-5 py-4 font-semibold">Grade</th>
-                    <th className="px-5 py-4 font-semibold">Base price</th>
-                    <th className="px-5 py-4 font-semibold">Availability</th>
-                    <th className="px-5 py-4 font-semibold">Orders</th>
-                    <th className="px-5 py-4 font-semibold">Status</th>
+        <section className="hidden overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm md:block">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+              <thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.14em] text-[#405348]">
+                <tr>
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Unit</th>
+                  <th className="px-4 py-3">Grade</th>
+                  <th className="px-4 py-3">Price</th>
+                  <th className="px-4 py-3">Availability</th>
+                  <th className="px-4 py-3">Orders</th>
+                  <th className="px-4 py-3">Edit</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {sorted.map((product) => (
+                  <tr key={product.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
+                    <td className="px-4 py-3 font-black text-[#102015]">{product.name}</td>
+                    <td className="px-4 py-3">{product.category}</td>
+                    <td className="px-4 py-3">{product.unit}</td>
+                    <td className="px-4 py-3">{product.grade}</td>
+                    <td className="px-4 py-3 font-black text-[#102015]">{formatNaira(product.basePrice)}</td>
+                    <td className="px-4 py-3">
+                      <AdminStatusPill tone={adminToneFromStatus(`${product.availability} ${product.status}`)}>
+                        {product.availability} · {product.status}
+                      </AdminStatusPill>
+                    </td>
+                    <td className="px-4 py-3">{product.orderItems.length}</td>
+                    <td className="px-4 py-3">
+                      <ProductEditForm product={product} />
+                    </td>
                   </tr>
-                </thead>
+                ))}
 
-                <tbody className="divide-y divide-[#102015]/10">
-                  {products.map((product) => (
-                    <tr key={product.id} className="text-[#405348]">
-                      <td className="px-5 py-4 font-semibold text-[#102015]">
-                        {product.name}
-                      </td>
-                      <td className="px-5 py-4">{product.category}</td>
-                      <td className="px-5 py-4">{product.unit}</td>
-                      <td className="px-5 py-4">{product.grade}</td>
-                      <td className="px-5 py-4">{formatNaira(product.basePrice)}</td>
-                      <td className="px-5 py-4">
-                        <form action={updateProductCatalogueStatusAction} className="grid gap-2">
-                          <input type="hidden" name="productId" value={product.id} />
-                          <select
-                            name="availability"
-                            defaultValue={product.availability}
-                            className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
-                          >
-                            {productAvailabilityOptions.map((availability) => (
-                              <option key={availability}>{availability}</option>
-                            ))}
-                          </select>
-                          <select
-                            name="status"
-                            defaultValue={product.status}
-                            className="rounded-xl border border-[#102015]/10 bg-white px-3 py-2 text-xs font-bold text-[#102015]"
-                          >
-                            {productStatusOptions.map((status) => (
-                              <option key={status}>{status}</option>
-                            ))}
-                          </select>
-                          <button
-                            type="submit"
-                            className="rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white"
-                          >
-                            Update
-                          </button>
-                        </form>
-                      </td>
-                      <td className="px-5 py-4">{product.orderItems.length}</td>
-                      <td className="px-5 py-4">
-                        <span className="rounded-full border border-[#102015]/10 bg-white px-3 py-1 text-xs font-semibold text-[#405348]">
-                          {product.status}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                {!sorted.length ? (
+                  <tr>
+                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={8}>
+                      No products match this view.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
           </div>
-        </AdminDisclosure>
+        </section>
 
-        <AdminDisclosure
-          title={`Edit products and prices (${products.length})`}
-          defaultOpen={false}
-        >
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {products.length === 0 ? (
-              <p className="rounded-2xl bg-white p-5 text-sm font-semibold text-[#405348]">
-                No products available to edit yet.
-              </p>
-            ) : null}
-
-            {products.map((product) => (
-              <form
-                key={product.id}
-                action={updateProductCatalogueStatusAction}
-                className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-sm"
-              >
-                <input type="hidden" name="productId" value={product.id} />
-
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-                      Product edit
-                    </p>
-                    <h3 className="mt-2 text-xl font-black">{product.name}</h3>
-                    <p className="mt-1 text-sm font-semibold text-[#405348]">
-                      Current price: {formatNaira(product.basePrice)} / {product.unit}
-                    </p>
-                  </div>
-                  <span className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
-                    {product.availability}
-                  </span>
+        <section className="grid gap-3 md:hidden">
+          {sorted.map((product) => (
+            <article key={product.id} className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-black text-[#102015]">{product.name}</h2>
+                  <p className="mt-1 text-sm text-[#405348]">
+                    {product.category} · {product.grade} · {product.unit}
+                  </p>
+                  <p className="mt-2 text-lg font-black text-[#102015]">
+                    {formatNaira(product.basePrice)}
+                  </p>
                 </div>
-
-                <div className="mt-5 grid gap-3">
-                  <label className="grid gap-2 text-sm font-semibold">
-                    Product name
-                    <input
-                      name="name"
-                      required
-                      defaultValue={product.name}
-                      className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    />
-                  </label>
-
-                  <label className="grid gap-2 text-sm font-semibold">
-                    Category
-                    <select
-                      name="category"
-                      defaultValue={product.category}
-                      className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    >
-                      {productCategoryOptions.map((category) => (
-                        <option key={category}>{category}</option>
-                      ))}
-                    </select>
-                  </label>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-semibold">
-                      Unit
-                      <select
-                        name="unit"
-                        defaultValue={product.unit}
-                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                      >
-                        {productUnitOptions.map((unit) => (
-                          <option key={unit}>{unit}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-semibold">
-                      Grade
-                      <select
-                        name="grade"
-                        defaultValue={product.grade}
-                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                      >
-                        {produceGrades.map((grade) => (
-                          <option key={grade}>{grade}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-
-                  <label className="grid gap-2 text-sm font-semibold">
-                    Base price
-                    <input
-                      name="basePrice"
-                      type="number"
-                      min="0"
-                      defaultValue={String(product.basePrice)}
-                      className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    />
-                  </label>
-
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <label className="grid gap-2 text-sm font-semibold">
-                      Availability
-                      <select
-                        name="availability"
-                        defaultValue={product.availability}
-                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                      >
-                        {productAvailabilityOptions.map((availability) => (
-                          <option key={availability}>{availability}</option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="grid gap-2 text-sm font-semibold">
-                      Status
-                      <select
-                        name="status"
-                        defaultValue={product.status}
-                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                      >
-                        {productStatusOptions.map((status) => (
-                          <option key={status}>{status}</option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="mt-5 w-full rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-                >
-                  Save product update
-                </button>
-              </form>
-            ))}
-          </section>
-        </AdminDisclosure>
-
-        <AdminDisclosure
-          title={`Grouped by category (${Object.keys(groupedProducts).length})`}
-          defaultOpen={false}
-        >
-          <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-sm">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h2 className="text-2xl font-black">Products by category</h2>
-                <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-                  Use this view when scanning seasonal availability, paused items, and produce coverage by category.
-                </p>
+                <AdminStatusPill tone={adminToneFromStatus(`${product.availability} ${product.status}`)}>
+                  {product.availability}
+                </AdminStatusPill>
               </div>
-              <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-xs font-black uppercase tracking-[0.16em] text-[#1f7a3f]">
-                {products.length} products
-              </span>
-            </div>
+              <div className="mt-3">
+                <ProductEditForm product={product} />
+              </div>
+            </article>
+          ))}
 
-            <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-                <div
-                  key={category}
-                  className="rounded-3xl border border-[#102015]/10 bg-[#f7f5ec] p-5"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-lg font-black">{category}</h3>
-                      <p className="mt-1 text-sm text-[#405348]">
-                        {categoryProducts.length} product{categoryProducts.length === 1 ? "" : "s"}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-4 grid gap-2">
-                    {categoryProducts.map((product) => (
-                      <div
-                        key={product.id}
-                        className="rounded-2xl bg-white p-4 text-sm"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-black text-[#102015]">{product.name}</p>
-                            <p className="mt-1 text-xs font-semibold text-[#405348]">
-                              {product.unit} · {product.grade} · {formatNaira(product.basePrice)}
-                            </p>
-                          </div>
-                          <span className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
-                            {product.availability}
-                          </span>
-                        </div>
-                        {product.status !== "Active" ? (
-                          <p className="mt-2 text-xs font-bold text-[#C95F3D]">
-                            {product.status}
-                          </p>
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-
-              {products.length === 0 ? (
-                <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm font-semibold text-[#405348]">
-                  No products yet. Seed the baseline catalogue or create products manually.
-                </p>
-              ) : null}
-            </div>
-          </section>
-        </AdminDisclosure>
+          {!sorted.length ? (
+            <p className="rounded-2xl bg-white p-5 text-center text-sm font-semibold text-[#587063]">
+              No products match this view.
+            </p>
+          ) : null}
+        </section>
       </div>
     </AdminPageShell>
+  );
+}
+
+function ProductEditForm({product}: {product: any}) {
+  return (
+    <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
+      <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Edit</summary>
+
+      <form action={updateProductDetailsAction} className="mt-3 grid min-w-[18rem] gap-3">
+        <input type="hidden" name="productId" value={product.id} />
+
+        <input name="name" required defaultValue={product.name} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]" />
+
+        <select name="category" defaultValue={product.category} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+          {productCategoryOptions.map((item) => <option key={item}>{item}</option>)}
+        </select>
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <select name="unit" defaultValue={product.unit} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+            {productUnitOptions.map((item) => <option key={item}>{item}</option>)}
+          </select>
+
+          <select name="grade" defaultValue={product.grade} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+            {produceGrades.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </div>
+
+        <input name="basePrice" type="number" min="0" defaultValue={String(product.basePrice)} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]" />
+
+        <div className="grid gap-2 sm:grid-cols-2">
+          <select name="availability" defaultValue={product.availability} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+            {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
+          </select>
+
+          <select name="status" defaultValue={product.status} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+            {productStatusOptions.map((item) => <option key={item}>{item}</option>)}
+          </select>
+        </div>
+
+        <button type="submit" className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">
+          Save
+        </button>
+      </form>
+    </details>
   );
 }

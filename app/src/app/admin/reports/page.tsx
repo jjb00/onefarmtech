@@ -1,4 +1,5 @@
 import AdminShell from "@/components/admin/AdminShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {getDbComplaints, getDbCustomers, getDbGroupBuys, getDbPayments, getDbProducts} from "@/data/dbAdmin";
 import {getDbOrders} from "@/data/dbOrders";
 import {formatNaira} from "@/lib/format";
@@ -113,18 +114,15 @@ export default async function ReportsPage() {
   return (
     <AdminShell
       title="Reports"
-      description="Company performance snapshot for orders, revenue, buyers, products, fulfilment, issues and investor update preparation."
+      description="Operating metrics for sales, buyers, products, fulfilment and issues."
     >
-      <section className="grid gap-8">
-        <div className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+      <section className="grid gap-5">
+        <AdminDisclosure title="Company metrics" defaultOpen>
+        <div className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
           <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
             Performance snapshot
           </p>
-          <h2 className="mt-3 text-2xl font-black">Company metrics</h2>
-          <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
-            Use this page as the first internal reporting view. Later this can support date filters,
-            CSV/PDF export, investor update packs, targets, charts and KPI comparisons.
-          </p>
+          <h2 className="mt-3 text-2xl font-black">Company snapshot</h2>
 
           <div className="mt-6 grid gap-4 md:grid-cols-3 xl:grid-cols-4">
             {performanceMetrics.map(([label, value]) => (
@@ -138,13 +136,12 @@ export default async function ReportsPage() {
             ))}
           </div>
         </div>
+        </AdminDisclosure>
 
-        <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-          <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+        <div className="grid gap-5 xl:grid-cols-[1.1fr_0.9fr]">
+          <AdminDisclosure title="KPI health" defaultOpen={false}>
+          <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
             <h2 className="text-2xl font-black">KPI health</h2>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Simple operating ratios based on current database records.
-            </p>
 
             <div className="mt-6 grid gap-4">
               {kpiRows.map((row) => (
@@ -163,12 +160,11 @@ export default async function ReportsPage() {
               ))}
             </div>
           </section>
+          </AdminDisclosure>
 
-          <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
-            <h2 className="text-2xl font-black">Investor update notes</h2>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Copy-ready reporting prompts for a future downloadable investor pack.
-            </p>
+          <AdminDisclosure title="Investor notes" defaultOpen={false}>
+          <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
+            <h2 className="text-2xl font-black">Investor notes</h2>
 
             <div className="mt-6 grid gap-3 text-sm leading-7 text-[#405348]">
               <div className="rounded-2xl bg-[#f7f5ec] p-4">
@@ -184,18 +180,16 @@ export default async function ReportsPage() {
                 active issues, product availability and supplier readiness.
               </div>
               <div className="rounded-2xl bg-[#f7f5ec] p-4">
-                <strong className="text-[#102015]">Next build:</strong> add date filters, downloadable CSV,
-                PDF summary and goal tracking.
+                <strong className="text-[#102015]">Focus:</strong> keep this view clean for management reporting and investor updates.
               </div>
             </div>
           </section>
+          </AdminDisclosure>
         </div>
 
-        <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
+        <AdminDisclosure title="Product performance" defaultOpen={false}>
+        <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
           <h2 className="text-2xl font-black">Product performance</h2>
-          <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Ranked by number of order-item records. This becomes more useful as more orders are processed.
-          </p>
 
           <div className="mt-6 overflow-x-auto rounded-3xl border border-[#102015]/10">
             <table className="min-w-full divide-y divide-[#102015]/10 text-sm">
@@ -230,6 +224,7 @@ export default async function ReportsPage() {
             </table>
           </div>
         </section>
+        </AdminDisclosure>
       </section>
     </AdminShell>
   );

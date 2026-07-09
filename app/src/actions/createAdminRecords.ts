@@ -2681,3 +2681,37 @@ export async function linkOrderToCustomerAction(formData: FormData) {
 
   redirect(`/admin/orders/${order.id}?linked=1`);
 }
+
+
+export async function updateProductDetailsAction(formData: FormData) {
+  const {revalidatePath} = await import("next/cache");
+  const {prisma} = await import("@/lib/prisma");
+
+  const productId = String(formData.get("productId") || "").trim();
+  const name = String(formData.get("name") || "").trim();
+  const category = String(formData.get("category") || "").trim();
+  const unit = String(formData.get("unit") || "").trim();
+  const grade = String(formData.get("grade") || "").trim();
+  const basePrice = Number(formData.get("basePrice") || 0);
+  const availability = String(formData.get("availability") || "").trim();
+  const status = String(formData.get("status") || "").trim();
+
+  if (!productId || !name || !category || !unit || !grade || !Number.isFinite(basePrice) || basePrice < 0) {
+    throw new Error("Product, category, unit, grade and valid price are required.");
+  }
+
+  await prisma.product.update({
+    where: {id: productId},
+    data: {
+      name,
+      category,
+      unit,
+      grade,
+      basePrice: Math.round(basePrice),
+      availability: availability || "Available",
+      status: status || "Active",
+    },
+  });
+
+  revalidatePath("/admin/products");
+}
