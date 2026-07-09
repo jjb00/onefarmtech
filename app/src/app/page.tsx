@@ -81,8 +81,8 @@ export default async function HomePage() {
           ]}
         />
         <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-[#1f7a3f] via-[#F2B84B] to-[#1f7a3f]" />
-        <div className="absolute right-[-140px] top-20 h-[22rem] w-[22rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
-        <div className="absolute left-[-160px] bottom-[-180px] h-[24rem] w-[24rem] rounded-full bg-[#F2B84B]/20 blur-3xl" />
+        <div className="oft-orb-drift absolute right-[-140px] top-20 h-[22rem] w-[22rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
+        <div className="oft-orb-drift-delay absolute left-[-160px] bottom-[-180px] h-[24rem] w-[24rem] rounded-full bg-[#F2B84B]/20 blur-3xl" />
         <div className="absolute left-1/2 top-24 h-40 w-[44rem] -translate-x-1/2 rounded-full bg-white/55 blur-3xl" />
 
         <div className="relative mx-auto max-w-7xl px-6 py-8 lg:px-10 lg:py-12">
@@ -156,7 +156,7 @@ better prices, quality and reliability.
               </div>
             </section>
 
-            <section className="oft-fade-up-delay-3 rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_18px_48px_rgba(16,23,18,0.10)] backdrop-blur">
+            <section className="oft-fade-up-delay-3 oft-quiet-float rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_18px_48px_rgba(16,23,18,0.10)] backdrop-blur">
               <div className="relative overflow-hidden rounded-[1.5rem] bg-[#101712] p-5 text-white">
                 <div className="absolute right-[-80px] top-[-90px] h-56 w-56 rounded-full bg-[#1f7a3f]/35 blur-3xl" />
                 <div className="absolute bottom-[-110px] left-[-90px] h-64 w-64 rounded-full bg-[#F2B84B]/20 blur-3xl" />

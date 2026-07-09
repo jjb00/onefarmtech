@@ -15,94 +15,84 @@ type Role = {
 
 const roles: Role[] = [
   {
-    title: "Procurement Field Associate",
+    title: "Regional Produce Sourcing Associate",
     department: "Procurement",
-    location: "Plateau / Jos and nearby farming clusters",
+    location: "Plateau / Jos, Benue, Nasarawa, Kogi, Kwara, Niger and Taraba",
     locationGroup: "Grower regions",
-    stage: "Entry / Associate",
+    stage: "Associate",
     type: "Field",
-    qualification: "OND, HND, degree or strong local market experience",
-    focus: "Source vegetables, potatoes, grains and seasonal produce from growers and aggregators.",
+    qualification: "OND, HND, degree, cooperative experience or strong produce-market experience",
+    focus: "Build grower and aggregator relationships across vegetables, potatoes, yam, cassava, maize, soybeans, grains and seasonal produce.",
   },
   {
-    title: "Middle Belt Sourcing Officer",
-    department: "Procurement",
-    location: "Benue, Nasarawa, Kogi, Kwara, Niger and Taraba",
-    locationGroup: "Grower regions",
-    stage: "Associate / Lead",
-    type: "Field",
-    qualification: "OND, HND, degree, cooperative or produce sourcing experience",
-    focus: "Build supply relationships for yam, cassava, maize, soybeans, grains and vegetables.",
-  },
-  {
-    title: "Northern Produce Procurement Lead",
+    title: "Northern Produce & Logistics Lead",
     department: "Procurement",
     location: "Kaduna, Kano, Katsina, Jigawa, Bauchi, Gombe and Adamawa",
     locationGroup: "Grower regions",
     stage: "Lead",
     type: "Field",
-    qualification: "HND, degree or 3+ years sourcing/logistics experience",
-    focus: "Coordinate sourcing for tomatoes, onions, grains, millet, sorghum, sesame and dry goods.",
+    qualification: "HND, degree or 3+ years sourcing, aggregation, transport or market operations experience",
+    focus: "Coordinate supplier relationships, quality checks and movement of tomatoes, onions, grains, millet, sorghum, sesame, groundnuts and dry goods.",
   },
   {
-    title: "Supplier Reliability Officer",
+    title: "Supplier Quality & Reliability Officer",
     department: "Operations",
     location: "Procurement regions and fulfilment hubs",
     locationGroup: "Mixed",
     stage: "Associate",
     type: "Field / Hybrid",
-    qualification: "OND, HND, degree or agriculture/food handling experience",
-    focus: "Track produce quality, supplier performance, issue logs and corrective actions.",
+    qualification: "OND, HND, degree or practical agriculture, food handling, warehouse or market experience",
+    focus: "Track produce quality, supplier reliability, issue logs, rejected items and corrective actions before buyer complaints escalate.",
   },
   {
     title: "Buyer Growth Associate",
     department: "Sales",
     location: "Lagos, Abuja, Port Harcourt, Ibadan, Enugu, Onitsha, Kano and Kaduna",
     locationGroup: "Buyer cities",
-    stage: "Entry / Associate",
+    stage: "Associate",
     type: "City operations",
-    qualification: "OND, HND, degree or strong sales/customer experience",
-    focus: "Acquire restaurants, hotels, caterers, retailers, food vendors and buying groups.",
+    qualification: "OND, HND, degree or strong sales, customer service or field marketing experience",
+    focus: "Win and support restaurants, hotels, caterers, retailers, food vendors, offices and organised buying groups.",
   },
   {
-    title: "Key Account Executive",
+    title: "Key Accounts & Partnerships Executive",
     department: "Sales",
     location: "Lagos, Abuja and Port Harcourt",
     locationGroup: "Buyer cities",
     stage: "Lead",
     type: "City operations",
-    qualification: "HND, degree or proven B2B sales experience",
-    focus: "Manage larger recurring buyers, repeat orders, account readiness and buyer retention.",
+    qualification: "HND, degree or proven B2B sales, account management or partnerships experience",
+    focus: "Manage higher-value recurring buyers, buyer onboarding, repeat orders, account readiness and retention.",
   },
   {
-    title: "Fulfilment Coordinator",
+    title: "Order Fulfilment Coordinator",
     department: "Fulfilment",
     location: "Lagos, Abuja, Port Harcourt and major city hubs",
     locationGroup: "Buyer cities",
     stage: "Associate",
     type: "City operations",
-    qualification: "OND, HND, degree or logistics/customer operations experience",
-    focus: "Coordinate order allocation, dispatch, delivery evidence and buyer issue follow-up.",
+    qualification: "OND, HND, degree or logistics, dispatch, warehouse or customer operations experience",
+    focus: "Coordinate order allocation, dispatch follow-up, delivery evidence, buyer updates and issue resolution.",
   },
   {
-    title: "Payments & Receipts Officer",
+    title: "Payments & Reconciliation Officer",
     department: "Finance",
     location: "Remote, Lagos or Abuja",
     locationGroup: "Remote / HQ",
     stage: "Associate",
     type: "Remote / Hybrid",
-    qualification: "OND, HND, degree or bookkeeping/admin experience",
-    focus: "Manage payment requests, receipts, reconciliation and buyer payment evidence.",
+    qualification: "OND, HND, degree or bookkeeping, finance admin, payments or reconciliation experience",
+    focus: "Manage payment requests, receipts, payment evidence, buyer balances and reconciliation across manual and online payment channels.",
   },
   {
-    title: "Full-Stack Product Engineer",
+    title: "Product Engineer",
     department: "Technology",
     location: "Remote / hybrid",
     locationGroup: "Remote / HQ",
     stage: "Experienced",
     type: "Remote / Hybrid",
     qualification: "Strong Next.js, TypeScript, database and product judgement. Degree not mandatory.",
-    focus: "Build buyer portal, admin operations, payments, WhatsApp workflows and internal tools.",
+    focus: "Build buyer portal, admin operations, payments, WhatsApp workflows, reporting and internal tools.",
   },
   {
     title: "Product Designer / UIUX Associate",
@@ -112,17 +102,17 @@ const roles: Role[] = [
     stage: "Associate",
     type: "Remote / Hybrid",
     qualification: "Portfolio preferred. Degree not mandatory.",
-    focus: "Design mobile-first buyer flows, admin workflows, design systems and accessibility.",
+    focus: "Design mobile-first buyer journeys, clean admin workflows, reusable product patterns and accessible interfaces.",
   },
   {
-    title: "Digital Content & Video Intern",
+    title: "Content & Community Intern",
     department: "Content",
-    location: "Remote, Lagos, Abuja or campus-based",
+    location: "Remote, Lagos, Abuja, Jos or campus-based",
     locationGroup: "Internship / NYSC",
     stage: "Internship",
     type: "Internship",
-    qualification: "Student or graduate. Media, theatre arts, communications, agriculture or business welcome.",
-    focus: "Create short videos, market visits, buyer stories, grower stories and product explainers.",
+    qualification: "Student or graduate. Media, theatre arts, communications, agriculture, business or creative backgrounds welcome.",
+    focus: "Create short videos, market stories, buyer stories, grower spotlights, social content and simple product explainers.",
   },
   {
     title: "NYSC Operations Associate",
@@ -131,8 +121,8 @@ const roles: Role[] = [
     locationGroup: "Internship / NYSC",
     stage: "NYSC",
     type: "NYSC",
-    qualification: "NYSC member with strong reliability and communication skills",
-    focus: "Support buyer follow-up, order tracking, supplier mapping, data entry and community operations.",
+    qualification: "NYSC member with strong reliability, communication and execution skills",
+    focus: "Support buyer follow-up, order tracking, supplier mapping, data entry, field visits and community operations.",
   },
 ];
 
@@ -140,28 +130,47 @@ const departments = ["All", ...Array.from(new Set(roles.map((role) => role.depar
 const locations = ["All", ...Array.from(new Set(roles.map((role) => role.locationGroup)))];
 const stages = ["All", ...Array.from(new Set(roles.map((role) => role.stage)))];
 const types = ["All", ...Array.from(new Set(roles.map((role) => role.type)))];
+const sorts = ["Department", "Location", "Stage"];
 
-function optionHref(key: string, value: string) {
-  if (value === "All") return "/careers";
-  return `/careers?${key}=${encodeURIComponent(value)}`;
+function buildHref(current: Record<string, string>, key: string, value: string) {
+  const next = new URLSearchParams();
+
+  for (const [paramKey, paramValue] of Object.entries(current)) {
+    if (paramValue && paramValue !== "All" && paramValue !== "Department") {
+      next.set(paramKey, paramValue);
+    }
+  }
+
+  if (value !== "All" && value !== "Department") {
+    next.set(key, value);
+  } else {
+    next.delete(key);
+  }
+
+  const query = next.toString();
+  return query ? `/careers?${query}` : "/careers";
 }
 
-export default function CareersPage({
+export default async function CareersPage({
   searchParams,
 }: {
-  searchParams?: {
+  searchParams?: Promise<{
     department?: string;
     location?: string;
     stage?: string;
     type?: string;
     sort?: string;
-  };
+  }>;
 }) {
-  const department = searchParams?.department || "All";
-  const location = searchParams?.location || "All";
-  const stage = searchParams?.stage || "All";
-  const type = searchParams?.type || "All";
-  const sort = searchParams?.sort || "department";
+  const params = await searchParams;
+
+  const department = params?.department || "All";
+  const location = params?.location || "All";
+  const stage = params?.stage || "All";
+  const type = params?.type || "All";
+  const sort = params?.sort || "Department";
+
+  const current = {department, location, stage, type, sort};
 
   const filtered = roles.filter((role) => {
     return (
@@ -173,8 +182,8 @@ export default function CareersPage({
   });
 
   const sorted = [...filtered].sort((a, b) => {
-    if (sort === "location") return a.locationGroup.localeCompare(b.locationGroup);
-    if (sort === "stage") return a.stage.localeCompare(b.stage);
+    if (sort === "Location") return a.locationGroup.localeCompare(b.locationGroup) || a.department.localeCompare(b.department);
+    if (sort === "Stage") return a.stage.localeCompare(b.stage) || a.department.localeCompare(b.department);
     return a.department.localeCompare(b.department) || a.title.localeCompare(b.title);
   });
 
@@ -199,33 +208,21 @@ export default function CareersPage({
               Careers
             </p>
             <h1 className="mt-6 text-5xl font-black tracking-tight md:text-7xl">
-              Work on food supply that moves.
+              Join the team building reliable food supply.
             </h1>
             <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
-              Explore roles across procurement, logistics, sales, fulfilment, technology, finance, content, internships and NYSC.
+              Work across sourcing, logistics, sales, fulfilment, technology, finance, content, internships and NYSC roles.
             </p>
           </div>
         </section>
 
-        <section className="sticky top-3 z-20 rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur">
+        <section className="rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur">
           <div className="grid gap-3 lg:grid-cols-5">
-            <Filter label="Department" options={departments} queryKey="department" active={department} />
-            <Filter label="Location" options={locations} queryKey="location" active={location} />
-            <Filter label="Stage" options={stages} queryKey="stage" active={stage} />
-            <Filter label="Type" options={types} queryKey="type" active={type} />
-
-            <label className="grid gap-1 text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
-              Sort
-              <select
-                defaultValue={sort}
-                className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-2 text-sm font-black normal-case tracking-normal text-[#102015]"
-                onChange={undefined}
-              >
-                <option value="department">Department</option>
-                <option value="location">Location</option>
-                <option value="stage">Stage</option>
-              </select>
-            </label>
+            <Filter label="Department" options={departments} queryKey="department" active={department} current={current} />
+            <Filter label="Location" options={locations} queryKey="location" active={location} current={current} />
+            <Filter label="Stage" options={stages} queryKey="stage" active={stage} current={current} />
+            <Filter label="Type" options={types} queryKey="type" active={type} current={current} />
+            <Filter label="Sort" options={sorts} queryKey="sort" active={sort} current={current} />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-3">
@@ -300,11 +297,13 @@ function Filter({
   options,
   queryKey,
   active,
+  current,
 }: {
   label: string;
   options: string[];
   queryKey: string;
   active: string;
+  current: Record<string, string>;
 }) {
   return (
     <details className="relative">
@@ -319,7 +318,7 @@ function Filter({
         {options.map((option) => (
           <Link
             key={`${queryKey}-${option}`}
-            href={optionHref(queryKey, option)}
+            href={buildHref(current, queryKey, option)}
             className={`rounded-xl px-3 py-2 text-sm font-black ${
               active === option
                 ? "bg-[#1f7a3f] text-white"

@@ -424,7 +424,7 @@ textarea:focus-visible {
 }
 
 /* Reduce constant animation load on lower-power devices */
-@media (max-width: 900px), (prefers-reduced-motion: reduce) {
+@media (max-width: 720px), (prefers-reduced-motion: reduce) {
   .oft-float-slow,
   .oft-float-delay,
   .oft-orb-drift,
@@ -433,4 +433,18 @@ textarea:focus-visible {
   .oft-progress-stripe {
     animation: none !important;
   }
+}
+
+
+@keyframes oftQuietFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.oft-quiet-float {
+  animation: oftQuietFloat 7.5s ease-in-out infinite;
 }
