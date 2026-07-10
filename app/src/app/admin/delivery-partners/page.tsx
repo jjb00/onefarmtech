@@ -12,7 +12,16 @@ import {prisma} from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function DeliveryPartnersPage() {
+type DeliveryPartnersPageProps = {
+  searchParams?: Promise<{
+    access?: string;
+    reveal?: string;
+  }>;
+};
+
+export default async function DeliveryPartnersPage({searchParams}: DeliveryPartnersPageProps) {
+  const params = await searchParams;
+  const revealPartnerId = params?.reveal || "";
   await requireStaff();
 
   const partners = await prisma.deliveryPartner.findMany({
@@ -175,8 +184,15 @@ export default async function DeliveryPartnersPage() {
                     <td className="px-5 py-4">
                       <div className="grid gap-2">
                         <p className="font-mono text-xs font-black text-[#405348]">
-                          {maskSecret(partner.accessCode)}
+                          {revealPartnerId === partner.id && partner.accessCode
+                            ? partner.accessCode
+                            : maskSecret(partner.accessCode)}
                         </p>
+                        {revealPartnerId === partner.id && partner.accessCode ? (
+                          <p className="rounded-xl bg-[#fff6d6] px-3 py-2 text-xs font-bold leading-5 text-[#7a4a00]">
+                            Copy this code now. It will be masked again after you leave this page.
+                          </p>
+                        ) : null}
                         <form action={generateDeliveryPartnerAccessCodeAction}>
                           <input type="hidden" name="id" value={partner.id} />
                           <button

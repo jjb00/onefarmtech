@@ -1402,7 +1402,7 @@ export async function generateDeliveryPartnerAccessCodeAction(formData: FormData
   });
 
   revalidatePath("/admin/delivery-partners");
-  redirect("/admin/delivery-partners?access=created");
+  redirect(`/admin/delivery-partners?access=created&reveal=${id}`);
 }
 
 export async function deliveryPartnerLoginAction(formData: FormData) {
