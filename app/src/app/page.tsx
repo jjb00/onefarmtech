@@ -120,8 +120,9 @@ better prices, quality and reliability.
               </h1>
 
               <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
-                OneFarmTech helps restaurants, retailers, caterers, households and buying
-                groups order fresh produce, join bulk buys, track payments and receive receipts.
+                Buy fresh produce directly from OneFarmTech. We combine dependable supply,
+                transparent pricing and reliable fulfilment with a simple ordering
+                experience built for businesses and households.
               </p>
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">
