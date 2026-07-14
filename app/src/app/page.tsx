@@ -3,6 +3,7 @@ import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
+import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -98,7 +99,7 @@ export default async function HomePage() {
                 Create buyer account
               </Link>
               <a
-                href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order."
+                href={buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order."))}
                 className="hidden rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f] md:inline-flex"
               >
                 Order on WhatsApp
@@ -125,7 +126,7 @@ better prices, quality and reliability.
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">
                 <a
-                  href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20place%20a%20fresh%20food%20order.%20Buyer%20type%3A%20___%20Location%3A%20___%20Items%3A%20___"
+                  href={buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"))}
                   className="oft-button-pop rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(31,122,63,0.22)] hover:bg-[#155c2f]"
                 >
                   Order on WhatsApp
@@ -214,7 +215,7 @@ better prices, quality and reliability.
 
               <div className="mt-5 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
                 <a
-                  href="https://wa.me/?text=Hello%20OneFarmTech%2C%20I%20want%20to%20join%20or%20create%20a%20group%20buy."
+                  href={buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to join or create a group buy."))}
                   className="oft-button-pop inline-flex items-center justify-center rounded-full bg-[#F2B84B] px-6 py-3 text-sm font-black text-[#101712] shadow-[0_18px_44px_rgba(242,184,75,0.32)] hover:bg-[#e4a833]"
                 >
                   Register group-buy interest

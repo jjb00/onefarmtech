@@ -13,6 +13,7 @@ const requiredFiles = [
   "src/app/api/payments/flutterwave/webhook/route.ts",
   "src/lib/whatsapp/provider.ts",
   "src/app/api/whatsapp/webhook/route.ts",
+  "src/app/api/email/resend/webhook/route.ts",
   "src/app/admin/whatsapp-inbox/page.tsx",
   "src/app/admin/whatsapp-drafts/page.tsx",
   "src/app/admin/integration-readiness/page.tsx",
@@ -21,8 +22,16 @@ const requiredFiles = [
 
 const envGroups = [
   {
-    name: "App URL",
-    keys: ["APP_BASE_URL", "NEXT_PUBLIC_APP_URL"],
+    name: "Transactional email",
+    keys: ["RESEND_API_KEY", "RESEND_WEBHOOK_SIGNING_SECRET", "EMAIL_FROM_ADDRESS", "EMAIL_FROM_NAME", "EMAIL_REPLY_TO", "EMAIL_ADMIN_RECIPIENTS"],
+  },
+  {
+    name: "Monitoring",
+    keys: ["SENTRY_DSN", "SENTRY_ORG", "SENTRY_PROJECT", "SENTRY_AUTH_TOKEN"],
+  },
+  {
+    name: "Core production",
+    keys: ["DATABASE_URL", "ADMIN_PASSWORD", "SESSION_SECRET", "APP_BASE_URL", "NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPPORT_WHATSAPP"],
   },
   {
     name: "Paystack",
@@ -62,6 +71,7 @@ console.log("\nWebhook paths to configure in provider dashboards:");
 console.log("Paystack:      /api/payments/webhook");
 console.log("Flutterwave:   /api/payments/flutterwave/webhook");
 console.log("Meta WhatsApp: /api/whatsapp/webhook");
+console.log("Resend:        /api/email/resend/webhook");
 
 if (failed) {
   console.error("\nProvider readiness failed because required code files are missing.");

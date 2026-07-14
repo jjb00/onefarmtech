@@ -1,6 +1,7 @@
 import {cookies} from "next/headers";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
+import {verifySessionToken} from "@/lib/sessionToken";
 
 export const BUYER_SESSION_COOKIE = "oft_buyer_session";
 export const BUYER_CUSTOMER_ID_COOKIE = "oft_buyer_customer_id";
@@ -20,13 +21,20 @@ export type CurrentBuyerActor = {
 export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
   const cookieStore = await cookies();
 
-  const isAuthenticated =
-    cookieStore.get(BUYER_SESSION_COOKIE)?.value === "authenticated";
+  const customerId = cookieStore.get(BUYER_CUSTOMER_ID_COOKIE)?.value || null;
+  const inviteId = cookieStore.get(BUYER_INVITE_ID_COOKIE)?.value || null;
+  const isAuthenticated = Boolean(
+    customerId && inviteId && verifySessionToken(
+      cookieStore.get(BUYER_SESSION_COOKIE)?.value,
+      "buyer",
+      `${customerId}:${inviteId}`,
+    ),
+  );
 
   return {
     isAuthenticated,
-    customerId: cookieStore.get(BUYER_CUSTOMER_ID_COOKIE)?.value || null,
-    inviteId: cookieStore.get(BUYER_INVITE_ID_COOKIE)?.value || null,
+    customerId,
+    inviteId,
     contactName: cookieStore.get(BUYER_CONTACT_NAME_COOKIE)?.value || null,
     contactRole: cookieStore.get(BUYER_CONTACT_ROLE_COOKIE)?.value || null,
     authMode: "invite-code",

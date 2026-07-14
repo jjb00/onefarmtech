@@ -18,7 +18,7 @@ function verifyMetaSignature(rawBody: string, signature: string | null) {
 
   // Local/dev foundation mode: accept unsigned webhooks only if app secret is not configured.
   // Production should set WHATSAPP_APP_SECRET.
-  if (!appSecret) return true;
+  if (!appSecret) return process.env.NODE_ENV !== "production";
 
   if (!signature || !signature.startsWith("sha256=")) return false;
 
@@ -511,6 +511,20 @@ async function logInboundMessage(input: {
   const customer = await findCustomerByWhatsAppPhone(input.from);
 
   if (customer) {
+    if (input.messageId) {
+      const existing = await prisma.buyerMessage.findFirst({
+        where: {
+          customerId: customer.id,
+          channel: "WhatsApp",
+          direction: "Inbound",
+          relatedId: input.messageId,
+        },
+        select: {id: true},
+      });
+
+      if (existing) return {matched: true, customerId: customer.id, duplicate: true};
+    }
+
     await prisma.buyerMessage.create({
       data: {
         customerId: customer.id,
@@ -537,7 +551,19 @@ async function logInboundMessage(input: {
       },
     });
 
-    return {matched: true, customerId: customer.id};
+    return {matched: true, customerId: customer.id, duplicate: false};
+  }
+
+  if (input.messageId) {
+    const existing = await prisma.contactEnquiry.findFirst({
+      where: {
+        source: "WhatsApp webhook",
+        adminNote: {contains: input.messageId},
+      },
+      select: {id: true},
+    });
+
+    if (existing) return {matched: false, customerId: null, duplicate: true};
   }
 
   await prisma.contactEnquiry.create({
@@ -561,7 +587,7 @@ async function logInboundMessage(input: {
     },
   });
 
-  return {matched: false, customerId: null};
+  return {matched: false, customerId: null, duplicate: false};
 }
 
 export async function GET(request: NextRequest) {
@@ -631,6 +657,8 @@ export async function POST(request: NextRequest) {
         raw: message,
         parsedIntent,
       });
+
+      if (inboundLog.duplicate) continue;
 
       await createDraftOrderRequestFromInboundWhatsApp({
         from,

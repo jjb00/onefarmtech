@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
+import {requireStaff} from "@/lib/auth";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -23,6 +24,7 @@ async function createNextOrderCode() {
 }
 
 export async function createOrderAction(formData: FormData) {
+  await requireStaff();
   const customerId = readText(formData, "customerId");
   const productId = readText(formData, "productId");
   const buyerNameInput = readText(formData, "buyerName");

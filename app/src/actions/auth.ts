@@ -17,6 +17,7 @@ import {
 } from "@/lib/currentBuyer";
 import {isStaffRole} from "@/lib/permissions";
 import {prisma} from "@/lib/prisma";
+import {createSessionToken} from "@/lib/sessionToken";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -56,7 +57,11 @@ export async function loginAction(formData: FormData) {
   const staffEmail = readText(formData, "staffEmail");
   const roleInput = readText(formData, "staffRole", "Admin");
   const staffRole = isStaffRole(roleInput) ? roleInput : "Admin";
-  const expectedPassword = process.env.ADMIN_PASSWORD || "onefarmtech-admin";
+  const expectedPassword = process.env.ADMIN_PASSWORD;
+
+  if (!expectedPassword) {
+    redirect("/staff-login?error=configuration");
+  }
 
   if (password !== expectedPassword) {
     redirect(`/staff-login?error=1&next=${encodeURIComponent(nextPath)}`);
@@ -67,11 +72,13 @@ export async function loginAction(formData: FormData) {
   const cookieOptions = {
     httpOnly: true,
     sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 8,
   };
 
-  cookieStore.set(STAFF_SESSION_COOKIE, "authenticated", cookieOptions);
+  const sessionSubject = staffEmail || "staff";
+  cookieStore.set(STAFF_SESSION_COOKIE, createSessionToken("staff", sessionSubject), cookieOptions);
   cookieStore.set(STAFF_NAME_COOKIE, staffName, cookieOptions);
   cookieStore.set(STAFF_ROLE_COOKIE, staffRole, cookieOptions);
 
@@ -179,11 +186,16 @@ export async function buyerLoginAction(formData: FormData) {
   const cookieOptions = {
     httpOnly: true,
     sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: 60 * 60 * 24 * 30,
   };
 
-  cookieStore.set(BUYER_SESSION_COOKIE, "authenticated", cookieOptions);
+  cookieStore.set(
+    BUYER_SESSION_COOKIE,
+    createSessionToken("buyer", `${customer.id}:${updatedInvite.id}`),
+    cookieOptions,
+  );
   cookieStore.set(BUYER_CUSTOMER_ID_COOKIE, customer.id, cookieOptions);
   cookieStore.set(BUYER_INVITE_ID_COOKIE, updatedInvite.id, cookieOptions);
   cookieStore.set(

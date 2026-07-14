@@ -4,6 +4,9 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
+import {requireStaff} from "@/lib/auth";
+import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
+import {emailTemplates} from "@/lib/email/templates";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -31,6 +34,7 @@ async function makeReceiptCode() {
 }
 
 export async function createPaymentAction(formData: FormData) {
+  await requireStaff();
   const orderId = readText(formData, "orderId");
   const orderCode = readText(formData, "orderCode");
   const provider = readText(formData, "provider", "Manual transfer");
@@ -74,6 +78,7 @@ export async function createPaymentAction(formData: FormData) {
 }
 
 export async function createComplaintAction(formData: FormData) {
+  await requireStaff();
   const orderId = readText(formData, "orderId");
   const orderCode = readText(formData, "orderCode");
   const issue = readText(formData, "issue");
@@ -114,6 +119,7 @@ export async function createComplaintAction(formData: FormData) {
 }
 
 export async function createPickupLocationAction(formData: FormData) {
+  await requireStaff();
   const name = readText(formData, "name");
   const area = readText(formData, "area");
   const address = readText(formData, "address");
@@ -142,6 +148,7 @@ export async function createPickupLocationAction(formData: FormData) {
 
 
 export async function issueReceiptAction(formData: FormData) {
+  await requireStaff();
   const orderId = readText(formData, "orderId");
   const paymentIdInput = readText(formData, "paymentId");
   const amountInput = readNumber(formData, "amount");
@@ -210,6 +217,10 @@ export async function issueReceiptAction(formData: FormData) {
     },
     actorRole: "Finance",
   });
+
+  if (receipt.buyerEmail) {
+    await sendTransactionalEmail({deduplicationKey: `receipt:${receipt.id}`, template: "receipt-issued", to: receipt.buyerEmail, content: emailTemplates.receiptIssued(receipt.buyerName, receipt.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(receipt.amount), getEmailBaseUrl()), relatedType: "Receipt", relatedId: receipt.id});
+  }
 
   revalidatePath("/admin/receipts");
   revalidatePath("/admin/buyer-accounts");

@@ -1,5 +1,6 @@
 import {cookies} from "next/headers";
 import {prisma} from "@/lib/prisma";
+import {createSessionToken, verifySessionToken} from "@/lib/sessionToken";
 
 const SESSION_COOKIE = "oft_delivery_partner_session";
 const PARTNER_ID_COOKIE = "oft_delivery_partner_id";
@@ -21,7 +22,7 @@ export async function getCurrentDeliveryPartner() {
     },
   });
 
-  if (!partner || session !== `delivery-partner:${partner.id}`) {
+  if (!partner || !verifySessionToken(session, "delivery-partner", partner.id)) {
     return null;
   }
 
@@ -31,7 +32,7 @@ export async function getCurrentDeliveryPartner() {
 export async function setDeliveryPartnerSession(partnerId: string) {
   const cookieStore = await cookies();
 
-  cookieStore.set(SESSION_COOKIE, `delivery-partner:${partnerId}`, {
+  cookieStore.set(SESSION_COOKIE, createSessionToken("delivery-partner", partnerId), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",

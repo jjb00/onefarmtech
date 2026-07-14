@@ -43,6 +43,10 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     staffUsers,
     buyerAccountRequests,
     buyerProfileUpdateRequests,
+    failedEmailCount,
+    openPaymentIncidentCount,
+    recentOperationalEventCount,
+    unprocessedContactCount,
   ] = await Promise.all([
     getDbOrders(),
     getDbOrderStats(),
@@ -60,6 +64,10 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
       include: {customer: true},
       take: 20,
     }),
+    prisma.emailDelivery.count({where: {status: {in: ["Failed", "Bounced", "Complained"]}}}),
+    prisma.paymentReconciliationIncident.count({where: {status: {in: ["Open", "Investigating"]}}}),
+    prisma.operationalEvent.count({where: {status: "Open"}}),
+    prisma.contactEnquiry.count({where: {status: "New"}}),
   ]);
 
   const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -121,6 +129,11 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
             </p>
           </div>
         ) : null}
+
+        {(failedEmailCount || openPaymentIncidentCount || recentOperationalEventCount || unprocessedContactCount) ? <section className="rounded-[2rem] border border-[#C95F3D]/20 bg-[#fff8f3] p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#C95F3D]">Operational attention</p><h2 className="mt-2 text-2xl font-black">Production follow-up</h2></div><Link href="/admin/buyer-messages?view=failed" className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white">Open communications</Link></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Failed emails" value={String(failedEmailCount)} href="/admin/buyer-messages?view=failed" /><MetricCard label="Payment incidents" value={String(openPaymentIncidentCount)} href="/admin/buyer-messages?view=reconciliation" /><MetricCard label="Webhook/system failures" value={String(recentOperationalEventCount)} href="/admin/buyer-messages?view=failed" /><MetricCard label="New enquiries" value={String(unprocessedContactCount)} href="/admin/contact-enquiries" /></div>
+        </section> : null}
 
         {openBuyerProfileUpdateRequests.length ? (
           <section className="rounded-[2rem] border border-[#3E7A4C]/20 bg-[#eef8ed] p-5 text-[#102015] shadow-sm">

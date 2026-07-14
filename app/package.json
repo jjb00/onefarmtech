@@ -16,11 +16,13 @@
     "simulate:webhook": "node scripts/simulate-provider-webhook.mjs",
     "simulate:paystack": "node scripts/simulate-provider-webhook.mjs paystack",
     "simulate:flutterwave": "node scripts/simulate-provider-webhook.mjs flutterwave",
-    "simulate:whatsapp": "node scripts/simulate-provider-webhook.mjs whatsapp"
+    "simulate:whatsapp": "node scripts/simulate-provider-webhook.mjs whatsapp",
+    "test:production-foundations": "node --test tests/production-foundations.test.mjs"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
     "@prisma/adapter-pg": "^7.8.0",
+    "@sentry/nextjs": "^10.65.0",
     "better-sqlite3": "^12.11.1",
     "next": "16.2.10",
     "pg": "^8.22.0",

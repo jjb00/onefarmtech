@@ -7,6 +7,9 @@ import {requireBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
+import {requireStaff} from "@/lib/auth";
+import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
+import {emailTemplates} from "@/lib/email/templates";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -57,6 +60,7 @@ async function markSourceDraftConverted(sourceDraftId: string, orderId: string, 
 }
 
 export async function createCustomerAction(formData: FormData) {
+  await requireStaff();
   const name = readText(formData, "name");
   const phone = readText(formData, "phone");
   const email = readText(formData, "email");
@@ -106,6 +110,7 @@ export async function createCustomerAction(formData: FormData) {
 }
 
 export async function createProductAction(formData: FormData) {
+  await requireStaff();
   const name = readText(formData, "name");
   const category = readText(formData, "category", "Fresh produce");
   const unit = readText(formData, "unit", "kg");
@@ -146,6 +151,7 @@ export async function createProductAction(formData: FormData) {
 
 
 export async function seedBaselineProductsAction() {
+  await requireStaff();
   const createdProducts = [];
   const skippedProducts = [];
 
@@ -187,6 +193,7 @@ export async function seedBaselineProductsAction() {
 }
 
 export async function updateProductCatalogueStatusAction(formData: FormData) {
+  await requireStaff();
   const productId = readText(formData, "productId");
   const name = readText(formData, "name");
   const category = readText(formData, "category", "Fresh produce");
@@ -242,6 +249,7 @@ export async function updateProductCatalogueStatusAction(formData: FormData) {
 }
 
 export async function createSupplierAction(formData: FormData) {
+  await requireStaff();
   const name = readText(formData, "name");
   const type = readText(formData, "type", "Farm / supply partner");
   const phone = readText(formData, "phone");
@@ -283,6 +291,7 @@ export async function createSupplierAction(formData: FormData) {
 
 
 export async function createStaffUserAction(formData: FormData) {
+  await requireStaff();
   const name = readText(formData, "name");
   const email = readText(formData, "email");
   const role = readText(formData, "role", "Operations");
@@ -316,6 +325,7 @@ export async function createStaffUserAction(formData: FormData) {
 }
 
 export async function updateCustomerAccountAction(formData: FormData) {
+  await requireStaff();
   const customerId = readText(formData, "customerId");
   const paymentTerms = readText(formData, "paymentTerms", "Full payment before order allocation");
   const creditLimit = readNumber(formData, "creditLimit");
@@ -401,6 +411,7 @@ function makeInviteCode(customerName: string) {
 }
 
 export async function createBuyerContactAction(formData: FormData) {
+  await requireStaff();
   const customerId = readText(formData, "customerId");
   const name = readText(formData, "name");
   const email = readText(formData, "email");
@@ -454,6 +465,7 @@ export async function createBuyerContactAction(formData: FormData) {
 }
 
 export async function createBuyerAccountInviteAction(formData: FormData) {
+  await requireStaff();
   const customerId = readText(formData, "customerId");
   const email = readText(formData, "email");
   const phone = readText(formData, "phone");
@@ -497,6 +509,17 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
     actorRole: "Buyer account manager",
   });
 
+  if (invite.email) {
+    await sendTransactionalEmail({
+      deduplicationKey: `buyer-invite:${invite.id}`,
+      template: "buyer-invite",
+      to: invite.email,
+      content: emailTemplates.buyerInvite(customer.name, invite.inviteCode, getEmailBaseUrl()),
+      relatedType: "BuyerAccountInvite",
+      relatedId: invite.id,
+    });
+  }
+
   revalidatePath("/admin/buyer-access");
   revalidatePath("/admin/buyer-accounts");
   revalidatePath(`/admin/customers/${customerId}`);
@@ -505,6 +528,7 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
 }
 
 export async function updateBuyerAccountInviteStatusAction(formData: FormData) {
+  await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -575,6 +599,11 @@ export async function createContactEnquiryAction(formData: FormData) {
     newValue: enquiry,
   });
 
+  if (enquiry.email) {
+    await sendTransactionalEmail({deduplicationKey: `contact-ack:${enquiry.id}`, template: "contact-acknowledgement", to: enquiry.email, content: emailTemplates.contactAcknowledgement(enquiry.name), relatedType: "ContactEnquiry", relatedId: enquiry.id});
+  }
+  await sendAdminTransactionalEmail({deduplicationKeyPrefix: `contact-admin:${enquiry.id}`, template: "contact-admin", content: emailTemplates.contactAdmin(enquiry.name, enquiry.enquiryType, enquiry.message, getEmailBaseUrl()), relatedType: "ContactEnquiry", relatedId: enquiry.id});
+
   revalidatePath("/contact");
   revalidatePath("/admin/contact-enquiries");
   revalidatePath("/admin/audit-log");
@@ -630,6 +659,11 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
     newValue: request,
   });
 
+  if (request.email) {
+    await sendTransactionalEmail({deduplicationKey: `account-request-ack:${request.id}`, template: "account-request-acknowledgement", to: request.email, content: emailTemplates.accountRequestAcknowledgement(request.contactName), relatedType: "BuyerAccountRequest", relatedId: request.id});
+  }
+  await sendAdminTransactionalEmail({deduplicationKeyPrefix: `account-request-admin:${request.id}`, template: "account-request-admin", content: emailTemplates.accountRequestAdmin(request.contactName, request.organisationName, getEmailBaseUrl()), relatedType: "BuyerAccountRequest", relatedId: request.id});
+
   revalidatePath("/buyer-account-request");
   revalidatePath("/admin/buyer-account-requests");
   revalidatePath("/admin/audit-log");
@@ -676,6 +710,11 @@ export async function createOrderRequestAction(formData: FormData) {
     entityLabel: `${orderRequest.buyerName} · ${orderRequest.buyerType}`,
     newValue: orderRequest,
   });
+
+  if (orderRequest.email) {
+    await sendTransactionalEmail({deduplicationKey: `order-request-ack:${orderRequest.id}`, template: "order-request-acknowledgement", to: orderRequest.email, content: emailTemplates.orderRequestAcknowledgement(orderRequest.buyerName), relatedType: "OrderRequest", relatedId: orderRequest.id});
+  }
+  await sendAdminTransactionalEmail({deduplicationKeyPrefix: `order-request-admin:${orderRequest.id}`, template: "order-request-admin", content: emailTemplates.orderRequestAdmin(orderRequest.buyerName, orderRequest.items, getEmailBaseUrl()), relatedType: "OrderRequest", relatedId: orderRequest.id});
 
   revalidatePath("/order-request");
   revalidatePath("/admin/order-requests");
@@ -835,6 +874,7 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
 }
 
 export async function logPreparedBuyerWhatsAppAction(formData: FormData) {
+  await requireStaff();
   const customerId = readText(formData, "customerId");
   const title = readText(formData, "title", "WhatsApp message prepared");
   const body = readText(formData, "body");
@@ -885,6 +925,7 @@ export async function logPreparedBuyerWhatsAppAction(formData: FormData) {
 }
 
 export async function updateBuyerProfileUpdateRequestStatusAction(formData: FormData) {
+  await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status", "Reviewing");
   const adminNote = readText(formData, "adminNote");
@@ -932,6 +973,7 @@ export async function updateBuyerProfileUpdateRequestStatusAction(formData: Form
 }
 
 export async function updateBuyerAccountRequestStatusAction(formData: FormData) {
+  await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
 
@@ -957,6 +999,7 @@ export async function updateBuyerAccountRequestStatusAction(formData: FormData) 
 }
 
 export async function convertBuyerAccountRequestToCustomerAction(formData: FormData) {
+  await requireStaff();
   const requestId = readText(formData, "requestId");
 
   if (!requestId) {
@@ -1015,6 +1058,7 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
 }
 
 export async function updateOrderRequestStatusAction(formData: FormData) {
+  await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
 
@@ -1040,6 +1084,7 @@ export async function updateOrderRequestStatusAction(formData: FormData) {
 }
 
 export async function updateContactEnquiryStatusAction(formData: FormData) {
+  await requireStaff();
   const enquiryId = readText(formData, "enquiryId");
   const status = readText(formData, "status");
 
@@ -1104,6 +1149,7 @@ export async function markBuyerMessageReadAction(formData: FormData) {
 
 
 export async function createDeliveryPartnerAction(formData: FormData) {
+  await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1139,6 +1185,7 @@ export async function createDeliveryPartnerAction(formData: FormData) {
 }
 
 export async function updateDeliveryPartnerStatusAction(formData: FormData) {
+  await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1163,6 +1210,7 @@ export async function updateDeliveryPartnerStatusAction(formData: FormData) {
 }
 
 export async function createWhatsAppAssistedOrderAction(formData: FormData) {
+  await requireStaff();
   const sourceDraftId = readText(formData, "sourceDraftId");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
@@ -1474,6 +1522,8 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
     select: {
       id: true,
       orderId: true,
+      customerId: true,
+      customer: {select: {name: true, email: true}},
     },
   });
 
@@ -1481,7 +1531,7 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
     redirect("/delivery-partner/jobs?error=not-found");
   }
 
-  await prisma.delivery.update({
+  const updatedDelivery = await prisma.delivery.update({
     where: {id: delivery.id},
     data: {
       status,
@@ -1504,6 +1554,38 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
   await prisma.order.update({
     where: {id: delivery.orderId},
     data: {fulfilmentStatus},
+  });
+
+  if (delivery.customerId) {
+    await prisma.buyerMessage.create({
+      data: {
+        customerId: delivery.customerId,
+        title: `Delivery update: ${status}`,
+        body: proofOfDeliveryNote
+          ? `Your delivery status is now ${status}. Note: ${proofOfDeliveryNote}`
+          : `Your delivery status is now ${status}.`,
+        channel: "Portal",
+        direction: "Outbound",
+        status: "Unread",
+        source: "Delivery partner update",
+        relatedType: "Delivery",
+        relatedId: delivery.id,
+      },
+    });
+
+    if (delivery.customer?.email) {
+      await sendTransactionalEmail({deduplicationKey: `delivery-status:${delivery.id}:${status}`, template: "delivery-status", to: delivery.customer.email, content: emailTemplates.deliveryStatus(delivery.customer.name, status, getEmailBaseUrl()), relatedType: "Delivery", relatedId: delivery.id});
+    }
+  }
+
+  await createAuditLog({
+    action: "Updated delivery status",
+    entityType: "Delivery",
+    entityId: delivery.id,
+    entityLabel: status,
+    newValue: updatedDelivery,
+    actorName: partner.name,
+    actorRole: "Delivery partner",
   });
 
   revalidatePath("/delivery-partner/jobs");
@@ -1614,6 +1696,7 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
   const order = await prisma.order.findUnique({
     where: {id: orderId},
     include: {
+      customer: true,
       paymentRequests: {
         orderBy: {createdAt: "desc"},
         take: 1,
@@ -1636,7 +1719,7 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
 
   const reference = await makePaymentReference(order.code);
 
-  await prisma.paymentRequest.create({
+  const paymentRequest = await prisma.paymentRequest.create({
     data: {
       orderId: order.id,
       customerId: order.customerId || null,
@@ -1675,6 +1758,10 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
         relatedId: reference,
       },
     });
+  }
+
+  if (order.customer?.email) {
+    await sendTransactionalEmail({deduplicationKey: `payment-request:${paymentRequest.id}`, template: "payment-request", to: order.customer.email, content: emailTemplates.paymentRequest(order.customer.name, order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(amount), paymentRequest.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
   }
 
   revalidatePath("/admin/payment-requests");
@@ -1759,6 +1846,10 @@ export async function generatePaymentLinkAction(formData: FormData) {
           metadata: JSON.stringify({provider: checkout.provider, gatewayReference: checkout.gatewayReference}),
         },
       });
+    }
+
+    if (paymentRequest.customer?.email) {
+      await sendTransactionalEmail({deduplicationKey: `payment-link:${paymentRequest.id}`, template: "payment-request", to: paymentRequest.customer.email, content: emailTemplates.paymentRequest(paymentRequest.customer.name, paymentRequest.order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount), checkout.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
     }
 
     revalidatePath("/admin/payment-requests");
@@ -2433,6 +2524,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
     where: {id},
     include: {
       order: true,
+      customer: true,
     },
   });
 
@@ -2472,7 +2564,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
         customerId: paymentRequest.customerId || null,
         paymentId: payment.id,
         buyerName: paymentRequest.order.buyerName,
-        buyerEmail: null,
+        buyerEmail: paymentRequest.customer?.receiptEmail || paymentRequest.customer?.email || null,
         amount: paymentRequest.amount,
         status: "Issued",
         issuedBy: "Local admin",
@@ -2494,6 +2586,10 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
           relatedId: receipt.id,
         },
       });
+    }
+
+    if (receipt.buyerEmail) {
+      await sendTransactionalEmail({deduplicationKey: `receipt:${receipt.id}`, template: "receipt-issued", to: receipt.buyerEmail, content: emailTemplates.receiptIssued(receipt.buyerName, receipt.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(receipt.amount), getEmailBaseUrl()), relatedType: "Receipt", relatedId: receipt.id});
     }
   }
 
@@ -2718,6 +2814,7 @@ export async function linkOrderToCustomerAction(formData: FormData) {
 
 
 export async function updateProductDetailsAction(formData: FormData) {
+  await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {prisma} = await import("@/lib/prisma");
 

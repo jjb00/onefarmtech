@@ -15,6 +15,16 @@ type FlutterwaveCheckoutResult = {
   gatewayReference: string;
 };
 
+export type FlutterwaveVerificationResult = {
+  ok: boolean;
+  status: string;
+  reference: string;
+  amount: number;
+  currency: string;
+  providerId: string;
+  metadata: Record<string, unknown>;
+};
+
 function requireFlutterwaveSecretKey() {
   const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
 
@@ -85,5 +95,28 @@ export async function createFlutterwaveCheckout(
     provider: "Flutterwave",
     paymentUrl: data.link,
     gatewayReference: input.reference,
+  };
+}
+
+export async function verifyFlutterwaveTransaction(transactionId: string): Promise<FlutterwaveVerificationResult> {
+  if (!transactionId) throw new Error("Flutterwave transaction ID is required for verification.");
+  const response = await fetch(`https://api.flutterwave.com/v3/transactions/${encodeURIComponent(transactionId)}/verify`, {
+    headers: {Authorization: `Bearer ${requireFlutterwaveSecretKey()}`},
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.status !== "success" || !payload?.data) {
+    throw new Error(payload?.message || `Flutterwave verification failed with HTTP ${response.status}.`);
+  }
+  const data = payload.data;
+  return {
+    ok: String(data.status || "").toLowerCase() === "successful",
+    status: String(data.status || "unknown"),
+    reference: String(data.tx_ref || ""),
+    amount: Number(data.amount),
+    currency: String(data.currency || "").toUpperCase(),
+    providerId: String(data.id || transactionId),
+    metadata: {processorResponse: data.processor_response || null, chargedAmount: data.charged_amount ?? null},
   };
 }

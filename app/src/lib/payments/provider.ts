@@ -23,11 +23,11 @@ export type PaymentCheckoutResult = {
 };
 
 function getBaseUrl() {
-  return (
-    process.env.APP_BASE_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3002"
-  ).replace(/\/$/, "");
+  const configured = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
+  if (!configured && process.env.NODE_ENV === "production") {
+    throw new Error("APP_BASE_URL is required for production payment links.");
+  }
+  return (configured || "http://localhost:3002").replace(/\/$/, "");
 }
 
 function getCheckoutEmail(input: PaymentCheckoutInput) {

@@ -49,7 +49,12 @@ const partnerTypes = [
   },
 ];
 
-export default function ContactPage() {
+export default async function ContactPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{submitted?: string}>;
+}) {
+  const submitted = (await searchParams)?.submitted === "1";
   return (
     <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
       <PublicImageCollage
@@ -142,6 +147,12 @@ export default function ContactPage() {
             <p className="mt-2 text-sm leading-7 text-[#405348]">
               Tell us what you are interested in and the team will review it.
             </p>
+
+            {submitted ? (
+              <p className="mt-3 rounded-2xl bg-[#3E7A4C]/10 p-4 text-sm font-bold leading-7 text-[#1f7a3f]">
+                Your enquiry has been received. The OneFarmTech team will review it and follow up using the contact details provided.
+              </p>
+            ) : null}
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-bold text-[#102015]">

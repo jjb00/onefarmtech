@@ -14,6 +14,16 @@ type PaystackCheckoutResult = {
   accessCode?: string;
 };
 
+export type PaystackVerificationResult = {
+  ok: boolean;
+  status: string;
+  reference: string;
+  amountMinor: number;
+  currency: string;
+  providerId?: string;
+  metadata: Record<string, unknown>;
+};
+
 function requirePaystackSecretKey() {
   const secretKey = process.env.PAYSTACK_SECRET_KEY;
 
@@ -77,5 +87,27 @@ export async function createPaystackCheckout(
     paymentUrl: data.authorization_url,
     gatewayReference: data.reference,
     accessCode: data.access_code,
+  };
+}
+
+export async function verifyPaystackTransaction(reference: string): Promise<PaystackVerificationResult> {
+  const response = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
+    headers: {Authorization: `Bearer ${requirePaystackSecretKey()}`},
+    signal: AbortSignal.timeout(10_000),
+    cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.status || !payload?.data) {
+    throw new Error(payload?.message || `Paystack verification failed with HTTP ${response.status}.`);
+  }
+  const data = payload.data;
+  return {
+    ok: data.status === "success",
+    status: String(data.status || "unknown"),
+    reference: String(data.reference || ""),
+    amountMinor: Number(data.amount),
+    currency: String(data.currency || "").toUpperCase(),
+    providerId: data.id ? String(data.id) : undefined,
+    metadata: {gatewayResponse: data.gateway_response || null, paidAt: data.paid_at || null},
   };
 }

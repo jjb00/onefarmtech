@@ -4,6 +4,9 @@ import {redirect} from "next/navigation";
 import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
+import {requireStaff} from "@/lib/auth";
+import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
+import {emailTemplates} from "@/lib/email/templates";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -11,6 +14,7 @@ function readText(formData: FormData, key: string, fallback = "") {
 }
 
 export async function updateOrderAction(formData: FormData) {
+  await requireStaff();
   const code = readText(formData, "code");
   const paymentStatus = readText(formData, "paymentStatus", "Unpaid");
   const fulfilmentStatus = readText(formData, "fulfilmentStatus", "New order");
@@ -30,6 +34,8 @@ export async function updateOrderAction(formData: FormData) {
       fulfilmentStatus: true,
       deliveryNote: true,
       adminNote: true,
+      buyerName: true,
+      customer: {select: {email: true}},
     },
   });
 
@@ -60,6 +66,10 @@ export async function updateOrderAction(formData: FormData) {
       adminNote: adminNote || null,
     },
   });
+
+  if (existingOrder.customer?.email && existingOrder.fulfilmentStatus !== fulfilmentStatus) {
+    await sendTransactionalEmail({deduplicationKey: `order-status:${existingOrder.id}:${fulfilmentStatus}`, template: "order-status", to: existingOrder.customer.email, content: emailTemplates.orderStatus(existingOrder.buyerName, existingOrder.code, fulfilmentStatus, getEmailBaseUrl()), relatedType: "Order", relatedId: existingOrder.id});
+  }
 
   revalidatePath("/admin/orders");
   revalidatePath("/admin/audit-log");

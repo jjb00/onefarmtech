@@ -1,5 +1,11 @@
 import {NextRequest, NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
+import {verifyFlutterwaveTransaction} from "@/lib/payments/flutterwave";
+import {createPaymentReconciliationIncident} from "@/lib/payments/reconciliation";
+import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
+import {emailTemplates} from "@/lib/email/templates";
+import {validateFlutterwaveVerification} from "@/lib/payments/verificationRules";
+import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,6 +46,8 @@ export async function POST(request: NextRequest) {
   const status = String(event?.data?.status || event?.status || "").toLowerCase();
   const txRef = String(event?.data?.tx_ref || event?.tx_ref || "").trim();
   const transactionId = String(event?.data?.id || event?.transaction_id || "").trim();
+  const paidAmount = Number(event?.data?.amount ?? event?.amount);
+  const paidCurrency = String(event?.data?.currency || event?.currency || "").toUpperCase();
 
   if (status !== "successful" && status !== "success") {
     return NextResponse.json({ok: true, ignored: status || "non-success"});
@@ -58,11 +66,51 @@ export async function POST(request: NextRequest) {
     },
     include: {
       order: true,
+      customer: true,
     },
   });
 
   if (!paymentRequest) {
+    await createPaymentReconciliationIncident({provider: "Flutterwave", providerReference: transactionId || txRef, reason: "No internal payment request matched the webhook reference.", payloadMetadata: {status, txRef, transactionId}});
     return NextResponse.json({ok: true, ignored: "payment request not found"});
+  }
+
+  if (["Cancelled", "Failed"].includes(paymentRequest.status)) {
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: `Payment request is not eligible for settlement (${paymentRequest.status}).`, payloadMetadata: {status, txRef, transactionId}});
+    return NextResponse.json({ok: true, ignored: "payment request not eligible"});
+  }
+
+  let verification;
+  try {
+    verification = await verifyFlutterwaveTransaction(transactionId);
+  } catch (error) {
+    Sentry.captureException(error, {tags: {component: "flutterwave-verification"}, extra: {internalReference: paymentRequest.reference, transactionId}});
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Provider verification failed or timed out.", payloadMetadata: {status, txRef, transactionId}, verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+    return NextResponse.json({ok: false, error: "Provider verification temporarily unavailable"}, {status: 503, headers: {"Retry-After": "60"}});
+  }
+
+  const verificationConflict = validateFlutterwaveVerification({verification, reference: txRef, amount: paymentRequest.amount, currency: paymentRequest.currency || "NGN"});
+  if (verificationConflict) {
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: `Provider verification conflict: ${verificationConflict}.`, payloadMetadata: {status, txRef, transactionId}, verificationMetadata: verification});
+    return NextResponse.json({ok: true, ignored: "provider verification mismatch"});
+  }
+
+  if (
+    !Number.isFinite(paidAmount) ||
+    paidAmount !== paymentRequest.amount ||
+    paidCurrency !== String(paymentRequest.currency || "NGN").toUpperCase()
+  ) {
+    console.error("Flutterwave webhook amount/currency mismatch", {
+      paymentRequestId: paymentRequest.id,
+      txRef,
+      transactionId,
+      expectedAmount: paymentRequest.amount,
+      paidAmount,
+      expectedCurrency: paymentRequest.currency || "NGN",
+      paidCurrency,
+    });
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Authenticated webhook amount/currency conflicts with the internal payment request.", payloadMetadata: {status, txRef, transactionId, paidAmount, paidCurrency}});
+    return NextResponse.json({ok: true, ignored: "webhook payment details mismatch"});
   }
 
   const existingPayment = await prisma.payment.findFirst({
@@ -125,6 +173,10 @@ export async function POST(request: NextRequest) {
         }),
       },
     });
+
+    if (paymentRequest.customer?.email) {
+      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: payment.id});
+    }
   }
 
   return NextResponse.json({ok: true});

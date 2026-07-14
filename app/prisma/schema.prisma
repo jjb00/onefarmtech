@@ -434,3 +434,87 @@ model Delivery {
   customer             Customer?        @relation(fields: [customerId], references: [id])
   deliveryPartner      DeliveryPartner? @relation(fields: [deliveryPartnerId], references: [id])
 }
+
+model EmailDelivery {
+  id              String    @id @default(cuid())
+  deduplicationKey String   @unique
+  template        String
+  recipient       String
+  subject         String
+  textBody        String
+  htmlBody        String
+  status          String    @default("Pending")
+  provider        String    @default("Resend")
+  providerMessageId String?
+  relatedType     String?
+  relatedId       String?
+  lastError       String?
+  retryCount      Int       @default(0)
+  acceptedAt      DateTime?
+  failedAt        DateTime?
+  lastAttemptAt   DateTime?
+  latestEventId   String?   @unique
+  latestEventType String?
+  latestEventAt   DateTime?
+  eventMetadata   String?
+  nextRetryAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  providerEvents  EmailProviderEvent[]
+
+  @@index([status, createdAt])
+  @@index([relatedType, relatedId])
+}
+
+model EmailProviderEvent {
+  id                String        @id @default(cuid())
+  eventId           String        @unique
+  emailDeliveryId   String?
+  emailDelivery     EmailDelivery? @relation(fields: [emailDeliveryId], references: [id], onDelete: SetNull)
+  providerMessageId String
+  eventType         String
+  eventAt           DateTime
+  matched           Boolean       @default(false)
+  metadata          String?
+  createdAt         DateTime      @default(now())
+
+  @@index([providerMessageId, eventAt])
+  @@index([emailDeliveryId, eventAt])
+}
+
+model PaymentReconciliationIncident {
+  id                   String   @id @default(cuid())
+  provider             String
+  internalReference    String?
+  providerReference    String?
+  reason               String
+  payloadMetadata      String?
+  verificationMetadata String?
+  status               String   @default("Open")
+  resolutionNote       String?
+  resolvedByName       String?
+  resolvedByEmail      String?
+  resolvedAt           DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([provider, internalReference])
+  @@index([status, createdAt])
+}
+
+model OperationalEvent {
+  id          String   @id @default(cuid())
+  category    String
+  severity    String   @default("Error")
+  summary     String
+  route       String?
+  relatedType String?
+  relatedId   String?
+  metadata    String?
+  status      String   @default("Open")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status, createdAt])
+  @@index([category, createdAt])
+}
