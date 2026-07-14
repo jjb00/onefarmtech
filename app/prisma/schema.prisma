@@ -64,28 +64,28 @@ model Supplier {
 }
 
 model Order {
-  id               String      @id @default(cuid())
-  code             String      @unique
+  id               String           @id @default(cuid())
+  code             String           @unique
   customerId       String?
-  customer         Customer?   @relation(fields: [customerId], references: [id])
+  customer         Customer?        @relation(fields: [customerId], references: [id])
   buyerName        String
   phone            String
   buyerType        String
   orderType        String
-  paymentStatus    String      @default("Unpaid")
-  fulfilmentStatus String      @default("New order")
+  paymentStatus    String           @default("Unpaid")
+  fulfilmentStatus String           @default("New order")
   deliveryMethod   String
   deliveryNote     String?
-  source           String      @default("Admin")
+  source           String           @default("Admin")
   sourcePhone      String?
   buyerContactId   String?
-  subtotal         Int         @default(0)
-  deliveryFee      Int         @default(0)
-  serviceFee       Int         @default(0)
-  discountAmount   Int         @default(0)
-  totalAmount      Int         @default(0)
+  subtotal         Int              @default(0)
+  deliveryFee      Int              @default(0)
+  serviceFee       Int              @default(0)
+  discountAmount   Int              @default(0)
+  totalAmount      Int              @default(0)
   paymentReference String?
-  estimatedTotal   Int         @default(0)
+  estimatedTotal   Int              @default(0)
   adminNote        String?
   items            OrderItem[]
   payments         Payment[]
@@ -93,8 +93,8 @@ model Order {
   receipts         Receipt[]
   paymentRequests  PaymentRequest[]
   delivery         Delivery?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model OrderItem {
@@ -368,7 +368,6 @@ model OrderRequest {
   updatedAt          DateTime @updatedAt
 }
 
-
 model DeliveryPartner {
   id           String     @id @default(cuid())
   name         String
@@ -385,7 +384,6 @@ model DeliveryPartner {
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 }
-
 
 model PaymentRequest {
   id               String    @id @default(cuid())
@@ -406,97 +404,96 @@ model PaymentRequest {
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
-  order            Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  customer         Customer? @relation(fields: [customerId], references: [id])
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer Customer? @relation(fields: [customerId], references: [id])
 }
 
-
 model Delivery {
-  id                   String           @id @default(cuid())
-  orderId              String           @unique
+  id                   String    @id @default(cuid())
+  orderId              String    @unique
   customerId           String?
   deliveryPartnerId    String?
-  deliveryMethod       String           @default("OneFarmTech arranged")
+  deliveryMethod       String    @default("OneFarmTech arranged")
   deliveryPartnerName  String?
   deliveryPartnerPhone String?
-  deliveryFee          Int              @default(0)
+  deliveryFee          Int       @default(0)
   deliveryAddress      String?
   deliveryArea         String?
   preferredDate        DateTime?
-  status               String           @default("Pending")
+  status               String    @default("Pending")
   trackingReference    String?
   proofOfDeliveryNote  String?
   deliveredAt          DateTime?
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
-  order                Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  customer             Customer?        @relation(fields: [customerId], references: [id])
-  deliveryPartner      DeliveryPartner? @relation(fields: [deliveryPartnerId], references: [id])
+  order           Order            @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  customer        Customer?        @relation(fields: [customerId], references: [id])
+  deliveryPartner DeliveryPartner? @relation(fields: [deliveryPartnerId], references: [id])
 }
 
 model EmailDelivery {
-  id              String    @id @default(cuid())
-  deduplicationKey String   @unique
-  template        String
-  recipient       String
-  subject         String
-  textBody        String
-  htmlBody        String
-  status          String    @default("Pending")
-  provider        String    @default("Resend")
+  id                String               @id @default(cuid())
+  deduplicationKey  String               @unique
+  template          String
+  recipient         String
+  subject           String
+  textBody          String
+  htmlBody          String
+  status            String               @default("Pending")
+  provider          String               @default("Resend")
   providerMessageId String?
-  relatedType     String?
-  relatedId       String?
-  lastError       String?
-  retryCount      Int       @default(0)
-  acceptedAt      DateTime?
-  failedAt        DateTime?
-  lastAttemptAt   DateTime?
-  latestEventId   String?   @unique
-  latestEventType String?
-  latestEventAt   DateTime?
-  eventMetadata   String?
-  nextRetryAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  providerEvents  EmailProviderEvent[]
+  relatedType       String?
+  relatedId         String?
+  lastError         String?
+  retryCount        Int                  @default(0)
+  acceptedAt        DateTime?
+  failedAt          DateTime?
+  lastAttemptAt     DateTime?
+  latestEventId     String?              @unique
+  latestEventType   String?
+  latestEventAt     DateTime?
+  eventMetadata     String?
+  nextRetryAt       DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  providerEvents    EmailProviderEvent[]
 
   @@index([status, createdAt])
   @@index([relatedType, relatedId])
 }
 
 model EmailProviderEvent {
-  id                String        @id @default(cuid())
-  eventId           String        @unique
+  id                String         @id @default(cuid())
+  eventId           String         @unique
   emailDeliveryId   String?
   emailDelivery     EmailDelivery? @relation(fields: [emailDeliveryId], references: [id], onDelete: SetNull)
   providerMessageId String
   eventType         String
   eventAt           DateTime
-  matched           Boolean       @default(false)
+  matched           Boolean        @default(false)
   metadata          String?
-  createdAt         DateTime      @default(now())
+  createdAt         DateTime       @default(now())
 
   @@index([providerMessageId, eventAt])
   @@index([emailDeliveryId, eventAt])
 }
 
 model PaymentReconciliationIncident {
-  id                   String   @id @default(cuid())
+  id                   String    @id @default(cuid())
   provider             String
   internalReference    String?
   providerReference    String?
   reason               String
   payloadMetadata      String?
   verificationMetadata String?
-  status               String   @default("Open")
+  status               String    @default("Open")
   resolutionNote       String?
   resolvedByName       String?
   resolvedByEmail      String?
   resolvedAt           DateTime?
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
 
   @@index([provider, internalReference])
   @@index([status, createdAt])

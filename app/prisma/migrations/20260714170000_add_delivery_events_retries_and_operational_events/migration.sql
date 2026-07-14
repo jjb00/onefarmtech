@@ -7,6 +7,10 @@ ADD COLUMN "latestEventAt" TIMESTAMP(3),
 ADD COLUMN "eventMetadata" TEXT,
 ADD COLUMN "nextRetryAt" TIMESTAMP(3);
 
+ALTER TABLE "EmailDelivery"
+ALTER COLUMN "textBody" DROP DEFAULT,
+ALTER COLUMN "htmlBody" DROP DEFAULT;
+
 ALTER TABLE "PaymentReconciliationIncident"
 ADD COLUMN "resolutionNote" TEXT,
 ADD COLUMN "resolvedByName" TEXT,
