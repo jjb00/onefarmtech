@@ -47,7 +47,7 @@ export default function PublicFooter() {
             <div>
               <p>
                 ONEFARM-TECH LTD · RC - 1714625 · SUITE 7, Cherry Hill Plaza,
-                FCT, Abuja 900108, Federal Capital Territory, Nigeria
+                FCT, Abuja 900108, Nigeria
               </p>
               <p>Built for buyers, growers, suppliers and food operators.</p>
             </div>
