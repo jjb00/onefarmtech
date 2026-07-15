@@ -22,7 +22,7 @@ export async function getCurrentStaffActor(): Promise<CurrentStaffActor> {
   const isAuthenticated = verifySessionToken(
     cookieStore.get(STAFF_SESSION_COOKIE)?.value,
     "staff",
-    email,
+    "staff",
   );
 
   const roleValue = cookieStore.get(STAFF_ROLE_COOKIE)?.value || "Admin";

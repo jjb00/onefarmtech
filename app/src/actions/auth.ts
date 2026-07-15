@@ -77,8 +77,11 @@ export async function loginAction(formData: FormData) {
     maxAge: 60 * 60 * 8,
   };
 
-  const sessionSubject = staffEmail || "staff";
-  cookieStore.set(STAFF_SESSION_COOKIE, createSessionToken("staff", sessionSubject), cookieOptions);
+  cookieStore.set(
+    STAFF_SESSION_COOKIE,
+    createSessionToken("staff", "staff"),
+    cookieOptions,
+  );
   cookieStore.set(STAFF_NAME_COOKIE, staffName, cookieOptions);
   cookieStore.set(STAFF_ROLE_COOKIE, staffRole, cookieOptions);
 
