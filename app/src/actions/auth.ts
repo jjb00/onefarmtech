@@ -57,7 +57,7 @@ export async function loginAction(formData: FormData) {
   const staffEmail = readText(formData, "staffEmail");
   const roleInput = readText(formData, "staffRole", "Admin");
   const staffRole = isStaffRole(roleInput) ? roleInput : "Admin";
-  const expectedPassword = process.env.ADMIN_PASSWORD;
+  const expectedPassword = process.env.ADMIN_PASSWORD?.trim();
 
   if (!expectedPassword) {
     redirect("/staff-login?error=configuration");
