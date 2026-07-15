@@ -80,8 +80,22 @@ test("WhatsApp routes retain signature, known\/unknown routing, duplicate and ou
   assert.match(inbound, /duplicate: true/);
   assert.match(inbound, /contactEnquiry\.create/);
   assert.match(inbound, /buyerMessage\.create/);
+  assert.match(inbound, /value\?\.statuses/);
+  assert.match(inbound, /applyDeliveryStatus/);
+  assert.match(inbound, /recordOperationalEvent/);
+  assert.match(inbound, /status: 503/);
+  assert.doesNotMatch(inbound, /raw: input\.raw/);
   assert.match(outbound, /WHATSAPP_CLOUD_ACCESS_TOKEN is not configured/);
   assert.match(outbound, /WhatsApp send failed/);
+});
+
+test("WhatsApp and contact enquiry destinations remain visible in admin navigation", () => {
+  const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
+  const enquiries = fs.readFileSync(new URL("../src/app/admin/contact-enquiries/page.tsx", import.meta.url), "utf8");
+  assert.match(navigation, /href: "\/admin\/whatsapp-inbox"/);
+  assert.match(navigation, /href: "\/admin\/contact-enquiries"/);
+  assert.match(enquiries, />Source</);
+  assert.match(enquiries, /\{source\}/);
 });
 
 test("payment webhooks retain signature checks, reconciliation creation and idempotent settlement", () => {

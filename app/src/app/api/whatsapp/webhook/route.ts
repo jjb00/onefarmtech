@@ -5,6 +5,7 @@ import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
 import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
+import {recordOperationalEvent} from "@/lib/operationalEvents";
 import {
   buildWhatsAppProductListMessage,
   isProductAvailableForWhatsApp,
@@ -525,7 +526,7 @@ async function logInboundMessage(input: {
       if (existing) return {matched: true, customerId: customer.id, duplicate: true};
     }
 
-    await prisma.buyerMessage.create({
+    const record = await prisma.buyerMessage.create({
       data: {
         customerId: customer.id,
         title: `Inbound WhatsApp from ${input.profileName || customer.name}`,
@@ -546,12 +547,12 @@ async function logInboundMessage(input: {
           intent: input.parsedIntent?.intent || "general",
           confidence: input.parsedIntent?.confidence || "Low",
           matchedIntentKeywords: input.parsedIntent?.matchedIntentKeywords || [],
-          raw: input.raw,
+          messageType: (input.raw as {type?: string} | null)?.type || "unknown",
         }),
       },
     });
 
-    return {matched: true, customerId: customer.id, duplicate: false};
+    return {matched: true, customerId: customer.id, duplicate: false, recordId: record.id, recordType: "BuyerMessage"};
   }
 
   if (input.messageId) {
@@ -566,7 +567,7 @@ async function logInboundMessage(input: {
     if (existing) return {matched: false, customerId: null, duplicate: true};
   }
 
-  await prisma.contactEnquiry.create({
+  const record = await prisma.contactEnquiry.create({
     data: {
       name: input.profileName || input.from,
       organisation: null,
@@ -587,7 +588,45 @@ async function logInboundMessage(input: {
     },
   });
 
-  return {matched: false, customerId: null, duplicate: false};
+  return {matched: false, customerId: null, duplicate: false, recordId: record.id, recordType: "ContactEnquiry"};
+}
+
+function deliveryStatus(status: string) {
+  return ({sent: "Sent", delivered: "Delivered", read: "Read", failed: "Failed"} as Record<string, string>)[status] || null;
+}
+
+async function applyDeliveryStatus(statusEvent: any) {
+  const providerMessageId = String(statusEvent?.id || "").trim();
+  const status = deliveryStatus(String(statusEvent?.status || "").toLowerCase());
+  if (!providerMessageId || !status) return false;
+
+  const message = await prisma.buyerMessage.findFirst({
+    where: {channel: "WhatsApp", direction: "Outbound", metadata: {contains: providerMessageId}},
+    select: {id: true, metadata: true},
+  });
+
+  if (!message) {
+    await recordOperationalEvent({
+      category: "WhatsApp webhook",
+      severity: "Warning",
+      summary: "WhatsApp delivery status did not match an outbound message.",
+      route: "/api/whatsapp/webhook",
+      metadata: {providerMessageId, status},
+    });
+    return false;
+  }
+
+  let metadata: Record<string, unknown> = {};
+  try { metadata = JSON.parse(message.metadata || "{}"); } catch {}
+  await prisma.buyerMessage.update({
+    where: {id: message.id},
+    data: {
+      status,
+      readAt: status === "Read" ? new Date() : undefined,
+      metadata: JSON.stringify({...metadata, latestProviderStatus: status, latestProviderStatusAt: statusEvent?.timestamp || null}),
+    },
+  });
+  return true;
 }
 
 export async function GET(request: NextRequest) {
@@ -626,11 +665,17 @@ export async function POST(request: NextRequest) {
 
   const changes = payload?.entry?.flatMap((entry: any) => entry?.changes || []) || [];
   let logged = 0;
+  let statusesUpdated = 0;
 
+  try {
   for (const change of changes) {
     const value = change?.value || {};
     const contacts = value?.contacts || [];
     const messages = value?.messages || [];
+
+    for (const statusEvent of value?.statuses || []) {
+      if (await applyDeliveryStatus(statusEvent)) statusesUpdated += 1;
+    }
 
     for (const message of messages) {
       const from = String(message?.from || "").trim();
@@ -659,6 +704,18 @@ export async function POST(request: NextRequest) {
       });
 
       if (inboundLog.duplicate) continue;
+
+      await recordOperationalEvent({
+        category: "WhatsApp inbound",
+        severity: "Info",
+        summary: inboundLog.matched
+          ? "Inbound WhatsApp message stored for a known buyer."
+          : "Inbound WhatsApp message stored as an unmatched contact enquiry.",
+        route: "/api/whatsapp/webhook",
+        relatedType: inboundLog.recordType,
+        relatedId: inboundLog.recordId,
+        metadata: {messageId, messageType: message?.type || "unknown", matched: inboundLog.matched},
+      });
 
       await createDraftOrderRequestFromInboundWhatsApp({
         from,
@@ -706,5 +763,15 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ok: true, logged});
+  } catch (error) {
+    await recordOperationalEvent({
+      category: "WhatsApp webhook",
+      summary: "WhatsApp webhook processing failed after signature verification.",
+      route: "/api/whatsapp/webhook",
+      metadata: {error: error instanceof Error ? error.message : "unknown"},
+    });
+    return NextResponse.json({ok: false, error: "Webhook processing failed"}, {status: 503, headers: {"Retry-After": "30"}});
+  }
+
+  return NextResponse.json({ok: true, logged, statusesUpdated});
 }

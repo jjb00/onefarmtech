@@ -38,7 +38,7 @@ const groups = [
     title: "Meta WhatsApp Cloud API",
     description: "Outbound WhatsApp messages and inbound webhook.",
     webhook: "/api/whatsapp/webhook",
-    keys: ["WHATSAPP_CLOUD_ACCESS_TOKEN", "WHATSAPP_CLOUD_PHONE_NUMBER_ID", "WHATSAPP_WEBHOOK_VERIFY_TOKEN", "WHATSAPP_APP_SECRET"],
+    keys: ["WHATSAPP_CLOUD_ACCESS_TOKEN", "WHATSAPP_CLOUD_PHONE_NUMBER_ID", "WHATSAPP_CLOUD_BUSINESS_ACCOUNT_ID", "WHATSAPP_WEBHOOK_VERIFY_TOKEN", "WHATSAPP_APP_SECRET"],
   },
   {
     title: "App URLs",

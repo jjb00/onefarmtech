@@ -68,6 +68,7 @@ export default async function ContactEnquiriesPage() {
                   <th className="px-4 py-3">Contact</th>
                   <th className="px-4 py-3">Organisation</th>
                   <th className="px-4 py-3">Type</th>
+                  <th className="px-4 py-3">Source</th>
                   <th className="px-4 py-3">Message</th>
                   <th className="px-4 py-3">Status</th>
                 </tr>
@@ -103,6 +104,12 @@ export default async function ContactEnquiriesPage() {
                         </span>
                       </td>
 
+                      <td className="px-4 py-4">
+                        <span className="rounded-full bg-[#e9f1ff] px-3 py-1 text-xs font-bold text-[#24518a]">
+                          {source}
+                        </span>
+                      </td>
+
                       <td className="max-w-md px-4 py-4 leading-7 text-[#405348]">
                         {safeText(enquiry.message, "No message")}
                       </td>
@@ -118,7 +125,7 @@ export default async function ContactEnquiriesPage() {
 
                 {!enquiries.length ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={7}>
                       No contact enquiries yet.
                     </td>
                   </tr>

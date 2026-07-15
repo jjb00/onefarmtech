@@ -59,6 +59,18 @@ export const adminNavigationGroups = [
         description: "Buyer enquiries, message inbox, templates and communication follow-up.",
         priority: true,
       },
+      {
+        title: "WhatsApp inbox",
+        href: "/admin/whatsapp-inbox",
+        description: "Inbound WhatsApp messages from matched and unrecognised senders.",
+        priority: true,
+      },
+      {
+        title: "Contact enquiries",
+        href: "/admin/contact-enquiries",
+        description: "Public contact submissions and unmatched WhatsApp senders.",
+        priority: true,
+      },
     ],
   },
   {
