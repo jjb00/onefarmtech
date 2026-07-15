@@ -10,6 +10,7 @@ import {createAuditLog} from "@/lib/auditLog";
 import {requireStaff} from "@/lib/auth";
 import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
+import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -999,62 +1000,25 @@ export async function updateBuyerAccountRequestStatusAction(formData: FormData) 
 }
 
 export async function convertBuyerAccountRequestToCustomerAction(formData: FormData) {
-  await requireStaff();
+  const staff = await requireStaff();
   const requestId = readText(formData, "requestId");
 
   if (!requestId) {
-    throw new Error("Request ID is required.");
+    redirect("/admin/buyer-account-requests?conversionError=missing-request-id");
   }
 
-  const request = await prisma.buyerAccountRequest.findUnique({
-    where: {id: requestId},
-  });
-
-  if (!request) {
-    throw new Error("Buyer account request not found.");
+  try {
+    await convertBuyerAccountRequestIntegrity({db: prisma, requestId, actor: staff});
+  } catch (error) {
+    const code = error instanceof BuyerAccountConversionError ? error.code : "conversion-failed";
+    redirect(`/admin/buyer-account-requests?conversionError=${encodeURIComponent(code)}`);
   }
-
-  const customer = await prisma.customer.create({
-    data: {
-      name: request.organisationName || request.contactName,
-      buyerType: request.buyerType,
-      phone: request.phone,
-      email: request.email || null,
-      location: request.location || null,
-      accountStatus: "Approved - manual setup",
-      accountLoginReady: false,
-      creditLimit: 0,
-      outstandingBalance: 0,
-      paymentTerms: request.interestedInCredit
-        ? "Payment terms interest noted - partner review required"
-        : "Pay on order / manual terms",
-      receiptEmail: request.email || null,
-    },
-  });
-
-  const updated = await prisma.buyerAccountRequest.update({
-    where: {id: request.id},
-    data: {
-      status: "Converted to customer",
-      adminNote: `Converted to customer record: ${customer.id}`,
-    },
-  });
-
-  await createAuditLog({
-    action: "Converted buyer account request to customer",
-    entityType: "BuyerAccountRequest",
-    entityId: updated.id,
-    entityLabel: `${updated.buyerType} · ${updated.contactName}`,
-    newValue: {
-      request: updated,
-      customer,
-    },
-  });
 
   revalidatePath("/admin/buyer-account-requests");
   revalidatePath("/admin/buyer-accounts");
   revalidatePath("/admin/customers");
   revalidatePath("/admin/audit-log");
+  redirect("/admin/buyer-account-requests?conversion=linked");
 }
 
 export async function updateOrderRequestStatusAction(formData: FormData) {

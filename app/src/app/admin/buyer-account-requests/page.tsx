@@ -29,6 +29,7 @@ async function loadRequests(where: object, page: number, pageSize: number) {
 export default async function BuyerAccountRequestsPage({searchParams}: PageProps) {
   const raw = await searchParams;
   const q = value(raw?.q); const status = value(raw?.status); const source = value(raw?.source); const buyerType = value(raw?.type); const conversion = value(raw?.conversion);
+  const conversionError = value(raw?.conversionError);
   const pageSize = parseAdminPageSize(value(raw?.pageSize)); const page = parseAdminPage(value(raw?.page));
   const params = {q, status, source, type: buyerType, conversion, pageSize};
   const where = {
@@ -52,6 +53,7 @@ export default async function BuyerAccountRequestsPage({searchParams}: PageProps
 
   return <AdminPageShell title="Account requests" description="Review recurring-buyer applications before customer setup and access management." compactHeader>
     <div className="grid gap-5">
+      {conversionError ? <div role="alert" className="rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{conversionErrorMessage(conversionError)}</div> : null}
       <nav aria-label="Related buyer workflows" className="flex flex-wrap gap-2"><WorkflowLink href="/admin/launch-inbox" label="Open Launch inbox" /><WorkflowLink href="/admin/customers" label="View all buyers" /><WorkflowLink href="/admin/buyer-access" label="Manage buyer access" /></nav>
       <AdminListToolbar search={q} searchLabel="Search applications" searchPlaceholder="Applicant, organisation, phone, registration or notes" pageSize={pageSize} resetHref={PATH} filters={[
         {name: "status", label: "Status", value: status, options: statuses.map(({status: item}) => ({value: item, label: item}))},
@@ -70,6 +72,7 @@ export default async function BuyerAccountRequestsPage({searchParams}: PageProps
 }
 
 function WorkflowLink({href, label}: {href: string; label: string}) { return <Link href={href} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm font-black text-[#405348] focus:outline-none focus:ring-2 focus:ring-[#1f7a3f]">{label}</Link>; }
+function conversionErrorMessage(code: string) { return ({"request-not-found": "The buyer account request was not found.", "conversion-not-allowed": "Rejected or closed applications cannot be converted.", "malformed-conversion-evidence": "This converted application has malformed customer evidence and needs review.", "converted-customer-missing": "The customer recorded for this converted application no longer exists.", "database-conflict": "The application changed during conversion. Please try again.", "missing-request-id": "A buyer account request is required.", "conversion-failed": "The application could not be converted. Please try again or review the audit log."} as Record<string, string>)[code] || "The application could not be converted."; }
 function ConversionState({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) { const id = customerIdFromRequest(request); if (request.status !== CONVERTED) return <span className="text-xs font-bold text-[#587063]">Not converted</span>; if (id && customer) return <Link href={`/admin/customers/${customer.id}`} className="text-xs font-black text-[#1f7a3f] underline underline-offset-4">Open customer {customer.name}</Link>; if (id) return <span className="text-xs font-bold text-[#7a4a00]">Customer link recorded; customer unavailable</span>; return <span className="text-xs font-bold text-[#7a4a00]">Marked converted; no customer link stored</span>; }
 
 function RequestRow({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) {
