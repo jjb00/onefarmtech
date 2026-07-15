@@ -370,3 +370,13 @@ Rows use concise message previews with responsive mobile cards. An accessible Ma
 No schema index was added. Future scale work should consider indexes for `createdAt`, `status`, `source`, `enquiryType`, and the identity fields used frequently in search. Text `contains` search may ultimately require PostgreSQL trigram or full-text indexing after production query analysis.
 
 Validation and the remaining documented lint baseline are recorded in the Phase 2 handoff. Known limitations are offset cost at very high page numbers and dynamic filter-value queries on every request. The recommended next rollout page is Order requests because it has the same capped intake-queue shape and existing status workflow.
+
+## Phase 2B implementation status
+
+Order requests now reuses the Phase 2 list toolbar, result count, pagination, empty state and URL-parameter utilities. It performs database-level search, exact status/source/buyer-type/conversion filtering, stable offset pagination and accurate counts with page sizes of 25, 50 or 100. Desktop rows and mobile cards retain requester identity, status and a review action while long item/message content stays inside an accessible disclosure.
+
+The queue reuses the existing authorised and audited status action. Only WhatsApp inbound drafts receive the existing assisted-order conversion link. Converted drafts expose the recorded order link when `adminNote` contains `convertedOrderId`; records merely marked converted without that evidence explicitly report that no reliable link is stored and do not offer repeat conversion.
+
+The shared toolbar was extended only with generic search-label and placeholder properties, preserving Contact enquiries behavior. No schema or index changed. Future indexes should be evaluated for `createdAt`, `status`, `source`, buyer type/conversion queries, phone/email identity lookup and text search. Known limitations remain offset cost, per-request distinct filter queries, and the lack of a reliably linked conversion flow for public order requests.
+
+Validation is recorded in the Phase 2B handoff. The recommended next work is not Phase 3 consolidation: first apply the list foundation to Buyer account requests or address the documented TypeScript/lint baseline in a separately scoped quality phase.
