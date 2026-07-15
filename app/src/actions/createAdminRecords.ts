@@ -579,6 +579,38 @@ export async function createContactEnquiryAction(formData: FormData) {
     throw new Error("Please provide an email or phone number.");
   }
 
+  if (enquiryType === "Buyer account request") {
+    const request = await prisma.buyerAccountRequest.create({
+      data: {
+        contactName: name,
+        organisationName: organisation || null,
+        phone,
+        email: email || null,
+        message,
+        status: "New",
+        source: "Contact page",
+      },
+    });
+
+    await createAuditLog({
+      action: "Created buyer account request",
+      entityType: "BuyerAccountRequest",
+      entityId: request.id,
+      entityLabel: `${request.buyerType} · ${request.contactName}`,
+      newValue: request,
+    });
+
+    if (request.email) {
+      await sendTransactionalEmail({deduplicationKey: `account-request-ack:${request.id}`, template: "account-request-acknowledgement", to: request.email, content: emailTemplates.accountRequestAcknowledgement(request.contactName), relatedType: "BuyerAccountRequest", relatedId: request.id});
+    }
+    await sendAdminTransactionalEmail({deduplicationKeyPrefix: `account-request-admin:${request.id}`, template: "account-request-admin", content: emailTemplates.accountRequestAdmin(request.contactName, request.organisationName, getEmailBaseUrl()), relatedType: "BuyerAccountRequest", relatedId: request.id});
+
+    revalidatePath("/contact");
+    revalidatePath("/admin/buyer-account-requests");
+    revalidatePath("/admin/audit-log");
+    redirect("/contact?submitted=1");
+  }
+
   const enquiry = await prisma.contactEnquiry.create({
     data: {
       name,
