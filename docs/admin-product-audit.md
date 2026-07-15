@@ -360,3 +360,13 @@ All legacy routes identified by the audit remain in place without redirects. Rel
 A compact reusable page header was introduced and piloted only on Orders, Deliveries and Customers. Their queries, filters, tables, server actions and operational behavior were not changed.
 
 Deferred issues include list pagination, unified communications queries, complaint/Issues completeness, buyer-list consolidation, finance state authority, and broader page-header migration. The recommended next phase is the shared list-foundation pilot on Contact enquiries, adding server-driven pagination, result counts, search and a reusable empty state without changing its record workflow.
+
+## Phase 2 implementation status
+
+The Contact enquiries pilot now uses reusable, record-agnostic list toolbar, result-count, pagination and empty-state components. URL parameters drive database-level search across contact identity and message fields, exact status/type/source filters, stable offset pagination, and page sizes of 25, 50 or 100. Invalid and out-of-range pages resolve safely, and active filters are retained by pagination links.
+
+Rows use concise message previews with responsive mobile cards. An accessible Manage disclosure reveals the complete message and reuses the existing authorised, audited `updateContactEnquiryStatusAction`; no mutation logic was duplicated or moved.
+
+No schema index was added. Future scale work should consider indexes for `createdAt`, `status`, `source`, `enquiryType`, and the identity fields used frequently in search. Text `contains` search may ultimately require PostgreSQL trigram or full-text indexing after production query analysis.
+
+Validation and the remaining documented lint baseline are recorded in the Phase 2 handoff. Known limitations are offset cost at very high page numbers and dynamic filter-value queries on every request. The recommended next rollout page is Order requests because it has the same capped intake-queue shape and existing status workflow.
