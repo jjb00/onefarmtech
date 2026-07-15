@@ -380,3 +380,13 @@ The queue reuses the existing authorised and audited status action. Only WhatsAp
 The shared toolbar was extended only with generic search-label and placeholder properties, preserving Contact enquiries behavior. No schema or index changed. Future indexes should be evaluated for `createdAt`, `status`, `source`, buyer type/conversion queries, phone/email identity lookup and text search. Known limitations remain offset cost, per-request distinct filter queries, and the lack of a reliably linked conversion flow for public order requests.
 
 Validation is recorded in the Phase 2B handoff. The recommended next work is not Phase 3 consolidation: first apply the list foundation to Buyer account requests or address the documented TypeScript/lint baseline in a separately scoped quality phase.
+
+## Phase 2C implementation status
+
+Buyer account requests now reuse the shared list toolbar, result count, pagination, empty state and parameter utilities. Database-level search covers applicant, organisation, contact, location, registration, produce needs, message and conversion-note fields. Exact status, buyer type, source and conversion-evidence filters combine with stable offset pagination and page sizes of 25, 50 or 100.
+
+Applications use compact desktop rows and mobile cards with an accessible review disclosure containing the existing application fields. Status and conversion forms reuse the authorised server actions. The UI suppresses repeat conversion after `Converted to customer`, parses the existing `Converted to customer record: <id>` evidence, verifies the linked customer on the current page, and links to customer detail when available. Converted records without reliable evidence are explicitly labelled. Customer conversion and buyer access remain separate stages.
+
+No shared component change was needed. No schema or index changed. The existing conversion action always creates a Customer and does not itself check request status or match existing customers, so UI suppression is not a concurrency/idempotency guarantee; hardening that action requires a separately approved business-logic phase. Future query work should assess indexes for creation time, status, buyer type, source, applicant email/phone and a first-class converted-customer relationship rather than text evidence.
+
+Validation is recorded in the Phase 2C handoff. The recommended next phase is a scoped quality and conversion-idempotency review before broader Buyers workspace consolidation.

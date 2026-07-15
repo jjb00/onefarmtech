@@ -1,278 +1,88 @@
+import Link from "next/link";
+import {redirect} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
-import {
-  AdminCompactMetric,
-  AdminStatusPill,
-  AdminViewBar,
-  adminToneFromStatus,
-} from "@/components/admin/AdminViewControls";
+import {AdminEmptyState, AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
+import {AdminStatusPill, adminToneFromStatus} from "@/components/admin/AdminViewControls";
+import {convertBuyerAccountRequestToCustomerAction, updateBuyerAccountRequestStatusAction} from "@/actions/createAdminRecords";
 import {prisma} from "@/lib/prisma";
-import {
-  convertBuyerAccountRequestToCustomerAction,
-  updateBuyerAccountRequestStatusAction,
-} from "@/actions/createAdminRecords";
+import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type PageProps = {
-  searchParams?: Promise<{
-    status?: string;
-    date?: string;
-    sort?: string;
-  }>;
-};
+type PageProps = {searchParams?: Promise<Record<string, string | string[] | undefined>>};
+type RequestRow = Awaited<ReturnType<typeof loadRequests>>[number];
+const PATH = "/admin/buyer-account-requests";
+const CONVERTED = "Converted to customer";
+const CUSTOMER_NOTE_PREFIX = "Converted to customer record: ";
+const reviewStatuses = ["Reviewing", "Rejected", "Closed"];
 
-function hrefFor(params: Record<string, string | undefined>) {
-  const search = new URLSearchParams();
+function value(input: string | string[] | undefined) { return String(Array.isArray(input) ? input[0] : input || "").trim(); }
+function formatDate(input: Date) { return new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeStyle: "short"}).format(input); }
+function preview(input: string | null, length = 110) { const text = String(input || "").trim(); return text.length > length ? `${text.slice(0, length - 3).trimEnd()}…` : text; }
+function customerIdFromRequest(request: {status: string; adminNote: string | null}) { if (request.status !== CONVERTED || !request.adminNote?.startsWith(CUSTOMER_NOTE_PREFIX)) return ""; return request.adminNote.slice(CUSTOMER_NOTE_PREFIX.length).trim(); }
 
-  for (const [key, value] of Object.entries(params)) {
-    if (value) search.set(key, value);
-  }
-
-  const query = search.toString();
-  return query ? `/admin/buyer-account-requests?${query}` : "/admin/buyer-account-requests";
-}
-
-function inDateRange(value: Date, range: string) {
-  if (range === "all") return true;
-
-  const now = new Date();
-  const date = new Date(value);
-
-  if (range === "today") return date.toDateString() === now.toDateString();
-
-  if (range === "week") {
-    const weekAgo = new Date(now);
-    weekAgo.setDate(now.getDate() - 7);
-    return date >= weekAgo;
-  }
-
-  if (range === "month") return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
-  if (range === "year") return date.getFullYear() === now.getFullYear();
-
-  return true;
+async function loadRequests(where: object, page: number, pageSize: number) {
+  return prisma.buyerAccountRequest.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
 }
 
 export default async function BuyerAccountRequestsPage({searchParams}: PageProps) {
-  const params = await searchParams;
-  const status = params?.status || "all";
-  const date = params?.date || "all";
-  const sort = params?.sort || "newest";
+  const raw = await searchParams;
+  const q = value(raw?.q); const status = value(raw?.status); const source = value(raw?.source); const buyerType = value(raw?.type); const conversion = value(raw?.conversion);
+  const pageSize = parseAdminPageSize(value(raw?.pageSize)); const page = parseAdminPage(value(raw?.page));
+  const params = {q, status, source, type: buyerType, conversion, pageSize};
+  const where = {
+    ...(q ? {OR: ["contactName", "organisationName", "email", "phone", "location", "businessRegNumber", "usualProduceNeeds", "message", "adminNote"].map((field) => ({[field]: {contains: q, mode: "insensitive" as const}}))} : {}),
+    ...(status ? {status} : {}), ...(source ? {source} : {}), ...(buyerType ? {buyerType} : {}),
+    ...(conversion === "not-converted" ? {status: {not: CONVERTED}} : conversion === "linked" ? {status: CONVERTED, adminNote: {startsWith: CUSTOMER_NOTE_PREFIX}} : conversion === "unlinked" ? {status: CONVERTED, OR: [{adminNote: null}, {adminNote: {not: {startsWith: CUSTOMER_NOTE_PREFIX}}}]} : {}),
+  };
+  const [total, allTotal, statuses, sources, types] = await Promise.all([
+    prisma.buyerAccountRequest.count({where}), prisma.buyerAccountRequest.count(),
+    prisma.buyerAccountRequest.findMany({distinct: ["status"], select: {status: true}, orderBy: {status: "asc"}}),
+    prisma.buyerAccountRequest.findMany({distinct: ["source"], select: {source: true}, orderBy: {source: "asc"}}),
+    prisma.buyerAccountRequest.findMany({distinct: ["buyerType"], select: {buyerType: true}, orderBy: {buyerType: "asc"}}),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  if (page > totalPages) redirect(adminListHref(PATH, params, {page: totalPages}));
+  const requests = await loadRequests(where, page, pageSize);
+  const customerIds = [...new Set(requests.map(customerIdFromRequest).filter(Boolean))];
+  const existingCustomers = customerIds.length ? await prisma.customer.findMany({where: {id: {in: customerIds}}, select: {id: true, name: true}}) : [];
+  const customers = new Map(existingCustomers.map((customer) => [customer.id, customer]));
+  const range = adminResultRange(page, pageSize, total); const filtered = Boolean(q || status || source || buyerType || conversion);
 
-  const requests = await prisma.buyerAccountRequest.findMany({
-    orderBy: {createdAt: "desc"},
-    take: 200,
-  });
-
-  const newCount = requests.filter((request) => request.status === "New").length;
-  const reviewingCount = requests.filter((request) => request.status === "Reviewing").length;
-  const creditInterest = requests.filter((request) => request.interestedInCredit).length;
-  const closedCount = requests.filter((request) => ["Closed", "Rejected"].includes(request.status)).length;
-
-  const filtered = requests.filter((request) => {
-    const statusMatch =
-      status === "all" ||
-      (status === "credit" && request.interestedInCredit) ||
-      request.status.toLowerCase() === status;
-
-    return statusMatch && inDateRange(request.createdAt, date);
-  });
-
-  const sorted = [...filtered].sort((a, b) => {
-    if (sort === "oldest") return a.createdAt.getTime() - b.createdAt.getTime();
-    if (sort === "credit") return Number(b.interestedInCredit) - Number(a.interestedInCredit);
-    return b.createdAt.getTime() - a.createdAt.getTime();
-  });
-
-  const base = {status, date, sort};
-
-  return (
-    <AdminPageShell
-      title="Account requests"
-      description="Review and approve recurring buyer applications."
-    >
-      <div className="grid gap-5">
-        <section className="grid gap-3 md:grid-cols-4">
-          <AdminCompactMetric label="New" value={String(newCount)} tone="amber" href={hrefFor({...base, status: "new"})} />
-          <AdminCompactMetric label="Reviewing" value={String(reviewingCount)} tone="blue" href={hrefFor({...base, status: "reviewing"})} />
-          <AdminCompactMetric label="Credit interest" value={String(creditInterest)} tone="green" href={hrefFor({...base, status: "credit"})} />
-          <AdminCompactMetric label="Closed" value={String(closedCount)} tone="neutral" href={hrefFor({...base, status: "closed"})} />
-        </section>
-
-        <AdminViewBar
-          title="Request controls"
-          description={`${sorted.length} request${sorted.length === 1 ? "" : "s"} shown.`}
-          filterOptions={[
-            {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
-            {label: "New", href: hrefFor({...base, status: "new"}), active: status === "new"},
-            {label: "Reviewing", href: hrefFor({...base, status: "reviewing"}), active: status === "reviewing"},
-            {label: "Credit", href: hrefFor({...base, status: "credit"}), active: status === "credit"},
-            {label: "Closed", href: hrefFor({...base, status: "closed"}), active: status === "closed"},
-          ]}
-          dateOptions={[
-            {label: "All time", href: hrefFor({...base, date: "all"}), active: date === "all"},
-            {label: "Today", href: hrefFor({...base, date: "today"}), active: date === "today"},
-            {label: "7 days", href: hrefFor({...base, date: "week"}), active: date === "week"},
-            {label: "This month", href: hrefFor({...base, date: "month"}), active: date === "month"},
-            {label: "This year", href: hrefFor({...base, date: "year"}), active: date === "year"},
-          ]}
-          sortOptions={[
-            {label: "Newest", href: hrefFor({...base, sort: "newest"}), active: sort === "newest"},
-            {label: "Oldest", href: hrefFor({...base, sort: "oldest"}), active: sort === "oldest"},
-            {label: "Credit first", href: hrefFor({...base, sort: "credit"}), active: sort === "credit"},
-          ]}
-        />
-
-        <section className="hidden overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm md:block">
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
-              <thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.14em] text-[#405348]">
-                <tr>
-                  <th className="px-4 py-3">Buyer</th>
-                  <th className="px-4 py-3">Contact</th>
-                  <th className="px-4 py-3">Location</th>
-                  <th className="px-4 py-3">Frequency</th>
-                  <th className="px-4 py-3">Credit</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Submitted</th>
-                  <th className="px-4 py-3">Manage</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {sorted.map((request) => (
-                  <tr key={request.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
-                    <td className="px-4 py-3">
-                      <p className="font-black text-[#102015]">{request.organisationName || request.contactName}</p>
-                      <p className="text-xs">{request.buyerType}</p>
-                    </td>
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-[#102015]">{request.contactName}</p>
-                      <p className="text-xs">{request.phone}</p>
-                      <p className="text-xs">{request.email || "No email"}</p>
-                    </td>
-                    <td className="px-4 py-3">{request.location || "Not provided"}</td>
-                    <td className="px-4 py-3">{request.orderFrequency || "Not provided"}</td>
-                    <td className="px-4 py-3">
-                      <AdminStatusPill tone={request.interestedInCredit ? "green" : "neutral"}>
-                        {request.interestedInCredit ? "Interested" : "No"}
-                      </AdminStatusPill>
-                    </td>
-                    <td className="px-4 py-3">
-                      <AdminStatusPill tone={adminToneFromStatus(request.status)}>
-                        {request.status}
-                      </AdminStatusPill>
-                    </td>
-                    <td className="px-4 py-3">{request.createdAt.toLocaleDateString("en-GB")}</td>
-                    <td className="px-4 py-3">
-                      <RequestActions request={request} />
-                    </td>
-                  </tr>
-                ))}
-
-                {!sorted.length ? (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={8}>
-                      No requests match this view.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
-
-        <section className="grid gap-3 md:hidden">
-          {sorted.map((request) => (
-            <article key={request.id} className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="font-black text-[#102015]">{request.organisationName || request.contactName}</h2>
-                  <p className="mt-1 text-sm text-[#405348]">{request.buyerType} · {request.location || "Location not set"}</p>
-                  <p className="mt-1 text-xs text-[#587063]">{request.phone}</p>
-                </div>
-                <AdminStatusPill tone={adminToneFromStatus(request.status)}>
-                  {request.status}
-                </AdminStatusPill>
-              </div>
-
-              <div className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                <div className="rounded-xl bg-[#f3f8ef] p-3">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-[#587063]">Frequency</p>
-                  <p className="mt-1 font-bold text-[#102015]">{request.orderFrequency || "N/A"}</p>
-                </div>
-                <div className="rounded-xl bg-[#f3f8ef] p-3">
-                  <p className="text-xs font-black uppercase tracking-[0.12em] text-[#587063]">Credit</p>
-                  <p className="mt-1 font-bold text-[#102015]">{request.interestedInCredit ? "Interested" : "No"}</p>
-                </div>
-              </div>
-
-              <div className="mt-3">
-                <RequestActions request={request} />
-              </div>
-            </article>
-          ))}
-
-          {!sorted.length ? (
-            <p className="rounded-2xl bg-white p-5 text-center text-sm font-semibold text-[#587063]">
-              No requests match this view.
-            </p>
-          ) : null}
-        </section>
-      </div>
-    </AdminPageShell>
-  );
+  return <AdminPageShell title="Account requests" description="Review recurring-buyer applications before customer setup and access management." compactHeader>
+    <div className="grid gap-5">
+      <nav aria-label="Related buyer workflows" className="flex flex-wrap gap-2"><WorkflowLink href="/admin/launch-inbox" label="Open Launch inbox" /><WorkflowLink href="/admin/customers" label="View all buyers" /><WorkflowLink href="/admin/buyer-access" label="Manage buyer access" /></nav>
+      <AdminListToolbar search={q} searchLabel="Search applications" searchPlaceholder="Applicant, organisation, phone, registration or notes" pageSize={pageSize} resetHref={PATH} filters={[
+        {name: "status", label: "Status", value: status, options: statuses.map(({status: item}) => ({value: item, label: item}))},
+        {name: "type", label: "Buyer type", value: buyerType, options: types.map(({buyerType: item}) => ({value: item, label: item}))},
+        {name: "source", label: "Source", value: source, options: sources.map(({source: item}) => ({value: item, label: item}))},
+        {name: "conversion", label: "Conversion", value: conversion, options: [{value: "not-converted", label: "Not converted"}, {value: "linked", label: "Converted with customer"}, {value: "unlinked", label: "Converted without link"}]},
+      ]} />
+      <div className="flex flex-wrap items-center justify-between gap-3"><AdminResultCount {...range} total={total} label="applications" /><p className="text-xs font-bold text-[#587063]">{allTotal.toLocaleString()} total records</p></div>
+      {!requests.length ? <AdminEmptyState title={allTotal === 0 ? "No account requests yet" : "No matching account requests"} description={allTotal === 0 ? "New buyer applications will appear here." : "Try a different search term or clear one or more filters."} resetHref={filtered ? PATH : undefined} /> : <>
+        <section className="hidden overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm md:block"><div className="overflow-x-auto"><table className="w-full min-w-[1000px] border-collapse text-left text-sm"><thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.12em] text-[#405348]"><tr><th className="px-4 py-3">Applied</th><th className="px-4 py-3">Applicant</th><th className="px-4 py-3">Business</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Conversion</th><th className="px-4 py-3">Review</th></tr></thead><tbody>{requests.map((request) => <RequestRow key={request.id} request={request} customer={customers.get(customerIdFromRequest(request))} />)}</tbody></table></div></section>
+        <section className="grid gap-3 md:hidden">{requests.map((request) => <RequestCard key={request.id} request={request} customer={customers.get(customerIdFromRequest(request))} />)}</section>
+      </>}
+      <AdminPagination page={page} totalPages={totalPages} previousHref={page > 1 ? adminListHref(PATH, params, {page: page - 1}) : undefined} nextHref={page < totalPages ? adminListHref(PATH, params, {page: page + 1}) : undefined} />
+    </div>
+  </AdminPageShell>;
 }
 
-function RequestActions({request}: {request: any}) {
-  return (
-    <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
-      <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Manage</summary>
+function WorkflowLink({href, label}: {href: string; label: string}) { return <Link href={href} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm font-black text-[#405348] focus:outline-none focus:ring-2 focus:ring-[#1f7a3f]">{label}</Link>; }
+function ConversionState({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) { const id = customerIdFromRequest(request); if (request.status !== CONVERTED) return <span className="text-xs font-bold text-[#587063]">Not converted</span>; if (id && customer) return <Link href={`/admin/customers/${customer.id}`} className="text-xs font-black text-[#1f7a3f] underline underline-offset-4">Open customer {customer.name}</Link>; if (id) return <span className="text-xs font-bold text-[#7a4a00]">Customer link recorded; customer unavailable</span>; return <span className="text-xs font-bold text-[#7a4a00]">Marked converted; no customer link stored</span>; }
 
-      <div className="mt-3 grid gap-3">
-        <details className="rounded-xl border border-[#102015]/10 bg-white p-3">
-          <summary className="cursor-pointer text-xs font-black text-[#102015]">Details</summary>
-          <div className="mt-2 grid gap-2 text-sm leading-6 text-[#405348]">
-            <p><strong className="text-[#102015]">Spend:</strong> {request.estimatedSpend || "Not provided"}</p>
-            <p><strong className="text-[#102015]">Payment:</strong> {request.preferredPaymentMethod || "Not provided"}</p>
-            <p><strong className="text-[#102015]">Produce:</strong> {request.usualProduceNeeds || "Not provided"}</p>
-            {request.message ? <p><strong className="text-[#102015]">Message:</strong> {request.message}</p> : null}
-          </div>
-        </details>
-
-        <div className="grid gap-2 sm:grid-cols-2">
-          <form action={updateBuyerAccountRequestStatusAction}>
-            <input type="hidden" name="requestId" value={request.id} />
-            <input type="hidden" name="status" value="Reviewing" />
-            <button type="submit" className="w-full rounded-full border border-[#102015]/10 bg-white px-4 py-2 text-xs font-black text-[#102015]">
-              Review
-            </button>
-          </form>
-
-          <form action={convertBuyerAccountRequestToCustomerAction}>
-            <input type="hidden" name="requestId" value={request.id} />
-            <button type="submit" className="w-full rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">
-              Approve
-            </button>
-          </form>
-
-          <form action={updateBuyerAccountRequestStatusAction}>
-            <input type="hidden" name="requestId" value={request.id} />
-            <input type="hidden" name="status" value="Rejected" />
-            <button type="submit" className="w-full rounded-full bg-[#C95F3D] px-4 py-2 text-xs font-black text-white">
-              Reject
-            </button>
-          </form>
-
-          <form action={updateBuyerAccountRequestStatusAction}>
-            <input type="hidden" name="requestId" value={request.id} />
-            <input type="hidden" name="status" value="Closed" />
-            <button type="submit" className="w-full rounded-full border border-[#102015]/10 bg-white px-4 py-2 text-xs font-black text-[#102015]">
-              Close
-            </button>
-          </form>
-        </div>
-      </div>
-    </details>
-  );
+function RequestRow({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) {
+  return <tr className="border-t border-[#102015]/10 align-top"><td className="whitespace-nowrap px-4 py-4 text-[#405348]">{formatDate(request.createdAt)}</td><td className="px-4 py-4"><p className="font-black text-[#102015]">{request.contactName || request.phone || "Unknown applicant"}</p><p className="mt-1 text-xs text-[#587063]">{request.email || "No email"}{request.phone ? ` · ${request.phone}` : " · No phone"}</p><p className="mt-1 text-xs text-[#405348]">{request.location || "No location"}</p></td><td className="px-4 py-4"><p className="font-bold text-[#102015]">{request.organisationName || "No organisation provided"}</p><p className="mt-1 text-xs text-[#587063]">{request.buyerType} · {request.source}</p>{request.message ? <p className="mt-2 max-w-xs text-xs text-[#405348]">{preview(request.message)}</p> : null}</td><td className="px-4 py-4"><AdminStatusPill tone={adminToneFromStatus(request.status)}>{request.status}</AdminStatusPill></td><td className="max-w-48 px-4 py-4"><ConversionState request={request} customer={customer} /></td><td className="px-4 py-4"><ReviewApplication request={request} customer={customer} /></td></tr>;
 }
+
+function RequestCard({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) {
+  return <article className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><div><h2 className="font-black text-[#102015]">{request.organisationName || request.contactName || "Unknown applicant"}</h2><p className="mt-1 text-xs text-[#587063]">{request.contactName} · {formatDate(request.createdAt)}</p></div><AdminStatusPill tone={adminToneFromStatus(request.status)}>{request.status}</AdminStatusPill></div><p className="mt-3 text-xs font-bold text-[#587063]">{request.buyerType} · {request.phone || request.email || "No contact detail"}</p><div className="mt-3"><ConversionState request={request} customer={customer} /></div><div className="mt-4"><ReviewApplication request={request} customer={customer} /></div></article>;
+}
+
+function ReviewApplication({request, customer}: {request: RequestRow; customer?: {id: string; name: string}}) {
+  const converted = request.status === CONVERTED;
+  return <details className="min-w-44"><summary className="cursor-pointer rounded-xl border border-[#102015]/15 px-3 py-2 text-center text-xs font-black text-[#102015] focus:outline-none focus:ring-2 focus:ring-[#1f7a3f]">Review {request.contactName || "application"}</summary><div className="mt-2 min-w-72 rounded-xl bg-[#f7f5ec] p-3 text-sm"><div className="grid gap-1 leading-6 text-[#405348]"><Detail label="Applicant" value={request.contactName} /><Detail label="Organisation" value={request.organisationName} /><Detail label="Email" value={request.email} /><Detail label="Phone" value={request.phone} /><Detail label="Location" value={request.location} /><Detail label="Buyer type" value={request.buyerType} /><Detail label="Registration" value={request.businessRegNumber} /><Detail label="Produce needs" value={request.usualProduceNeeds} /><Detail label="Order frequency" value={request.orderFrequency} /><Detail label="Estimated spend" value={request.estimatedSpend} /><Detail label="Payment preference" value={request.preferredPaymentMethod} /><Detail label="Receipts" value={request.needsReceipts ? "Required" : "Not requested"} /><Detail label="Credit interest" value={request.interestedInCredit ? "Interested" : "No"} /><Detail label="Source" value={request.source} /><Detail label="Status" value={request.status} /><Detail label="Submitted" value={formatDate(request.createdAt)} /><Detail label="Updated" value={formatDate(request.updatedAt)} />{request.message ? <p className="mt-2 max-h-36 overflow-y-auto whitespace-pre-wrap"><strong className="text-[#102015]">Message:</strong> {request.message}</p> : null}</div><div className="mt-3"><ConversionState request={request} customer={customer} /></div>{!converted ? <div className="mt-3 grid gap-2"><form action={updateBuyerAccountRequestStatusAction} className="grid gap-2"><input type="hidden" name="requestId" value={request.id} /><label className="grid gap-1 text-xs font-black text-[#405348]">Application status<select name="status" defaultValue={request.status} className="rounded-lg border border-[#102015]/15 bg-white px-2 py-2 text-sm font-normal">{[...new Set([request.status, ...reviewStatuses])].map((item) => <option key={item}>{item}</option>)}</select></label><button className="rounded-lg bg-[#102015] px-3 py-2 text-xs font-black text-white">Update status</button></form><form action={convertBuyerAccountRequestToCustomerAction}><input type="hidden" name="requestId" value={request.id} /><button className="w-full rounded-lg bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white">Convert to customer</button></form><p className="text-xs leading-5 text-[#587063]">Conversion creates the customer only. Configure login access separately.</p></div> : null}</div></details>;
+}
+
+function Detail({label, value}: {label: string; value: string | null | undefined}) { return <p><strong className="text-[#102015]">{label}:</strong> {value || "Not provided"}</p>; }
