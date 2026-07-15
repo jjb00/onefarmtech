@@ -1,6 +1,8 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import AdminSidebarGroup from "@/components/admin/AdminSidebarGroup";
+import AdminNavigationLink from "@/components/admin/AdminNavigationLink";
+import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import {adminNavigationGroups} from "@/data/adminNavigation";
 import {getCurrentStaffActor} from "@/lib/currentStaff";
 import {canAccessAdminPath, filterAdminLinksForRole, getRoleAccessSummary} from "@/lib/adminAccess";
@@ -10,6 +12,8 @@ type AdminLayoutFrameProps = {
   description: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  compactHeader?: boolean;
+  eyebrow?: string;
 };
 
 export default async function AdminLayoutFrame({
@@ -17,6 +21,8 @@ export default async function AdminLayoutFrame({
   description,
   action,
   children,
+  compactHeader,
+  eyebrow,
 }: AdminLayoutFrameProps) {
   const staff = await getCurrentStaffActor();
   const visibleNavigationGroups = adminNavigationGroups
@@ -119,13 +125,7 @@ export default async function AdminLayoutFrame({
                       </p>
                       <div className="mt-2 grid gap-2">
                         {group.links.map((item) => (
-                          <Link
-                            key={item.href}
-                            href={item.href}
-                            className="block rounded-xl border border-white/10 bg-white/[0.05] px-4 py-3 text-sm font-bold text-white hover:bg-white/[0.1]"
-                          >
-                            {item.title}
-                          </Link>
+                          <AdminNavigationLink key={item.href} item={item} />
                         ))}
                       </div>
                     </div>
@@ -160,23 +160,7 @@ export default async function AdminLayoutFrame({
             </div>
           </div>
 
-          <header className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm md:p-8">
-            <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.28em] text-[#1f7a3f]">
-                  Operations desk
-                </p>
-                <h1 className="mt-4 text-4xl font-black tracking-tight text-[#102015] md:text-5xl">
-                  {title}
-                </h1>
-                <p className="mt-4 max-w-4xl text-base leading-7 text-[#405348] md:text-lg">
-                  {description}
-                </p>
-              </div>
-
-              {action && <div className="shrink-0">{action}</div>}
-            </div>
-          </header>
+          <AdminPageHeader title={title} description={description} action={action} compact={compactHeader} eyebrow={eyebrow} />
 
           <section className="mt-8 text-[#102015]">{children}</section>
         </section>

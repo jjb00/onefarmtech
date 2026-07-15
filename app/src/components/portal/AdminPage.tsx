@@ -5,6 +5,7 @@ type AdminPageProps = {
   subtitle?: string;
   description?: string;
   children: React.ReactNode;
+  compactHeader?: boolean;
 };
 
 export function AdminPage({
@@ -12,9 +13,10 @@ export function AdminPage({
   subtitle,
   description,
   children,
+  compactHeader,
 }: AdminPageProps) {
   return (
-    <AdminPageShell title={title} description={description || subtitle || ""}>
+    <AdminPageShell title={title} description={description || subtitle || ""} compactHeader={compactHeader}>
       {children}
     </AdminPageShell>
   );

@@ -7,6 +7,7 @@ type AdminPageShellProps = {
   actionHref?: string;
   actionLabel?: string;
   children: React.ReactNode;
+  compactHeader?: boolean;
 };
 
 export default function AdminPageShell({
@@ -15,6 +16,7 @@ export default function AdminPageShell({
   actionHref,
   actionLabel,
   children,
+  compactHeader,
 }: AdminPageShellProps) {
   const action =
     actionHref && actionLabel ? (
@@ -27,7 +29,7 @@ export default function AdminPageShell({
     ) : undefined;
 
   return (
-    <AdminLayoutFrame title={title} description={description} action={action}>
+    <AdminLayoutFrame title={title} description={description} action={action} compactHeader={compactHeader}>
       <section className="mt-8">{children}</section>
     </AdminLayoutFrame>
   );

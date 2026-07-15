@@ -102,6 +102,7 @@ export default async function CustomersPage({searchParams}: CustomersPageProps) 
     <AdminPageShell
       title="Customers"
       description="Buyer master records, contact details and account status."
+      compactHeader
     >
       <div className="grid gap-5">
         <section className="grid gap-3 md:grid-cols-4">

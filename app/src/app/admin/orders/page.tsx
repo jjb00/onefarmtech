@@ -83,6 +83,7 @@ export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
     <AdminShell
       title="Orders"
       description="Full order database with compact views, filters and sorting for staff operations."
+      compactHeader
       action={
         <Link
           href="/admin/create-order"

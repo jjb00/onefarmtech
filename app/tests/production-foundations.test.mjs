@@ -89,13 +89,53 @@ test("WhatsApp routes retain signature, known\/unknown routing, duplicate and ou
   assert.match(outbound, /WhatsApp send failed/);
 });
 
-test("WhatsApp and contact enquiry destinations remain visible in admin navigation", () => {
+test("Phase 1 admin navigation uses the approved job-based destinations", () => {
   const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
-  const enquiries = fs.readFileSync(new URL("../src/app/admin/contact-enquiries/page.tsx", import.meta.url), "utf8");
-  assert.match(navigation, /href: "\/admin\/whatsapp-inbox"/);
-  assert.match(navigation, /href: "\/admin\/contact-enquiries"/);
-  assert.match(enquiries, />Source</);
-  assert.match(enquiries, /\{source\}/);
+  for (const group of ["Dashboard", "Operations", "Communications", "Buyers", "Finance", "Catalogue & supply", "Reports", "System & settings"]) assert.match(navigation, new RegExp(`title: "${group.replace("&", "&")}"`));
+  for (const href of ["/admin/operations", "/admin/orders", "/admin/deliveries", "/admin/complaints", "/admin/buyer-messages", "/admin/whatsapp-tools", "/admin/customers", "/admin/guest-buyers", "/admin/buyer-account-requests", "/admin/buyer-access", "/admin/buyer-profile-requests", "/admin/payment-requests", "/admin/payments", "/admin/receipts", "/admin/products", "/admin/group-buys", "/admin/suppliers", "/admin/pickup-locations", "/admin/delivery-partners", "/admin/reports", "/admin/staff", "/admin/audit-log", "/admin/launch-readiness", "/admin/operating-manual"]) assert.match(navigation, new RegExp(`href: "${href}"`));
+  assert.match(navigation, /\/admin\/buyer-messages\?view=reconciliation/);
+  assert.doesNotMatch(navigation, /title: "Sales"/);
+});
+
+test("every visible Phase 1 sidebar destination resolves to an existing route", () => {
+  const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
+  const hrefs = [...navigation.matchAll(/href: "(\/admin[^"?]*)(?:\?[^\"]*)?"/g)].map((match) => match[1]);
+  for (const href of new Set(hrefs)) {
+    const relative = href === "/admin" ? "../src/app/admin/page.tsx" : `../src/app${href}/page.tsx`;
+    assert.equal(fs.existsSync(new URL(relative, import.meta.url)), true, `${href} should resolve to a page`);
+  }
+});
+
+test("sidebar is collapsed by default, role-filtered, and highlights main and legacy routes", () => {
+  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminSidebarGroup.tsx", import.meta.url), "utf8");
+  const layout = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
+  const access = fs.readFileSync(new URL("../src/lib/adminAccess.ts", import.meta.url), "utf8");
+  const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
+  assert.match(sidebar, /<details className=/);
+  assert.doesNotMatch(sidebar, /<details[^>]* open=/);
+  assert.doesNotMatch(sidebar, /localStorage|useEffect|useState/);
+  assert.match(sidebar, /aria-current=\{active \? "page"/);
+  assert.match(layout, /filterAdminLinksForRole/);
+  assert.match(access, /canAccessAdminPath\(role, link\.href\)/);
+  for (const legacy of ["/admin/whatsapp-inbox", "/admin/contact-enquiries", "/admin/whatsapp-drafts", "/admin/buyer-accounts", "/admin/deployment-readiness", "/admin/security", "/admin/permissions"]) assert.match(navigation, new RegExp(legacy.replaceAll("/", "\\/")));
+});
+
+test("Orders, Deliveries and Customers use the compact header without losing existing actions", () => {
+  const orders = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
+  const deliveries = fs.readFileSync(new URL("../src/app/admin/deliveries/page.tsx", import.meta.url), "utf8");
+  const customers = fs.readFileSync(new URL("../src/app/admin/customers/page.tsx", import.meta.url), "utf8");
+  for (const source of [orders, deliveries, customers]) assert.match(source, /compactHeader/);
+  assert.match(orders, /href="\/admin\/create-order"/);
+  assert.match(deliveries, /assignDeliveryPartnerAction/);
+  assert.match(customers, /createCustomerAction/);
+});
+
+test("legacy admin operational routes remain present and guest orders use the accepted id", () => {
+  for (const route of ["whatsapp", "whatsapp-inbox", "contact-enquiries", "launch-inbox", "order-requests", "drafts", "whatsapp-drafts", "buyer-accounts", "workflows", "whatsapp-workflow", "security", "permissions", "deployment-readiness", "integration-readiness", "launch-smoke-test"]) assert.equal(fs.existsSync(new URL(`../src/app/admin/${route}/page.tsx`, import.meta.url)), true);
+  const guests = fs.readFileSync(new URL("../src/app/admin/guest-buyers/page.tsx", import.meta.url), "utf8");
+  const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
+  assert.match(guests, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
+  assert.match(detail, /where: \{id\}/);
 });
 
 test("payment webhooks retain signature checks, reconciliation creation and idempotent settlement", () => {

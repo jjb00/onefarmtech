@@ -5,6 +5,7 @@ type AdminShellProps = {
   description: string;
   action?: React.ReactNode;
   children: React.ReactNode;
+  compactHeader?: boolean;
 };
 
 export default function AdminShell({
@@ -12,9 +13,10 @@ export default function AdminShell({
   description,
   action,
   children,
+  compactHeader,
 }: AdminShellProps) {
   return (
-    <AdminLayoutFrame title={title} description={description} action={action}>
+    <AdminLayoutFrame title={title} description={description} action={action} compactHeader={compactHeader}>
       {children}
     </AdminLayoutFrame>
   );

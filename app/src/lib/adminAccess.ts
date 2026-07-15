@@ -62,6 +62,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
 };
 
 export function canAccessAdminPath(role: StaffRole, pathname: string) {
+  const path = pathname.split("?")[0];
   if (fullAccessRoles.includes(role)) {
     return true;
   }
@@ -70,10 +71,10 @@ export function canAccessAdminPath(role: StaffRole, pathname: string) {
 
   return allowedPaths.some((allowedPath) => {
     if (allowedPath === "/admin") {
-      return pathname === "/admin";
+      return path === "/admin";
     }
 
-    return pathname === allowedPath || pathname.startsWith(`${allowedPath}/`);
+    return path === allowedPath || path.startsWith(`${allowedPath}/`);
   });
 }
 

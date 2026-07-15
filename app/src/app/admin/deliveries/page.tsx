@@ -106,7 +106,7 @@ export default async function DeliveriesPage({searchParams}: DeliveriesPageProps
   const base = {status, sort};
 
   return (
-    <AdminPage title="Deliveries" subtitle="Delivery queue with compact filters, partner assignment and status updates.">
+    <AdminPage title="Deliveries" subtitle="Delivery queue with compact filters, partner assignment and status updates." compactHeader>
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Active" value={String(active.length)} tone="blue" href={hrefFor({...base, status: "active"})} />
         <AdminCompactMetric label="Unassigned" value={String(unassigned.length)} tone="amber" href={hrefFor({...base, status: "unassigned"})} />
