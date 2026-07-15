@@ -8,8 +8,9 @@ export function proxy(request: NextRequest) {
   const {pathname, search} = request.nextUrl;
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginRoute = pathname === "/login" || pathname === "/staff-login";
-  const isAuthenticated =
-    request.cookies.get(STAFF_SESSION_COOKIE)?.value === "authenticated";
+  const isAuthenticated = Boolean(
+    request.cookies.get(STAFF_SESSION_COOKIE)?.value,
+  );
   const roleCookie = request.cookies.get("oft_staff_role")?.value || "Admin";
   const staffRole = isStaffRole(roleCookie) ? roleCookie : "Admin";
 
