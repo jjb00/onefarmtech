@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import {createPaystackCheckout} from "../src/lib/payments/paystack.ts";
-import {freshPaymentReference, initialisePayment} from "../src/lib/payments/paymentInitialization.js";
-import {fulfilmentStatusesFor, initialFulfilmentStatus, validateFulfilmentStatus} from "../src/lib/orderStatusRules.js";
+import {freshPaymentReference, initialisePayment, isReusablePaymentRequest} from "../src/lib/payments/paymentInitialization.js";
+import {fulfilmentStatusesFor, initialFulfilmentStatus, validateFulfilmentStatus, validateOrderStatusTransition} from "../src/lib/orderStatusRules.js";
 
 test("canonical Orders query includes website, WhatsApp and admin Order rows without source filtering", () => {
   const data = fs.readFileSync(new URL("../src/data/dbOrders.ts", import.meta.url), "utf8");
@@ -40,32 +40,42 @@ test("Paystack initialization sends kobo, NGN, callback, unique reference and re
   assert.notEqual(freshPaymentReference("OFT-1", () => 1, () => "aaaaaaaa-0000"), freshPaymentReference("OFT-1", () => 1, () => "bbbbbbbb-0000"));
 });
 
-function paymentDb(status = "Pending") {
-  const source = {id: "old", orderId: "order-1", customerId: null, provider: "Paystack", reference: "OLD", amount: 75000, currency: "NGN", status, paidAt: status === "Paid" ? new Date() : null, order: {id: "order-1", code: "OFT-1", buyerName: "Buyer", phone: "+2341"}, customer: null};
-  const state = {requests: [source], order: {...source.order, paymentStatus: "Unpaid"}};
+function paymentDb(status = "Pending", overrides = {}) {
+  const source = {id: "old", orderId: "order-1", customerId: null, provider: "Paystack", reference: "OLD", amount: 75000, currency: "NGN", status, paidAt: status === "Paid" ? new Date() : null, paymentUrl: null, expiresAt: null, order: {id: "order-1", code: "OFT-1", buyerName: "Buyer", phone: "+2341"}, customer: null, ...overrides};
+  const state = {requests: [source], order: {...source.order, paymentStatus: "Unpaid"}, providerCalls: 0};
   const db = {state, paymentRequest: {
     findUnique: async () => source,
+    findFirst: async () => [...state.requests].reverse().find((item) => isReusablePaymentRequest(item)) || null,
     create: async ({data}) => {const row = {id: `attempt-${state.requests.length}`, ...data}; state.requests.push(row); return row;},
     update: async ({where, data}) => {const row = state.requests.find((item) => item.id === where.id); Object.assign(row, data); return row;},
-    updateMany: async ({data}) => {Object.assign(source, data); return {count: 1};},
-  }, order: {update: async ({data}) => Object.assign(state.order, data)}};
+    updateMany: async ({where, data}) => {let count = 0; for (const row of state.requests) if (row.id !== where.id.not && !row.paidAt && ["Pending", "Initialising"].includes(row.status)) {Object.assign(row, data); count += 1;} return {count};},
+  }, order: {update: async ({data}) => Object.assign(state.order, data)}, $transaction: async (callback) => callback(db), $queryRawUnsafe: async () => []};
   return db;
 }
 
-test("fresh payment attempts supersede old references but never reuse paid requests", async () => {
+test("repeated payment initialization reuses one valid active provider link", async () => {
   const db = paymentDb();
-  const result = await initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-NEW", createCheckout: async (input) => ({provider: "Paystack", paymentUrl: "https://checkout.paystack.com/new", gatewayReference: input.reference})});
-  assert.equal(result.paymentRequest.reference, "PAY-NEW");
-  assert.equal(result.source.status, "Superseded");
-  await assert.rejects(() => initialisePayment({db: paymentDb("Paid"), paymentRequestId: "old", provider: "Paystack", createCheckout: async () => null}), (error) => error.code === "already-paid");
+  const createCheckout = async (input) => {db.state.providerCalls += 1; return {provider: "Paystack", paymentUrl: "https://checkout.paystack.com/new", gatewayReference: input.reference};};
+  const first = await initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-NEW", createCheckout});
+  const second = await initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-OTHER", createCheckout});
+  assert.equal(first.reused, false); assert.equal(second.reused, true);
+  assert.equal(second.paymentRequest.reference, "PAY-NEW"); assert.equal(db.state.providerCalls, 1);
+  assert.equal(db.state.requests.filter((item) => item.status === "Pending").length, 1);
 });
 
 test("failed initialization records a failed attempt without a false successful payment", async () => {
   const db = paymentDb();
-  await assert.rejects(() => initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-FAILED", createCheckout: async () => {throw new Error("provider rejected");}}), (error) => error.code === "provider-failed");
+  await assert.rejects(() => initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-FAILED", createCheckout: async () => {throw new Error("provider rejected");}}), (error) => error.code === "provider-failed" && !error.message.includes("rejected"));
   assert.equal(db.state.requests.at(-1).status, "Failed");
   assert.equal(db.state.requests.at(-1).paymentUrl, null);
   assert.equal(db.state.order.paymentStatus, "Unpaid");
+});
+
+test("paid links are never reused and expired links receive a fresh attempt", async () => {
+  await assert.rejects(() => initialisePayment({db: paymentDb("Paid"), paymentRequestId: "old", provider: "Paystack", createCheckout: async () => null}), (error) => error.code === "already-paid");
+  const db = paymentDb("Pending", {paymentUrl: "https://checkout.paystack.com/expired", expiresAt: new Date("2020-01-01")});
+  const result = await initialisePayment({db, paymentRequestId: "old", provider: "Paystack", now: () => new Date("2025-01-01"), referenceFactory: () => "PAY-FRESH", createCheckout: async (input) => ({provider: "Paystack", paymentUrl: "https://checkout.paystack.com/fresh", gatewayReference: input.reference})});
+  assert.equal(result.reused, false); assert.equal(result.paymentRequest.reference, "PAY-FRESH");
 });
 
 test("pickup and payment workflows remain independent and operationally valid", () => {
@@ -77,6 +87,26 @@ test("pickup and payment workflows remain independent and operationally valid", 
   const order = {paymentStatus: "Unpaid", fulfilmentStatus: initialFulfilmentStatus("Pickup")};
   order.fulfilmentStatus = "Ready for pickup";
   assert.equal(order.paymentStatus, "Unpaid");
+  order.paymentStatus = "Paid";
+  assert.equal(order.fulfilmentStatus, "Ready for pickup");
+});
+
+test("status rules allow forward pickup and delivery progress but reject regressions", () => {
+  assert.equal(validateOrderStatusTransition({deliveryMethod: "Pickup", currentPaymentStatus: "Paid", nextPaymentStatus: "Paid", currentFulfilmentStatus: "Pending pickup", nextFulfilmentStatus: "Ready for pickup"}), null);
+  assert.equal(validateOrderStatusTransition({deliveryMethod: "Platform delivery", currentPaymentStatus: "Payment pending", nextPaymentStatus: "Paid", currentFulfilmentStatus: "Confirmed", nextFulfilmentStatus: "Out for delivery"}), null);
+  assert.equal(validateOrderStatusTransition({deliveryMethod: "Platform delivery", currentPaymentStatus: "Paid", nextPaymentStatus: "Unpaid", currentFulfilmentStatus: "Delivered", nextFulfilmentStatus: "Confirmed"}), "payment-status-regression");
+  assert.equal(validateFulfilmentStatus("Platform delivery", "Ready for pickup"), "delivery-cannot-use-pickup-status");
+});
+
+test("UI and actions keep pickup, payment and delivery assignment independent", () => {
+  const orders = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
+  const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
+  const payments = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
+  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  for (const source of [orders, detail, payments]) { assert.match(source, /paymentStatus/); assert.match(source, /fulfilmentStatus/); }
+  assert.match(actions, /pickup-does-not-use-delivery-assignment/);
+  assert.match(actions, /initialisePayment/);
+  assert.match(actions, /requireStaff/);
 });
 
 test("existing order detail links continue to resolve IDs and legacy codes", () => {

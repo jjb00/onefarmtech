@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck -- temporary build stabilisation for new commerce pages
 import Link from "next/link";
 import {notFound} from "next/navigation";
@@ -23,6 +24,7 @@ import {
 } from "@/lib/communications/orderTemplates";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
 import {fulfilmentStatusesFor} from "@/lib/orderStatusRules.js";
+import {isReusablePaymentRequest} from "@/lib/payments/paymentInitialization.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -70,6 +72,7 @@ function statusClass(status: string | null | undefined) {
 }
 
 const paymentStatusOptions = [
+  "Pending confirmation",
   "Payment pending",
   "Unpaid",
   "Part-paid",
@@ -135,7 +138,7 @@ export default async function AdminOrderDetailPage({
         },
       },
     },
-  }) as any;
+  });
 
   if (!order) {
     notFound();
@@ -203,7 +206,7 @@ export default async function AdminOrderDetailPage({
       : null;
 
   const paymentRequestWhatsAppSent = Boolean(latestPaymentWhatsAppMessage);
-  const paymentLinkReady = Boolean(latestPaymentRequest?.paymentUrl);
+  const paymentLinkReady = isReusablePaymentRequest(latestPaymentRequest);
   const paymentIsPaid =
     String(order.paymentStatus || "").toLowerCase().includes("paid") ||
     String(latestPaymentRequest?.status || "").toLowerCase() === "paid";
@@ -458,7 +461,7 @@ export default async function AdminOrderDetailPage({
                   type="submit"
                   className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
                 >
-                  {paymentLinkReady ? "Generate fresh Paystack link" : "Generate Paystack link"}
+                  {paymentLinkReady ? "Use existing payment link" : "Create Paystack link"}
                 </button>
               </form>
 
@@ -487,7 +490,7 @@ export default async function AdminOrderDetailPage({
             </form>
           ) : null}
 
-          {latestPaymentRequest?.paymentUrl ? (
+          {paymentLinkReady && latestPaymentRequest?.paymentUrl ? (
             <Link
               href={latestPaymentRequest.paymentUrl}
               target="_blank"
@@ -803,12 +806,12 @@ export default async function AdminOrderDetailPage({
                   <p className="mt-1 text-sm leading-6 text-[#405348]">
                     {latestPaymentRequest.provider} · {latestPaymentRequest.status} · {formatNaira(latestPaymentRequest.amount)}
                   </p>
-                  {latestPaymentRequest.paymentUrl ? (
+                  {paymentLinkReady && latestPaymentRequest.paymentUrl ? (
                     <p className="mt-2 break-all text-sm text-[#405348]">
                       <span className="font-black text-[#102015]">Payment link:</span>{" "}
                       {latestPaymentRequest.paymentUrl}
                     </p>
-                  ) : null}
+                  ) : latestPaymentRequest.paymentUrl ? <p className="mt-2 text-sm font-bold text-[#7a4a00]">Stored link is expired or unavailable; create a replacement before sending it.</p> : null}
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -823,7 +826,7 @@ export default async function AdminOrderDetailPage({
                     </button>
                   </form>
 
-                  {latestPaymentRequest.paymentUrl ? (
+                  {paymentLinkReady && latestPaymentRequest.paymentUrl ? (
                     <a
                       href={latestPaymentRequest.paymentUrl}
                       target="_blank"

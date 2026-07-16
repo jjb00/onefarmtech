@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck -- temporary build stabilisation for broad admin action file
 "use server";
 

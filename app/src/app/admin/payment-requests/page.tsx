@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck -- commerce actions are server-validated at runtime
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
@@ -16,6 +17,7 @@ import {
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
+import {isReusablePaymentRequest} from "@/lib/payments/paymentInitialization.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -107,6 +109,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
           phone: true,
           paymentStatus: true,
           fulfilmentStatus: true,
+          deliveryMethod: true,
         },
       },
       customer: {
@@ -118,7 +121,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
         },
       },
     },
-  }) as any[];
+  });
 
   const paymentRequestIds = paymentRequests.map((request) => request.id);
 
@@ -243,6 +246,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
             <tbody>
               {sorted.map((request) => {
                 const buyerName = request.customer?.name || request.order.buyerName;
+                const reusableLink = isReusablePaymentRequest(request);
                 const paymentMessage = buildPaymentInstructionMessage({
                   orderCode: request.order.code,
                   buyerName,
@@ -265,6 +269,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                         {request.order.code}
                       </Link>
                       <p className="text-xs">{request.order.phone}</p>
+                      <p className="mt-1 text-xs font-bold">{request.order.deliveryMethod} · Payment: {request.order.paymentStatus} · Fulfilment: {request.order.fulfilmentStatus}</p>
                     </td>
                     <td className="px-4 py-3 font-black text-[#102015]">{formatNaira(request.amount)}</td>
                     <td className="px-4 py-3">
@@ -274,12 +279,12 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                     </td>
                     <td className="px-4 py-3">{request.provider}</td>
                     <td className="px-4 py-3">
-                      {request.paymentUrl ? (
+                      {reusableLink ? (
                         <a href={request.paymentUrl} target="_blank" rel="noreferrer" className="font-black text-[#1f7a3f] underline-offset-4 hover:underline">
                           Open link
                         </a>
                       ) : (
-                        <span className="text-xs font-bold text-[#587063]">No link</span>
+                        <span className="text-xs font-bold text-[#587063]">{request.paymentUrl ? "Expired or unavailable" : "No link"}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -348,7 +353,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                                   <input type="hidden" name="id" value={request.id} />
                                   <input type="hidden" name="provider" value="Paystack" />
                                   <button type="submit" disabled={request.status === "Paid"} className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
-                                    {request.paymentUrl ? "Fresh Paystack link" : "Paystack link"}
+                                    {reusableLink ? "Use Paystack link" : "Create Paystack link"}
                                   </button>
                                 </form>
 

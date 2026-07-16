@@ -1,8 +1,9 @@
 export const PICKUP_FULFILMENT_STATUSES = ["Pending pickup", "Confirmed", "Preparing", "Ready for pickup", "Collected", "Cancelled"];
 export const DELIVERY_FULFILMENT_STATUSES = ["New order", "Confirmed", "Preparing", "Delivery pending assignment", "Delivery assigned", "Picked up by delivery partner", "Out for delivery", "Delivered", "Delivery issue", "Cancelled"];
-export const PAYMENT_STATUSES = ["Payment pending", "Unpaid", "Part-paid", "Paid", "Payment failed", "Payment cancelled", "Refunded"];
+export const PAYMENT_STATUSES = ["Pending confirmation", "Payment pending", "Unpaid", "Part-paid", "Paid", "Payment failed", "Payment cancelled", "Refunded"];
 
 const PAYMENT_TRANSITIONS = {
+  "Pending confirmation": new Set(["Pending confirmation", "Unpaid", "Payment pending", "Part-paid", "Paid", "Payment cancelled"]),
   "Payment pending": new Set(["Payment pending", "Part-paid", "Paid", "Payment failed", "Payment cancelled"]),
   Unpaid: new Set(["Unpaid", "Payment pending", "Part-paid", "Paid", "Payment failed", "Payment cancelled"]),
   "Part-paid": new Set(["Part-paid", "Paid", "Payment failed", "Payment cancelled"]),

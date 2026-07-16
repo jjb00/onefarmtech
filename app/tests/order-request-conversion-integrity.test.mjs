@@ -27,8 +27,19 @@ test("OrderRequest conversion creates and links one real Order", async () => {
   assert.equal(result.created, true);
   assert.equal(db.state.creates, 1);
   assert.equal(db.state.request.status, "Converted to order");
+  assert.equal(result.order.paymentStatus, "Pending confirmation");
+  assert.equal(result.order.fulfilmentStatus, "Buyer request");
   assert.deepEqual(convertedOrderFromNote(db.state.request.adminNote), {id: result.order.id, code: result.order.code});
   assert.equal(db.state.audits.length, 1);
+});
+
+test("pickup conversion starts awaiting pickup without creating delivery state", async () => {
+  const db = fakeDb();
+  db.state.request.deliveryPreference = "Pickup";
+  const result = await convertOrderRequestIntegrity({db, requestId: initialRequest.id, actor});
+  assert.equal(result.order.paymentStatus, "Pending confirmation");
+  assert.equal(result.order.fulfilmentStatus, "Pending pickup");
+  assert.equal("delivery" in result.order, false);
 });
 
 test("repeated and concurrent conversion is idempotent", async () => {
