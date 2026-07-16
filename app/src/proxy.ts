@@ -21,7 +21,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (isAdminRoute && isAuthenticated && !canAccessAdminPath(staffRole, pathname)) {
+  if (isAdminRoute && isAuthenticated && !canAccessAdminPath(staffRole, `${pathname}${search}`)) {
     const adminUrl = request.nextUrl.clone();
     adminUrl.pathname = "/admin";
     adminUrl.searchParams.set("access", "denied");

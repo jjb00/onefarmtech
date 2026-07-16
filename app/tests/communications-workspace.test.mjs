@@ -6,7 +6,7 @@ import {COMMUNICATION_VIEWS, communicationViewHref, resolveCommunicationView} fr
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("buyer messages remains the canonical Inbox with safe supported views", async () => {
-  assert.deepEqual(COMMUNICATION_VIEWS, ["all", "whatsapp", "enquiries", "email", "reconciliation"]);
+  assert.deepEqual(COMMUNICATION_VIEWS, ["all", "whatsapp", "enquiries", "email", "reconciliation", "operations"]);
   assert.equal(resolveCommunicationView("unknown"), "all");
   const page = await read("src/app/admin/buyer-messages/page.tsx");
   assert.match(page, /title="Inbox"/);
@@ -22,13 +22,14 @@ test("view switching is URL driven, accessible and resets pagination", async () 
 
 test("source views use database pagination, stable ordering and existing actions", async () => {
   const page = await read("src/app/admin/buyer-messages/page.tsx");
+  const enquiries = await read("src/components/admin/ContactEnquiriesList.tsx");
   assert.match(page, /channel: "WhatsApp"/);
   assert.match(page, /prisma\.contactEnquiry\.count/);
   assert.match(page, /prisma\.emailDelivery\.count/);
   assert.match(page, /prisma\.paymentReconciliationIncident\.count/);
   assert.match(page, /orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/);
   assert.match(page, /retryFailedEmailAction/);
-  assert.match(page, /updateContactEnquiryStatusAction/);
+  assert.match(enquiries, /updateContactEnquiryStatusAction/);
   assert.match(page, /resolvePaymentIncidentAction/);
   assert.match(page, /\/admin\/customers\//);
   assert.match(page, /\/admin\/orders\//);
@@ -44,9 +45,9 @@ test("unknown WhatsApp contacts and legacy routes remain discoverable", async ()
   }
 });
 
-test("role policy, Prisma models and webhook ingestion are unchanged by the workspace", async () => {
+test("role policy, Prisma models and webhook ingestion remain explicit", async () => {
   const access = await read("src/lib/adminAccess.ts");
-  assert.doesNotMatch(access, /buyer-messages/);
+  assert.match(access, /buyer-messages/);
   const schema = await read("prisma/schema.prisma");
   assert.match(schema, /model BuyerMessage/);
   assert.match(schema, /model ContactEnquiry/);

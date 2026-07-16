@@ -24,15 +24,17 @@ test("pagination links preserve filters and reset page when overridden", () => {
 
 test("Contact enquiries uses database pagination, search and filters", () => {
   const page = fs.readFileSync(new URL("../src/app/admin/contact-enquiries/page.tsx", import.meta.url), "utf8");
-  assert.match(page, /skip: \(page - 1\) \* pageSize, take: pageSize/);
-  assert.match(page, /contactEnquiry\.count\(\{where\}\)/);
-  for (const field of ["name", "email", "phone", "organisation", "message"]) assert.match(page, new RegExp(`"${field}"`));
-  for (const filter of ["status", "enquiryType", "source"]) assert.match(page, new RegExp(filter));
-  assert.match(page, /orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/);
-  assert.match(page, /redirect\(adminListHref/);
-  assert.match(page, /updateContactEnquiryStatusAction/);
+  const renderer = fs.readFileSync(new URL("../src/components/admin/ContactEnquiriesList.tsx", import.meta.url), "utf8");
+  assert.match(page, /ContactEnquiriesList/);
+  assert.match(renderer, /skip: \(page - 1\) \* pageSize, take: pageSize/);
+  assert.match(renderer, /contactEnquiry\.count\(\{where\}\)/);
+  for (const field of ["name", "email", "phone", "organisation", "message"]) assert.match(renderer, new RegExp(`"${field}"`));
+  for (const filter of ["status", "enquiryType", "source"]) assert.match(renderer, new RegExp(filter));
+  assert.match(renderer, /orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/);
+  assert.match(renderer, /redirect\(adminListHref/);
+  assert.match(renderer, /updateContactEnquiryStatusAction/);
   assert.match(page, /compactHeader/);
-  assert.match(page, /md:hidden/);
+  assert.match(renderer, /md:hidden/);
 });
 
 test("shared list components remain record-agnostic and include empty states", () => {

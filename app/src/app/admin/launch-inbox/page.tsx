@@ -125,6 +125,7 @@ export default async function LaunchInboxPage() {
                 WhatsApp or email, then mark the item as reviewing, followed up, converted,
                 rejected, or closed. Keep the public workflow simple; keep the admin workflow structured.
               </p>
+              <p className="mt-2 text-xs font-bold text-[#587063]">Queue ownership: Buyer applications → Buyers · Order requests → Operations · Contact enquiries → Communications. This page remains cross-queue launch triage.</p>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -141,10 +142,10 @@ export default async function LaunchInboxPage() {
                 Buyer requests
               </Link>
               <Link
-                href="/admin/contact-enquiries"
+                href="/admin/buyer-messages?view=enquiries"
                 className="rounded-full border border-[#102015]/10 bg-[#f3f8ef] px-4 py-2 text-xs font-black text-[#102015]"
               >
-                Contact enquiries
+                Communications enquiries
               </Link>
             </div>
           </div>

@@ -27,6 +27,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     "/admin/pickup-locations",
     "/admin/workflows",
     "/admin/whatsapp",
+    "/admin/buyer-messages",
   ],
 
   Finance: [
@@ -37,6 +38,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     "/admin/buyer-accounts",
     "/admin/buyer-access",
     "/admin/audit-log",
+    "/admin/buyer-messages?view=reconciliation",
   ],
 
   Support: [
@@ -47,6 +49,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     "/admin/complaints",
     "/admin/customers",
     "/admin/whatsapp",
+    "/admin/buyer-messages",
   ],
 
   "Buyer account manager": [
@@ -62,7 +65,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
 };
 
 export function canAccessAdminPath(role: StaffRole, pathname: string) {
-  const path = pathname.split("?")[0];
+  const [path, query = ""] = pathname.split("?");
   if (fullAccessRoles.includes(role)) {
     return true;
   }
@@ -70,11 +73,16 @@ export function canAccessAdminPath(role: StaffRole, pathname: string) {
   const allowedPaths = roleAllowedPaths[role] || sharedAdminPaths;
 
   return allowedPaths.some((allowedPath) => {
-    if (allowedPath === "/admin") {
+    const [allowedPathname, allowedQuery = ""] = allowedPath.split("?");
+    if (allowedPathname === "/admin") {
       return path === "/admin";
     }
-
-    return path === allowedPath || path.startsWith(`${allowedPath}/`);
+    const pathMatches = path === allowedPathname || path.startsWith(`${allowedPathname}/`);
+    if (!pathMatches) return false;
+    if (!allowedQuery) return true;
+    const requested = new URLSearchParams(query);
+    const required = new URLSearchParams(allowedQuery);
+    return [...required].every(([key, value]) => requested.get(key) === value);
   });
 }
 

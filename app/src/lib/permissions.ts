@@ -89,6 +89,11 @@ export const protectedAdminAreas = [
     note: "Issue handling, support records, and resolution notes.",
   },
   {
+    area: "Communications",
+    requiredRoles: ["Super admin", "Admin", "Operations", "Support", "Finance"] as StaffRole[],
+    note: "Operations and Support use communication views; Finance is restricted to payment reconciliation.",
+  },
+  {
     area: "Staff & roles",
     requiredRoles: ["Super admin"] as StaffRole[],
     note: "Staff access planning and future role assignment.",
