@@ -90,6 +90,8 @@ export default async function LaunchInboxPage() {
     <AdminPageShell
       title="Launch inbox"
       description="One place to review launch-day buyer requests, order requests, and contact enquiries before following up by WhatsApp, email, or internal admin action."
+      actionHref="/admin/buyer-messages"
+      actionLabel="Open unified Inbox"
     >
       <div className="grid gap-6">
         <section className="grid gap-4 md:grid-cols-4">

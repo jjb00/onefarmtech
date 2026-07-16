@@ -1,167 +1,126 @@
-// @ts-nocheck -- temporary build stabilisation for new commerce pages
 import Link from "next/link";
-import {AdminPage} from "@/components/portal/AdminPage";
-import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
+import {redirect} from "next/navigation";
+import AdminPageShell from "@/components/AdminPageShell";
+import CommunicationsViewSwitcher from "@/components/admin/CommunicationsViewSwitcher";
+import {AdminEmptyState, AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
+import {AdminStatusPill, adminToneFromStatus} from "@/components/admin/AdminViewControls";
 import BuyerWhatsAppComposeButton from "@/components/admin/BuyerWhatsAppComposeButton";
+import {resolvePaymentIncidentAction, retryFailedEmailAction} from "@/actions/communications";
+import {updateContactEnquiryStatusAction} from "@/actions/createAdminRecords";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
-import {resolvePaymentIncidentAction, retryFailedEmailAction} from "@/actions/communications";
+import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
+import {resolveCommunicationView} from "@/lib/communicationsWorkspace.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+const PATH = "/admin/buyer-messages";
+type Params = Record<string, string | string[] | undefined>;
 
-function formatDate(value: Date | string | null) {
-  if (!value) return "Not sent";
-  return new Intl.DateTimeFormat("en-GB", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+function value(raw: string | string[] | undefined) { return String(Array.isArray(raw) ? raw[0] : raw || "").trim(); }
+function formatDate(raw: Date | string | null) { return raw ? new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeStyle: "short"}).format(new Date(raw)) : "Not recorded"; }
+function preview(raw: string, length = 120) { return raw.length > length ? `${raw.slice(0, length - 1).trimEnd()}…` : raw; }
+function relatedHref(type?: string | null, id?: string | null) {
+  if (!id) return null;
+  if (type === "Order") return `/admin/orders/${id}`;
+  if (type === "Customer") return `/admin/customers/${id}`;
+  if (type === "PaymentRequest") return "/admin/payment-requests";
+  return null;
 }
 
-export default async function AdminBuyerMessagesPage({searchParams}) {
+export default async function AdminBuyerMessagesPage({searchParams}: {searchParams?: Promise<Params>}) {
   await requireStaff();
-  const params = await searchParams;
-  const view = String(params?.view || "all").toLowerCase();
-  const query = String(params?.q || "").trim();
-  const statusFilter = String(params?.status || "").trim();
-  const direction = String(params?.direction || "").trim();
-  const dateFrom = params?.dateFrom && !Number.isNaN(Date.parse(params.dateFrom)) ? new Date(params.dateFrom) : null;
+  const raw = await searchParams;
+  const requestedView = value(raw?.view);
+  const view = resolveCommunicationView(requestedView);
+  if (requestedView && requestedView !== view) redirect(PATH);
+  const params = {q: value(raw?.q), status: value(raw?.status), direction: value(raw?.direction), type: value(raw?.type), source: value(raw?.source), pageSize: parseAdminPageSize(value(raw?.pageSize))};
 
-  const [messages, emailDeliveries, reconciliationIncidents, operationalEvents] = await Promise.all([prisma.buyerMessage.findMany({
-    where: {
-      ...(view === "whatsapp" ? {channel: "WhatsApp"} : view === "portal/system" ? {channel: {in: ["Portal", "System"]}} : {}),
-      ...(direction ? {direction} : {}),
-      ...(dateFrom ? {createdAt: {gte: dateFrom}} : {}),
-      ...(query ? {OR: [{title: {contains: query, mode: "insensitive"}}, {recipient: {contains: query, mode: "insensitive"}}, {relatedId: {contains: query, mode: "insensitive"}}, {customer: {name: {contains: query, mode: "insensitive"}}}]} : {}),
-    },
-    orderBy: {createdAt: "desc"},
-    take: 100,
-    include: {
-      customer: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-          email: true,
-          accountStatus: true,
-        },
-      },
-    },
-  }), prisma.emailDelivery.findMany({where: {
-    ...(view === "failed" ? {status: {in: ["Failed", "Bounced", "Complained"]}} : {}),
-    ...(statusFilter ? {status: statusFilter} : {}),
-    ...(dateFrom ? {createdAt: {gte: dateFrom}} : {}),
-    ...(query ? {OR: [{recipient: {contains: query, mode: "insensitive"}}, {subject: {contains: query, mode: "insensitive"}}, {relatedId: {contains: query, mode: "insensitive"}}]} : {}),
-  }, orderBy: {createdAt: "desc"}, take: 100}), prisma.paymentReconciliationIncident.findMany({where: view === "reconciliation" ? {} : {status: {in: ["Open", "Investigating"]}}, orderBy: {createdAt: "desc"}, take: 50}), prisma.operationalEvent.findMany({where: {status: "Open"}, orderBy: {createdAt: "desc"}, take: 50})]) as any;
+  return <AdminPageShell title="Inbox" description="Buyer communications, enquiries, delivery evidence and reconciliation follow-up." compactHeader>
+    <div className="grid gap-5">
+      <CommunicationsViewSwitcher activeView={view} params={params} />
+      <div className="flex flex-wrap gap-2 text-sm font-bold">
+        <Link href="/admin/order-requests" className="rounded-lg border bg-white px-3 py-2">Order requests</Link>
+        <Link href="/admin/whatsapp-drafts" className="rounded-lg border bg-white px-3 py-2">WhatsApp drafts</Link>
+        <Link href="/admin/whatsapp-tools" className="rounded-lg border bg-white px-3 py-2">WhatsApp tools</Link>
+        <Link href="/admin/customers" className="rounded-lg border bg-white px-3 py-2">All buyers</Link>
+      </div>
+      {view === "all" ? <AllActivity /> : null}
+      {view === "whatsapp" ? <WhatsAppView raw={raw || {}} /> : null}
+      {view === "enquiries" ? <EnquiriesView raw={raw || {}} /> : null}
+      {view === "email" ? <EmailView raw={raw || {}} /> : null}
+      {view === "reconciliation" ? <ReconciliationView raw={raw || {}} /> : null}
+    </div>
+  </AdminPageShell>;
+}
 
-  return (
-    <AdminPage
-      title="Buyer messages"
-      subtitle="Unified email, WhatsApp, portal and payment-reconciliation operations workspace."
-    >
-      <nav className="mb-4 flex gap-2 overflow-x-auto pb-2">
-        {["All", "WhatsApp", "Email", "Portal/System", "Failed", "Reconciliation"].map((item) => <Link key={item} href={`/admin/buyer-messages?view=${encodeURIComponent(item.toLowerCase())}`} className={`whitespace-nowrap rounded-full px-4 py-2 text-sm font-black ${view === item.toLowerCase() ? "bg-[#1f7a3f] text-white" : "bg-white text-[#405348]"}`}>{item}</Link>)}
-      </nav>
-      <form className="mb-6 grid gap-3 rounded-2xl bg-white p-4 md:grid-cols-5">
-        <input type="hidden" name="view" value={view} />
-        <input name="q" defaultValue={query} placeholder="Buyer, recipient or related ID" className="rounded-xl border border-[#102015]/10 px-3 py-2 text-sm md:col-span-2" />
-        <select name="status" defaultValue={statusFilter} className="rounded-xl border border-[#102015]/10 px-3 py-2 text-sm"><option value="">Any email status</option>{["Pending", "Accepted", "Sent", "Delivered", "Delayed", "Bounced", "Complained", "Failed", "Skipped"].map((item) => <option key={item}>{item}</option>)}</select>
-        <select name="direction" defaultValue={direction} className="rounded-xl border border-[#102015]/10 px-3 py-2 text-sm"><option value="">Any direction</option><option>Inbound</option><option>Outbound</option></select>
-        <div className="flex gap-2"><input type="date" name="dateFrom" defaultValue={params?.dateFrom || ""} className="min-w-0 rounded-xl border border-[#102015]/10 px-3 py-2 text-sm" /><button className="rounded-xl bg-[#102015] px-4 py-2 text-sm font-black text-white">Filter</button></div>
-      </form>
+async function AllActivity() {
+  const [messages, enquiries, emails, incidents, operationalEvents, unknownCount] = await Promise.all([
+    prisma.buyerMessage.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8, include: {customer: {select: {id: true, name: true}}}}),
+    prisma.contactEnquiry.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.emailDelivery.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.paymentReconciliationIncident.findMany({where: {status: {in: ["Open", "Investigating"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.operationalEvent.findMany({where: {status: "Open"}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.contactEnquiry.count({where: {enquiryType: "WhatsApp inbound"}}),
+  ]);
+  const sections = [
+    {title: "Buyer messages", href: `${PATH}?view=whatsapp`, items: messages.map((x) => ({id: x.id, title: `${x.customer.name} · ${x.channel} · ${x.direction}`, detail: preview(x.title), date: x.createdAt}))},
+    {title: `Enquiries${unknownCount ? ` · ${unknownCount} unmatched WhatsApp` : ""}`, href: `${PATH}?view=enquiries`, items: enquiries.map((x) => ({id: x.id, title: `${x.name} · ${x.enquiryType}`, detail: preview(x.message), date: x.createdAt}))},
+    {title: "Email delivery", href: `${PATH}?view=email`, items: emails.map((x) => ({id: x.id, title: `${x.recipient} · ${x.status}`, detail: preview(x.subject), date: x.createdAt}))},
+    {title: "Open reconciliation", href: `${PATH}?view=reconciliation`, items: incidents.map((x) => ({id: x.id, title: `${x.provider} · ${x.status}`, detail: preview(x.reason), date: x.createdAt}))},
+    {title: "Open operational events", href: "/admin/launch-readiness", items: operationalEvents.map((x) => ({id: x.id, title: `${x.category} · ${x.severity}`, detail: preview(x.summary), date: x.createdAt}))},
+  ];
+  return <><p className="rounded-xl bg-[#fff6d6] px-4 py-3 text-sm text-[#6b4b00]">Recent previews are independently capped at 8 records per source; they are not a globally paginated timeline.</p><div className="grid gap-4 lg:grid-cols-2">{sections.map((section) => <section key={section.title} className="rounded-2xl border border-[#102015]/10 bg-white p-4"><div className="flex justify-between gap-3"><h2 className="font-black">{section.title}</h2><Link href={section.href} className="text-sm font-black text-[#1f7a3f]">View all</Link></div><div className="mt-3 divide-y">{section.items.length ? section.items.map((item) => <div key={item.id} className="py-3"><p className="text-sm font-bold">{item.title}</p><p className="mt-1 text-sm text-[#405348]">{item.detail}</p><p className="mt-1 text-xs text-[#587063]">{formatDate(item.date)}</p></div>) : <p className="py-5 text-sm text-[#587063]">No records.</p>}</div></section>)}</div></>;
+}
 
-      {view !== "whatsapp" && view !== "portal/system" && view !== "reconciliation" ? (
-      <section className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-black text-[#102015]">Email delivery</h2>
-        <p className="mt-2 text-sm text-[#405348]">Accepted, pending, skipped and failed transactional-email attempts.</p>
-        <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead><tr className="border-b border-[#102015]/10"><th className="p-3">Status</th><th className="p-3">Recipient</th><th className="p-3">Template</th><th className="p-3">Related record</th><th className="p-3">Attempts</th><th className="p-3">Last result</th></tr></thead>
-            <tbody>{emailDeliveries.map((delivery) => <tr key={delivery.id} className="border-b border-[#102015]/5"><td className="p-3 font-black">{delivery.status === "Accepted" ? "Accepted by provider" : delivery.status}</td><td className="p-3">{delivery.recipient}</td><td className="p-3"><div className="font-bold">{delivery.subject}</div><div className="text-xs text-[#587063]">{delivery.template}</div></td><td className="p-3">{delivery.relatedType || "—"} {delivery.relatedId || ""}</td><td className="p-3">{delivery.retryCount}</td><td className="p-3">{delivery.lastError || delivery.latestEventType || delivery.providerMessageId || formatDate(delivery.lastAttemptAt)}{delivery.status === "Failed" ? <form action={retryFailedEmailAction} className="mt-2"><input type="hidden" name="deliveryId" value={delivery.id} /><button className="rounded-lg bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white">Retry email</button></form> : null}</td></tr>)}</tbody>
-          </table>
-        </div>
-      </section>
-      ) : null}
+async function WhatsAppView({raw}: {raw: Params}) {
+  const q = value(raw.q), direction = value(raw.direction), status = value(raw.status), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
+  const where = {channel: "WhatsApp", ...(direction ? {direction} : {}), ...(status ? {status} : {}), ...(q ? {OR: [{title: {contains: q, mode: "insensitive" as const}}, {body: {contains: q, mode: "insensitive" as const}}, {recipient: {contains: q, mode: "insensitive" as const}}, {customer: {name: {contains: q, mode: "insensitive" as const}}}]} : {})};
+  const [total, unknownCount, statuses] = await Promise.all([prisma.buyerMessage.count({where}), prisma.contactEnquiry.count({where: {enquiryType: "WhatsApp inbound"}}), prisma.buyerMessage.findMany({where: {channel: "WhatsApp"}, distinct: ["status"], select: {status: true}, orderBy: {status: "asc"}})]);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const base = {view: "whatsapp", q, direction, status, pageSize};
+  if (page > totalPages) redirect(adminListHref(PATH, base, {page: totalPages}));
+  const messages = await prisma.buyerMessage.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize, include: {customer: {select: {id: true, name: true, phone: true}}}});
+  const range = adminResultRange(page, pageSize, total);
+  return <SourceList toolbar={<AdminListToolbar search={q} pageSize={pageSize} resetHref={`${PATH}?view=whatsapp`} hiddenParams={{view: "whatsapp"}} searchLabel="Search WhatsApp" searchPlaceholder="Buyer, recipient or message" filters={[{name: "direction", label: "Direction", value: direction, options: ["Inbound", "Outbound"].map((x) => ({value: x, label: x}))}, {name: "status", label: "Status", value: status, options: statuses.map((x) => ({value: x.status, label: x.status}))}]} />} range={range} total={total} label="messages" page={page} pages={totalPages} base={base} empty="No matching WhatsApp messages.">
+    {unknownCount ? <Link href={`${PATH}?view=enquiries&type=WhatsApp+inbound`} className="block rounded-xl bg-[#fff6d6] px-4 py-3 text-sm font-bold text-[#6b4b00]">{unknownCount} unmatched WhatsApp contact{unknownCount === 1 ? "" : "s"} available in Enquiries</Link> : null}
+    <div className="grid gap-3">{messages.map((message) => <article key={message.id} className="rounded-2xl border bg-white p-4"><div className="flex flex-wrap justify-between gap-3"><div><div className="flex gap-2"><AdminStatusPill tone={adminToneFromStatus(message.status)}>{message.status}</AdminStatusPill><span className="text-xs font-black uppercase text-[#587063]">{message.direction}</span></div><Link href={`/admin/customers/${message.customerId}`} className="mt-2 block font-black text-[#1f7a3f]">{message.customer.name}</Link><p className="text-xs text-[#587063]">{message.recipient || message.customer.phone || "No recipient"}</p></div><p className="text-xs text-[#587063]">{formatDate(message.createdAt)}</p></div><p className="mt-3 font-bold">{message.title}</p><p className="mt-1 text-sm text-[#405348]">{preview(message.body)}</p><details className="mt-3"><summary className="cursor-pointer text-sm font-black">Review</summary><p className="mt-2 whitespace-pre-wrap text-sm">{message.body}</p><div className="mt-3 flex flex-wrap gap-2">{relatedHref(message.relatedType, message.relatedId) ? <Link href={relatedHref(message.relatedType, message.relatedId)!} className="text-sm font-black text-[#1f7a3f]">Open related {message.relatedType}</Link> : null}{message.customer.phone ? <BuyerWhatsAppComposeButton customerId={message.customerId} phone={message.customer.phone} title={message.title} body={message.body} relatedType="BuyerMessage" relatedId={message.id} /> : null}</div><p className="mt-2 text-xs text-[#587063]">Source: {message.source || "Message log"}</p></details></article>)}</div>
+  </SourceList>;
+}
 
-      {view !== "email" && reconciliationIncidents.length ? <section className="mb-6 rounded-[2rem] border border-[#C95F3D]/20 bg-[#fff8f3] p-6 shadow-sm">
-        <h2 className="text-xl font-black text-[#102015]">Open payment reconciliation</h2>
-        <div className="mt-4 grid gap-3">{reconciliationIncidents.map((incident) => <div key={incident.id} className="rounded-2xl bg-white p-4 text-sm"><div className="font-black">{incident.provider} · {incident.status}</div><div className="mt-1">{incident.reason}</div><div className="mt-1 text-xs text-[#587063]">Internal: {incident.internalReference || "unknown"} · Provider: {incident.providerReference || "unknown"} · {formatDate(incident.createdAt)}</div><form action={resolvePaymentIncidentAction} className="mt-3 grid gap-2 md:grid-cols-[12rem_1fr_auto]"><input type="hidden" name="incidentId" value={incident.id} /><select name="status" required className="rounded-xl border px-3 py-2"><option>Investigating</option><option>Resolved as paid</option><option>Resolved as unpaid</option><option>Ignored as invalid/test</option></select><input name="resolutionNote" required minLength={3} placeholder="Required resolution note" className="rounded-xl border px-3 py-2" /><button className="rounded-xl bg-[#102015] px-4 py-2 font-black text-white">Update</button></form></div>)}</div>
-      </section> : null}
+async function EnquiriesView({raw}: {raw: Params}) {
+  const q = value(raw.q), status = value(raw.status), type = value(raw.type), source = value(raw.source), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
+  const where = {...(q ? {OR: ["name", "email", "phone", "organisation", "message"].map((field) => ({[field]: {contains: q, mode: "insensitive" as const}}))} : {}), ...(status ? {status} : {}), ...(type ? {enquiryType: type} : {}), ...(source ? {source} : {})};
+  const [total, statuses, types, sources] = await Promise.all([prisma.contactEnquiry.count({where}), prisma.contactEnquiry.findMany({distinct: ["status"], select: {status: true}, orderBy: {status: "asc"}}), prisma.contactEnquiry.findMany({distinct: ["enquiryType"], select: {enquiryType: true}, orderBy: {enquiryType: "asc"}}), prisma.contactEnquiry.findMany({distinct: ["source"], select: {source: true}, orderBy: {source: "asc"}})]);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize)), base = {view: "enquiries", q, status, type, source, pageSize};
+  if (page > totalPages) redirect(adminListHref(PATH, base, {page: totalPages}));
+  const enquiries = await prisma.contactEnquiry.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
+  const range = adminResultRange(page, pageSize, total);
+  return <SourceList toolbar={<AdminListToolbar search={q} pageSize={pageSize} resetHref={`${PATH}?view=enquiries`} hiddenParams={{view: "enquiries"}} filters={[{name: "status", label: "Status", value: status, options: statuses.map((x) => ({value: x.status, label: x.status}))}, {name: "type", label: "Type", value: type, options: types.map((x) => ({value: x.enquiryType, label: x.enquiryType}))}, {name: "source", label: "Source", value: source, options: sources.map((x) => ({value: x.source, label: x.source}))}]} />} range={range} total={total} label="enquiries" page={page} pages={totalPages} base={base} empty="No matching enquiries."><div className="grid gap-3">{enquiries.map((enquiry) => <article key={enquiry.id} className="rounded-2xl border bg-white p-4"><div className="flex justify-between gap-3"><div><p className="font-black">{enquiry.name}</p><p className="text-xs text-[#587063]">{enquiry.email || enquiry.phone || "No contact detail"} · {enquiry.enquiryType} · {enquiry.source}</p></div><AdminStatusPill tone={adminToneFromStatus(enquiry.status)}>{enquiry.status}</AdminStatusPill></div><p className="mt-3 text-sm text-[#405348]">{preview(enquiry.message)}</p><details className="mt-3"><summary className="cursor-pointer text-sm font-black">Review</summary><p className="mt-2 whitespace-pre-wrap text-sm">{enquiry.message}</p><form action={updateContactEnquiryStatusAction} className="mt-3 flex flex-wrap gap-2"><input type="hidden" name="enquiryId" value={enquiry.id}/><select name="status" defaultValue={enquiry.status} className="rounded-lg border px-3 py-2 text-sm">{[...new Set([enquiry.status, "Reviewing", "Followed up", "Closed", "Rejected"])].map((x) => <option key={x}>{x}</option>)}</select><button className="rounded-lg bg-[#1f7a3f] px-3 py-2 text-sm font-black text-white">Update status</button></form></details></article>)}</div></SourceList>;
+}
 
-      {(view === "failed" || view === "all") && operationalEvents.length ? <section className="mb-6 rounded-[2rem] border border-[#C95F3D]/20 bg-white p-6 shadow-sm"><h2 className="text-xl font-black">Recent webhook and system failures</h2><div className="mt-4 grid gap-3">{operationalEvents.map((event) => <div key={event.id} className="rounded-2xl bg-[#fff8f3] p-4 text-sm"><div className="font-black">{event.category} · {event.severity}</div><div className="mt-1">{event.summary}</div><div className="mt-1 text-xs text-[#587063]">{event.route || "Internal operation"} · {formatDate(event.createdAt)}</div></div>)}</div></section> : null}
+async function EmailView({raw}: {raw: Params}) {
+  const q = value(raw.q), status = value(raw.status), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
+  const where = {...(status ? {status} : {}), ...(q ? {OR: [{recipient: {contains: q, mode: "insensitive" as const}}, {subject: {contains: q, mode: "insensitive" as const}}, {template: {contains: q, mode: "insensitive" as const}}, {relatedId: {contains: q, mode: "insensitive" as const}}]} : {})};
+  const [total, statuses] = await Promise.all([prisma.emailDelivery.count({where}), prisma.emailDelivery.findMany({distinct: ["status"], select: {status: true}, orderBy: {status: "asc"}})]);
+  const pages = Math.max(1, Math.ceil(total / pageSize)), base = {view: "email", q, status, pageSize};
+  if (page > pages) redirect(adminListHref(PATH, base, {page: pages}));
+  const deliveries = await prisma.emailDelivery.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
+  const range = adminResultRange(page, pageSize, total);
+  return <SourceList toolbar={<AdminListToolbar search={q} pageSize={pageSize} resetHref={`${PATH}?view=email`} hiddenParams={{view: "email"}} searchLabel="Search delivery evidence" searchPlaceholder="Recipient, subject, template or related ID" filters={[{name: "status", label: "Status", value: status, options: statuses.map((x) => ({value: x.status, label: x.status}))}]} />} range={range} total={total} label="deliveries" page={page} pages={pages} base={base} empty="No matching email deliveries."><div className="grid gap-3">{deliveries.map((delivery) => <article key={delivery.id} className="rounded-2xl border bg-white p-4"><div className="flex justify-between gap-3"><div><p className="font-black">{delivery.recipient}</p><p className="text-sm text-[#405348]">{delivery.subject}</p><p className="text-xs text-[#587063]">{delivery.template} · attempt {formatDate(delivery.lastAttemptAt || delivery.createdAt)}</p></div><AdminStatusPill tone={adminToneFromStatus(delivery.status)}>{delivery.status}</AdminStatusPill></div><details className="mt-3"><summary className="cursor-pointer text-sm font-black">Review</summary><p className="mt-2 text-sm">{delivery.lastError || delivery.latestEventType || "No failure detail recorded."}</p><p className="mt-2 text-xs text-[#587063]">Attempts: {delivery.retryCount} · Related: {delivery.relatedType || "None"} {delivery.relatedId || ""}</p>{delivery.status === "Failed" ? <form action={retryFailedEmailAction} className="mt-3"><input type="hidden" name="deliveryId" value={delivery.id}/><button className="rounded-lg bg-[#1f7a3f] px-3 py-2 text-sm font-black text-white">Retry email</button></form> : null}</details></article>)}</div></SourceList>;
+}
 
-      {view !== "email" && view !== "reconciliation" ? <div className="grid gap-4">
-        {messages.length === 0 ? (
-          <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-black text-[#102015]">No buyer messages logged yet</h2>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Prepared WhatsApp messages, account notices and buyer inbox updates will appear here.
-            </p>
-          </section>
-        ) : (
-          messages.map((message) => (
-            <section key={message.id} className="rounded-[2rem] bg-white p-6 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <BuyerMessageStatusPill status={message.status} />
-                    <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black text-[#405348]">
-                      {message.channel}
-                    </span>
-                    <span className="rounded-full bg-[#f1eee4] px-3 py-1 text-xs font-black text-[#405348]">
-                      {message.direction}
-                    </span>
-                  </div>
+async function ReconciliationView({raw}: {raw: Params}) {
+  const q = value(raw.q), status = value(raw.status), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
+  const where = {...(status ? {status} : {}), ...(q ? {OR: [{provider: {contains: q, mode: "insensitive" as const}}, {internalReference: {contains: q, mode: "insensitive" as const}}, {providerReference: {contains: q, mode: "insensitive" as const}}, {reason: {contains: q, mode: "insensitive" as const}}]} : {})};
+  const [total, statuses] = await Promise.all([prisma.paymentReconciliationIncident.count({where}), prisma.paymentReconciliationIncident.findMany({distinct: ["status"], select: {status: true}, orderBy: {status: "asc"}})]);
+  const pages = Math.max(1, Math.ceil(total / pageSize)), base = {view: "reconciliation", q, status, pageSize};
+  if (page > pages) redirect(adminListHref(PATH, base, {page: pages}));
+  const incidents = await prisma.paymentReconciliationIncident.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
+  const range = adminResultRange(page, pageSize, total);
+  return <SourceList toolbar={<AdminListToolbar search={q} pageSize={pageSize} resetHref={`${PATH}?view=reconciliation`} hiddenParams={{view: "reconciliation"}} searchLabel="Search incidents" searchPlaceholder="Provider, reference or reason" filters={[{name: "status", label: "Status", value: status, options: statuses.map((x) => ({value: x.status, label: x.status}))}]} />} range={range} total={total} label="incidents" page={page} pages={pages} base={base} empty="No matching reconciliation incidents."><div className="grid gap-3">{incidents.map((incident) => <article key={incident.id} className="rounded-2xl border bg-white p-4"><div className="flex justify-between gap-3"><div><p className="font-black">{incident.provider} · {incident.internalReference || incident.providerReference || "Unknown reference"}</p><p className="text-xs text-[#587063]">{formatDate(incident.createdAt)}</p></div><AdminStatusPill tone={adminToneFromStatus(incident.status)}>{incident.status}</AdminStatusPill></div><p className="mt-3 text-sm">{preview(incident.reason)}</p><details className="mt-3"><summary className="cursor-pointer text-sm font-black">Review</summary><p className="mt-2 whitespace-pre-wrap text-sm">{incident.reason}</p><p className="mt-2 text-xs text-[#587063]">Internal: {incident.internalReference || "unknown"} · Provider: {incident.providerReference || "unknown"}{incident.resolutionNote ? ` · Resolution: ${incident.resolutionNote}` : ""}</p><form action={resolvePaymentIncidentAction} className="mt-3 grid gap-2 md:grid-cols-[12rem_1fr_auto]"><input type="hidden" name="incidentId" value={incident.id}/><select name="status" required className="rounded-lg border px-3 py-2"><option>Investigating</option><option>Resolved as paid</option><option>Resolved as unpaid</option><option>Ignored as invalid/test</option></select><input name="resolutionNote" required minLength={3} placeholder="Required resolution note" className="rounded-lg border px-3 py-2"/><button className="rounded-lg bg-[#102015] px-3 py-2 font-black text-white">Update</button></form></details></article>)}</div></SourceList>;
+}
 
-                  <h2 className="mt-3 text-xl font-black text-[#102015]">
-                    {message.title}
-                  </h2>
-
-                  <p className="mt-2 text-sm font-bold text-[#405348]">
-                    Buyer:{" "}
-                    <Link
-                      href={`/admin/customers/${message.customerId}`}
-                      className="text-[#1f7a3f] underline underline-offset-4"
-                    >
-                      {message.customer?.name || "Buyer account"}
-                    </Link>
-                  </p>
-                </div>
-
-                <div className="text-right text-sm text-[#405348]">
-                  <p className="font-black text-[#102015]">{formatDate(message.createdAt)}</p>
-                  <p>{message.recipient || "No recipient recorded"}</p>
-                </div>
-              </div>
-
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-[#405348]">
-                {message.body}
-              </p>
-
-              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-4">
-                <div className="text-xs font-bold uppercase tracking-[0.16em] text-[#8a7d55]">
-                  {message.source || "Message log"}
-                  {message.relatedType ? ` · ${message.relatedType}` : ""}
-                </div>
-
-                {message.customer?.phone ? (
-                  <BuyerWhatsAppComposeButton
-                    customerId={message.customerId}
-                    phone={message.customer.phone}
-                    title={message.title}
-                    body={message.body}
-                    relatedType="BuyerMessage"
-                    relatedId={message.id}
-                  />
-                ) : null}
-              </div>
-            </section>
-          ))
-        )}
-      </div> : null}
-    </AdminPage>
-  );
+function SourceList({toolbar, range, total, label, page, pages, base, empty, children}: {toolbar: React.ReactNode; range: {start: number; end: number}; total: number; label: string; page: number; pages: number; base: Record<string, unknown>; empty: string; children: React.ReactNode}) {
+  return <div className="grid gap-4">{toolbar}<AdminResultCount {...range} total={total} label={label}/>{total ? children : <AdminEmptyState title={empty} description="Try a different search term or clear one or more filters." resetHref={adminListHref(PATH, {view: base.view})}/>}<AdminPagination page={page} totalPages={pages} previousHref={page > 1 ? adminListHref(PATH, base, {page: page - 1}) : undefined} nextHref={page < pages ? adminListHref(PATH, base, {page: page + 1}) : undefined}/></div>;
 }

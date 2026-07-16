@@ -15,10 +15,10 @@ function text(formData: FormData, key: string) {
 export async function retryFailedEmailAction(formData: FormData) {
   await requireStaff();
   const deliveryId = text(formData, "deliveryId");
-  if (!deliveryId) redirect("/admin/buyer-messages?view=failed&error=missing-email");
+  if (!deliveryId) redirect("/admin/buyer-messages?view=email&status=Failed&error=missing-email");
   const result = await retryEmailDelivery(deliveryId);
   revalidatePath("/admin/buyer-messages");
-  redirect(`/admin/buyer-messages?view=failed&retry=${encodeURIComponent(result.status.toLowerCase())}`);
+  redirect(`/admin/buyer-messages?view=email&status=Failed&retry=${encodeURIComponent(result.status.toLowerCase())}`);
 }
 
 export async function resolvePaymentIncidentAction(formData: FormData) {

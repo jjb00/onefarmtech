@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-export function AdminListToolbar({search, filters, pageSize, resetHref, searchLabel = "Search enquiries", searchPlaceholder = "Name, contact, organisation or message"}: {search: string; filters: Array<{name: string; label: string; value: string; options: Array<{value: string; label: string}>}>; pageSize: number; resetHref: string; searchLabel?: string; searchPlaceholder?: string}) {
+export function AdminListToolbar({search, filters, pageSize, resetHref, searchLabel = "Search enquiries", searchPlaceholder = "Name, contact, organisation or message", hiddenParams = {}}: {search: string; filters: Array<{name: string; label: string; value: string; options: Array<{value: string; label: string}>}>; pageSize: number; resetHref: string; searchLabel?: string; searchPlaceholder?: string; hiddenParams?: Record<string, string>}) {
   return <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
     <form method="get" className="grid gap-3 lg:grid-cols-[minmax(16rem,2fr)_repeat(4,minmax(9rem,1fr))_auto]">
+      {Object.entries(hiddenParams).map(([name, value]) => <input key={name} type="hidden" name={name} value={value} />)}
       <label className="grid gap-1 text-xs font-black text-[#405348]">{searchLabel}
         <input name="q" defaultValue={search} placeholder={searchPlaceholder} className="rounded-xl border border-[#102015]/15 px-3 py-2.5 text-sm font-normal outline-none focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/20" />
       </label>

@@ -47,7 +47,7 @@ export default async function ContactEnquiriesPage({searchParams}: PageProps) {
   const range = adminResultRange(page, pageSize, total);
   const filtered = Boolean(q || status || enquiryType || source);
 
-  return <AdminPageShell title="Contact enquiries" description="Review public enquiries and unmatched WhatsApp contacts." compactHeader>
+  return <AdminPageShell title="Contact enquiries" description="Review public enquiries and unmatched WhatsApp contacts." actionHref="/admin/buyer-messages?view=enquiries" actionLabel="Open unified Inbox" compactHeader>
     <div className="grid gap-5">
       <AdminListToolbar search={q} pageSize={pageSize} resetHref={PATH} filters={[
         {name: "status", label: "Status", value: status, options: statusValues.map(({status: value}) => ({value, label: value}))},

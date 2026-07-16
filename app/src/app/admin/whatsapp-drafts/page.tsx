@@ -60,7 +60,7 @@ export default async function AdminWhatsAppDraftsPage() {
           </div>
 
           <div className="flex flex-wrap gap-2">
-
+            <Link href="/admin/buyer-messages?view=whatsapp" className="rounded-full bg-[#102015] px-4 py-2 text-sm font-black text-white">Open unified Inbox</Link>
             <Link
               href="/admin/integration-readiness"
               className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
