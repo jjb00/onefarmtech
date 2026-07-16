@@ -22,6 +22,7 @@ import {
   buildPaymentRequestMessage,
 } from "@/lib/communications/orderTemplates";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
+import {fulfilmentStatusesFor} from "@/lib/orderStatusRules.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -76,21 +77,6 @@ const paymentStatusOptions = [
   "Payment failed",
   "Payment cancelled",
   "Refunded",
-];
-
-const fulfilmentStatusOptions = [
-  "New order",
-  "WhatsApp order received",
-  "Buyer request",
-  "Confirmed",
-  "Being prepared",
-  "Delivery pending assignment",
-  "Delivery assigned",
-  "Picked up by delivery partner",
-  "Out for delivery",
-  "Delivered",
-  "Delivery issue",
-  "Cancelled",
 ];
 
 export default async function AdminOrderDetailPage({
@@ -463,7 +449,7 @@ export default async function AdminOrderDetailPage({
             </form>
           ) : null}
 
-          {latestPaymentRequest && !paymentLinkReady && !paymentIsPaid ? (
+          {latestPaymentRequest && !paymentIsPaid ? (
             <>
               <form action={generatePaymentLinkAction}>
                 <input type="hidden" name="id" value={latestPaymentRequest.id} />
@@ -472,7 +458,7 @@ export default async function AdminOrderDetailPage({
                   type="submit"
                   className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
                 >
-                  Generate Paystack link
+                  {paymentLinkReady ? "Generate fresh Paystack link" : "Generate Paystack link"}
                 </button>
               </form>
 
@@ -751,7 +737,7 @@ export default async function AdminOrderDetailPage({
               defaultValue={order.fulfilmentStatus}
               className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
             >
-              {fulfilmentStatusOptions.map((status) => (
+              {fulfilmentStatusesFor(order.deliveryMethod, order.fulfilmentStatus).map((status) => (
                 <option key={status}>{status}</option>
               ))}
             </select>

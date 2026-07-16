@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
 import {requireStaff} from "@/lib/auth";
+import {initialFulfilmentStatus} from "@/lib/orderStatusRules.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -36,8 +37,9 @@ export async function createOrderAction(formData: FormData) {
   const quantity = readNumber(formData, "quantity");
   const unitPriceInput = readNumber(formData, "unitPrice");
   const paymentStatus = readText(formData, "paymentStatus", "Unpaid");
-  const fulfilmentStatus = readText(formData, "fulfilmentStatus", "New order");
+  const fulfilmentStatusInput = readText(formData, "fulfilmentStatus", "New order");
   const deliveryMethod = readText(formData, "deliveryMethod", "Platform delivery");
+  const fulfilmentStatus = fulfilmentStatusInput === "New order" ? initialFulfilmentStatus(deliveryMethod) : fulfilmentStatusInput;
   const deliveryNote = readText(formData, "deliveryNote");
   const adminNote = readText(formData, "adminNote");
 

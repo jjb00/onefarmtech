@@ -9,6 +9,9 @@ import {
 } from "@/components/admin/AdminViewControls";
 import {getDbOrders, getOrderItemsSummary, formatOrderTotal} from "@/data/dbOrders";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 type OrdersPageProps = {
   searchParams?: Promise<{
     view?: string;

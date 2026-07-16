@@ -1,3 +1,5 @@
+import {initialFulfilmentStatus} from "./orderStatusRules.js";
+
 const CONVERTED_STATUS = "Converted to order";
 const BLOCKED_STATUSES = new Set(["Rejected", "Closed"]);
 
@@ -60,7 +62,7 @@ export async function convertOrderRequestIntegrity({db, requestId, actor, now = 
         buyerType: request.buyerType,
         orderType: "Order request conversion",
         paymentStatus: "Pending confirmation",
-        fulfilmentStatus: "Buyer request",
+        fulfilmentStatus: initialFulfilmentStatus(request.deliveryPreference, "Buyer request"),
         deliveryMethod: request.deliveryPreference,
         deliveryNote: [request.timing ? `Timing: ${request.timing}` : null, request.message || null, `Requested items: ${request.items}`].filter(Boolean).join("\n"),
         source: request.source,

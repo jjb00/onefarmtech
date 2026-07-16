@@ -12,6 +12,8 @@ import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} fr
 import {emailTemplates} from "@/lib/email/templates";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
 import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
+import {initialFulfilmentStatus, isPickupMethod, validateOrderStatusTransition} from "@/lib/orderStatusRules.js";
+import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -1341,7 +1343,7 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
       buyerType,
       orderType: "WhatsApp assisted",
       paymentStatus: "Payment pending",
-      fulfilmentStatus: "WhatsApp order received",
+      fulfilmentStatus: initialFulfilmentStatus(deliveryMethod, "WhatsApp order received"),
       deliveryMethod,
       deliveryNote: deliveryNote || null,
       source: "WhatsApp",
@@ -1730,6 +1732,9 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
     redirect(`/admin/orders/${orderId}?error=invalid-payment-amount`);
   }
 
+  const activePaymentRequest = await prisma.paymentRequest.findFirst({where: {orderId: order.id, paidAt: null, status: {in: ["Pending", "Initialising"]}, OR: [{expiresAt: null}, {expiresAt: {gt: new Date()}}]}, orderBy: {createdAt: "desc"}});
+  if (activePaymentRequest) redirect(`/admin/orders/${order.id}?paymentRequest=existing`);
+
   const reference = await makePaymentReference(order.code);
 
   const paymentRequest = await prisma.paymentRequest.create({
@@ -1795,7 +1800,7 @@ export async function generatePaymentLinkAction(formData: FormData) {
   const {prisma} = await import("@/lib/prisma");
   const {createPaymentCheckout} = await import("@/lib/payments/provider");
 
-  await requireStaff();
+  const staff = await requireStaff();
 
   const id = String(formData.get("id") || "");
   const provider = String(formData.get("provider") || "Paystack").trim() || "Paystack";
@@ -1804,46 +1809,13 @@ export async function generatePaymentLinkAction(formData: FormData) {
     redirect("/admin/payment-requests?error=missing-id");
   }
 
-  const paymentRequest = await prisma.paymentRequest.findUnique({
-    where: {id},
-    include: {
-      order: true,
-      customer: true,
-    },
-  });
-
-  if (!paymentRequest) {
-    redirect("/admin/payment-requests?error=not-found");
-  }
-
-  if (paymentRequest.status === "Paid") {
-    redirect("/admin/payment-requests?error=already-paid");
-  }
-
   try {
-    const checkout = await createPaymentCheckout({
-      provider,
-      reference: paymentRequest.reference,
-      amount: paymentRequest.amount,
-      currency: paymentRequest.currency || "NGN",
-      buyerEmail: paymentRequest.customer?.email || null,
-      buyerName: paymentRequest.customer?.name || paymentRequest.order.buyerName,
-      buyerPhone: paymentRequest.order.phone,
-      orderCode: paymentRequest.order.code,
-      callbackPath: `/admin/payment-requests?reference=${encodeURIComponent(paymentRequest.reference)}`,
-    });
+    const result = await initialisePayment({db: prisma, paymentRequestId: id, provider, createCheckout: createPaymentCheckout});
+    const {source: sourcePaymentRequest, reused} = result;
+    const paymentRequest = {...sourcePaymentRequest, ...result.paymentRequest, order: sourcePaymentRequest.order, customer: sourcePaymentRequest.customer};
+    const checkout = result.checkout || {provider: paymentRequest.provider, gatewayReference: paymentRequest.gatewayReference, paymentUrl: paymentRequest.paymentUrl};
 
-    await prisma.paymentRequest.update({
-      where: {id: paymentRequest.id},
-      data: {
-        provider: checkout.provider,
-        paymentUrl: checkout.paymentUrl,
-        gatewayReference: checkout.gatewayReference,
-        status: "Pending",
-      },
-    });
-
-    if (paymentRequest.customerId) {
+    if (!reused && paymentRequest.customerId) {
       await prisma.buyerMessage.create({
         data: {
           customerId: paymentRequest.customerId,
@@ -1861,22 +1833,22 @@ export async function generatePaymentLinkAction(formData: FormData) {
       });
     }
 
-    if (paymentRequest.customer?.email) {
+    if (!reused && paymentRequest.customer?.email) {
       await sendTransactionalEmail({deduplicationKey: `payment-link:${paymentRequest.id}`, template: "payment-request", to: paymentRequest.customer.email, content: emailTemplates.paymentRequest(paymentRequest.customer.name, paymentRequest.order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount), checkout.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
     }
+
+    await createAuditLog({actorName: staff.name, actorEmail: staff.email, actorRole: staff.role, action: reused ? "Reused active payment link" : "Generated payment link", entityType: "PaymentRequest", entityId: paymentRequest.id, entityLabel: paymentRequest.order.code, newValue: {provider: paymentRequest.provider, reference: paymentRequest.reference, reused}});
 
     revalidatePath("/admin/payment-requests");
     revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
     revalidatePath("/buyer-account/payments");
     revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
     revalidatePath("/buyer-account/inbox");
+    redirect(`/admin/payment-requests?paymentLink=${reused ? "reused" : "generated"}`);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "payment-link-failed";
-    const encoded = encodeURIComponent(message).slice(0, 180);
-    redirect(`/admin/payment-requests?error=${encoded}`);
+    const code = error instanceof PaymentInitializationError ? error.code : "payment-link-failed";
+    redirect(`/admin/payment-requests?error=${encodeURIComponent(code)}`);
   }
-
-  redirect("/admin/payment-requests?paymentLink=generated");
 }
 
 
@@ -1912,6 +1884,10 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 
   if (!order) {
     redirect("/admin/orders?error=order-not-found");
+  }
+
+  if (isPickupMethod(order.deliveryMethod) || isPickupMethod(deliveryMethod)) {
+    redirect(`/admin/orders/${order.id}?error=pickup-does-not-use-delivery-assignment`);
   }
 
   const partner = deliveryPartnerId
@@ -2632,6 +2608,11 @@ export async function updateAdminOrderControlAction(formData: FormData) {
   if (!orderId) {
     redirect("/admin/orders?error=missing-order");
   }
+
+  const existingOrder = await prisma.order.findUnique({where: {id: orderId}, select: {deliveryMethod: true, paymentStatus: true, fulfilmentStatus: true}});
+  if (!existingOrder) redirect("/admin/orders?error=order-not-found");
+  const transitionError = validateOrderStatusTransition({deliveryMethod: existingOrder.deliveryMethod, currentPaymentStatus: existingOrder.paymentStatus, nextPaymentStatus: paymentStatus || existingOrder.paymentStatus, currentFulfilmentStatus: existingOrder.fulfilmentStatus, nextFulfilmentStatus: fulfilmentStatus || existingOrder.fulfilmentStatus});
+  if (transitionError) redirect(`/admin/orders/${orderId}?error=${transitionError}`);
 
   await prisma.order.update({
     where: {id: orderId},

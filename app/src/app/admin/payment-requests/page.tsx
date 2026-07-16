@@ -26,6 +26,8 @@ type PageProps = {
     provider?: string;
     date?: string;
     sort?: string;
+    error?: string;
+    detail?: string;
   }>;
 };
 
@@ -172,6 +174,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
       title="Payment requests"
       subtitle="Payment links, buyer follow-up, status updates and receipt actions."
     >
+      {params?.error ? <div role="alert" className="mb-4 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{params.detail || params.error}</div> : null}
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
         <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
@@ -339,13 +342,13 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                           </details>
 
                           <div className="flex flex-wrap gap-2 border-t border-[#102015]/10 pt-3">
-                            {!request.paymentUrl ? (
+                            {request.status !== "Paid" ? (
                               <>
                                 <form action={generatePaymentLinkAction}>
                                   <input type="hidden" name="id" value={request.id} />
                                   <input type="hidden" name="provider" value="Paystack" />
                                   <button type="submit" disabled={request.status === "Paid"} className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-40">
-                                    Paystack link
+                                    {request.paymentUrl ? "Fresh Paystack link" : "Paystack link"}
                                   </button>
                                 </form>
 
