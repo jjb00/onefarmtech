@@ -8,6 +8,7 @@ type AdminPageShellProps = {
   actionLabel?: string;
   children: React.ReactNode;
   compactHeader?: boolean;
+  embedded?: boolean;
 };
 
 export default function AdminPageShell({
@@ -17,7 +18,9 @@ export default function AdminPageShell({
   actionLabel,
   children,
   compactHeader,
+  embedded,
 }: AdminPageShellProps) {
+  if (embedded) return <section>{children}</section>;
   const action =
     actionHref && actionLabel ? (
       <Link

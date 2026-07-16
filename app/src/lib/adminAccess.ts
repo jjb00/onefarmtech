@@ -28,6 +28,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     "/admin/workflows",
     "/admin/whatsapp",
     "/admin/buyer-messages",
+    "/admin/customers",
   ],
 
   Finance: [

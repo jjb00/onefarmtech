@@ -14,7 +14,9 @@ type CustomerDetailPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<{section?: string}>;
 };
+const detailSections = ["overview", "access", "orders", "finance", "communications", "activity"];
 
 const accountStatuses = [
   "Manual WhatsApp",
@@ -25,14 +27,17 @@ const accountStatuses = [
   "Paused",
 ];
 
-export default async function CustomerDetailPage({params}: CustomerDetailPageProps) {
+export default async function CustomerDetailPage({params, searchParams}: CustomerDetailPageProps) {
   const {id} = await params;
+  const requestedSection = String((await searchParams)?.section || "overview").toLowerCase();
+  const section = detailSections.includes(requestedSection) ? requestedSection : "overview";
 
   const customer = await prisma.customer.findUnique({
     where: {id},
     include: {
       orders: {
         orderBy: {createdAt: "desc"},
+        take: 25,
         include: {
           payments: {
             orderBy: {createdAt: "desc"},
@@ -44,6 +49,7 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
       },
       receipts: {
         orderBy: {issuedAt: "desc"},
+        take: 25,
         include: {
           order: true,
           payment: true,
@@ -51,10 +57,13 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
       },
       buyerContacts: {
         orderBy: {createdAt: "desc"},
+        take: 25,
       },
       buyerInvites: {
         orderBy: {createdAt: "desc"},
+        take: 25,
       },
+      buyerMessages: {orderBy: {createdAt: "desc"}, take: 25},
     },
   });
 
@@ -104,6 +113,9 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
           </Link>
         </div>
 
+        <nav aria-label="Buyer detail sections" className="flex gap-2 overflow-x-auto border-b pb-3">{detailSections.map((item) => <Link key={item} href={`/admin/customers/${customer.id}?section=${item}`} aria-current={section === item ? "page" : undefined} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-black ${section === item ? "bg-[#102015] text-white" : "bg-white text-[#405348]"}`}>{({overview: "Overview", access: "Contacts & access", orders: "Orders", finance: "Finance", communications: "Communications", activity: "Activity"} as Record<string, string>)[item]}</Link>)}</nav>
+
+        {section === "overview" ? <>
         <section className="grid gap-4 md:grid-cols-4">
           <Metric label="Order value" value={formatNaira(orderValue)} />
           <Metric label="Payments recorded" value={formatNaira(paymentValue)} />
@@ -249,7 +261,9 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
             />
           </div>
         </section>
+        </> : null}
 
+        {section === "access" ?
         <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -293,8 +307,9 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
               </p>
             ) : null}
           </div>
-        </section>
+        </section> : null}
 
+        {section === "orders" ?
         <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -345,8 +360,9 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
               </p>
             ) : null}
           </div>
-        </section>
+        </section> : null}
 
+        {section === "finance" ?
         <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
           <h2 className="text-2xl font-black">Receipt history</h2>
           <div className="mt-6 overflow-x-auto">
@@ -390,7 +406,9 @@ export default async function CustomerDetailPage({params}: CustomerDetailPagePro
               </tbody>
             </table>
           </div>
-        </section>
+        </section> : null}
+        {section === "communications" ? <section className="rounded-[2rem] bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">Recent communications</h2><div className="mt-4 grid gap-3">{customer.buyerMessages.map((message) => <article key={message.id} className="rounded-xl bg-[#f3f8ef] p-4"><p className="font-black">{message.title}</p><p className="mt-1 text-sm text-[#405348]">{message.channel} · {message.direction} · {message.status}</p><p className="mt-2 text-sm">{message.body.slice(0, 180)}{message.body.length > 180 ? "…" : ""}</p></article>)}</div><Link href={`/admin/buyer-messages?q=${encodeURIComponent(customer.name)}`} className="mt-4 inline-flex font-black text-[#1f7a3f]">View all communications</Link></section> : null}
+        {section === "activity" ? <section className="rounded-[2rem] bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">Recent account activity</h2><p className="mt-3 text-sm text-[#405348]">Last master-record update: {customer.updatedAt.toLocaleString()}</p><p className="mt-2 text-sm text-[#405348]">Recent previews are bounded to 25 records per section.</p><Link href="/admin/audit-log" className="mt-4 inline-flex font-black text-[#1f7a3f]">Open audit log</Link></section> : null}
       </div>
     </AdminPageShell>
   );

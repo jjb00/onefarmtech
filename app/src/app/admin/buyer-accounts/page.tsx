@@ -90,6 +90,8 @@ export default async function BuyerAccountsPage({searchParams}: PageProps) {
     <AdminPageShell
       title="Buyer accounts"
       description="Approved buyers, credit exposure, balances and login readiness."
+      actionHref="/admin/customers?view=all"
+      actionLabel="Open Buyers workspace"
     >
       <div className="grid gap-5">
         <section className="grid gap-3 md:grid-cols-4">

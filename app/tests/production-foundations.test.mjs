@@ -89,10 +89,11 @@ test("WhatsApp routes retain signature, known\/unknown routing, duplicate and ou
   assert.match(outbound, /WhatsApp send failed/);
 });
 
-test("Phase 1 admin navigation uses the approved job-based destinations", () => {
+test("admin navigation uses the approved job-based destinations and canonical buyer views", () => {
   const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
   for (const group of ["Dashboard", "Operations", "Communications", "Buyers", "Finance", "Catalogue & supply", "Reports", "System & settings"]) assert.match(navigation, new RegExp(`title: "${group.replace("&", "&")}"`));
-  for (const href of ["/admin/operations", "/admin/orders", "/admin/deliveries", "/admin/complaints", "/admin/buyer-messages", "/admin/whatsapp-tools", "/admin/customers", "/admin/guest-buyers", "/admin/buyer-account-requests", "/admin/buyer-access", "/admin/buyer-profile-requests", "/admin/payment-requests", "/admin/payments", "/admin/receipts", "/admin/products", "/admin/group-buys", "/admin/suppliers", "/admin/pickup-locations", "/admin/delivery-partners", "/admin/reports", "/admin/staff", "/admin/audit-log", "/admin/launch-readiness", "/admin/operating-manual"]) assert.match(navigation, new RegExp(`href: "${href}"`));
+  for (const href of ["/admin/operations", "/admin/orders", "/admin/deliveries", "/admin/complaints", "/admin/buyer-messages", "/admin/whatsapp-tools", "/admin/customers", "/admin/customers?view=guests", "/admin/customers?view=applications", "/admin/customers?view=access", "/admin/customers?view=updates", "/admin/payment-requests", "/admin/payments", "/admin/receipts", "/admin/products", "/admin/group-buys", "/admin/suppliers", "/admin/pickup-locations", "/admin/delivery-partners", "/admin/reports", "/admin/staff", "/admin/audit-log", "/admin/launch-readiness", "/admin/operating-manual"]) assert.match(navigation, new RegExp(`href: "${href.replace("?", "\\?")}"`));
+  for (const legacy of ["/admin/guest-buyers", "/admin/buyer-account-requests", "/admin/buyer-access", "/admin/buyer-profile-requests"]) assert.match(navigation, new RegExp(legacy.replaceAll("/", "\\/")));
   assert.match(navigation, /\/admin\/buyer-messages\?view=reconciliation/);
   assert.doesNotMatch(navigation, /title: "Sales"/);
 });

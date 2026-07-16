@@ -22,10 +22,10 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
   ]},
   {title: "Buyers", links: [
     {title: "All buyers", href: "/admin/customers", description: "Buyer master records and account status.", activePaths: ["/admin/buyer-accounts"], priority: true},
-    {title: "Guest buyers", href: "/admin/guest-buyers", description: "Unlinked buyers and account candidates."},
-    {title: "Applications", href: "/admin/buyer-account-requests", description: "New buyer applications awaiting review."},
-    {title: "Access", href: "/admin/buyer-access", description: "Buyer contacts, invitations and portal access."},
-    {title: "Update requests", href: "/admin/buyer-profile-requests", description: "Buyer-submitted profile and account changes."},
+    {title: "Guest buyers", href: "/admin/customers?view=guests", description: "Unlinked buyers and account candidates.", activePaths: ["/admin/guest-buyers"]},
+    {title: "Applications", href: "/admin/customers?view=applications", description: "New buyer applications awaiting review.", activePaths: ["/admin/buyer-account-requests"]},
+    {title: "Access", href: "/admin/customers?view=access", description: "Buyer contacts, invitations and portal access.", activePaths: ["/admin/buyer-access"]},
+    {title: "Update requests", href: "/admin/customers?view=updates", description: "Buyer-submitted profile and account changes.", activePaths: ["/admin/buyer-profile-requests"]},
   ]},
   {title: "Finance", links: [
     {title: "Payment requests", href: "/admin/payment-requests", description: "Payment links and buyer follow-up.", priority: true},

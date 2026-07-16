@@ -10,7 +10,7 @@ import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} fro
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-type PageProps = {searchParams?: Promise<Record<string, string | string[] | undefined>>};
+type PageProps = {searchParams?: Promise<Record<string, string | string[] | undefined>>; embedded?: boolean};
 type RequestRow = Awaited<ReturnType<typeof loadRequests>>[number];
 const PATH = "/admin/buyer-account-requests";
 const CONVERTED = "Converted to customer";
@@ -26,7 +26,7 @@ async function loadRequests(where: object, page: number, pageSize: number) {
   return prisma.buyerAccountRequest.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
 }
 
-export default async function BuyerAccountRequestsPage({searchParams}: PageProps) {
+export default async function BuyerAccountRequestsPage({searchParams, embedded}: PageProps) {
   const raw = await searchParams;
   const q = value(raw?.q); const status = value(raw?.status); const source = value(raw?.source); const buyerType = value(raw?.type); const conversion = value(raw?.conversion);
   const conversionError = value(raw?.conversionError);
@@ -51,10 +51,10 @@ export default async function BuyerAccountRequestsPage({searchParams}: PageProps
   const customers = new Map(existingCustomers.map((customer) => [customer.id, customer]));
   const range = adminResultRange(page, pageSize, total); const filtered = Boolean(q || status || source || buyerType || conversion);
 
-  return <AdminPageShell title="Account requests" description="Review recurring-buyer applications before customer setup and access management." compactHeader>
+  return <AdminPageShell title="Account requests" description="Review recurring-buyer applications before customer setup and access management." compactHeader embedded={embedded}>
     <div className="grid gap-5">
       {conversionError ? <div role="alert" className="rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{conversionErrorMessage(conversionError)}</div> : null}
-      <nav aria-label="Related buyer workflows" className="flex flex-wrap gap-2"><WorkflowLink href="/admin/launch-inbox" label="Open Launch inbox" /><WorkflowLink href="/admin/customers" label="View all buyers" /><WorkflowLink href="/admin/buyer-access" label="Manage buyer access" /></nav>
+      <nav aria-label="Related buyer workflows" className="flex flex-wrap gap-2"><WorkflowLink href="/admin/customers?view=applications" label="Open Buyers workspace" /><WorkflowLink href="/admin/launch-inbox" label="Open Launch inbox" /><WorkflowLink href="/admin/customers" label="View all buyers" /><WorkflowLink href="/admin/buyer-access" label="Manage buyer access" /></nav>
       <AdminListToolbar search={q} searchLabel="Search applications" searchPlaceholder="Applicant, organisation, phone, registration or notes" pageSize={pageSize} resetHref={PATH} filters={[
         {name: "status", label: "Status", value: status, options: statuses.map(({status: item}) => ({value: item, label: item}))},
         {name: "type", label: "Buyer type", value: buyerType, options: types.map(({buyerType: item}) => ({value: item, label: item}))},

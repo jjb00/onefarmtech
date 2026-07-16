@@ -79,6 +79,7 @@ function recommendation(group: GuestBuyerGroup) {
 }
 
 type GuestBuyersPageProps = {
+  embedded?: boolean;
   searchParams?: Promise<{
     status?: string;
     date?: string;
@@ -110,7 +111,7 @@ function inDateRange(value: Date, range: string) {
   return true;
 }
 
-export default async function GuestBuyersPage({searchParams}: GuestBuyersPageProps) {
+export default async function GuestBuyersPage({searchParams, embedded}: GuestBuyersPageProps) {
   await requireStaff();
 
   const params = await searchParams;
@@ -203,7 +204,9 @@ export default async function GuestBuyersPage({searchParams}: GuestBuyersPagePro
     <AdminPage
       title="Guest buyers"
       subtitle="Unlinked WhatsApp, event and one-off buyers grouped by phone number."
+      embedded={embedded}
     >
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#fff6d6] px-4 py-3 text-sm"><p>This is a bounded recent view of up to 500 unlinked orders. Guest identity is grouped by the stored phone value.</p><Link href="/admin/customers?view=guests" className="font-black text-[#1f7a3f]">Open Buyers workspace</Link></div>
       <section className="grid gap-3 md:grid-cols-3">
         <AdminCompactMetric label="Guest phones" value={String(guestGroups.length)} tone="blue" />
         <AdminCompactMetric label="Guest value" value={formatNaira(totalGuestSpend)} tone="green" />

@@ -50,6 +50,8 @@ export default async function BuyerAccessPage() {
     <AdminPageShell
       title="Buyer access"
       description="Manage authorised contacts and buyer portal access."
+      actionHref="/admin/customers?view=access"
+      actionLabel="Open Buyers workspace"
     >
       <div className="grid gap-6">
 
