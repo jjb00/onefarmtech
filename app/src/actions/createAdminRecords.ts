@@ -11,6 +11,7 @@ import {requireStaff} from "@/lib/auth";
 import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
+import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -1054,12 +1055,28 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
 }
 
 export async function updateOrderRequestStatusAction(formData: FormData) {
-  await requireStaff();
+  const staff = await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
 
   if (!requestId || !status) {
     throw new Error("Request ID and status are required.");
+  }
+
+  if (status === "Converted to order") {
+    let convertedOrderId = "";
+    try {
+      const result = await convertOrderRequestIntegrity({db: prisma, requestId, actor: staff});
+      convertedOrderId = result.order.id;
+    } catch (error) {
+      const code = error instanceof OrderRequestConversionError ? error.code : "conversion-failed";
+      redirect(`/admin/order-requests?conversionError=${encodeURIComponent(code)}`);
+    }
+    revalidatePath("/admin/launch-inbox");
+    revalidatePath("/admin/order-requests");
+    revalidatePath("/admin/orders");
+    revalidatePath("/admin/audit-log");
+    redirect(`/admin/orders/${convertedOrderId}`);
   }
 
   const updated = await prisma.orderRequest.update({

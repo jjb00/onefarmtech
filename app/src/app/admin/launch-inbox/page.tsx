@@ -2,6 +2,7 @@ import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
 import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
+import {convertedOrderFromNote} from "@/lib/orderRequestConversion.js";
 import {
   convertBuyerAccountRequestToCustomerAction,
   updateBuyerAccountRequestStatusAction,
@@ -228,6 +229,7 @@ export default async function LaunchInboxPage() {
           empty="No order requests yet."
         >
           {orderRequests.map((request) => {
+            const convertedOrder = convertedOrderFromNote(request.adminNote);
             const wa = whatsappHref(
               request.phone,
               `Hello ${request.buyerName}, thank you for your OneFarmTech order request. We are reviewing the items and will follow up shortly.`,
@@ -275,7 +277,7 @@ export default async function LaunchInboxPage() {
 
                   <OrderStatusButton requestId={request.id} status="Reviewing" label="Mark reviewing" />
                   <OrderStatusButton requestId={request.id} status="Followed up on WhatsApp" label="WhatsApp follow-up" />
-                  <OrderStatusButton requestId={request.id} status="Converted to order" label="Converted to order" strong />
+                  {convertedOrder ? <Link href={`/admin/orders/${convertedOrder.id}`} className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">Open {convertedOrder.code || "converted order"}</Link> : <OrderStatusButton requestId={request.id} status="Converted to order" label="Convert to order" strong />}
                   <OrderStatusButton requestId={request.id} status="Closed" label="Close" />
                   <OrderStatusButton requestId={request.id} status="Rejected" label="Reject" danger />
                 </div>

@@ -138,7 +138,7 @@ export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
                 {statusOrders.slice(0, 12).map((order) => (
                   <Link
                     key={order.code}
-                    href={`/admin/orders/${order.code}`}
+                    href={`/admin/orders/${order.id}`}
                     className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-3 text-sm transition hover:bg-[#f3f8ef]"
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -182,7 +182,7 @@ export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
                   {sortedOrders.map((order) => (
                     <tr key={order.code} className="border-t border-[#102015]/10 text-[#405348]">
                       <td className="px-4 py-3 font-black text-[#102015]">
-                        <Link href={`/admin/orders/${order.code}`} className="text-[#1f7a3f] underline-offset-4 hover:underline">
+                        <Link href={`/admin/orders/${order.id}`} className="text-[#1f7a3f] underline-offset-4 hover:underline">
                           {order.code}
                         </Link>
                         {view === "list" ? <p className="mt-1 text-xs text-[#587063]">{order.orderType}</p> : null}

@@ -135,7 +135,7 @@ test("legacy admin operational routes remain present and guest orders use the ac
   const guests = fs.readFileSync(new URL("../src/app/admin/guest-buyers/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
   assert.match(guests, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
-  assert.match(detail, /where: \{id\}/);
+  assert.match(detail, /where: \{OR: \[\{id\}, \{code: id\}\]\}/);
 });
 
 test("payment webhooks retain signature checks, reconciliation creation and idempotent settlement", () => {
