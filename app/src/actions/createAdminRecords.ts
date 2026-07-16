@@ -1810,14 +1810,21 @@ export async function generatePaymentLinkAction(formData: FormData) {
     redirect("/admin/payment-requests?error=missing-id");
   }
 
+  let result;
   try {
-    const result = await initialisePayment({db: prisma, paymentRequestId: id, provider, createCheckout: createPaymentCheckout});
-    const {source: sourcePaymentRequest, reused} = result;
-    const paymentRequest = {...sourcePaymentRequest, ...result.paymentRequest, order: sourcePaymentRequest.order, customer: sourcePaymentRequest.customer};
-    const checkout = result.checkout || {provider: paymentRequest.provider, gatewayReference: paymentRequest.gatewayReference, paymentUrl: paymentRequest.paymentUrl};
+    result = await initialisePayment({db: prisma, paymentRequestId: id, provider, createCheckout: createPaymentCheckout});
+  } catch (error) {
+    const code = error instanceof PaymentInitializationError ? error.code : "payment-link-failed";
+    const detail = error instanceof PaymentInitializationError ? error.message : "Payment initialisation failed unexpectedly.";
+    redirect(`/admin/payment-requests?error=${encodeURIComponent(code)}&detail=${encodeURIComponent(`${provider}: ${detail}`)}`);
+  }
 
-    if (!reused && paymentRequest.customerId) {
-      await prisma.buyerMessage.create({
+  const {source: sourcePaymentRequest, reused} = result;
+  const paymentRequest = {...sourcePaymentRequest, ...result.paymentRequest, order: sourcePaymentRequest.order, customer: sourcePaymentRequest.customer};
+  const checkout = result.checkout || {provider: paymentRequest.provider, gatewayReference: paymentRequest.gatewayReference, paymentUrl: paymentRequest.paymentUrl};
+
+  if (!reused && paymentRequest.customerId) {
+    await prisma.buyerMessage.create({
         data: {
           customerId: paymentRequest.customerId,
           title: `Payment link for ${paymentRequest.order.code}`,
@@ -1831,25 +1838,21 @@ export async function generatePaymentLinkAction(formData: FormData) {
           relatedId: paymentRequest.id,
           metadata: JSON.stringify({provider: checkout.provider, gatewayReference: checkout.gatewayReference}),
         },
-      });
-    }
-
-    if (!reused && paymentRequest.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `payment-link:${paymentRequest.id}`, template: "payment-request", to: paymentRequest.customer.email, content: emailTemplates.paymentRequest(paymentRequest.customer.name, paymentRequest.order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount), checkout.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
-    }
-
-    await createAuditLog({actorName: staff.name, actorEmail: staff.email, actorRole: staff.role, action: reused ? "Reused active payment link" : "Generated payment link", entityType: "PaymentRequest", entityId: paymentRequest.id, entityLabel: paymentRequest.order.code, newValue: {provider: paymentRequest.provider, reference: paymentRequest.reference, reused}});
-
-    revalidatePath("/admin/payment-requests");
-    revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
-    revalidatePath("/buyer-account/payments");
-    revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
-    revalidatePath("/buyer-account/inbox");
-    redirect(`/admin/payment-requests?paymentLink=${reused ? "reused" : "generated"}`);
-  } catch (error) {
-    const code = error instanceof PaymentInitializationError ? error.code : "payment-link-failed";
-    redirect(`/admin/payment-requests?error=${encodeURIComponent(code)}`);
+    });
   }
+
+  if (!reused && paymentRequest.customer?.email) {
+    await sendTransactionalEmail({deduplicationKey: `payment-link:${paymentRequest.id}`, template: "payment-request", to: paymentRequest.customer.email, content: emailTemplates.paymentRequest(paymentRequest.customer.name, paymentRequest.order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount), checkout.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
+  }
+
+  await createAuditLog({actorName: staff.name, actorEmail: staff.email, actorRole: staff.role, action: reused ? "Reused active payment link" : "Generated payment link", entityType: "PaymentRequest", entityId: paymentRequest.id, entityLabel: paymentRequest.order.code, newValue: {provider: paymentRequest.provider, reference: paymentRequest.reference, reused}});
+
+  revalidatePath("/admin/payment-requests");
+  revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
+  revalidatePath("/buyer-account/payments");
+  revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
+  revalidatePath("/buyer-account/inbox");
+  redirect(`/admin/payment-requests?paymentLink=${reused ? "reused" : "generated"}`);
 }
 
 

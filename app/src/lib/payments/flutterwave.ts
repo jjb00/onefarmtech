@@ -1,3 +1,5 @@
+import {PaymentProviderError} from "./providerError.js";
+
 type FlutterwaveCheckoutInput = {
   reference: string;
   amount: number;
@@ -13,6 +15,7 @@ type FlutterwaveCheckoutResult = {
   provider: "Flutterwave";
   paymentUrl: string;
   gatewayReference: string;
+  httpStatus: number;
 };
 
 export type FlutterwaveVerificationResult = {
@@ -26,10 +29,10 @@ export type FlutterwaveVerificationResult = {
 };
 
 function requireFlutterwaveSecretKey() {
-  const secretKey = process.env.FLUTTERWAVE_SECRET_KEY;
+  const secretKey = process.env.FLUTTERWAVE_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    throw new Error("FLUTTERWAVE_SECRET_KEY is not configured.");
+    throw new PaymentProviderError({provider: "Flutterwave", code: "configuration-missing", message: "FLUTTERWAVE_SECRET_KEY is not configured."});
   }
 
   return secretKey;
@@ -41,7 +44,7 @@ export async function createFlutterwaveCheckout(
   const secretKey = requireFlutterwaveSecretKey();
 
   if (!input.email) {
-    throw new Error("Flutterwave checkout requires a buyer email or FLUTTERWAVE_FALLBACK_EMAIL.");
+    throw new PaymentProviderError({provider: "Flutterwave", code: "customer-email-missing", message: "Flutterwave checkout requires a buyer email or FLUTTERWAVE_FALLBACK_EMAIL."});
   }
 
   if (!input.reference) {
@@ -78,23 +81,24 @@ export async function createFlutterwaveCheckout(
 
   const payload = await response.json().catch(() => null);
 
-  if (!response.ok || !payload?.status) {
+  if (!response.ok || payload?.status !== "success") {
     const message =
       payload?.message ||
       `Flutterwave checkout failed with HTTP ${response.status}.`;
-    throw new Error(message);
+    throw new PaymentProviderError({provider: "Flutterwave", code: "provider-rejected", message, httpStatus: response.status});
   }
 
   const data = payload.data || {};
 
   if (!data.link) {
-    throw new Error("Flutterwave did not return a payment link.");
+    throw new PaymentProviderError({provider: "Flutterwave", code: "invalid-provider-response", message: "Flutterwave did not return a payment link.", httpStatus: response.status});
   }
 
   return {
     provider: "Flutterwave",
     paymentUrl: data.link,
     gatewayReference: input.reference,
+    httpStatus: response.status,
   };
 }
 

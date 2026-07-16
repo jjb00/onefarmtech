@@ -283,6 +283,8 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                         <a href={request.paymentUrl} target="_blank" rel="noreferrer" className="font-black text-[#1f7a3f] underline-offset-4 hover:underline">
                           Open link
                         </a>
+                      ) : request.status === "Failed" && request.providerError ? (
+                        <span className="text-xs font-bold text-[#9b2f12]">{request.provider}: {request.providerError}</span>
                       ) : (
                         <span className="text-xs font-bold text-[#587063]">{request.paymentUrl ? "Expired or unavailable" : "No link"}</span>
                       )}

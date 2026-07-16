@@ -386,23 +386,25 @@ model DeliveryPartner {
 }
 
 model PaymentRequest {
-  id               String    @id @default(cuid())
-  orderId          String
-  customerId       String?
-  provider         String    @default("Manual")
-  reference        String    @unique
-  amount           Int
-  currency         String    @default("NGN")
-  status           String    @default("Pending")
-  paymentUrl       String?
-  bankName         String?
-  accountNumber    String?
-  accountName      String?
-  gatewayReference String?
-  expiresAt        DateTime?
-  paidAt           DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                 String    @id @default(cuid())
+  orderId            String
+  customerId         String?
+  provider           String    @default("Manual")
+  reference          String    @unique
+  amount             Int
+  currency           String    @default("NGN")
+  status             String    @default("Pending")
+  paymentUrl         String?
+  providerHttpStatus Int?
+  providerError      String?
+  bankName           String?
+  accountNumber      String?
+  accountName        String?
+  gatewayReference   String?
+  expiresAt          DateTime?
+  paidAt             DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
   order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
   customer Customer? @relation(fields: [customerId], references: [id])

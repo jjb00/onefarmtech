@@ -1,6 +1,8 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
 import {requireStaff} from "@/lib/auth";
+import {prisma} from "@/lib/prisma";
+import {paymentConfigurationSummary} from "@/lib/payments/configuration";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -50,12 +52,39 @@ const groups = [
 
 export default async function IntegrationReadinessPage() {
   await requireStaff();
+  const paymentConfiguration = paymentConfigurationSummary();
+  const [lastPaystack, lastFlutterwave] = await Promise.all([
+    prisma.paymentRequest.findFirst({where: {provider: "Paystack"}, orderBy: {createdAt: "desc"}, select: {status: true, providerHttpStatus: true, providerError: true, createdAt: true}}),
+    prisma.paymentRequest.findFirst({where: {provider: "Flutterwave"}, orderBy: {createdAt: "desc"}, select: {status: true, providerHttpStatus: true, providerError: true, createdAt: true}}),
+  ]);
 
   return (
     <AdminPage
       title="Integration readiness"
       subtitle="Check payment and WhatsApp provider configuration without exposing secret values."
     >
+      <section className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm">
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">Payment diagnostics</p>
+        <h2 className="mt-2 text-2xl font-black text-[#102015]">Safe payment initialisation status</h2>
+        <p className="mt-2 text-sm leading-7 text-[#405348]">Secret values are never displayed. Modes are detected from key prefixes only.</p>
+        <div className="mt-5 grid gap-4 lg:grid-cols-2">
+          {[
+            {name: "Paystack", config: paymentConfiguration.paystack, callback: paymentConfiguration.paystackCallbackUrl, last: lastPaystack},
+            {name: "Flutterwave", config: paymentConfiguration.flutterwave, callback: paymentConfiguration.flutterwaveRedirectUrl, last: lastFlutterwave},
+          ].map(({name, config, callback, last}) => (
+            <article key={name} className="rounded-[1.5rem] border border-[#102015]/10 p-5 text-sm text-[#405348]">
+              <div className="flex items-center justify-between gap-3"><h3 className="text-lg font-black text-[#102015]">{name}</h3><StatusPill ready={config.configured} /></div>
+              <dl className="mt-4 grid gap-2">
+                <div><dt className="font-black text-[#102015]">Key mode</dt><dd>{config.mode}</dd></div>
+                <div><dt className="font-black text-[#102015]">Callback/redirect</dt><dd className="break-all">{callback}</dd></div>
+                <div><dt className="font-black text-[#102015]">Last initialisation</dt><dd>{last ? `${last.status}${last.providerHttpStatus ? ` · HTTP ${last.providerHttpStatus}` : ""}` : "No recorded attempt"}</dd></div>
+                {last?.providerError ? <div><dt className="font-black text-[#102015]">Last safe error</dt><dd>{last.providerError}</dd></div> : null}
+              </dl>
+            </article>
+          ))}
+        </div>
+        <div className="mt-4 rounded-2xl bg-[#f7f5ec] p-4 text-sm"><span className="font-black text-[#102015]">APP_BASE_URL:</span> {paymentConfiguration.appBaseUrl}</div>
+      </section>
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>

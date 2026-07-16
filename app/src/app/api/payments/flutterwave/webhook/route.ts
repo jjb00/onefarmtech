@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function verifyFlutterwaveSignature(signature: string | null) {
-  const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH;
+  const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH || process.env.FLUTTERWAVE_SECRET_HASH;
 
   if (!secretHash || !signature) {
     return false;

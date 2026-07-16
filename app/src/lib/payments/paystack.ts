@@ -1,3 +1,5 @@
+import {PaymentProviderError} from "./providerError.js";
+
 type PaystackCheckoutInput = {
   reference: string;
   amount: number;
@@ -12,6 +14,7 @@ type PaystackCheckoutResult = {
   paymentUrl: string;
   gatewayReference: string;
   accessCode?: string;
+  httpStatus: number;
 };
 
 export type PaystackVerificationResult = {
@@ -25,10 +28,10 @@ export type PaystackVerificationResult = {
 };
 
 function requirePaystackSecretKey() {
-  const secretKey = process.env.PAYSTACK_SECRET_KEY;
+  const secretKey = process.env.PAYSTACK_SECRET_KEY?.trim();
 
   if (!secretKey) {
-    throw new Error("PAYSTACK_SECRET_KEY is not configured.");
+    throw new PaymentProviderError({provider: "Paystack", code: "configuration-missing", message: "PAYSTACK_SECRET_KEY is not configured."});
   }
 
   return secretKey;
@@ -40,7 +43,7 @@ export async function createPaystackCheckout(
   const secretKey = requirePaystackSecretKey();
 
   if (!input.email) {
-    throw new Error("Paystack checkout requires a buyer email or PAYSTACK_FALLBACK_EMAIL.");
+    throw new PaymentProviderError({provider: "Paystack", code: "customer-email-missing", message: "Paystack checkout requires a buyer email or PAYSTACK_FALLBACK_EMAIL."});
   }
 
   if (!input.reference) {
@@ -73,13 +76,13 @@ export async function createPaystackCheckout(
     const message =
       payload?.message ||
       `Paystack checkout failed with HTTP ${response.status}.`;
-    throw new Error(message);
+    throw new PaymentProviderError({provider: "Paystack", code: "provider-rejected", message, httpStatus: response.status});
   }
 
   const data = payload.data || {};
 
   if (!data.authorization_url || !data.reference) {
-    throw new Error("Paystack did not return a payment URL/reference.");
+    throw new PaymentProviderError({provider: "Paystack", code: "invalid-provider-response", message: "Paystack did not return a payment URL/reference.", httpStatus: response.status});
   }
 
   return {
@@ -87,6 +90,7 @@ export async function createPaystackCheckout(
     paymentUrl: data.authorization_url,
     gatewayReference: data.reference,
     accessCode: data.access_code,
+    httpStatus: response.status,
   };
 }
 

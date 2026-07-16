@@ -19,15 +19,29 @@ export type PaymentCheckoutResult = {
   provider: PaymentProviderName | string;
   paymentUrl: string;
   gatewayReference: string;
+  httpStatus: number;
   metadata?: Record<string, unknown>;
 };
 
-function getBaseUrl() {
+export function getPaymentBaseUrl() {
   const configured = process.env.APP_BASE_URL || process.env.NEXT_PUBLIC_APP_URL;
   if (!configured && process.env.NODE_ENV === "production") {
     throw new Error("APP_BASE_URL is required for production payment links.");
   }
-  return (configured || "http://localhost:3002").replace(/\/$/, "");
+  const baseUrl = (configured || "http://localhost:3002").trim().replace(/\/$/, "");
+  if (process.env.NODE_ENV === "production" && baseUrl !== "https://onefarmtech.com") {
+    throw new Error("APP_BASE_URL must be https://onefarmtech.com for production payment links.");
+  }
+  return baseUrl;
+}
+
+export function getPaymentCallbackUrls() {
+  const baseUrl = getPaymentBaseUrl();
+  return {
+    paystack: `${baseUrl}/api/payments/webhook`,
+    flutterwave: `${baseUrl}/api/payments/flutterwave/webhook`,
+    returnUrl: `${baseUrl}/admin/payment-requests`,
+  };
 }
 
 function getCheckoutEmail(input: PaymentCheckoutInput) {
@@ -58,7 +72,7 @@ export async function createPaymentCheckout(
       amount: input.amount,
       currency: input.currency || "NGN",
       email: getCheckoutEmail(input),
-      callbackUrl: `${getBaseUrl()}${callbackPath}`,
+      callbackUrl: `${getPaymentBaseUrl()}${callbackPath}`,
       metadata: {
         orderCode: input.orderCode,
         buyerName: input.buyerName,
@@ -71,6 +85,7 @@ export async function createPaymentCheckout(
       provider: checkout.provider,
       paymentUrl: checkout.paymentUrl,
       gatewayReference: checkout.gatewayReference,
+      httpStatus: checkout.httpStatus,
       metadata: {
         accessCode: checkout.accessCode,
       },
@@ -85,7 +100,7 @@ export async function createPaymentCheckout(
       email: getCheckoutEmail(input),
       name: input.buyerName,
       phone: input.buyerPhone,
-      redirectUrl: `${getBaseUrl()}${callbackPath}`,
+      redirectUrl: `${getPaymentBaseUrl()}${callbackPath}`,
       metadata: {
         orderCode: input.orderCode,
         buyerName: input.buyerName,
@@ -98,6 +113,7 @@ export async function createPaymentCheckout(
       provider: checkout.provider,
       paymentUrl: checkout.paymentUrl,
       gatewayReference: checkout.gatewayReference,
+      httpStatus: checkout.httpStatus,
     };
   }
 
