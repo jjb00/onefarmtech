@@ -64,7 +64,7 @@ export function buildPaymentInstructionMessage(input: PaymentInstructionInput) {
     "Thank you.",
   );
 
-  return lines.join("\\n");
+  return lines.join("\n");
 }
 
 export function buildPaymentReceivedMessage(input: {

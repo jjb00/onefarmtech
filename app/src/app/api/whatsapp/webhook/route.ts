@@ -618,12 +618,23 @@ async function applyDeliveryStatus(statusEvent: any) {
 
   let metadata: Record<string, unknown> = {};
   try { metadata = JSON.parse(message.metadata || "{}"); } catch {}
+  const providerErrors = Array.isArray(statusEvent?.errors)
+    ? statusEvent.errors.map((error: unknown) => {
+        const providerError = error as {code?: number; title?: string; message?: string; error_data?: {details?: string}};
+        return {
+          code: providerError.code || null,
+          title: providerError.title || null,
+          message: providerError.message || null,
+          details: providerError.error_data?.details || null,
+        };
+      })
+    : [];
   await prisma.buyerMessage.update({
     where: {id: message.id},
     data: {
       status,
       readAt: status === "Read" ? new Date() : undefined,
-      metadata: JSON.stringify({...metadata, latestProviderStatus: status, latestProviderStatusAt: statusEvent?.timestamp || null}),
+      metadata: JSON.stringify({...metadata, latestProviderStatus: status, latestProviderStatusAt: statusEvent?.timestamp || null, providerErrors}),
     },
   });
   return true;

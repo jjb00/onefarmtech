@@ -30,6 +30,7 @@ type PageProps = {
     sort?: string;
     error?: string;
     detail?: string;
+    whatsapp?: string;
   }>;
 };
 
@@ -125,7 +126,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
 
   const paymentRequestIds = paymentRequests.map((request) => request.id);
 
-  const whatsappSentMessages = paymentRequestIds.length
+  const whatsappMessages = paymentRequestIds.length
     ? await prisma.buyerMessage.findMany({
         where: {
           relatedType: "PaymentRequest",
@@ -133,21 +134,23 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
           channel: "WhatsApp",
           direction: "Outbound",
           source: "WhatsApp API",
-          status: "Sent",
         },
         select: {
           relatedId: true,
           sentAt: true,
           createdAt: true,
           metadata: true,
+          status: true,
+          recipient: true,
         },
         orderBy: {createdAt: "desc"},
       })
     : [];
 
-  const whatsappSentByRequest = new Map(
-    whatsappSentMessages
+  const whatsappByRequest = new Map(
+    whatsappMessages
       .filter((message) => message.relatedId)
+      .filter((message, index, messages) => messages.findIndex((candidate) => candidate.relatedId === message.relatedId) === index)
       .map((message) => [message.relatedId, message]),
   );
 
@@ -178,6 +181,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
       subtitle="Payment links, buyer follow-up, status updates and receipt actions."
     >
       {params?.error ? <div role="alert" className="mb-4 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{params.detail || params.error}</div> : null}
+      {params?.whatsapp === "accepted" ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment link created separately. WhatsApp accepted the notification for sending; delivery status will update from Meta.</div> : null}
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
         <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
@@ -260,6 +264,11 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                   accountName: request.accountName,
                 });
 
+                const whatsappMessage = whatsappByRequest.get(request.id);
+                let whatsappMetadata: {error?: string; providerErrors?: Array<{details?: string; message?: string}>} = {};
+                try { whatsappMetadata = JSON.parse(whatsappMessage?.metadata || "{}"); } catch {}
+                const whatsappError = whatsappMetadata.error || whatsappMetadata.providerErrors?.[0]?.details || whatsappMetadata.providerErrors?.[0]?.message || null;
+
                 return (
                   <tr key={request.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
                     <td className="px-4 py-3 font-black text-[#102015]">{request.reference}</td>
@@ -290,8 +299,8 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      {whatsappSentByRequest.has(request.id) ? (
-                        <AdminStatusPill tone="green">Sent</AdminStatusPill>
+                      {whatsappMessage ? (
+                        <div className="grid gap-1"><AdminStatusPill tone={adminToneFromStatus(whatsappMessage.status)}>{whatsappMessage.status}</AdminStatusPill>{whatsappError ? <span className="max-w-xs text-xs font-bold text-[#9b2f12]">{whatsappError}</span> : null}</div>
                       ) : (
                         <AdminStatusPill tone="amber">Not sent</AdminStatusPill>
                       )}
@@ -369,11 +378,11 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                               </>
                             ) : null}
 
-                            {!whatsappSentByRequest.has(request.id) ? (
+                            {!whatsappMessage || whatsappMessage.status === "Failed" ? (
                               <form action={sendPaymentRequestWhatsAppAction}>
                                 <input type="hidden" name="id" value={request.id} />
                                 <button type="submit" disabled={!request.order.phone} className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-4 py-2 text-xs font-black text-[#1f7a3f] disabled:cursor-not-allowed disabled:opacity-40">
-                                  Send message
+                                  {whatsappMessage?.status === "Failed" ? "Retry same link" : "Send message"}
                                 </button>
                               </form>
                             ) : null}

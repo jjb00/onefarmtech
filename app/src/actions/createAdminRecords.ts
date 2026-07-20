@@ -2268,7 +2268,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
   const {prisma} = await import("@/lib/prisma");
-  const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+  const {normaliseWhatsAppPhone, sendWhatsAppPaymentTemplate, WhatsAppProviderError} = await import("@/lib/whatsapp/provider");
   const {buildPaymentInstructionMessage} = await import("@/lib/communications/paymentTemplates");
 
   await requireStaff();
@@ -2320,81 +2320,71 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
     accountName: paymentRequest.accountName,
   });
 
+  const recipient = paymentRequest.customer?.phone || paymentRequest.order.phone;
+  let normalizedRecipient: string;
   try {
-    const result = await sendWhatsAppTextMessage({
-      to: paymentRequest.order.phone,
-      body,
+    normalizedRecipient = normaliseWhatsAppPhone(recipient);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "WhatsApp recipient phone is invalid.";
+    redirect(`/admin/payment-requests?error=whatsapp-recipient&detail=${encodeURIComponent(detail)}`);
+  }
+
+  let customerId = paymentRequest.customerId || paymentRequest.order.customerId || null;
+  if (!customerId) {
+    const existingCustomer = await prisma.customer.findFirst({where: {phone: recipient}});
+    const customer = existingCustomer || await prisma.customer.create({data: {
+      name: paymentRequest.order.buyerName || "WhatsApp buyer",
+      phone: recipient,
+      email: paymentRequest.customer?.email || null,
+      buyerType: paymentRequest.order.buyerType || "WhatsApp buyer",
+      location: paymentRequest.order.deliveryNote || null,
+      accountStatus: "Manual WhatsApp",
+      status: "Active",
+    }});
+    customerId = customer.id;
+    await prisma.order.update({where: {id: paymentRequest.orderId}, data: {customerId}});
+    await prisma.paymentRequest.update({where: {id: paymentRequest.id}, data: {customerId}});
+  }
+
+  const messageLog = await prisma.buyerMessage.create({data: {
+    customerId,
+    title: `WhatsApp payment request for ${paymentRequest.order.code}`,
+    body,
+    channel: "WhatsApp",
+    direction: "Outbound",
+    status: "Pending",
+    recipient: normalizedRecipient,
+    source: "WhatsApp API",
+    relatedType: "PaymentRequest",
+    relatedId: paymentRequest.id,
+    metadata: JSON.stringify({provider: "Meta WhatsApp Cloud API", attemptedAt: new Date().toISOString(), normalizedRecipient, paymentUrl: paymentRequest.paymentUrl}),
+  }});
+
+  try {
+    if (!paymentRequest.paymentUrl) throw new Error("Create a valid checkout link before sending the WhatsApp payment notification.");
+    const result = await sendWhatsAppPaymentTemplate({
+      to: recipient,
+      buyerName: paymentRequest.customer?.name || paymentRequest.order.buyerName || "Customer",
+      orderCode: paymentRequest.order.code,
+      amount: new Intl.NumberFormat("en-NG", {style: "currency", currency: paymentRequest.currency || "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount),
+      reference: paymentRequest.reference,
+      paymentUrl: paymentRequest.paymentUrl,
     });
-
-    let customerId = paymentRequest.customerId || paymentRequest.order.customerId || null;
-
-    if (!customerId) {
-      const existingCustomer = await prisma.customer.findFirst({
-        where: {phone: paymentRequest.order.phone},
-      });
-
-      const customer =
-        existingCustomer ||
-        (await prisma.customer.create({
-          data: {
-            name: paymentRequest.order.buyerName || "WhatsApp buyer",
-            phone: paymentRequest.order.phone,
-            email: paymentRequest.customer?.email || null,
-            buyerType: paymentRequest.order.buyerType || "WhatsApp buyer",
-            location: paymentRequest.order.deliveryNote || null,
-            accountStatus: "Manual WhatsApp",
-            status: "Active",
-          },
-        }));
-
-      customerId = customer.id;
-
-      await prisma.order.update({
-        where: {id: paymentRequest.orderId},
-        data: {customerId},
-      });
-
-      await prisma.paymentRequest.update({
-        where: {id: paymentRequest.id},
-        data: {customerId},
-      });
-    }
-
-    if (!customerId) {
-      throw new Error("Could not create or resolve buyer record for WhatsApp evidence.");
-    }
-
-    await prisma.buyerMessage.create({
-      data: {
-        customerId,
-        title: `WhatsApp payment request for ${paymentRequest.order.code}`,
-        body,
-        channel: "WhatsApp",
-        direction: "Outbound",
-        status: result.status,
-        recipient: paymentRequest.order.phone,
-        source: "WhatsApp API",
-        relatedType: "PaymentRequest",
-        relatedId: paymentRequest.id,
-        sentAt: new Date(),
-        metadata: JSON.stringify({
-          provider: result.provider,
-          messageId: result.messageId,
-        }),
-      },
-    });
+    await prisma.buyerMessage.update({where: {id: messageLog.id}, data: {status: "Sent", sentAt: new Date(), metadata: JSON.stringify({provider: result.provider, messageId: result.messageId, metaHttpStatus: result.httpStatus, normalizedRecipient: result.normalizedTo, messageType: result.messageType, paymentUrl: paymentRequest.paymentUrl})}});
 
     revalidatePath("/admin/payment-requests");
     revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
     revalidatePath("/admin/buyer-messages");
     revalidatePath("/buyer-account/inbox");
   } catch (error) {
-    const message = error instanceof Error ? error.message : "whatsapp-send-failed";
-    const encoded = encodeURIComponent(message).slice(0, 180);
-    redirect(`/admin/payment-requests?error=${encoded}`);
+    const message = error instanceof Error ? error.message : "WhatsApp send failed.";
+    const details = error instanceof WhatsAppProviderError ? error.details : {};
+    await prisma.buyerMessage.update({where: {id: messageLog.id}, data: {status: "Failed", metadata: JSON.stringify({provider: "Meta WhatsApp Cloud API", normalizedRecipient, paymentUrl: paymentRequest.paymentUrl, error: message, ...details})}});
+    revalidatePath("/admin/payment-requests");
+    redirect(`/admin/payment-requests?error=whatsapp-failed&detail=${encodeURIComponent(message).slice(0, 220)}`);
   }
 
-  redirect("/admin/payment-requests?whatsapp=sent");
+  redirect("/admin/payment-requests?whatsapp=accepted");
 }
 
 
