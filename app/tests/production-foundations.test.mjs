@@ -62,11 +62,14 @@ test("Resend delivery and failure events map to accurate operational statuses", 
 
 test("Resend handler, email retry and reconciliation actions contain replay and authorization guards", () => {
   const webhook = fs.readFileSync(new URL("../src/app/api/email/resend/webhook/route.ts", import.meta.url), "utf8");
+  const eventProcessing = fs.readFileSync(new URL("../src/lib/email/resendEventProcessing.js", import.meta.url), "utf8");
   const service = fs.readFileSync(new URL("../src/lib/email/service.ts", import.meta.url), "utf8");
   const actions = fs.readFileSync(new URL("../src/actions/communications.ts", import.meta.url), "utf8");
-  assert.match(webhook, /emailProviderEvent\.findUnique/);
-  assert.match(webhook, /eventAt >= delivery\.latestEventAt/);
-  assert.match(webhook, /unmatched provider message id/);
+  assert.match(webhook, /applyResendDeliveryEvent/);
+  assert.match(webhook, /unmatched: true/);
+  assert.match(eventProcessing, /emailProviderEvent\.findUnique/);
+  assert.match(eventProcessing, /latestEventAt: \{lt: eventAt\}/);
+  assert.doesNotMatch(eventProcessing, /\$transaction/);
   assert.match(service, /60_000/);
   assert.match(service, /Bounced.*Complained/);
   assert.match(actions, /await requireStaff\(\)/);
