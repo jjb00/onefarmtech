@@ -517,3 +517,11 @@ model OperationalEvent {
   @@index([status, createdAt])
   @@index([category, createdAt])
 }
+
+model PublicIntakeDedupe {
+  id        String   @id @default(cuid())
+  dedupeKey String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

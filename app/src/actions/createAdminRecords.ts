@@ -15,6 +15,7 @@ import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "
 import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
 import {initialFulfilmentStatus, isPickupMethod, validateOrderStatusTransition} from "@/lib/orderStatusRules.js";
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
+import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -583,6 +584,13 @@ export async function createContactEnquiryAction(formData: FormData) {
     throw new Error("Please provide an email or phone number.");
   }
 
+  try {
+    await protectPublicIntake({formType: "contact", action: "contact", token: readText(formData, "cf-turnstile-response"), honeypot: readText(formData, "website"), values: [name, organisation, email, phone, enquiryType, message]});
+  } catch (error) {
+    const code = error instanceof PublicIntakeError ? error.code : "bot-check";
+    redirect(`/contact?intakeError=${encodeURIComponent(code)}`);
+  }
+
   if (enquiryType === "Buyer account request") {
     const request = await prisma.buyerAccountRequest.create({
       data: {
@@ -721,6 +729,13 @@ export async function createOrderRequestAction(formData: FormData) {
 
   if (!buyerName || !phone || !items) {
     throw new Error("Buyer name, phone, and items are required.");
+  }
+
+  try {
+    await protectPublicIntake({formType: "order-request", action: "order_request", token: readText(formData, "cf-turnstile-response"), honeypot: readText(formData, "website"), values: [buyerName, buyerType, phone, email, location, deliveryPreference, items, timing, groupBuyInterest, message]});
+  } catch (error) {
+    const code = error instanceof PublicIntakeError ? error.code : "bot-check";
+    redirect(`/order-request?intakeError=${encodeURIComponent(code)}`);
   }
 
   const orderRequest = await prisma.orderRequest.create({

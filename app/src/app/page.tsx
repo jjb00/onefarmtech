@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 async function getHomepageActivity() {
+  try {
   const activeGroupBuy = await prisma.groupBuy.findFirst({
     where: {
       status: {
@@ -49,6 +50,10 @@ async function getHomepageActivity() {
     reservationCount: activeGroupBuy?.reservations.length || 0,
     item: activeGroupBuy?.items[0],
   };
+  } catch (error) {
+    console.error("Homepage activity unavailable", {route: "/", error: error instanceof Error ? error.message : "unknown"});
+    return {activeGroupBuy: null, activeGroupBuyCount: 0, reservedQuantity: 0, targetQuantity: 0, progress: 0, reservationCount: 0, item: undefined};
+  }
 }
 
 export default async function HomePage() {
