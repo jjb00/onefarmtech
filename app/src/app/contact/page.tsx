@@ -225,13 +225,7 @@ export default async function ContactPage({
                 />
               </label>
 
-              <TurnstileWidget action="contact" />
-              <button
-                type="submit"
-                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
-              >
-                Submit enquiry
-              </button>
+              <TurnstileWidget key={intakeError || "ready"} action="contact" idleLabel="Submit enquiry" pendingLabel="Sending…" />
 
               <p className="text-xs leading-6 text-[#587063]">
                 Enquiries are reviewed manually. For urgent buyer support, use the

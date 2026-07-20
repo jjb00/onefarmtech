@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import {honeypotIsFilled, intakeFingerprint, registerUniqueIntakeDedupe, validTurnstileResult} from "../src/lib/publicIntakeRules.js";
+import {honeypotIsFilled, intakeFingerprint, registerUniqueIntakeDedupe, validTurnstileResult, verifyThenReserveIntake} from "../src/lib/publicIntakeRules.js";
 
 test("duplicate intake attempt does not create a second record", async () => {
   const keys = new Set(); let creates = 0;
@@ -35,6 +35,13 @@ test("Turnstile requires success, hostname and action", () => {
   assert.equal(validTurnstileResult({success: true, action: "wrong", hostname: "onefarmtech.com"}, "contact", "onefarmtech.com"), false);
   assert.equal(validTurnstileResult({success: true, action: "contact", hostname: "evil.example"}, "contact", "onefarmtech.com"), false);
   assert.equal(validTurnstileResult({success: true, action: "contact", hostname: "onefarmtech.com"}, "contact", "onefarmtech.com"), true);
+  assert.equal(validTurnstileResult({success: true, action: "contact", hostname: "www.onefarmtech.com"}, "contact", ["onefarmtech.com", "www.onefarmtech.com"]), true);
+});
+
+test("failed verification creates no dedupe reservation", async () => {
+  let reservations = 0;
+  await assert.rejects(() => verifyThenReserveIntake(async () => {throw new Error("expired token");}, async () => {reservations += 1; return true;}));
+  assert.equal(reservations, 0);
 });
 
 test("honeypot rejects abusive submissions", () => {
@@ -58,10 +65,34 @@ test("Turnstile widgets, server verification and production-safe bypass are wire
   const order = fs.readFileSync(new URL("../src/app/order-request/page.tsx", import.meta.url), "utf8");
   const contact = fs.readFileSync(new URL("../src/app/contact/page.tsx", import.meta.url), "utf8");
   const protection = fs.readFileSync(new URL("../src/lib/publicIntakeProtection.ts", import.meta.url), "utf8");
+  const widget = fs.readFileSync(new URL("../src/components/TurnstileWidget.tsx", import.meta.url), "utf8");
   for (const page of [order, contact]) {assert.match(page, /TurnstileWidget/); assert.match(page, /name="website"/);}
   assert.match(protection, /turnstile\/v0\/siteverify/);
-  assert.match(protection, /result, action, expectedHostname/);
+  assert.match(protection, /validTurnstileResult\(result, action, allowedHostnames\)/);
   assert.match(protection, /NODE_ENV === "test" && process\.env\.TURNSTILE_TEST_BYPASS === "true"/);
+  assert.match(widget, /callback: \(nextToken: string\) => setToken\(nextToken\)/);
+  assert.match(widget, /name="cf-turnstile-response" value=\{token\}/);
+  assert.match(widget, /expired-callback.*setToken\(""\)/s);
+  assert.match(widget, /timeout-callback.*setToken\(""\)/s);
+  assert.match(widget, /useFormStatus/);
+  assert.match(widget, /disabled=\{!ready \|\| pending\}/);
+  assert.match(widget, /pending \? pendingLabel : idleLabel/);
+  assert.match(widget, /turnstile\.remove/);
+  assert.match(contact, /pendingLabel="Sending…"/);
+  assert.match(order, /pendingLabel="Submitting…"/);
+  assert.match(contact, /key=\{intakeError \|\| "ready"\}/);
+  assert.match(order, /key=\{intakeError \|\| "ready"\}/);
+  assert.match(contact, /Your enquiry has been received/);
+  assert.match(order, /Your order request has been received/);
+});
+
+test("both server actions read the exact explicit Turnstile token field", () => {
+  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  for (const action of ["createContactEnquiryAction", "createOrderRequestAction"]) {
+    const start = actions.indexOf(`export async function ${action}`);
+    const end = actions.indexOf("export async function", start + 25);
+    assert.match(actions.slice(start, end), /readText\(formData, "cf-turnstile-response"\)/);
+  }
 });
 
 test("minimal protection has no rate limiting or admin spam workflow", () => {

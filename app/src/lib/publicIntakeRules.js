@@ -5,8 +5,14 @@ export const hashIntakeValue = (value) => createHash("sha256").update(value).dig
 export const intakeFingerprint = (values) => hashIntakeValue(values.map(normalizeIntakeValue).join("\u001f"));
 export const honeypotIsFilled = (value) => Boolean(normalizeIntakeValue(value));
 
-export function validTurnstileResult(result, expectedAction, expectedHostname) {
-  return Boolean(result?.success && result.action === expectedAction && result.hostname === expectedHostname);
+export function validTurnstileResult(result, expectedAction, expectedHostnames) {
+  const allowedHostnames = Array.isArray(expectedHostnames) ? expectedHostnames : [expectedHostnames];
+  return Boolean(result?.success && result.action === expectedAction && allowedHostnames.includes(result.hostname));
+}
+
+export async function verifyThenReserveIntake(verify, reserve) {
+  await verify();
+  return reserve();
 }
 
 export async function registerUniqueIntakeDedupe(db, dedupeKey, since) {

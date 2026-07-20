@@ -218,13 +218,7 @@ export default async function OrderRequestPage({
                 />
               </label>
 
-              <TurnstileWidget action="order_request" />
-              <button
-                type="submit"
-                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
-              >
-                Send order request
-              </button>
+              <TurnstileWidget key={intakeError || "ready"} action="order_request" idleLabel="Send order request" pendingLabel="Submitting…" />
             </div>
           </form>
         </section>
