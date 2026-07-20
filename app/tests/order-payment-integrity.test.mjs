@@ -5,6 +5,7 @@ import {createPaystackCheckout} from "../src/lib/payments/paystack.ts";
 import {createFlutterwaveCheckout} from "../src/lib/payments/flutterwave.ts";
 import {PaymentProviderError} from "../src/lib/payments/providerError.js";
 import {freshPaymentReference, initialisePayment} from "../src/lib/payments/paymentInitialization.js";
+import {uniqueOrdersById} from "../src/lib/orderListIntegrity.js";
 import {fulfilmentStatusesFor, initialFulfilmentStatus, validateFulfilmentStatus, validateOrderStatusTransition} from "../src/lib/orderStatusRules.js";
 
 test("canonical Orders query includes website, WhatsApp and admin Order rows without source filtering", () => {
@@ -67,14 +68,14 @@ test("Flutterwave initialization sends naira and returns data.link in the shared
 
 function paymentDb(status = "Pending", overrides = {}) {
   const source = {id: "old", orderId: "order-1", customerId: null, provider: "Paystack", reference: "OLD", amount: 75000, currency: "NGN", status, paidAt: status === "Paid" ? new Date() : null, paymentUrl: null, expiresAt: null, order: {id: "order-1", code: "OFT-1", buyerName: "Buyer", phone: "+2341"}, customer: null, ...overrides};
-  const state = {requests: [source], order: {...source.order, paymentStatus: "Unpaid"}, providerCalls: 0};
+  const state = {requests: [source], order: {...source.order, paymentStatus: "Unpaid"}, providerCalls: 0, orderCreates: 0};
   const db = {state, paymentRequest: {
     findUnique: async () => source,
     findFirst: async ({where}) => where?.OR ? state.requests.find((item) => item.status === "Paid" || item.paidAt) || null : null,
     create: async ({data}) => {const row = {id: `attempt-${state.requests.length}`, ...data}; state.requests.push(row); return row;},
     update: async ({where, data}) => {const row = state.requests.find((item) => item.id === where.id); Object.assign(row, data); return row;},
     updateMany: async ({where, data}) => {let count = 0; for (const row of state.requests) if (row.id !== where.id.not && !row.paidAt && ["Pending", "Initialising"].includes(row.status)) {Object.assign(row, data); count += 1;} return {count};},
-  }, order: {update: async ({data}) => Object.assign(state.order, data)}, $transaction: async (callback) => callback(db), $queryRawUnsafe: async () => []};
+  }, order: {create: async () => {state.orderCreates += 1; throw new Error("payment initialisation must not create orders");}, update: async ({data}) => Object.assign(state.order, data)}, $transaction: async (callback) => callback(db), $queryRawUnsafe: async () => []};
   return db;
 }
 
@@ -86,6 +87,28 @@ test("each retry creates a fresh unique reference and supersedes old abandoned l
   assert.equal(first.reused, false); assert.equal(second.reused, false);
   assert.equal(second.paymentRequest.reference, "PAY-OTHER"); assert.equal(db.state.providerCalls, 2);
   assert.equal(db.state.requests.filter((item) => item.status === "Pending").length, 1);
+  assert.equal(db.state.orderCreates, 0);
+});
+
+test("Paystack and Flutterwave retries create provider-specific attempts without creating Orders", async () => {
+  for (const provider of ["Paystack", "Flutterwave"]) {
+    const db = paymentDb();
+    const checkoutHost = provider === "Paystack" ? "checkout.paystack.com" : "checkout.flutterwave.com";
+    const createCheckout = async (input) => ({provider, paymentUrl: `https://${checkoutHost}/${input.reference}`, gatewayReference: input.reference, httpStatus: 200});
+    await initialisePayment({db, paymentRequestId: "old", provider, referenceFactory: () => `${provider}-1`, createCheckout});
+    await initialisePayment({db, paymentRequestId: "old", provider, referenceFactory: () => `${provider}-2`, createCheckout});
+    assert.equal(db.state.orderCreates, 0);
+    assert.deepEqual(db.state.requests.slice(1).map((attempt) => attempt.provider), [provider, provider]);
+    assert.equal(db.state.requests.length, 3);
+  }
+});
+
+test("one Order with several PaymentRequests renders once while payment history retains every attempt", () => {
+  const order = {id: "order-1", code: "OFT-1", paymentRequests: [{id: "request-1"}, {id: "request-2"}, {id: "request-3"}]};
+  const rows = uniqueOrdersById([order, {...order}, order]);
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, "order-1");
+  assert.deepEqual(rows[0].paymentRequests.map((request) => request.id), ["request-1", "request-2", "request-3"]);
 });
 
 test("failed initialization records a failed attempt without a false successful payment", async () => {
@@ -157,5 +180,8 @@ test("UI and actions keep pickup, payment and delivery assignment independent", 
 
 test("existing order detail links continue to resolve IDs and legacy codes", () => {
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
+  const list = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
   assert.match(detail, /where: \{OR: \[\{id\}, \{code: id\}\]\}/);
+  assert.match(list, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
+  assert.match(list, /key=\{order\.id\}/);
 });

@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { formatNaira } from "@/lib/format";
+import {uniqueOrdersById} from "@/lib/orderListIntegrity.js";
 
 type OrderCodeRow = {
   code: string;
@@ -12,7 +13,7 @@ type OrderItemSummaryRow = {
 };
 
 export async function getDbOrders() {
-  return prisma.order.findMany({
+  const orders = await prisma.order.findMany({
     orderBy: {
       createdAt: "desc",
     },
@@ -23,6 +24,8 @@ export async function getDbOrders() {
       customer: true,
     },
   });
+
+  return uniqueOrdersById(orders);
 }
 
 export async function getDbOrderByCode(code: string) {

@@ -140,7 +140,7 @@ export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
               <div className="mt-4 grid gap-2">
                 {statusOrders.slice(0, 12).map((order) => (
                   <Link
-                    key={order.code}
+                    key={order.id}
                     href={`/admin/orders/${order.id}`}
                     className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] px-3 py-3 text-sm transition hover:bg-[#f3f8ef]"
                   >
@@ -183,7 +183,7 @@ export default async function AdminOrdersPage({searchParams}: OrdersPageProps) {
 
                 <tbody>
                   {sortedOrders.map((order) => (
-                    <tr key={order.code} className="border-t border-[#102015]/10 text-[#405348]">
+                    <tr key={order.id} className="border-t border-[#102015]/10 text-[#405348]">
                       <td className="px-4 py-3 font-black text-[#102015]">
                         <Link href={`/admin/orders/${order.id}`} className="text-[#1f7a3f] underline-offset-4 hover:underline">
                           {order.code}
