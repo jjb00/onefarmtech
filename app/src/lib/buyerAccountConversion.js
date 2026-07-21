@@ -27,7 +27,7 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
   try {
     return await db.$transaction(async (tx) => {
       // PostgreSQL transaction-scoped lock: every process converting this request uses the same key.
-      await tx.$queryRawUnsafe(
+      await tx.$executeRawUnsafe(
         "SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))",
         requestId,
       );
