@@ -124,3 +124,14 @@ export async function verifyFlutterwaveTransaction(transactionId: string): Promi
     metadata: {processorResponse: data.processor_response || null, chargedAmount: data.charged_amount ?? null},
   };
 }
+
+export async function verifyFlutterwaveTransactionByReference(reference: string): Promise<FlutterwaveVerificationResult> {
+  if (!reference) throw new Error("Flutterwave tx_ref is required for verification.");
+  const response = await fetch(`https://api.flutterwave.com/v3/transactions/verify_by_reference?tx_ref=${encodeURIComponent(reference)}`, {
+    headers: {Authorization: `Bearer ${requireFlutterwaveSecretKey()}`}, signal: AbortSignal.timeout(10_000), cache: "no-store",
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || payload?.status !== "success" || !payload?.data) throw new Error(payload?.message || `Flutterwave verification failed with HTTP ${response.status}.`);
+  const data = payload.data;
+  return {ok: String(data.status || "").toLowerCase() === "successful", status: String(data.status || "unknown"), reference: String(data.tx_ref || ""), amount: Number(data.amount), currency: String(data.currency || "").toUpperCase(), providerId: String(data.id || ""), metadata: {processorResponse: data.processor_response || null, chargedAmount: data.charged_amount ?? null, createdAt: data.created_at || null}};
+}

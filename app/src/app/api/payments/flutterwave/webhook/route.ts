@@ -1,24 +1,17 @@
 import {NextRequest, NextResponse} from "next/server";
+import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {verifyFlutterwaveTransaction} from "@/lib/payments/flutterwave";
 import {createPaymentReconciliationIncident} from "@/lib/payments/reconciliation";
 import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {validateFlutterwaveVerification} from "@/lib/payments/verificationRules";
+import {settleVerifiedFlutterwavePayment} from "@/lib/payments/flutterwaveSettlement.js";
+import {validateFlutterwaveWebhookPayment, verifyFlutterwaveWebhookSignature} from "@/lib/payments/flutterwaveWebhookRules.js";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function verifyFlutterwaveSignature(signature: string | null) {
-  const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH || process.env.FLUTTERWAVE_SECRET_HASH;
-
-  if (!secretHash || !signature) {
-    return false;
-  }
-
-  return signature === secretHash;
-}
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -29,16 +22,18 @@ function formatNaira(amount: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const signature = request.headers.get("verif-hash");
-
-  if (!verifyFlutterwaveSignature(signature)) {
+  const rawBody = await request.text();
+  const signature = request.headers.get("flutterwave-signature");
+  const legacyHash = request.headers.get("verif-hash");
+  const secretHash = process.env.FLUTTERWAVE_WEBHOOK_SECRET_HASH || process.env.FLUTTERWAVE_SECRET_HASH;
+  if (!verifyFlutterwaveWebhookSignature({rawBody, signature, legacyHash, secretHash})) {
     return NextResponse.json({ok: false, error: "Invalid signature"}, {status: 401});
   }
 
-  let event: any;
+  let event: {status?: string; tx_ref?: string; transaction_id?: string | number; amount?: number; currency?: string; data?: {status?: string; tx_ref?: string; id?: string | number; amount?: number; currency?: string; created_at?: string}};
 
   try {
-    event = await request.json();
+    event = JSON.parse(rawBody);
   } catch {
     return NextResponse.json({ok: false, error: "Invalid JSON"}, {status: 400});
   }
@@ -46,8 +41,6 @@ export async function POST(request: NextRequest) {
   const status = String(event?.data?.status || event?.status || "").toLowerCase();
   const txRef = String(event?.data?.tx_ref || event?.tx_ref || "").trim();
   const transactionId = String(event?.data?.id || event?.transaction_id || "").trim();
-  const paidAmount = Number(event?.data?.amount ?? event?.amount);
-  const paidCurrency = String(event?.data?.currency || event?.currency || "").toUpperCase();
 
   if (status !== "successful" && status !== "success") {
     return NextResponse.json({ok: true, ignored: status || "non-success"});
@@ -95,65 +88,21 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ok: true, ignored: "provider verification mismatch"});
   }
 
-  if (
-    !Number.isFinite(paidAmount) ||
-    paidAmount !== paymentRequest.amount ||
-    paidCurrency !== String(paymentRequest.currency || "NGN").toUpperCase()
-  ) {
-    console.error("Flutterwave webhook amount/currency mismatch", {
-      paymentRequestId: paymentRequest.id,
-      txRef,
-      transactionId,
-      expectedAmount: paymentRequest.amount,
-      paidAmount,
-      expectedCurrency: paymentRequest.currency || "NGN",
-      paidCurrency,
-    });
-    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Authenticated webhook amount/currency conflicts with the internal payment request.", payloadMetadata: {status, txRef, transactionId, paidAmount, paidCurrency}});
+  const webhookConflict = validateFlutterwaveWebhookPayment({data: event.data || event, expectedAmount: paymentRequest.amount, expectedCurrency: paymentRequest.currency || "NGN"});
+  if (webhookConflict) {
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: `Authenticated webhook payment conflict: ${webhookConflict}.`, payloadMetadata: {status, txRef, transactionId}});
     return NextResponse.json({ok: true, ignored: "webhook payment details mismatch"});
   }
 
-  const existingPayment = await prisma.payment.findFirst({
-    where: {
-      reference: paymentRequest.reference,
-      orderId: paymentRequest.orderId,
-    },
-  });
+  const paidAt = event.data?.created_at ? new Date(event.data.created_at) : new Date();
+  const settlement = await settleVerifiedFlutterwavePayment({db: prisma, paymentRequest, verification, paidAt, source: "Flutterwave webhook"});
+  if (!settlement.ok) {
+    await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: `Settlement verification conflict: ${settlement.conflict}.`, verificationMetadata: verification});
+    return NextResponse.json({ok: true, ignored: "settlement verification mismatch"});
+  }
+  if (settlement.receiptError) await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Payment was verified and marked paid, but automatic receipt creation failed.", verificationMetadata: {receiptError: settlement.receiptError}});
 
-  const paidAt = new Date();
-
-  await prisma.paymentRequest.update({
-    where: {id: paymentRequest.id},
-    data: {
-      provider: "Flutterwave",
-      gatewayReference: transactionId || txRef,
-      status: "Paid",
-      paidAt,
-    },
-  });
-
-  const payment =
-    existingPayment ||
-    (await prisma.payment.create({
-      data: {
-        orderId: paymentRequest.orderId,
-        reference: paymentRequest.reference,
-        provider: "Flutterwave",
-        amount: paymentRequest.amount,
-        status: "Paid",
-        paidAt,
-      },
-    }));
-
-  await prisma.order.update({
-    where: {id: paymentRequest.orderId},
-    data: {
-      paymentStatus: "Paid",
-      paymentReference: paymentRequest.reference,
-    },
-  });
-
-  if (paymentRequest.customerId && !existingPayment) {
+  if (paymentRequest.customerId && !settlement.duplicate) {
     await prisma.buyerMessage.create({
       data: {
         customerId: paymentRequest.customerId,
@@ -165,7 +114,7 @@ export async function POST(request: NextRequest) {
         recipient: paymentRequest.order.phone,
         source: "Flutterwave webhook",
         relatedType: "Payment",
-        relatedId: payment.id,
+        relatedId: settlement.payment.id,
         metadata: JSON.stringify({
           provider: "Flutterwave",
           txRef,
@@ -175,9 +124,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (paymentRequest.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: payment.id});
+      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
     }
   }
 
-  return NextResponse.json({ok: true});
+  for (const path of ["/admin/payment-requests", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
+
+  return NextResponse.json({ok: true, duplicate: settlement.duplicate});
 }
