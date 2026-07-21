@@ -1,38 +1,35 @@
 import {cookies} from "next/headers";
 import {isStaffRole, type StaffRole} from "@/lib/permissions";
-import {verifySessionToken} from "@/lib/sessionToken";
+import {prisma} from "@/lib/prisma";
+import {verifyStaffSessionToken} from "@/lib/staffAuthorization";
 
 export const STAFF_SESSION_COOKIE = "oft_admin_session";
-export const STAFF_NAME_COOKIE = "oft_staff_name";
-export const STAFF_EMAIL_COOKIE = "oft_staff_email";
-export const STAFF_ROLE_COOKIE = "oft_staff_role";
 
 export type CurrentStaffActor = {
   isAuthenticated: boolean;
   name: string;
   email: string | null;
   role: StaffRole;
-  authMode: "temporary-password" | "proper-auth";
+  id: string | null;
+  authMode: "authoritative-staff";
 };
 
 export async function getCurrentStaffActor(): Promise<CurrentStaffActor> {
   const cookieStore = await cookies();
 
-  const email = cookieStore.get(STAFF_EMAIL_COOKIE)?.value || "staff";
-  const isAuthenticated = verifySessionToken(
-    cookieStore.get(STAFF_SESSION_COOKIE)?.value,
-    "staff",
-    "staff",
+  const claims = verifyStaffSessionToken(cookieStore.get(STAFF_SESSION_COOKIE)?.value);
+  const staff = claims ? await prisma.staffUser.findUnique({where: {id: claims.staffId}}) : null;
+  const valid = Boolean(
+    staff && staff.status === "Active" && isStaffRole(staff.role) &&
+    staff.role === claims?.role && staff.updatedAt.toISOString() === claims?.staffUpdatedAt,
   );
 
-  const roleValue = cookieStore.get(STAFF_ROLE_COOKIE)?.value || "Admin";
-  const role = isStaffRole(roleValue) ? roleValue : "Admin";
-
   return {
-    isAuthenticated,
-    name: cookieStore.get(STAFF_NAME_COOKIE)?.value || "Local staff user",
-    email: email === "staff" ? null : email,
-    role,
-    authMode: "temporary-password",
+    isAuthenticated: valid,
+    id: valid ? staff!.id : null,
+    name: valid ? staff!.name : "Unauthenticated staff",
+    email: valid ? staff!.email : null,
+    role: valid ? (staff!.role as StaffRole) : "Support",
+    authMode: "authoritative-staff",
   };
 }

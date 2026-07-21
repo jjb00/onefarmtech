@@ -20,15 +20,14 @@ test("direct URL and sidebar access use query-aware reconciliation rules", async
   const navigation = await read("src/data/adminNavigation.ts");
   assert.match(access, /buyer-messages\?view=reconciliation/);
   assert.match(access, /URLSearchParams/);
-  assert.match(proxy, /canAccessAdminPath\(staffRole, `\$\{pathname\}\$\{search\}`\)/);
+  assert.match(proxy, /canAccessAdminPath\(claims\.role, `\$\{pathname\}\$\{search\}`\)/);
   assert.match(navigation, /buyer-messages\?view=reconciliation/);
 });
 
 test("reconciliation action has independent role protection", async () => {
   const actions = await read("src/actions/communications.ts");
-  assert.match(actions, /requireCommunicationsRole/);
-  assert.match(actions, /\["Super admin", "Admin", "Finance"\], "reconciliation"/);
-  assert.doesNotMatch(actions, /\["Super admin", "Admin", "Finance", "Support"\]/);
+  assert.match(actions, /requireCapability\("manage_payments"\)/);
+  assert.doesNotMatch(actions, /Support[\s\S]{0,80}manage_payments/);
 });
 
 test("Operational events is a paginated searchable filtered source view", async () => {

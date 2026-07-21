@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
-import {requireStaff} from "@/lib/auth";
+import {requireCapability} from "@/lib/auth";
 import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 
@@ -34,7 +34,7 @@ async function makeReceiptCode() {
 }
 
 export async function createPaymentAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_payments");
   const orderId = readText(formData, "orderId");
   const orderCode = readText(formData, "orderCode");
   const provider = readText(formData, "provider", "Manual transfer");
@@ -78,7 +78,7 @@ export async function createPaymentAction(formData: FormData) {
 }
 
 export async function createComplaintAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_support");
   const orderId = readText(formData, "orderId");
   const orderCode = readText(formData, "orderCode");
   const issue = readText(formData, "issue");
@@ -119,7 +119,7 @@ export async function createComplaintAction(formData: FormData) {
 }
 
 export async function createPickupLocationAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_fulfilment");
   const name = readText(formData, "name");
   const area = readText(formData, "area");
   const address = readText(formData, "address");
@@ -148,12 +148,12 @@ export async function createPickupLocationAction(formData: FormData) {
 
 
 export async function issueReceiptAction(formData: FormData) {
-  await requireStaff();
+  const staff = await requireCapability("manage_payments");
   const orderId = readText(formData, "orderId");
   const paymentIdInput = readText(formData, "paymentId");
   const amountInput = readNumber(formData, "amount");
   const buyerEmailInput = readText(formData, "buyerEmail");
-  const issuedBy = readText(formData, "issuedBy", "Local admin");
+  const issuedBy = staff.name;
 
   if (!orderId) {
     throw new Error("Order is required.");
@@ -215,7 +215,6 @@ export async function issueReceiptAction(formData: FormData) {
       buyerEmail: receipt.buyerEmail,
       paymentReference: selectedPayment?.reference || null,
     },
-    actorRole: "Finance",
   });
 
   if (receipt.buyerEmail) {

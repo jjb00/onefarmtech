@@ -9,6 +9,28 @@ export const staffRoles = [
 
 export type StaffRole = (typeof staffRoles)[number];
 
+export const staffCapabilities = [
+  "manage_staff", "manage_buyer_access", "manage_finance", "manage_payments",
+  "manage_orders", "manage_fulfilment", "manage_suppliers", "manage_products",
+  "manage_delivery_partners", "manage_delivery_access", "manage_group_buys",
+  "manage_support", "manage_communications", "manage_admin_configuration",
+] as const;
+export type StaffCapability = (typeof staffCapabilities)[number];
+
+const allCapabilities = [...staffCapabilities];
+export const roleCapabilities: Record<StaffRole, StaffCapability[]> = {
+  "Super admin": allCapabilities,
+  Admin: allCapabilities.filter((capability) => !["manage_staff", "manage_admin_configuration"].includes(capability)),
+  Operations: ["manage_orders", "manage_fulfilment", "manage_suppliers", "manage_products", "manage_delivery_partners", "manage_delivery_access", "manage_group_buys", "manage_communications"],
+  Finance: ["manage_finance", "manage_payments"],
+  Support: ["manage_support", "manage_communications"],
+  "Buyer account manager": ["manage_buyer_access", "manage_finance", "manage_communications"],
+};
+
+export function roleHasCapability(role: StaffRole, capability: StaffCapability) {
+  return roleCapabilities[role].includes(capability);
+}
+
 export const rolePermissions: Record<StaffRole, string[]> = {
   "Super admin": [
     "Manage staff roles",

@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import {requireStaff} from "@/lib/auth";
+import {requireCapability} from "@/lib/auth";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -27,7 +27,7 @@ async function createNextGroupBuyCode() {
 }
 
 export async function createGroupBuyAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_group_buys");
   const title = readText(formData, "title");
   const description = readText(formData, "description");
   const productId = readText(formData, "productId");
@@ -83,7 +83,7 @@ export async function createGroupBuyAction(formData: FormData) {
 }
 
 export async function createGroupBuyReservationAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_group_buys");
   const groupBuyId = readText(formData, "groupBuyId");
   const buyerName = readText(formData, "buyerName");
   const phone = readText(formData, "phone");
@@ -125,7 +125,7 @@ export async function createGroupBuyReservationAction(formData: FormData) {
 }
 
 export async function updateGroupBuyAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_group_buys");
   const groupBuyId = readText(formData, "groupBuyId");
   const status = readText(formData, "status", "Closed");
   const paymentStatus = readText(formData, "paymentStatus", "Not collecting");

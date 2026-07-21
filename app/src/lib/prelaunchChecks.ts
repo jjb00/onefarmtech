@@ -29,7 +29,7 @@ export async function getPrelaunchChecks() {
 
   const isSqlite = schema.includes('provider = "sqlite"');
   const isPostgres = schema.includes('provider = "postgresql"');
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const staffPasswordHashes = process.env.STAFF_PASSWORD_HASHES;
   const databaseUrl = process.env.DATABASE_URL || "";
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
@@ -60,15 +60,12 @@ export async function getPrelaunchChecks() {
         : "For Supabase/Postgres, keep DATABASE_URL configured locally and in Vercel environment variables.",
     },
     {
-      title: "Temporary staff password",
-      status:
-        adminPassword && adminPassword !== "onefarmtech-admin" ? "warn" : "fail",
-      detail:
-        adminPassword && adminPassword !== "onefarmtech-admin"
-          ? "ADMIN_PASSWORD is set, but the app still uses a temporary shared-password gate."
-          : "ADMIN_PASSWORD is missing or using the fallback local password.",
-      recommendation:
-        "Before Vercel team testing, replace the shared password gate with proper staff auth and roles.",
+      title: "Named staff credentials",
+      status: staffPasswordHashes ? "pass" : "fail",
+      detail: staffPasswordHashes
+        ? "Per-user staff password hashes are configured; identity and role are resolved from active staff records."
+        : "STAFF_PASSWORD_HASHES is not configured, so staff login is intentionally unavailable.",
+      recommendation: "Keep password hashes server-only and rotate them when staff access changes.",
     },
     {
       title: "Supabase public config",

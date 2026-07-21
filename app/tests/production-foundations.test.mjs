@@ -72,7 +72,8 @@ test("Resend handler, email retry and reconciliation actions contain replay and 
   assert.doesNotMatch(eventProcessing, /\$transaction/);
   assert.match(service, /60_000/);
   assert.match(service, /Bounced.*Complained/);
-  assert.match(actions, /await requireStaff\(\)/);
+  assert.match(actions, /requireCapability\("manage_communications"\)/);
+  assert.match(actions, /requireCapability\("manage_payments"\)/);
   assert.match(actions, /createAuditLog/);
 });
 

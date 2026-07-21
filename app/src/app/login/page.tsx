@@ -1,6 +1,5 @@
 import BrandMark from "@/components/BrandMark";
 import {loginAction} from "@/actions/auth";
-import {staffRoles} from "@/lib/permissions";
 
 type LoginPageProps = {
   searchParams?: Promise<{
@@ -33,7 +32,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
                 Controlled staff access
               </p>
               <p className="mt-2 text-xs leading-5 text-[#405348]">
-                The selected role controls which admin pages are visible during this session.
+                Your access is assigned to your staff account and cannot be selected at sign-in.
               </p>
             </div>
           </div>
@@ -63,7 +62,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
                 What is this login for?
               </summary>
               <p className="mt-3 leading-6 text-[#405348]">
-                This is the staff-only admin area. Your selected role controls which pages are visible after sign in.
+                This is the staff-only admin area. Your assigned role controls which pages are visible after sign in.
               </p>
             </details>
 
@@ -75,36 +74,15 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-semibold">
-                Staff name
-                <input
-                  name="staffName"
-                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="e.g. Joy / Ops desk"
-                  defaultValue="Local staff user"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-semibold">
                 Staff email
                 <input
                   name="staffEmail"
                   type="email"
                   className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  placeholder="optional for local testing"
+                  required
+                  autoFocus
+                  placeholder="name@example.com"
                 />
-              </label>
-
-              <label className="grid gap-2 text-sm font-semibold">
-                Role for this session
-                <select
-                  name="staffRole"
-                  defaultValue="Admin"
-                  className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                >
-                  {staffRoles.map((role) => (
-                    <option key={role}>{role}</option>
-                  ))}
-                </select>
               </label>
 
               <label className="grid gap-2 text-sm font-semibold">
@@ -113,7 +91,6 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
                   name="password"
                   type="password"
                   required
-                  autoFocus
                   className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                   placeholder="Enter staff access password"
                 />

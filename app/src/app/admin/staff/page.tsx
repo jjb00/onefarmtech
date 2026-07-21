@@ -7,6 +7,7 @@ import {prisma} from "@/lib/prisma";
 import {staffRoles} from "@/lib/permissions";
 import {staffStatusOptions} from "@/lib/formOptions";
 import {createStaffUserAction} from "@/actions/createAdminRecords";
+import {requireStaffRole} from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,6 +23,7 @@ function formatDate(value?: Date | string | null) {
 }
 
 export default async function StaffPage() {
+  await requireStaffRole("Super admin");
   const staffUsers = await prisma.staffUser.findMany({
     orderBy: {createdAt: "desc"},
     take: 50,
@@ -30,21 +32,19 @@ export default async function StaffPage() {
   return (
     <AdminPageShell
       title="Staff & roles"
-      description="Plan staff access, role visibility and operational accountability for the controlled launch period. Full named staff login accounts come after the shared staff gate phase."
+      description="Manage named staff identities, assigned roles and operational accountability."
     >
       <div className="grid gap-6">
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-                Access model v1
+                Authoritative access
               </p>
               <h2 className="mt-3 text-2xl font-black">Current launch access</h2>
               <p className="mt-3 max-w-4xl text-sm leading-7 text-[#405348]">
-                The admin area is protected by a shared staff password for the controlled launch.
-                The selected session role now limits visible admin areas. The next phase is named
-                staff accounts created by Super admin/Admin, with individual login credentials and
-                stronger action-level permissions.
+                Each login maps to an active staff record. The server assigns the role and enforces
+                capabilities again for protected actions; staff cannot choose a role at sign-in.
               </p>
             </div>
 
@@ -63,8 +63,8 @@ export default async function StaffPage() {
               </p>
               <h2 className="mt-3 text-2xl font-black">Create staff record</h2>
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-                Add staff members and assign their launch role. This creates the staff register
-                foundation now; individual password invites and named staff login come in the next auth phase.
+                Add a staff identity and assign its role. A matching server-side password hash must
+                be configured before that account can sign in.
               </p>
             </div>
           </div>
@@ -134,7 +134,7 @@ export default async function StaffPage() {
 
         <AdminDisclosure
           title="Staff records"
-          description="Existing database records are shown here for readiness review. Account creation and password invite flow should be added in the next staff-auth build."
+          description="Existing authoritative staff records and their assigned access roles."
           defaultOpen={staffUsers.length > 0}
         >
           <div className="grid gap-3">
@@ -167,8 +167,7 @@ export default async function StaffPage() {
               ))
             ) : (
               <div className="rounded-[1.5rem] bg-[#f8fbf5] p-6 text-sm leading-7 text-[#405348]">
-                No staff records yet. For launch, continue using the controlled staff password.
-                Add named staff accounts in the next auth phase.
+                No staff records yet. Create a named staff identity before enabling staff login.
               </div>
             )}
           </div>

@@ -8,7 +8,7 @@ import {requireBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
-import {requireStaff} from "@/lib/auth";
+import {requireAnyCapability, requireCapability, requireStaff} from "@/lib/auth";
 import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
@@ -16,6 +16,7 @@ import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/o
 import {initialFulfilmentStatus, isPickupMethod, validateOrderStatusTransition} from "@/lib/orderStatusRules.js";
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
+import {isStaffRole} from "@/lib/permissions";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -66,7 +67,7 @@ async function markSourceDraftConverted(sourceDraftId: string, orderId: string, 
 }
 
 export async function createCustomerAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_buyer_access");
   const name = readText(formData, "name");
   const phone = readText(formData, "phone");
   const email = readText(formData, "email");
@@ -116,7 +117,7 @@ export async function createCustomerAction(formData: FormData) {
 }
 
 export async function createProductAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_products");
   const name = readText(formData, "name");
   const category = readText(formData, "category", "Fresh produce");
   const unit = readText(formData, "unit", "kg");
@@ -157,7 +158,7 @@ export async function createProductAction(formData: FormData) {
 
 
 export async function seedBaselineProductsAction() {
-  await requireStaff();
+  await requireCapability("manage_products");
   const createdProducts = [];
   const skippedProducts = [];
 
@@ -199,7 +200,7 @@ export async function seedBaselineProductsAction() {
 }
 
 export async function updateProductCatalogueStatusAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_products");
   const productId = readText(formData, "productId");
   const name = readText(formData, "name");
   const category = readText(formData, "category", "Fresh produce");
@@ -255,7 +256,7 @@ export async function updateProductCatalogueStatusAction(formData: FormData) {
 }
 
 export async function createSupplierAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_suppliers");
   const name = readText(formData, "name");
   const type = readText(formData, "type", "Farm / supply partner");
   const phone = readText(formData, "phone");
@@ -297,14 +298,14 @@ export async function createSupplierAction(formData: FormData) {
 
 
 export async function createStaffUserAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_staff");
   const name = readText(formData, "name");
   const email = readText(formData, "email");
   const role = readText(formData, "role", "Operations");
   const status = readText(formData, "status", "Active");
 
-  if (!name || !email) {
-    throw new Error("Staff name and email are required.");
+  if (!name || !email || !isStaffRole(role)) {
+    throw new Error("Staff name, email, and valid role are required.");
   }
 
   const staffUser = await prisma.staffUser.create({
@@ -331,7 +332,7 @@ export async function createStaffUserAction(formData: FormData) {
 }
 
 export async function updateCustomerAccountAction(formData: FormData) {
-  await requireStaff();
+  const authoritativeStaff = await requireAnyCapability("manage_buyer_access", "manage_finance");
   const customerId = readText(formData, "customerId");
   const paymentTerms = readText(formData, "paymentTerms", "Full payment before order allocation");
   const creditLimit = readNumber(formData, "creditLimit");
@@ -369,7 +370,7 @@ export async function updateCustomerAccountAction(formData: FormData) {
           : existingCustomer.approvedAt,
       approvedBy:
         accountLoginReady && !existingCustomer.approvedBy
-          ? "Local admin"
+          ? authoritativeStaff.name
           : existingCustomer.approvedBy,
     },
   });
@@ -417,7 +418,7 @@ function makeInviteCode(customerName: string) {
 }
 
 export async function createBuyerContactAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_buyer_access");
   const customerId = readText(formData, "customerId");
   const name = readText(formData, "name");
   const email = readText(formData, "email");
@@ -471,7 +472,7 @@ export async function createBuyerContactAction(formData: FormData) {
 }
 
 export async function createBuyerAccountInviteAction(formData: FormData) {
-  await requireStaff();
+  const authoritativeStaff = await requireCapability("manage_buyer_access");
   const customerId = readText(formData, "customerId");
   const email = readText(formData, "email");
   const phone = readText(formData, "phone");
@@ -502,7 +503,7 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
       phone: phone || null,
       role,
       status,
-      createdBy: "Local staff user",
+      createdBy: authoritativeStaff.name,
     },
   });
 
@@ -534,7 +535,7 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
 }
 
 export async function updateBuyerAccountInviteStatusAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_buyer_access");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -926,6 +927,7 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
 }
 
 export async function logPreparedBuyerWhatsAppAction(formData: FormData) {
+  await requireCapability("manage_communications");
   await requireStaff();
   const customerId = readText(formData, "customerId");
   const title = readText(formData, "title", "WhatsApp message prepared");
@@ -977,6 +979,7 @@ export async function logPreparedBuyerWhatsAppAction(formData: FormData) {
 }
 
 export async function updateBuyerProfileUpdateRequestStatusAction(formData: FormData) {
+  await requireCapability("manage_buyer_access");
   await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status", "Reviewing");
@@ -1025,6 +1028,7 @@ export async function updateBuyerProfileUpdateRequestStatusAction(formData: Form
 }
 
 export async function updateBuyerAccountRequestStatusAction(formData: FormData) {
+  await requireCapability("manage_buyer_access");
   await requireStaff();
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
@@ -1051,7 +1055,7 @@ export async function updateBuyerAccountRequestStatusAction(formData: FormData) 
 }
 
 export async function convertBuyerAccountRequestToCustomerAction(formData: FormData) {
-  const staff = await requireStaff();
+  const staff = await requireCapability("manage_buyer_access");
   const requestId = readText(formData, "requestId");
 
   if (!requestId) {
@@ -1073,7 +1077,7 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
 }
 
 export async function updateOrderRequestStatusAction(formData: FormData) {
-  const staff = await requireStaff();
+  const staff = await requireCapability("manage_orders");
   const requestId = readText(formData, "requestId");
   const status = readText(formData, "status");
 
@@ -1115,7 +1119,7 @@ export async function updateOrderRequestStatusAction(formData: FormData) {
 }
 
 export async function updateContactEnquiryStatusAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_support");
   const enquiryId = readText(formData, "enquiryId");
   const status = readText(formData, "status");
 
@@ -1180,7 +1184,7 @@ export async function markBuyerMessageReadAction(formData: FormData) {
 
 
 export async function createDeliveryPartnerAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_delivery_partners");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1216,7 +1220,7 @@ export async function createDeliveryPartnerAction(formData: FormData) {
 }
 
 export async function updateDeliveryPartnerStatusAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_delivery_partners");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1241,7 +1245,7 @@ export async function updateDeliveryPartnerStatusAction(formData: FormData) {
 }
 
 export async function createWhatsAppAssistedOrderAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_orders");
   const sourceDraftId = readText(formData, "sourceDraftId");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
@@ -1458,6 +1462,7 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
 }
 
 export async function generateDeliveryPartnerAccessCodeAction(formData: FormData) {
+  await requireCapability("manage_delivery_access");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1626,6 +1631,7 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
 }
 
 export async function assignDeliveryPartnerAction(formData: FormData) {
+  await requireCapability("manage_fulfilment");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1705,6 +1711,7 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
 
 
 export async function createPaymentRequestFromOrderAction(formData: FormData) {
+  await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1810,6 +1817,7 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
 
 
 export async function generatePaymentLinkAction(formData: FormData) {
+  await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1872,6 +1880,7 @@ export async function generatePaymentLinkAction(formData: FormData) {
 
 
 export async function createOrAssignDeliveryFromOrderAction(formData: FormData) {
+  await requireCapability("manage_fulfilment");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -1994,6 +2003,7 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
 
 
 export async function sendWhatsAppStorefrontMenuAction(formData: FormData) {
+  await requireCapability("manage_communications");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2068,7 +2078,7 @@ export async function sendWhatsAppStorefrontMenuAction(formData: FormData) {
       body,
       channel: "WhatsApp",
       direction: "Outbound",
-      status: "Sent",
+      status: {in: ["Sent", "Delivered", "Read"]},
       recipient: sourcePhone,
       source: "WhatsApp storefront menu",
       relatedType: "WhatsAppStorefrontMenu",
@@ -2091,6 +2101,7 @@ export async function sendWhatsAppStorefrontMenuAction(formData: FormData) {
 
 
 export async function sendWhatsAppProductListAction(formData: FormData) {
+  await requireCapability("manage_communications");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2212,6 +2223,7 @@ export async function sendWhatsAppProductListAction(formData: FormData) {
 
 
 export async function updateWhatsAppDraftStatusAction(formData: FormData) {
+  await requireCapability("manage_communications");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2264,6 +2276,7 @@ export async function updateWhatsAppDraftStatusAction(formData: FormData) {
 
 
 export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
+  await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2389,6 +2402,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
 
 
 export async function updatePaymentRequestStatusAction(formData: FormData) {
+  await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2505,6 +2519,7 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
 }
 
 export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
+  const authoritativeStaff = await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2565,7 +2580,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
         buyerEmail: paymentRequest.customer?.receiptEmail || paymentRequest.customer?.email || null,
         amount: paymentRequest.amount,
         status: "Issued",
-        issuedBy: "Local admin",
+        issuedBy: authoritativeStaff.name,
       },
     });
 
@@ -2601,6 +2616,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
 }
 
 export async function updateAdminOrderControlAction(formData: FormData) {
+  await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2620,6 +2636,9 @@ export async function updateAdminOrderControlAction(formData: FormData) {
 
   const existingOrder = await prisma.order.findUnique({where: {id: orderId}, select: {deliveryMethod: true, paymentStatus: true, fulfilmentStatus: true}});
   if (!existingOrder) redirect("/admin/orders?error=order-not-found");
+  if (paymentStatus && paymentStatus !== existingOrder.paymentStatus) await requireCapability("manage_payments");
+  if (fulfilmentStatus && fulfilmentStatus !== existingOrder.fulfilmentStatus) await requireCapability("manage_fulfilment");
+  if (!paymentStatus && !fulfilmentStatus) await requireCapability("manage_orders");
   const transitionError = validateOrderStatusTransition({deliveryMethod: existingOrder.deliveryMethod, currentPaymentStatus: existingOrder.paymentStatus, nextPaymentStatus: paymentStatus || existingOrder.paymentStatus, currentFulfilmentStatus: existingOrder.fulfilmentStatus, nextFulfilmentStatus: fulfilmentStatus || existingOrder.fulfilmentStatus});
   if (transitionError) redirect(`/admin/orders/${orderId}?error=${transitionError}`);
 
@@ -2644,6 +2663,7 @@ export async function updateAdminOrderControlAction(formData: FormData) {
 }
 
 export async function logOrderBuyerMessageAction(formData: FormData) {
+  await requireCapability("manage_communications");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2696,6 +2716,7 @@ export async function logOrderBuyerMessageAction(formData: FormData) {
 }
 
 export async function linkOrderToCustomerAction(formData: FormData) {
+  await requireCapability("manage_orders");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2817,7 +2838,7 @@ export async function linkOrderToCustomerAction(formData: FormData) {
 
 
 export async function updateProductDetailsAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_products");
   const {revalidatePath} = await import("next/cache");
   const {prisma} = await import("@/lib/prisma");
 

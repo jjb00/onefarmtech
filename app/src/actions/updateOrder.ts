@@ -4,7 +4,7 @@ import {redirect} from "next/navigation";
 import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
-import {requireStaff} from "@/lib/auth";
+import {requireCapability, requireStaff} from "@/lib/auth";
 import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 
@@ -41,6 +41,12 @@ export async function updateOrderAction(formData: FormData) {
 
   if (!existingOrder) {
     throw new Error("Order not found.");
+  }
+
+  if (paymentStatus !== existingOrder.paymentStatus) await requireCapability("manage_payments");
+  if (fulfilmentStatus !== existingOrder.fulfilmentStatus) await requireCapability("manage_fulfilment");
+  if (paymentStatus === existingOrder.paymentStatus && fulfilmentStatus === existingOrder.fulfilmentStatus) {
+    await requireCapability("manage_orders");
   }
 
   const updatedOrder = await prisma.order.update({

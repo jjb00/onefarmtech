@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
-import {requireStaff} from "@/lib/auth";
+import {requireCapability} from "@/lib/auth";
 import {initialFulfilmentStatus} from "@/lib/orderStatusRules.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
@@ -25,7 +25,7 @@ async function createNextOrderCode() {
 }
 
 export async function createOrderAction(formData: FormData) {
-  await requireStaff();
+  await requireCapability("manage_orders");
   const customerId = readText(formData, "customerId");
   const productId = readText(formData, "productId");
   const buyerNameInput = readText(formData, "buyerName");
@@ -40,6 +40,7 @@ export async function createOrderAction(formData: FormData) {
   const fulfilmentStatusInput = readText(formData, "fulfilmentStatus", "New order");
   const deliveryMethod = readText(formData, "deliveryMethod", "Platform delivery");
   const fulfilmentStatus = fulfilmentStatusInput === "New order" ? initialFulfilmentStatus(deliveryMethod) : fulfilmentStatusInput;
+  if (paymentStatus !== "Unpaid") await requireCapability("manage_payments");
   const deliveryNote = readText(formData, "deliveryNote");
   const adminNote = readText(formData, "adminNote");
 

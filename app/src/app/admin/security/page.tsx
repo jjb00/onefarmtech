@@ -1,22 +1,22 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
-import {getCurrentStaffActor} from "@/lib/currentStaff";
+import {requireStaffRole} from "@/lib/auth";
 
 const readinessItems = [
   {
-    title: "Temporary staff password gate",
+    title: "Named staff authentication",
     status: "Active",
-    note: "Useful for local testing only. It must be replaced before Vercel team testing.",
+    note: "Each active staff identity uses an individually configured server-side password hash.",
   },
   {
     title: "Staff role records",
-    status: "Foundation added",
-    note: "Staff records exist for planning, but they are not real login identities yet.",
+    status: "Authoritative",
+    note: "The active database record supplies the staff identity and assigned role.",
   },
   {
     title: "Audit attribution",
-    status: "Improved",
-    note: "Audit logs now use the selected staff name, email, and role from the temporary session.",
+    status: "Authoritative",
+    note: "Audit logs use the authenticated database identity rather than submitted actor fields.",
   },
   {
     title: "Buyer login",
@@ -24,14 +24,14 @@ const readinessItems = [
     note: "Recurring buyer login is planned, but no fake access is exposed.",
   },
   {
-    title: "Production auth",
-    status: "Required before testing",
-    note: "Supabase Auth or equivalent should handle staff and buyer accounts before Vercel team testing.",
+    title: "Action authorization",
+    status: "Active",
+    note: "Sensitive server actions enforce assigned capabilities independently of page visibility.",
   },
 ];
 
 export default async function SecurityPage() {
-  const staff = await getCurrentStaffActor();
+  const staff = await requireStaffRole("Super admin");
 
   return (
     <AdminPageShell
@@ -41,7 +41,7 @@ export default async function SecurityPage() {
       <div className="grid gap-6">
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
           <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-            Current local session
+            Current staff session
           </p>
 
           <div className="mt-5 grid gap-4 md:grid-cols-4">
@@ -77,13 +77,12 @@ export default async function SecurityPage() {
 
         <section className="rounded-[2rem] border border-[#102015]/10 bg-white p-6 text-[#102015] shadow-sm">
           <h2 className="text-2xl font-black text-[#102015]">
-            Pre-Vercel auth requirement
+            Access maintenance
           </h2>
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[#405348]">
-            Before team testing on Vercel, the app should have proper staff
-            login, recurring buyer login, role checks, and audit attribution
-            backed by the production database/auth provider.
+            Keep staff records active only while access is required, rotate individual
+            credential hashes securely, and review audit events after role changes.
           </p>
 
           <div className="mt-5 flex flex-wrap gap-3">

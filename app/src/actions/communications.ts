@@ -2,7 +2,7 @@
 
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
-import {requireStaff} from "@/lib/auth";
+import {requireCapability} from "@/lib/auth";
 import {retryEmailDelivery} from "@/lib/email/service";
 import {prisma} from "@/lib/prisma";
 import {createAuditLog} from "@/lib/auditLog";
@@ -12,14 +12,8 @@ function text(formData: FormData, key: string) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-async function requireCommunicationsRole(allowedRoles: string[], deniedView: string) {
-  const staff = await requireStaff();
-  if (!allowedRoles.includes(staff.role)) redirect(`/admin?access=denied&blocked=/admin/buyer-messages?view=${deniedView}`);
-  return staff;
-}
-
 export async function retryFailedEmailAction(formData: FormData) {
-  await requireCommunicationsRole(["Super admin", "Admin", "Operations", "Support"], "email");
+  await requireCapability("manage_communications");
   const deliveryId = text(formData, "deliveryId");
   if (!deliveryId) redirect("/admin/buyer-messages?view=email&status=Failed&error=missing-email");
   const result = await retryEmailDelivery(deliveryId);
@@ -28,7 +22,7 @@ export async function retryFailedEmailAction(formData: FormData) {
 }
 
 export async function resolvePaymentIncidentAction(formData: FormData) {
-  const staff = await requireCommunicationsRole(["Super admin", "Admin", "Finance"], "reconciliation");
+  const staff = await requireCapability("manage_payments");
   const incidentId = text(formData, "incidentId");
   const status = text(formData, "status");
   const resolutionNote = text(formData, "resolutionNote");
