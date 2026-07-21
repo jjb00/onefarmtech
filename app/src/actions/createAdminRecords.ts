@@ -1062,18 +1062,22 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
     redirect("/admin/buyer-account-requests?conversionError=missing-request-id");
   }
 
+  let customerId = "";
   try {
-    await convertBuyerAccountRequestIntegrity({db: prisma, requestId, actor: staff});
+    const result = await convertBuyerAccountRequestIntegrity({db: prisma, requestId, actor: staff});
+    customerId = result.customer.id;
   } catch (error) {
     const code = error instanceof BuyerAccountConversionError ? error.code : "conversion-failed";
     redirect(`/admin/buyer-account-requests?conversionError=${encodeURIComponent(code)}`);
   }
 
   revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/launch-inbox");
   revalidatePath("/admin/buyer-accounts");
   revalidatePath("/admin/customers");
+  revalidatePath(`/admin/customers/${customerId}`);
   revalidatePath("/admin/audit-log");
-  redirect("/admin/buyer-account-requests?conversion=linked");
+  redirect(`/admin/customers/${customerId}?conversion=created`);
 }
 
 export async function updateOrderRequestStatusAction(formData: FormData) {

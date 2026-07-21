@@ -3,10 +3,10 @@ import test from "node:test";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity, convertedCustomerIdFromNote} from "../src/lib/buyerAccountConversion.js";
 
 const actor = {name: "Test Admin", email: "admin@example.test", role: "Admin"};
-function request(overrides = {}) { return {id: "request-1", contactName: "Buyer", organisationName: "Farm Shop", buyerType: "Business buyer", phone: "+2341", email: "buyer@example.test", location: "Lagos", interestedInCredit: false, status: "New", adminNote: null, ...overrides}; }
+function request(overrides = {}) { return {id: "request-1", contactName: "Buyer", organisationName: "Farm Shop", buyerType: "Business buyer", phone: "+2341", email: "buyer@example.test", location: "Lagos", needsReceipts: true, interestedInCredit: false, status: "New", adminNote: null, ...overrides}; }
 
 function fakeDb(initial = request()) {
-  const state = {request: initial, customers: new Map(), audits: [], creates: 0};
+  const state = {request: initial, customers: new Map(), contacts: [], audits: [], creates: 0};
   let lock = Promise.resolve();
   return {state, async $transaction(callback) {
     const previous = lock; let release; lock = new Promise((resolve) => { release = resolve; }); await previous;
@@ -14,6 +14,7 @@ function fakeDb(initial = request()) {
       $queryRawUnsafe: async () => [{pg_advisory_xact_lock: null}],
       buyerAccountRequest: {findUnique: async () => state.request, update: async ({data}) => (state.request = {...state.request, ...data})},
       customer: {findUnique: async ({where}) => state.customers.get(where.id) || null, create: async ({data}) => { state.creates += 1; const customer = {id: `customer-${state.creates}`, ...data}; state.customers.set(customer.id, customer); return customer; }},
+      buyerContact: {create: async ({data}) => { const contact = {id: `contact-${state.contacts.length + 1}`, ...data}; state.contacts.push(contact); return contact; }},
       auditLog: {create: async ({data}) => { state.audits.push(data); return data; }},
     };
     try { return await callback(tx); } finally { release(); }
@@ -22,7 +23,7 @@ function fakeDb(initial = request()) {
 
 test("first conversion atomically creates one customer, request evidence and audit", async () => {
   const db = fakeDb(); const result = await convertBuyerAccountRequestIntegrity({db, requestId: "request-1", actor});
-  assert.equal(result.created, true); assert.equal(db.state.creates, 1); assert.equal(db.state.request.status, "Converted to customer"); assert.equal(convertedCustomerIdFromNote(db.state.request.adminNote), result.customer.id); assert.equal(db.state.audits.length, 1); assert.match(db.state.audits[0].newValue, /request-1/); assert.match(db.state.audits[0].newValue, /customer-1/);
+  assert.equal(result.created, true); assert.equal(db.state.creates, 1); assert.equal(db.state.contacts.length, 1); assert.equal(db.state.contacts[0].customerId, result.customer.id); assert.equal(db.state.request.status, "Converted to customer"); assert.equal(convertedCustomerIdFromNote(db.state.request.adminNote), result.customer.id); assert.equal(db.state.audits.length, 1); assert.match(db.state.audits[0].newValue, /request-1/); assert.match(db.state.audits[0].newValue, /customer-1/);
 });
 
 test("repeated and concurrent conversion creates no more than one customer", async () => {
@@ -43,7 +44,13 @@ test("blocked, malformed, missing request and missing customer fail safely", asy
   assert.equal(convertedCustomerIdFromNote("Converted to customer record: malformed id"), null);
 });
 
-test("conversion does not match customers or create buyer access", async () => {
+test("conversion creates the primary buyer contact but no invite", async () => {
+  const db = fakeDb();
+  const result = await convertBuyerAccountRequestIntegrity({db, requestId: "request-1", actor});
+  assert.equal(db.state.contacts.length, 1);
+  assert.equal(db.state.contacts[0].customerId, result.customer.id);
+  assert.equal(db.state.contacts[0].email, "buyer@example.test");
+  assert.equal(db.state.contacts[0].canViewReceipts, true);
   const source = String(convertBuyerAccountRequestIntegrity);
-  assert.doesNotMatch(source, /findFirst|buyerContact|buyerAccountInvite|email.*find|phone.*find/);
+  assert.doesNotMatch(source, /buyerAccountInvite/);
 });

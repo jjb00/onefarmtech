@@ -28,7 +28,7 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
     return await db.$transaction(async (tx) => {
       // PostgreSQL transaction-scoped lock: every process converting this request uses the same key.
       await tx.$queryRawUnsafe(
-        "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
+        "SELECT pg_advisory_xact_lock(hashtextextended($1::text, 0))",
         requestId,
       );
 
@@ -87,6 +87,17 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
         paymentTerms: request.interestedInCredit ? "Payment terms interest noted - partner review required" : "Pay on order / manual terms",
         receiptEmail: request.email || null,
       }});
+      const buyerContact = await tx.buyerContact.create({data: {
+        customerId: customer.id,
+        name: request.contactName,
+        email: request.email || null,
+        phone: request.phone || null,
+        role: "Buyer user",
+        canPlaceOrders: true,
+        canViewReceipts: request.needsReceipts,
+        canViewCredit: false,
+        status: "Active",
+      }});
       const convertedAt = now();
       const updated = await tx.buyerAccountRequest.update({where: {id: request.id}, data: {status: CONVERTED_STATUS, adminNote: `${CUSTOMER_NOTE_PREFIX}${customer.id}`}});
       await tx.auditLog.create({data: {
@@ -98,7 +109,7 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
         newValue: json({requestId: request.id, customerId: customer.id, status: updated.status}),
         metadata: json({conversionTimestamp: convertedAt.toISOString(), conversionResult: "new-customer"}),
       }});
-      return {request: updated, customer, created: true};
+      return {request: updated, customer, buyerContact, created: true};
     });
   } catch (error) {
     if (error instanceof BuyerAccountConversionError) throw error;
