@@ -11,7 +11,7 @@ function fakeDb(initial = request()) {
   return {state, async $transaction(callback) {
     const previous = lock; let release; lock = new Promise((resolve) => { release = resolve; }); await previous;
     const tx = {
-      $queryRawUnsafe: async () => [{pg_advisory_xact_lock: null}],
+      $executeRawUnsafe: async () => 1,
       buyerAccountRequest: {findUnique: async () => state.request, update: async ({data}) => (state.request = {...state.request, ...data})},
       customer: {findUnique: async ({where}) => state.customers.get(where.id) || null, create: async ({data}) => { state.creates += 1; const customer = {id: `customer-${state.creates}`, ...data}; state.customers.set(customer.id, customer); return customer; }},
       buyerContact: {create: async ({data}) => { const contact = {id: `contact-${state.contacts.length + 1}`, ...data}; state.contacts.push(contact); return contact; }},
