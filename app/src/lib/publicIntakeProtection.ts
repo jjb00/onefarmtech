@@ -24,7 +24,7 @@ async function verifyTurnstile(token: string, action: string, fetcher: typeof fe
   if (!response.ok || !validTurnstileResult(result, action, allowedHostnames)) throw new PublicIntakeError("bot-check");
 }
 
-export async function protectPublicIntake(input: {formType: "contact" | "order-request"; action: string; token?: string; honeypot?: string; values: unknown[]; fetcher?: typeof fetch}) {
+export async function protectPublicIntake(input: {formType: "contact" | "order-request" | "career" | "supplier"; action: string; token?: string; honeypot?: string; values: unknown[]; fetcher?: typeof fetch}) {
   if (honeypotIsFilled(input.honeypot)) throw new PublicIntakeError("spam");
   const fingerprint = intakeFingerprint(input.values);
   const created = await verifyThenReserveIntake(

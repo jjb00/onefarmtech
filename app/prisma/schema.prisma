@@ -326,6 +326,24 @@ model ContactEnquiry {
   updatedAt    DateTime @updatedAt
 }
 
+model CareerApplication {
+  id         String   @id @default(cuid())
+  name       String
+  email      String
+  phone      String
+  location   String
+  role       String
+  experience String
+  consent    Boolean  @default(false)
+  status     String   @default("New")
+  source     String   @default("Careers page")
+  adminNote  String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([status, createdAt])
+}
+
 model BuyerAccountRequest {
   id                     String   @id @default(cuid())
   contactName            String

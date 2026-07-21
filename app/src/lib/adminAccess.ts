@@ -46,6 +46,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     ...sharedAdminPaths,
     "/admin/launch-inbox",
     "/admin/contact-enquiries",
+    "/admin/career-applications",
     "/admin/buyer-account-requests",
     "/admin/complaints",
     "/admin/customers",
@@ -61,6 +62,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
     "/admin/buyer-access",
     "/admin/customers",
     "/admin/contact-enquiries",
+    "/admin/career-applications",
     "/admin/receipts",
   ],
 };

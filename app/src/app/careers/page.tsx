@@ -277,10 +277,10 @@ export default async function CareersPage({
                   </p>
 
                   <Link
-                    href={`/contact?role=${encodeURIComponent(role.title)}`}
+                    href={`/careers/apply?role=${encodeURIComponent(role.title)}`}
                     className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
                   >
-                    Express interest
+                    Apply for this role
                   </Link>
                 </div>
               </div>
