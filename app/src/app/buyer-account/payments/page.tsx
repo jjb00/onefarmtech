@@ -1,8 +1,7 @@
-// @ts-nocheck -- temporary build stabilisation for new commerce pages
 import Link from "next/link";
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
-import {getCurrentBuyer} from "@/lib/currentBuyer";
+import {requireBuyerCapability} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {redirect} from "next/navigation";
 
@@ -37,15 +36,12 @@ function statusClass(status: string | null | undefined) {
 }
 
 export default async function BuyerPaymentsPage() {
-  const buyer = await getCurrentBuyer();
-
-  if (!buyer?.customerId) {
-    redirect("/buyer-account-request");
-  }
+  const {buyer} = await requireBuyerCapability("canViewReceipts");
+  const customerId = buyer.customerId!;
 
   const [customer, paymentRequests, payments, receipts, unreadMessageCount] = await Promise.all([
     prisma.customer.findUnique({
-      where: {id: buyer.customerId},
+      where: {id: customerId},
       select: {
         id: true,
         name: true,
@@ -56,7 +52,7 @@ export default async function BuyerPaymentsPage() {
       },
     }),
     prisma.paymentRequest.findMany({
-      where: {customerId: buyer.customerId},
+      where: {customerId},
       orderBy: {createdAt: "desc"},
       take: 50,
       include: {
@@ -73,7 +69,7 @@ export default async function BuyerPaymentsPage() {
     prisma.payment.findMany({
       where: {
         order: {
-          customerId: buyer.customerId,
+          customerId,
         },
       },
       orderBy: {createdAt: "desc"},
@@ -88,7 +84,7 @@ export default async function BuyerPaymentsPage() {
       },
     }),
     prisma.receipt.findMany({
-      where: {customerId: buyer.customerId},
+      where: {customerId},
       orderBy: {createdAt: "desc"},
       take: 50,
       include: {
@@ -102,7 +98,7 @@ export default async function BuyerPaymentsPage() {
     }),
     prisma.buyerMessage.count({
       where: {
-        customerId: buyer.customerId,
+        customerId,
         OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
       },
     }),

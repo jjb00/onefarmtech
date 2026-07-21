@@ -11,13 +11,13 @@ export const runtime = "nodejs";
 export default async function BuyerAccountPage({
   searchParams,
 }: {
-  searchParams?: Promise<{orderSubmitted?: string; profileSubmitted?: string}>;
+  searchParams?: Promise<{orderSubmitted?: string; profileSubmitted?: string; permission?: string}>;
 }) {
   const params = await searchParams;
   const orderSubmitted = params?.orderSubmitted === "1";
   const profileSubmitted = params?.profileSubmitted === "1";
 
-  const {customer} = await requireBuyer();
+  const {buyer, customer} = await requireBuyer();
   const unreadMessageCount = await prisma.buyerMessage.count({
     where: {
       customerId: customer.id,
@@ -43,6 +43,7 @@ export default async function BuyerAccountPage({
       {profileSubmitted ? (
         <Alert>Your profile update request has been submitted for admin review.</Alert>
       ) : null}
+      {params?.permission ? <div role="alert" className="rounded-2xl bg-red-50 p-4 text-sm font-bold text-red-700">You do not have permission to use that buyer-account feature. Ask an authorised buyer contact or OneFarmTech support.</div> : null}
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -69,25 +70,25 @@ export default async function BuyerAccountPage({
         <div className="mt-6 grid gap-3 md:grid-cols-4">
           <Metric label="Status" value={customer.accountStatus} />
           <Metric label="Payment terms" value={customer.paymentTerms} />
-          <Metric label="Available credit" value={formatNaira(availableCredit)} />
-          <Metric label="Outstanding" value={formatNaira(customer.outstandingBalance)} />
+          {buyer.canViewCredit ? <Metric label="Available credit" value={formatNaira(availableCredit)} /> : null}
+          {buyer.canViewCredit ? <Metric label="Outstanding" value={formatNaira(customer.outstandingBalance)} /> : null}
         </div>
       </section>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <ActionCard
+        {buyer.canPlaceOrders ? <ActionCard
           title="Place buyer order"
           body="Send a fresh produce request linked to this account."
           href="/buyer-account/order"
           label="New order"
           primary
-        />
-        <ActionCard
+        /> : null}
+        {buyer.canViewReceipts ? <ActionCard
           title="Payments and receipts"
           body="Open payment requests, confirmed payments and receipt records."
           href="/buyer-account/payments"
           label="View payments"
-        />
+        /> : null}
         <ActionCard
           title="Inbox"
           body="Read order, payment, receipt and account messages from OneFarmTech."

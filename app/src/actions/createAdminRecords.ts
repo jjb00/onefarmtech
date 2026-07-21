@@ -4,7 +4,7 @@
 
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
-import {requireBuyer} from "@/lib/currentBuyer";
+import {requireBuyer, requireBuyerCapability} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
@@ -782,7 +782,7 @@ async function makeOrderCode() {
 }
 
 export async function createBuyerPortalOrderAction(formData: FormData) {
-  const {customer} = await requireBuyer();
+  const {customer} = await requireBuyerCapability("canPlaceOrders");
 
   const items = readText(formData, "items");
   const deliveryPreference = readText(formData, "deliveryPreference", "Delivery");

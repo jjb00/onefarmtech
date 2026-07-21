@@ -8,6 +8,8 @@ export const BUYER_CUSTOMER_ID_COOKIE = "oft_buyer_customer_id";
 export const BUYER_CONTACT_NAME_COOKIE = "oft_buyer_contact_name";
 export const BUYER_CONTACT_ROLE_COOKIE = "oft_buyer_contact_role";
 export const BUYER_INVITE_ID_COOKIE = "oft_buyer_invite_id";
+export const BUYER_CONTACT_ID_COOKIE = "oft_buyer_contact_id";
+export const BUYER_CONTACT_REVISION_COOKIE = "oft_buyer_contact_revision";
 
 export type CurrentBuyerActor = {
   isAuthenticated: boolean;
@@ -15,6 +17,10 @@ export type CurrentBuyerActor = {
   inviteId: string | null;
   contactName: string | null;
   contactRole: string | null;
+  contactId: string | null;
+  canPlaceOrders: boolean;
+  canViewReceipts: boolean;
+  canViewCredit: boolean;
   authMode: "invite-code";
 };
 
@@ -23,11 +29,18 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
 
   const customerId = cookieStore.get(BUYER_CUSTOMER_ID_COOKIE)?.value || null;
   const inviteId = cookieStore.get(BUYER_INVITE_ID_COOKIE)?.value || null;
+  const contactId = cookieStore.get(BUYER_CONTACT_ID_COOKIE)?.value || null;
+  const contactRevision = cookieStore.get(BUYER_CONTACT_REVISION_COOKIE)?.value || null;
+  const contact = contactId ? await prisma.buyerContact.findUnique({where: {id: contactId}}) : null;
+  const invite = inviteId ? await prisma.buyerAccountInvite.findUnique({where: {id: inviteId}}) : null;
   const isAuthenticated = Boolean(
-    customerId && inviteId && verifySessionToken(
+    customerId && inviteId && contactId && contactRevision && contact && invite &&
+    contact.customerId === customerId && contact.status === "Active" && contact.updatedAt.toISOString() === contactRevision &&
+    invite.customerId === customerId && !invite.status.toLowerCase().includes("cancel") &&
+    verifySessionToken(
       cookieStore.get(BUYER_SESSION_COOKIE)?.value,
       "buyer",
-      `${customerId}:${inviteId}`,
+      `${customerId}:${inviteId}:${contactId}:${contactRevision}`,
     ),
   );
 
@@ -35,8 +48,12 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
     isAuthenticated,
     customerId,
     inviteId,
-    contactName: cookieStore.get(BUYER_CONTACT_NAME_COOKIE)?.value || null,
-    contactRole: cookieStore.get(BUYER_CONTACT_ROLE_COOKIE)?.value || null,
+    contactId: isAuthenticated ? contactId : null,
+    contactName: isAuthenticated ? contact!.name : null,
+    contactRole: isAuthenticated ? contact!.role : null,
+    canPlaceOrders: isAuthenticated ? contact!.canPlaceOrders : false,
+    canViewReceipts: isAuthenticated ? contact!.canViewReceipts : false,
+    canViewCredit: isAuthenticated ? contact!.canViewCredit : false,
     authMode: "invite-code",
   };
 }
@@ -76,6 +93,13 @@ export async function requireBuyer() {
     buyer,
     customer,
   };
+}
+
+export type BuyerCapability = "canPlaceOrders" | "canViewReceipts" | "canViewCredit";
+export async function requireBuyerCapability(capability: BuyerCapability) {
+  const result = await requireBuyer();
+  if (!result.buyer[capability]) redirect(`/buyer-account?permission=${capability}`);
+  return result;
 }
 
 export async function getCurrentBuyer() {

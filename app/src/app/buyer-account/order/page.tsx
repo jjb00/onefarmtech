@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {createBuyerPortalOrderAction} from "@/actions/createAdminRecords";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
-import {requireBuyer} from "@/lib/currentBuyer";
+import {requireBuyerCapability} from "@/lib/currentBuyer";
 import {deliveryPreferenceOptions, timingOptions} from "@/lib/formOptions";
 import {formatNaira} from "@/lib/format";
 
@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerPortalOrderPage() {
-  const {customer} = await requireBuyer();
+  const {buyer, customer} = await requireBuyerCapability("canPlaceOrders");
 
   return (
     <main className="min-h-screen bg-[#f7f5ec] px-4 py-6 text-[#102015] sm:px-6 lg:px-8">
@@ -41,7 +41,7 @@ export default async function BuyerPortalOrderPage() {
           <div className="mt-6 grid gap-3 md:grid-cols-3">
             <Metric label="Buyer type" value={customer.buyerType} />
             <Metric label="Payment terms" value={customer.paymentTerms} />
-            <Metric label="Available credit" value={formatNaira(Math.max(customer.creditLimit - customer.outstandingBalance, 0))} />
+            {buyer.canViewCredit ? <Metric label="Available credit" value={formatNaira(Math.max(customer.creditLimit - customer.outstandingBalance, 0))} /> : null}
           </div>
         </section>
 

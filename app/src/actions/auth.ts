@@ -10,6 +10,8 @@ import {
   BUYER_CONTACT_ROLE_COOKIE,
   BUYER_CUSTOMER_ID_COOKIE,
   BUYER_INVITE_ID_COOKIE,
+  BUYER_CONTACT_ID_COOKIE,
+  BUYER_CONTACT_REVISION_COOKIE,
   BUYER_SESSION_COOKIE,
 } from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
@@ -68,7 +70,7 @@ export async function buyerLoginAction(formData: FormData) {
   const buyerAccessCode = readText(formData, "buyerAccessCode").toUpperCase();
 
   if (!buyerIdentifier || !buyerAccessCode) {
-    redirect("/buyer-account-request?buyerLogin=missing");
+    redirect("/buyer-login?error=missing");
   }
 
   const invite = await prisma.buyerAccountInvite.findUnique({
@@ -85,7 +87,7 @@ export async function buyerLoginAction(formData: FormData) {
   });
 
   if (!invite) {
-    redirect("/buyer-account-request?buyerLogin=invalid");
+    redirect("/buyer-login?error=invalid");
   }
 
   const customer = invite.customer;
@@ -105,19 +107,23 @@ export async function buyerLoginAction(formData: FormData) {
   );
 
   if (!inviteTargetMatches && !customerTargetMatches && !matchingContact) {
-    redirect("/buyer-account-request?buyerLogin=identifier");
+    redirect("/buyer-login?error=identifier");
   }
 
   if (invite.status.toLowerCase().includes("cancel")) {
-    redirect("/buyer-account-request?buyerLogin=cancelled");
+    redirect("/buyer-login?error=cancelled");
   }
 
   if (invite.expiresAt && invite.expiresAt < new Date()) {
-    redirect("/buyer-account-request?buyerLogin=expired");
+    redirect("/buyer-login?error=expired");
   }
 
   if (customer.status !== "Active" || !customer.accountLoginReady) {
-    redirect("/buyer-account-request?buyerLogin=not-ready");
+    redirect("/buyer-login?error=not-ready");
+  }
+
+  if (!matchingContact || matchingContact.status !== "Active") {
+    redirect("/buyer-login?error=contact");
   }
 
   const updatedInvite = await prisma.buyerAccountInvite.update({
@@ -142,11 +148,13 @@ export async function buyerLoginAction(formData: FormData) {
 
   cookieStore.set(
     BUYER_SESSION_COOKIE,
-    createSessionToken("buyer", `${customer.id}:${updatedInvite.id}`),
+    createSessionToken("buyer", `${customer.id}:${updatedInvite.id}:${matchingContact.id}:${matchingContact.updatedAt.toISOString()}`),
     cookieOptions,
   );
   cookieStore.set(BUYER_CUSTOMER_ID_COOKIE, customer.id, cookieOptions);
   cookieStore.set(BUYER_INVITE_ID_COOKIE, updatedInvite.id, cookieOptions);
+  cookieStore.set(BUYER_CONTACT_ID_COOKIE, matchingContact.id, cookieOptions);
+  cookieStore.set(BUYER_CONTACT_REVISION_COOKIE, matchingContact.updatedAt.toISOString(), cookieOptions);
   cookieStore.set(
     BUYER_CONTACT_NAME_COOKIE,
     matchingContact?.name || customer.name,
@@ -170,6 +178,8 @@ export async function buyerLogoutAction() {
     BUYER_CONTACT_NAME_COOKIE,
     BUYER_CONTACT_ROLE_COOKIE,
     BUYER_INVITE_ID_COOKIE,
+    BUYER_CONTACT_ID_COOKIE,
+    BUYER_CONTACT_REVISION_COOKIE,
   ]) {
     cookieStore.set(cookieName, "", {
       httpOnly: true,
@@ -179,5 +189,5 @@ export async function buyerLogoutAction() {
     });
   }
 
-  redirect("/buyer-account-request");
+  redirect("/buyer-login");
 }

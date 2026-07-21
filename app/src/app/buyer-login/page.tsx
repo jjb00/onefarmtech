@@ -1,88 +1,21 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
-import PublicImageCollage from "@/components/PublicImageCollage";
-import PublicMobileMenu from "@/components/PublicMobileMenu";
+import PublicFooter from "@/components/PublicFooter";
+import {buyerLoginAction} from "@/actions/auth";
 
-export default function BuyerLoginPage() {
-  return (
-    <main className="relative min-h-screen overflow-hidden bg-[#fbfff8] px-6 py-10 text-[#101712]">
-      <PublicImageCollage
-        images={[
-          {
-            src: "/backgrounds/buyers.png",
-            alt: "",
-            className: "right-[-180px] top-20 h-80 w-80 opacity-[0.38] md:h-[32rem] md:w-[32rem]",
-          },
-          {
-            src: "/backgrounds/banking.png",
-            alt: "",
-            className: "left-[-170px] bottom-[-120px] h-80 w-80 opacity-[0.34] md:h-[30rem] md:w-[30rem]",
-          },
-          {
-            src: "/backgrounds/produce.png",
-            alt: "",
-            className: "bottom-[-150px] right-[28%] hidden h-[24rem] w-[24rem] opacity-[0.36] lg:block",
-          },
-        ]}
-      />
-      <div className="pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/10 blur-3xl" />
-      <div className="pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/25 blur-3xl" />
-
-      <div className="relative z-10 mx-auto flex max-w-5xl justify-end">
-        <PublicMobileMenu />
-      </div>
-
-      <section className="relative mx-auto flex min-h-[80vh] max-w-5xl items-center justify-center">
-        <div className="oft-fade-up w-full rounded-[2rem] border border-[#101712]/10 bg-white/95 p-8 shadow-sm backdrop-blur">
-          <Link href="/" aria-label="Go to OneFarmTech homepage" className="inline-flex">
-            <BrandMark />
-          </Link>
-
-          <p className="mt-8 text-sm font-black uppercase tracking-[0.24em] text-[#C95F3D]">
-            Recurring buyers
-          </p>
-          <h1 className="mt-3 max-w-3xl text-5xl font-black tracking-tight">
-            Create your OneFarmTech buyer account.
-          </h1>
-          <p className="mt-5 max-w-2xl text-base leading-8 text-[#1E2420]/70">
-            Buyer accounts are for regular restaurants, hotels, caterers, retailers,
-            offices, food vendors and other repeat customers who want order history,
-            receipts, payment records, authorised contacts and repeat-order support.
-          </p>
-
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {[
-              "Order history",
-              "Electronic receipts",
-              "Payment records",
-              "Authorised contacts",
-              "Credit and balance tracking",
-              "Repeat-order support",
-            ].map((item) => (
-              <div
-                key={item}
-                className="oft-card-lift rounded-2xl bg-[#f3f8ef] p-4 text-sm font-black"
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
-            <Link
-              href="/buyer-account-request"
-              className="rounded-full bg-[#1f7a3f] px-6 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-            >
-              Request account setup
-            </Link>
-            <div className="flex flex-wrap gap-3 text-sm font-black text-[#1f7a3f]">
-              <Link href="/order-request" className="hover:underline">Order form</Link>
-              <Link href="/faq" className="hover:underline">FAQ</Link>
-              <Link href="/contact" className="hover:underline">Contact</Link>
-            </div>
-          </div>
-        </div>
-      </section>
-    </main>
-  );
+export const dynamic = "force-dynamic";
+const messages: Record<string, string> = {
+  missing: "Enter your email or phone and access code.", invalid: "That access code was not recognised.",
+  identifier: "Those details do not match the access code.", cancelled: "This access code has been cancelled. Contact support for a replacement.",
+  expired: "This access code has expired. Contact support for a replacement.", "not-ready": "This buyer account is inactive or not yet approved for login.",
+  contact: "Your buyer contact is inactive or not configured for portal access. Contact OneFarmTech support.",
+};
+export default async function BuyerLoginPage({searchParams}: {searchParams?: Promise<{error?: string}>}) {
+  const params = await searchParams;
+  return <main className="min-h-screen bg-[#fbfff8] text-[#102015]"><section className="mx-auto max-w-xl px-6 py-12"><Link href="/"><BrandMark /></Link>
+    <div className="mt-10 rounded-[2rem] border bg-white p-7 shadow-sm"><p className="text-xs font-black uppercase tracking-[0.2em] text-[#1f7a3f]">Approved buyers</p><h1 className="mt-3 text-4xl font-black">Buyer login</h1><p className="mt-3 text-sm leading-7 text-[#405348]">Use the access code provided after your buyer account was approved.</p>
+      {params?.error ? <div role="alert" className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-700">{messages[params.error] || "Sign-in could not be completed."}</div> : null}
+      <form action={buyerLoginAction} className="mt-6 grid gap-4"><label className="grid gap-2 text-sm font-bold">Email or phone<input name="buyerIdentifier" required autoComplete="username" className="rounded-xl border px-4 py-3 font-normal" /></label><label className="grid gap-2 text-sm font-bold">Access code<input name="buyerAccessCode" type="password" required autoComplete="current-password" className="rounded-xl border px-4 py-3 font-normal" /></label><button className="rounded-full bg-[#1f7a3f] px-6 py-3 font-black text-white">Sign in</button></form>
+      <div className="mt-6 border-t pt-5 text-sm"><span>Not approved yet? </span><Link href="/buyer-account-request" className="font-black text-[#1f7a3f]">Request a buyer account</Link></div>
+    </div></section><PublicFooter /></main>;
 }
