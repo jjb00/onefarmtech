@@ -18,6 +18,7 @@ import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
 import {isReusablePaymentRequest} from "@/lib/payments/paymentInitialization.js";
+import {verifyPaystackPaymentAction} from "@/actions/verifyPaystackPayment";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,6 +32,7 @@ type PageProps = {
     error?: string;
     detail?: string;
     whatsapp?: string;
+    verified?: string;
   }>;
 };
 
@@ -182,6 +184,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
     >
       {params?.error ? <div role="alert" className="mb-4 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{params.detail || params.error}</div> : null}
       {params?.whatsapp === "accepted" ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment link created separately. WhatsApp accepted the notification for sending; delivery status will update from Meta.</div> : null}
+      {params?.verified ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Paystack verified payment {params.verified}. The payment request, order and receipt records are now reconciled.</div> : null}
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
         <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
@@ -360,6 +363,14 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
                           <div className="flex flex-wrap gap-2 border-t border-[#102015]/10 pt-3">
                             {request.status !== "Paid" ? (
                               <>
+                                {request.provider === "Paystack" ? (
+                                  <form action={verifyPaystackPaymentAction}>
+                                    <input type="hidden" name="id" value={request.id} />
+                                    <button type="submit" className="rounded-full border border-[#1f7a3f]/25 bg-[#eef6ea] px-4 py-2 text-xs font-black text-[#1f7a3f]">
+                                      Verify with Paystack
+                                    </button>
+                                  </form>
+                                ) : null}
                                 <form action={generatePaymentLinkAction}>
                                   <input type="hidden" name="id" value={request.id} />
                                   <input type="hidden" name="provider" value="Paystack" />

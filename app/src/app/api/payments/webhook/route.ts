@@ -1,30 +1,17 @@
-import crypto from "node:crypto";
 import {NextRequest, NextResponse} from "next/server";
+import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {verifyPaystackTransaction} from "@/lib/payments/paystack";
 import {createPaymentReconciliationIncident} from "@/lib/payments/reconciliation";
 import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {validatePaystackVerification} from "@/lib/payments/verificationRules";
+import {settleVerifiedPaystackPayment} from "@/lib/payments/paystackSettlement.js";
+import {validatePaystackWebhookPayment, verifyPaystackWebhookSignature} from "@/lib/payments/paystackWebhookRules.js";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
-
-function verifyPaystackSignature(rawBody: string, signature: string | null) {
-  const secret = process.env.PAYSTACK_WEBHOOK_SECRET || process.env.PAYSTACK_SECRET_KEY;
-
-  if (!secret || !signature) {
-    return false;
-  }
-
-  const hash = crypto
-    .createHmac("sha512", secret)
-    .update(rawBody)
-    .digest("hex");
-
-  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
-}
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -38,11 +25,11 @@ export async function POST(request: NextRequest) {
   const rawBody = await request.text();
   const signature = request.headers.get("x-paystack-signature");
 
-  if (!verifyPaystackSignature(rawBody, signature)) {
+  if (!verifyPaystackWebhookSignature(rawBody, signature, process.env.PAYSTACK_SECRET_KEY)) {
     return NextResponse.json({ok: false, error: "Invalid signature"}, {status: 401});
   }
 
-  let event: any;
+  let event: {event?: string; data?: {reference?: unknown; amount?: unknown; currency?: unknown; paid_at?: string}};
 
   try {
     event = JSON.parse(rawBody);
@@ -56,8 +43,6 @@ export async function POST(request: NextRequest) {
 
   const data = event.data || {};
   const gatewayReference = String(data.reference || "").trim();
-  const paidAmount = Number(data.amount) / 100;
-  const paidCurrency = String(data.currency || "").toUpperCase();
 
   if (!gatewayReference) {
     return NextResponse.json({ok: false, error: "Missing reference"}, {status: 400});
@@ -101,64 +86,23 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ok: true, ignored: "provider verification mismatch"});
   }
 
-  if (
-    !Number.isFinite(paidAmount) ||
-    paidAmount !== paymentRequest.amount ||
-    paidCurrency !== String(paymentRequest.currency || "NGN").toUpperCase()
-  ) {
-    console.error("Paystack webhook amount/currency mismatch", {
-      paymentRequestId: paymentRequest.id,
-      gatewayReference,
-      expectedAmount: paymentRequest.amount,
-      paidAmount,
-      expectedCurrency: paymentRequest.currency || "NGN",
-      paidCurrency,
-    });
-    await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: "Authenticated webhook amount/currency conflicts with the internal payment request.", payloadMetadata: {event: event.event, paidAmount, paidCurrency}});
+  const webhookConflict = validatePaystackWebhookPayment({data, expectedAmount: paymentRequest.amount, expectedCurrency: paymentRequest.currency || "NGN"});
+  if (webhookConflict) {
+    await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: `Authenticated webhook payment conflict: ${webhookConflict}.`, payloadMetadata: {event: event.event, amountMinor: data.amount, currency: data.currency}});
     return NextResponse.json({ok: true, ignored: "webhook payment details mismatch"});
   }
 
   const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+  const settlement = await settleVerifiedPaystackPayment({db: prisma, paymentRequest, verification, paidAt, source: "Paystack webhook"});
+  if (!settlement.ok) {
+    await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: `Settlement verification conflict: ${settlement.conflict}.`, verificationMetadata: verification});
+    return NextResponse.json({ok: true, ignored: "settlement verification mismatch"});
+  }
+  if (settlement.receiptError) {
+    await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: "Payment was verified and marked paid, but automatic receipt creation failed.", verificationMetadata: {receiptError: settlement.receiptError}});
+  }
 
-  const existingPayment = await prisma.payment.findFirst({
-    where: {
-      reference: paymentRequest.reference,
-      orderId: paymentRequest.orderId,
-    },
-  });
-
-  await prisma.paymentRequest.update({
-    where: {id: paymentRequest.id},
-    data: {
-      provider: "Paystack",
-      gatewayReference,
-      status: "Paid",
-      paidAt,
-    },
-  });
-
-  const payment =
-    existingPayment ||
-    (await prisma.payment.create({
-      data: {
-        orderId: paymentRequest.orderId,
-        reference: paymentRequest.reference,
-        provider: "Paystack",
-        amount: paymentRequest.amount,
-        status: "Paid",
-        paidAt,
-      },
-    }));
-
-  await prisma.order.update({
-    where: {id: paymentRequest.orderId},
-    data: {
-      paymentStatus: "Paid",
-      paymentReference: paymentRequest.reference,
-    },
-  });
-
-  if (paymentRequest.customerId && !existingPayment) {
+  if (paymentRequest.customerId && !settlement.duplicate) {
     await prisma.buyerMessage.create({
       data: {
         customerId: paymentRequest.customerId,
@@ -170,7 +114,7 @@ export async function POST(request: NextRequest) {
         recipient: paymentRequest.order.phone,
         source: "Paystack webhook",
         relatedType: "Payment",
-        relatedId: payment.id,
+        relatedId: settlement.payment.id,
         metadata: JSON.stringify({
           provider: "Paystack",
           gatewayReference,
@@ -180,9 +124,11 @@ export async function POST(request: NextRequest) {
     });
 
     if (paymentRequest.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: payment.id});
+      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
     }
   }
 
-  return NextResponse.json({ok: true});
+  for (const path of ["/admin/payment-requests", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
+
+  return NextResponse.json({ok: true, duplicate: settlement.duplicate});
 }

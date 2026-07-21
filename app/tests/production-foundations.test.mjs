@@ -35,7 +35,7 @@ test("production links have no silent localhost fallback", () => {
 test("webhooks preserve duplicate guards and retry provider timeouts", () => {
   for (const path of ["../src/app/api/payments/webhook/route.ts", "../src/app/api/payments/flutterwave/webhook/route.ts"]) {
     const source = fs.readFileSync(new URL(path, import.meta.url), "utf8");
-    assert.match(source, /existingPayment/);
+    assert.match(source, path.includes("flutterwave") ? /existingPayment/ : /settleVerifiedPaystackPayment/);
     assert.match(source, /status: 503/);
     assert.match(source, /payment request not found/);
     assert.match(source, /createPaymentReconciliationIncident/);
@@ -145,12 +145,12 @@ test("legacy admin operational routes remain present and guest orders use the ac
 test("payment webhooks retain signature checks, reconciliation creation and idempotent settlement", () => {
   const paystackRoute = fs.readFileSync(new URL("../src/app/api/payments/webhook/route.ts", import.meta.url), "utf8");
   const flutterwaveRoute = fs.readFileSync(new URL("../src/app/api/payments/flutterwave/webhook/route.ts", import.meta.url), "utf8");
-  assert.match(paystackRoute, /verifyPaystackSignature/);
+  assert.match(paystackRoute, /verifyPaystackWebhookSignature/);
   assert.match(paystackRoute, /verifyPaystackTransaction/);
   assert.match(flutterwaveRoute, /verifyFlutterwaveSignature/);
   assert.match(flutterwaveRoute, /verifyFlutterwaveTransaction/);
   for (const source of [paystackRoute, flutterwaveRoute]) {
-    assert.match(source, /existingPayment/);
+    assert.match(source, source === paystackRoute ? /settleVerifiedPaystackPayment/ : /existingPayment/);
     assert.match(source, /createPaymentReconciliationIncident/);
     assert.match(source, /payment request not found/);
   }
