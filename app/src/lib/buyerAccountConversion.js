@@ -113,8 +113,39 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
     });
   } catch (error) {
     if (error instanceof BuyerAccountConversionError) throw error;
-    const code = error && typeof error === "object" && "code" in error ? String(error.code) : "";
-    if (["P2034", "40001", "40P01"].includes(code)) throw new BuyerAccountConversionError("database-conflict", "The request changed during conversion. Please try again.");
-    throw new BuyerAccountConversionError("conversion-failed", "The buyer account request could not be converted.");
+
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : "";
+
+    console.error("buyer-account-conversion-failed", {
+      requestId,
+      code,
+      name:
+        error && typeof error === "object" && "name" in error
+          ? String(error.name)
+          : "",
+      message:
+        error && typeof error === "object" && "message" in error
+          ? String(error.message)
+          : String(error),
+      meta:
+        error && typeof error === "object" && "meta" in error
+          ? error.meta
+          : undefined,
+    });
+
+    if (["P2034", "40001", "40P01"].includes(code)) {
+      throw new BuyerAccountConversionError(
+        "database-conflict",
+        "The request changed during conversion. Please try again.",
+      );
+    }
+
+    throw new BuyerAccountConversionError(
+      "conversion-failed",
+      "The buyer account request could not be converted.",
+    );
   }
 }
