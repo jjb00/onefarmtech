@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck -- temporary build stabilisation for new commerce pages
 import Link from "next/link";
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
@@ -5,6 +6,7 @@ import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
 import {getCurrentBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {redirect, notFound} from "next/navigation";
+import {buyerOrderFinancialRelations, visibleBuyerPaymentStatus} from "@/lib/buyerFinancialAccess.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -59,18 +61,7 @@ export default async function BuyerOrderDetailPage({
         items: {
           orderBy: {id: "asc"},
         },
-        paymentRequests: {
-          orderBy: {createdAt: "desc"},
-          take: 3,
-        },
-        payments: {
-          orderBy: {createdAt: "desc"},
-          take: 3,
-        },
-        receipts: {
-          orderBy: {createdAt: "desc"},
-          take: 3,
-        },
+        ...buyerOrderFinancialRelations(buyer.canViewReceipts),
         delivery: {
           include: {
             deliveryPartner: {
@@ -101,12 +92,15 @@ export default async function BuyerOrderDetailPage({
 
   const subtotal = order.subtotal || order.items.reduce((sum, item) => sum + item.lineTotal, 0);
   const total = order.totalAmount || order.estimatedTotal || subtotal;
-  const latestPaymentRequest = order.paymentRequests[0];
+  const latestPaymentRequest = buyer.canViewReceipts ? order.paymentRequests?.[0] : null;
 
   return (
     <BuyerPortalFrame
+      customerName={customer.name}
       buyerType={customer.buyerType || "Buyer account"}
       unreadMessageCount={unreadMessageCount}
+      canPlaceOrders={buyer.canPlaceOrders}
+      canViewReceipts={buyer.canViewReceipts}
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -126,9 +120,11 @@ export default async function BuyerOrderDetailPage({
             <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">
               {order.fulfilmentStatus}
             </span>
-            <span className="rounded-full bg-[#fff6d6] px-4 py-2 text-sm font-black text-[#7a4a00]">
-              {order.paymentStatus}
-            </span>
+            {visibleBuyerPaymentStatus(buyer.canViewReceipts, order.paymentStatus) ? (
+              <span className="rounded-full bg-[#fff6d6] px-4 py-2 text-sm font-black text-[#7a4a00]">
+                {order.paymentStatus}
+              </span>
+            ) : null}
           </div>
         </div>
       </section>
@@ -219,7 +215,7 @@ export default async function BuyerOrderDetailPage({
             </dl>
           </section>
 
-          <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+          {buyer.canViewReceipts ? <section className="rounded-[2rem] bg-white p-6 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
               Payment
             </p>
@@ -251,7 +247,7 @@ export default async function BuyerOrderDetailPage({
                 Payment request is not available yet. The team will confirm the next payment step.
               </p>
             )}
-          </section>
+          </section> : null}
 
           <section className="rounded-[2rem] bg-white p-6 shadow-sm">
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -276,7 +272,7 @@ export default async function BuyerOrderDetailPage({
         </aside>
       </section>
 
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
+      {buyer.canViewReceipts ? <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -299,7 +295,7 @@ export default async function BuyerOrderDetailPage({
           <div className="rounded-2xl bg-[#f7f5ec] p-5">
             <h4 className="font-black text-[#102015]">Recent receipts</h4>
             <div className="mt-3 grid gap-2">
-              {order.receipts.length === 0 ? (
+              {order.receipts?.length === 0 ? (
                 <p className="text-sm text-[#405348]">No receipts issued yet.</p>
               ) : (
                 order.receipts.map((receipt) => (
@@ -315,7 +311,7 @@ export default async function BuyerOrderDetailPage({
           <div className="rounded-2xl bg-[#f7f5ec] p-5">
             <h4 className="font-black text-[#102015]">Payments</h4>
             <div className="mt-3 grid gap-2">
-              {order.payments.length === 0 ? (
+              {order.payments?.length === 0 ? (
                 <p className="text-sm text-[#405348]">No confirmed payments yet.</p>
               ) : (
                 order.payments.map((payment) => (
@@ -328,7 +324,7 @@ export default async function BuyerOrderDetailPage({
             </div>
           </div>
         </div>
-      </section>
+      </section> : null}
     </BuyerPortalFrame>
   );
 }

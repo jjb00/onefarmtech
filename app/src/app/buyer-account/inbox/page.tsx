@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck -- temporary build stabilisation for new commerce pages
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
@@ -37,7 +38,15 @@ export default async function BuyerInboxPage() {
       },
     }),
     prisma.buyerMessage.findMany({
-      where: {customerId: buyer.customerId},
+      where: {
+        customerId: buyer.customerId,
+        ...(buyer.canViewReceipts ? {} : {
+          OR: [
+            {relatedType: null},
+            {relatedType: {notIn: ["Payment", "PaymentRequest", "Receipt"]}},
+          ],
+        }),
+      },
       orderBy: {createdAt: "desc"},
       take: 50,
     }),
@@ -58,6 +67,8 @@ export default async function BuyerInboxPage() {
       customerName={customer.name}
       buyerType={customer.buyerType || "Buyer account"}
       unreadMessageCount={unreadMessageCount}
+      canPlaceOrders={buyer.canPlaceOrders}
+      canViewReceipts={buyer.canViewReceipts}
     >
       <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">

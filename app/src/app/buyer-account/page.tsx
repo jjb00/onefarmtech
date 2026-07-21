@@ -4,6 +4,7 @@ import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
+import {loadAuthorizedRecentReceipts, visibleBuyerPaymentStatus} from "@/lib/buyerFinancialAccess.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -18,21 +19,29 @@ export default async function BuyerAccountPage({
   const profileSubmitted = params?.profileSubmitted === "1";
 
   const {buyer, customer} = await requireBuyer();
-  const unreadMessageCount = await prisma.buyerMessage.count({
-    where: {
+  const [unreadMessageCount, recentReceipts] = await Promise.all([
+    prisma.buyerMessage.count({
+      where: {
+        customerId: customer.id,
+        OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
+      },
+    }),
+    loadAuthorizedRecentReceipts({
+      db: prisma,
       customerId: customer.id,
-      OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
-    },
-  });
+      canViewReceipts: buyer.canViewReceipts,
+    }),
+  ]);
   const availableCredit = Math.max(customer.creditLimit - customer.outstandingBalance, 0);
   const recentOrders = customer.orders.slice(0, 3);
-  const recentReceipts = customer.receipts.slice(0, 3);
 
   return (
     <BuyerPortalFrame
       customerName={customer.name}
       buyerType={customer.buyerType}
       unreadMessageCount={unreadMessageCount}
+      canPlaceOrders={buyer.canPlaceOrders}
+      canViewReceipts={buyer.canViewReceipts}
     >
       {orderSubmitted ? (
         <Alert>
@@ -117,9 +126,11 @@ export default async function BuyerAccountPage({
                   </div>
                   <div className="text-right">
                     <p className="font-black">{formatNaira(order.estimatedTotal)}</p>
-                    <p className="mt-1 text-xs font-bold text-[#405348]">
-                      {order.paymentStatus}
-                    </p>
+                    {visibleBuyerPaymentStatus(buyer.canViewReceipts, order.paymentStatus) ? (
+                      <p className="mt-1 text-xs font-bold text-[#405348]">
+                        {order.paymentStatus}
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -133,9 +144,9 @@ export default async function BuyerAccountPage({
           </div>
         </Panel>
 
-        <Panel title="Recent receipts" href="/buyer-account/payments">
+        {buyer.canViewReceipts ? <Panel title="Recent receipts" href="/buyer-account/payments">
           <div className="grid gap-3">
-            {recentReceipts.map((receipt) => (
+            {recentReceipts.map((receipt: {id: string; code: string; status: string; issuedAt: Date; amount: number}) => (
               <div key={receipt.id} className="rounded-2xl bg-[#f7f5ec] p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -155,7 +166,7 @@ export default async function BuyerAccountPage({
               </p>
             ) : null}
           </div>
-        </Panel>
+        </Panel> : null}
       </section>
     </BuyerPortalFrame>
   );

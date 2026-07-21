@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerSupportPage() {
-  const {customer} = await requireBuyer();
+  const {buyer, customer} = await requireBuyer();
   const unreadMessageCount = await prisma.buyerMessage.count({
     where: {
       customerId: customer.id,
@@ -20,6 +20,8 @@ export default async function BuyerSupportPage() {
       customerName={customer.name}
       buyerType={customer.buyerType}
       unreadMessageCount={unreadMessageCount}
+      canPlaceOrders={buyer.canPlaceOrders}
+      canViewReceipts={buyer.canViewReceipts}
     >
       <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <h2 className="text-3xl font-black">Support</h2>

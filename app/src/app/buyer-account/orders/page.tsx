@@ -4,12 +4,13 @@ import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
+import {visibleBuyerPaymentStatus} from "@/lib/buyerFinancialAccess.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 export default async function BuyerOrdersPage() {
-  const {customer} = await requireBuyer();
+  const {buyer, customer} = await requireBuyer();
   const unreadMessageCount = await prisma.buyerMessage.count({
     where: {
       customerId: customer.id,
@@ -22,6 +23,8 @@ export default async function BuyerOrdersPage() {
       customerName={customer.name}
       buyerType={customer.buyerType}
       unreadMessageCount={unreadMessageCount}
+      canPlaceOrders={buyer.canPlaceOrders}
+      canViewReceipts={buyer.canViewReceipts}
     >
       <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -31,12 +34,12 @@ export default async function BuyerOrdersPage() {
               Orders linked to this buyer account.
             </p>
           </div>
-          <Link
+          {buyer.canPlaceOrders ? <Link
             href="/buyer-account/order"
             className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
           >
             New buyer order
-          </Link>
+          </Link> : null}
         </div>
 
         <div className="mt-6 grid gap-3">
@@ -51,7 +54,9 @@ export default async function BuyerOrdersPage() {
                 </div>
                 <div className="text-right">
                   <p className="font-black">{formatNaira(order.estimatedTotal)}</p>
-                  <p className="mt-1 text-xs font-bold text-[#405348]">{order.paymentStatus}</p>
+                  {visibleBuyerPaymentStatus(buyer.canViewReceipts, order.paymentStatus) ? (
+                    <p className="mt-1 text-xs font-bold text-[#405348]">{order.paymentStatus}</p>
+                  ) : null}
                 </div>
               </div>
             </div>

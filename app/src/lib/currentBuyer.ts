@@ -78,10 +78,6 @@ export async function requireBuyer() {
         orderBy: {createdAt: "desc"},
         take: 8,
       },
-      receipts: {
-        orderBy: {issuedAt: "desc"},
-        take: 8,
-      },
     },
   });
 

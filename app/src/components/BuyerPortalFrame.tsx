@@ -11,10 +11,14 @@ const navItems = [
   ["Support", "/buyer-account/support"],
 ];
 
-function BuyerNavLinks({unreadMessageCount = 0}: {unreadMessageCount?: number}) {
+function BuyerNavLinks({unreadMessageCount = 0, canViewReceipts}: {unreadMessageCount?: number; canViewReceipts: boolean}) {
+  const visibleNavItems = canViewReceipts
+    ? navItems
+    : navItems.filter(([, href]) => href !== "/buyer-account/payments");
+
   return (
     <nav className="grid gap-2">
-      {navItems.map(([label, href]) => (
+      {visibleNavItems.map(([label, href]) => (
         <Link
           key={href}
           href={href}
@@ -36,15 +40,17 @@ function BuyerNavLinks({unreadMessageCount = 0}: {unreadMessageCount?: number}) 
   );
 }
 
-function BuyerAccountActions() {
+function BuyerAccountActions({canPlaceOrders}: {canPlaceOrders: boolean}) {
   return (
     <div className="grid gap-2">
-      <Link
-        href="/buyer-account/order"
-        className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-      >
-        Place order
-      </Link>
+      {canPlaceOrders ? (
+        <Link
+          href="/buyer-account/order"
+          className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+        >
+          Place order
+        </Link>
+      ) : null}
 
       <form action={buyerLogoutAction}>
         <button
@@ -62,11 +68,15 @@ export default function BuyerPortalFrame({
   customerName,
   buyerType,
   unreadMessageCount = 0,
+  canPlaceOrders,
+  canViewReceipts,
   children,
 }: {
   customerName: string;
   buyerType: string;
   unreadMessageCount?: number;
+  canPlaceOrders: boolean;
+  canViewReceipts: boolean;
   children: ReactNode;
 }) {
   return (
@@ -97,9 +107,9 @@ export default function BuyerPortalFrame({
                 <p className="px-3 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
                   Buyer menu
                 </p>
-                <BuyerNavLinks unreadMessageCount={unreadMessageCount} />
+                <BuyerNavLinks unreadMessageCount={unreadMessageCount} canViewReceipts={canViewReceipts} />
                 <div className="mt-3 border-t border-[#102015]/10 pt-3">
-                  <BuyerAccountActions />
+                  <BuyerAccountActions canPlaceOrders={canPlaceOrders} />
                 </div>
               </div>
             </details>
@@ -118,7 +128,7 @@ export default function BuyerPortalFrame({
             <p className="mt-2 text-sm leading-7 text-[#405348]">{buyerType}</p>
 
             <div className="mt-5">
-              <BuyerNavLinks unreadMessageCount={unreadMessageCount} />
+              <BuyerNavLinks unreadMessageCount={unreadMessageCount} canViewReceipts={canViewReceipts} />
             </div>
 
             <details className="mt-5 rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-3">
@@ -126,7 +136,7 @@ export default function BuyerPortalFrame({
                 Account actions
               </summary>
               <div className="mt-3">
-                <BuyerAccountActions />
+                <BuyerAccountActions canPlaceOrders={canPlaceOrders} />
               </div>
             </details>
           </div>
