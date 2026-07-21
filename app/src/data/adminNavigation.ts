@@ -17,7 +17,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
     {title: "Issues", href: "/admin/complaints", description: "Current complaint queue and issue follow-up."},
   ]},
   {title: "Communications", links: [
-    {title: "Inbox", href: "/admin/buyer-messages", description: "Buyer messages, email delivery and operational follow-up.", activePaths: ["/admin/whatsapp", "/admin/whatsapp-inbox", "/admin/contact-enquiries"], priority: true},
+    {title: "Inbox", href: "/admin/buyer-messages", description: "All new intake, messages, email delivery and unresolved incidents.", activePaths: ["/admin/whatsapp", "/admin/whatsapp-inbox", "/admin/contact-enquiries", "/admin/career-applications", "/admin/order-requests", "/admin/buyer-account-requests"], priority: true},
     {title: "WhatsApp tools", href: "/admin/whatsapp-tools", description: "Send storefront menus and product messages."},
   ]},
   {title: "Buyers", links: [

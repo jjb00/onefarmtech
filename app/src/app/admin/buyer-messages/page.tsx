@@ -43,6 +43,9 @@ export default async function AdminBuyerMessagesPage({searchParams}: {searchPara
       <CommunicationsViewSwitcher activeView={view} params={params} role={staff.role} />
       {staff.role !== "Finance" ? <div className="flex flex-wrap gap-2 text-sm font-bold">
         <Link href="/admin/order-requests" className="rounded-lg border bg-white px-3 py-2">Order requests</Link>
+        <Link href="/admin/buyer-account-requests" className="rounded-lg border bg-white px-3 py-2">Buyer requests</Link>
+        <Link href="/admin/career-applications" className="rounded-lg border bg-white px-3 py-2">Career applications</Link>
+        <Link href="/admin/buyer-messages?view=enquiries&type=Supplier+%2F+partner+enquiry" className="rounded-lg border bg-white px-3 py-2">Supplier enquiries</Link>
         <Link href="/admin/whatsapp-drafts" className="rounded-lg border bg-white px-3 py-2">WhatsApp drafts</Link>
         <Link href="/admin/whatsapp-tools" className="rounded-lg border bg-white px-3 py-2">WhatsApp tools</Link>
         <Link href="/admin/customers" className="rounded-lg border bg-white px-3 py-2">All buyers</Link>
@@ -58,9 +61,12 @@ export default async function AdminBuyerMessagesPage({searchParams}: {searchPara
 }
 
 async function AllActivity() {
-  const [messages, enquiries, emails, incidents, operationalEvents, unknownCount] = await Promise.all([
+  const [messages, enquiries, careers, buyerRequests, orderRequests, emails, incidents, operationalEvents, unknownCount] = await Promise.all([
     prisma.buyerMessage.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8, include: {customer: {select: {id: true, name: true}}}}),
     prisma.contactEnquiry.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.careerApplication.findMany({where: {status: {not: "Archived"}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.buyerAccountRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.orderRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.emailDelivery.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.paymentReconciliationIncident.findMany({where: {status: {in: ["Open", "Investigating"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.operationalEvent.findMany({where: {status: "Open"}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
@@ -69,6 +75,9 @@ async function AllActivity() {
   const sections = [
     {title: "Buyer messages", href: `${PATH}?view=whatsapp`, items: messages.map((x) => ({id: x.id, title: `${x.customer.name} · ${x.channel} · ${x.direction}`, detail: preview(x.title), date: x.createdAt}))},
     {title: `Enquiries${unknownCount ? ` · ${unknownCount} unmatched WhatsApp` : ""}`, href: `${PATH}?view=enquiries`, items: enquiries.map((x) => ({id: x.id, title: `${x.name} · ${x.enquiryType}`, detail: preview(x.message), date: x.createdAt}))},
+    {title: "Career applications", href: "/admin/career-applications", items: careers.map((x) => ({id: x.id, title: `${x.name} · ${x.role}`, detail: x.status, date: x.createdAt}))},
+    {title: "Buyer requests", href: "/admin/buyer-account-requests", items: buyerRequests.map((x) => ({id: x.id, title: x.organisationName || x.contactName, detail: x.status, date: x.createdAt}))},
+    {title: "Order requests", href: "/admin/order-requests", items: orderRequests.map((x) => ({id: x.id, title: x.buyerName, detail: preview(x.items), date: x.createdAt}))},
     {title: "Email delivery", href: `${PATH}?view=email`, items: emails.map((x) => ({id: x.id, title: `${x.recipient} · ${x.status}`, detail: preview(x.subject), date: x.createdAt}))},
     {title: "Open reconciliation", href: `${PATH}?view=reconciliation`, items: incidents.map((x) => ({id: x.id, title: `${x.provider} · ${x.status}`, detail: preview(x.reason), date: x.createdAt}))},
     {title: "Open operational events", href: `${PATH}?view=operations`, items: operationalEvents.map((x) => ({id: x.id, title: `${x.category} · ${x.severity}`, detail: preview(x.summary), date: x.createdAt}))},
@@ -103,7 +112,7 @@ async function EmailView({raw}: {raw: Params}) {
 }
 
 async function OperationalEventsView({raw}: {raw: Params}) {
-  const q = value(raw.q), status = value(raw.status), category = value(raw.category), severity = value(raw.severity), relatedType = value(raw.relatedType), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
+  const q = value(raw.q), status = value(raw.status) || "Open", category = value(raw.category), severity = value(raw.severity), relatedType = value(raw.relatedType), pageSize = parseAdminPageSize(value(raw.pageSize)), page = parseAdminPage(value(raw.page));
   const where = {...(status ? {status} : {}), ...(category ? {category} : {}), ...(severity ? {severity} : {}), ...(relatedType ? {relatedType} : {}), ...(q ? {OR: [{category: {contains: q, mode: "insensitive" as const}}, {summary: {contains: q, mode: "insensitive" as const}}, {route: {contains: q, mode: "insensitive" as const}}, {relatedType: {contains: q, mode: "insensitive" as const}}, {relatedId: {contains: q, mode: "insensitive" as const}}]} : {})};
   const [total, statuses, categories, severities, relatedTypes] = await Promise.all([
     prisma.operationalEvent.count({where}),
