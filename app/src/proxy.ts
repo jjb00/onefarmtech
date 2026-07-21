@@ -6,7 +6,7 @@ const STAFF_SESSION_COOKIE = "oft_admin_session";
 
 export function proxy(request: NextRequest) {
   const {pathname, search} = request.nextUrl;
-  const isAdminRoute = pathname.startsWith("/admin");
+  const isAdminRoute = pathname.startsWith("/admin") && pathname !== "/admin-recovery";
   const isLoginRoute = pathname === "/login" || pathname === "/staff-login";
   const claims = verifyStaffSessionToken(request.cookies.get(STAFF_SESSION_COOKIE)?.value);
   const isAuthenticated = Boolean(claims);
