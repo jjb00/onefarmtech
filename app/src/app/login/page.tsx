@@ -1,17 +1,17 @@
 import BrandMark from "@/components/BrandMark";
-import {loginAction} from "@/actions/auth";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type LoginPageProps = {
   searchParams?: Promise<{
     error?: string;
-    next?: string;
   }>;
 };
 
 export default async function LoginPage({searchParams}: LoginPageProps) {
   const params = await searchParams;
   const hasError = params?.error === "1";
-  const nextPath = params?.next || "/admin";
 
   return (
     <main className="min-h-screen bg-[#07120c] px-4 py-6 text-white sm:px-6 sm:py-10">
@@ -38,11 +38,10 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
           </div>
 
           <form
-            action={loginAction}
+            action="/api/staff-login"
+            method="post"
             className="flex flex-col justify-center rounded-[1.25rem] bg-white p-5 text-[#102015] sm:rounded-[1.5rem] sm:p-6"
           >
-            <input type="hidden" name="next" value={nextPath} />
-
             <div className="md:hidden">
               <BrandMark />
             </div>
@@ -68,7 +67,7 @@ export default async function LoginPage({searchParams}: LoginPageProps) {
 
             {hasError && (
               <div className="mt-5 rounded-2xl bg-red-50 p-4 text-sm font-semibold text-red-700">
-                Incorrect password. Try again.
+                Sign-in could not be completed. Check your details and try again later.
               </div>
             )}
 

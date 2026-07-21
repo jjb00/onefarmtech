@@ -6,11 +6,13 @@ const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("staff cannot select a role and login resolves an active database identity", async () => {
   const page = await read("src/app/login/page.tsx");
-  const action = await read("src/actions/auth.ts");
+  const route = await read("src/app/api/staff-login/route.ts");
+  const login = await read("src/lib/staffLogin.js");
   assert.doesNotMatch(page, /name="staffRole"|Role for this session|name="staffName"/);
-  assert.match(action, /prisma\.staffUser\.findFirst/);
-  assert.match(action, /staff\.status !== "Active"/);
-  assert.doesNotMatch(action, /ADMIN_PASSWORD/);
+  assert.match(login, /db\.staffUser\.findFirst/);
+  assert.match(login, /staff\.status !== "Active"/);
+  assert.match(route, /verifyStaffPassword/);
+  assert.doesNotMatch(`${route}\n${login}`, /ADMIN_PASSWORD/);
 });
 
 test("signed claims bind staff id role revision and expiry", async () => {

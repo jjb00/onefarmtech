@@ -14,8 +14,6 @@ import {
 } from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {createSessionToken} from "@/lib/sessionToken";
-import {createStaffSessionToken, verifyStaffPassword} from "@/lib/staffAuthorization";
-import {isStaffRole} from "@/lib/permissions";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -46,43 +44,6 @@ function identityMatches(input: string, target: string | null | undefined) {
   const targetPhone = normalizePhone(target);
 
   return Boolean(inputPhone && targetPhone && inputPhone === targetPhone);
-}
-
-export async function loginAction(formData: FormData) {
-  const password = readText(formData, "password");
-  const nextPath = readText(formData, "next", "/admin");
-  const staffEmail = readText(formData, "staffEmail");
-  if (!process.env.STAFF_PASSWORD_HASHES) {
-    redirect("/staff-login?error=configuration");
-  }
-  const staff = staffEmail ? await prisma.staffUser.findFirst({where: {email: {equals: staffEmail, mode: "insensitive"}}}) : null;
-  if (!staff || staff.status !== "Active" || !isStaffRole(staff.role) || !verifyStaffPassword(staff.email, password)) {
-    redirect(`/staff-login?error=1&next=${encodeURIComponent(nextPath)}`);
-  }
-
-  const cookieStore = await cookies();
-
-  const cookieOptions = {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 8,
-  };
-
-  cookieStore.set(
-    STAFF_SESSION_COOKIE,
-    createStaffSessionToken({
-      staffId: staff.id,
-      role: staff.role,
-      staffUpdatedAt: staff.updatedAt.toISOString(),
-      expiresAt: Date.now() + 60 * 60 * 8 * 1000,
-      version: 1,
-    }),
-    cookieOptions,
-  );
-
-  redirect(nextPath.startsWith("/admin") ? nextPath : "/admin");
 }
 
 export async function logoutAction() {
