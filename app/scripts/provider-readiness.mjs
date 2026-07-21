@@ -31,7 +31,7 @@ const envGroups = [
   },
   {
     name: "Core production",
-    keys: ["DATABASE_URL", "ADMIN_PASSWORD", "SESSION_SECRET", "APP_BASE_URL", "NEXT_PUBLIC_APP_URL", "NEXT_PUBLIC_SUPPORT_WHATSAPP"],
+    keys: ["DATABASE_URL", "SESSION_SECRET", "STAFF_PASSWORD_HASHES", "APP_BASE_URL", "NEXT_PUBLIC_APP_URL"],
   },
   {
     name: "Paystack",
@@ -49,7 +49,8 @@ const envGroups = [
 
 let failed = false;
 
-console.log("\nOneFarmTech provider readiness\n");
+const scope = process.env.VERCEL_ENV === "production" ? "Vercel production" : "local environment";
+console.log(`\nOneFarmTech provider readiness · ${scope}\n`);
 
 console.log("Code files:");
 for (const file of requiredFiles) {
@@ -61,7 +62,7 @@ for (const file of requiredFiles) {
 console.log("\nEnvironment variables:");
 for (const group of envGroups) {
   const ready = group.keys.filter((key) => Boolean(process.env[key]));
-  console.log(`\n${group.name}: ${ready.length}/${group.keys.length}`);
+  console.log(`\n${group.name}: ${ready.length === group.keys.length ? "configured" : "missing required values"} (${ready.length}/${group.keys.length})`);
   for (const key of group.keys) {
     console.log(`${process.env[key] ? "✓" : "○"} ${key}`);
   }

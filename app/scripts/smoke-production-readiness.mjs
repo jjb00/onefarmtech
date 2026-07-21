@@ -1,5 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
+import nextEnv from "@next/env";
+const {loadEnvConfig} = nextEnv;
+loadEnvConfig(process.cwd());
 
 const root = process.cwd();
 
@@ -22,7 +25,7 @@ const requiredFiles = [
 
 let failed = false;
 
-console.log("OneFarmTech production readiness smoke check");
+console.log(`OneFarmTech ${process.env.VERCEL_ENV === "production" ? "Vercel production" : "local"} readiness smoke check`);
 
 for (const file of requiredFiles) {
   const exists = fs.existsSync(path.join(root, file));
@@ -35,4 +38,11 @@ if (failed) {
   process.exit(1);
 }
 
-console.log("Smoke check passed for code-side readiness.");
+const requiredEnvironment = ["DATABASE_URL", "SESSION_SECRET", "STAFF_PASSWORD_HASHES"];
+for (const key of requiredEnvironment) {
+  const configured = Boolean(process.env[key]);
+  console.log(`${configured ? "✓ configured" : "✗ missing"} ${key} (required)`);
+  if (!configured) failed = true;
+}
+if (failed) process.exit(1);
+console.log("Smoke check passed for code and required environment readiness.");

@@ -31,10 +31,8 @@ export async function getPrelaunchChecks() {
   const isPostgres = schema.includes('provider = "postgresql"');
   const staffPasswordHashes = process.env.STAFF_PASSWORD_HASHES;
   const databaseUrl = process.env.DATABASE_URL || "";
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || "";
   const nodeEnv = process.env.NODE_ENV || "development";
+  const configured = (keys: string[]) => keys.every((key) => Boolean(process.env[key]));
 
   const checks: PrelaunchCheck[] = [
     {
@@ -68,52 +66,28 @@ export async function getPrelaunchChecks() {
       recommendation: "Keep password hashes server-only and rotate them when staff access changes.",
     },
     {
-      title: "Supabase public config",
-      status: supabaseUrl && supabaseAnonKey ? "pass" : "warn",
-      detail:
-        supabaseUrl && supabaseAnonKey
-          ? "Supabase public URL and anon key are present."
-          : "Supabase public URL and anon key are not configured yet.",
-      recommendation:
-        "Only add these after the Supabase project password has been reset and the migration branch is ready.",
-    },
-    {
-      title: "Service role key",
-      status: serviceRoleKey ? "warn" : "pass",
-      detail: serviceRoleKey
-        ? "SUPABASE_SERVICE_ROLE_KEY is present."
-        : "No service role key found in the current environment.",
-      recommendation:
-        "Use service role keys only on trusted server-side routes. Never expose them publicly.",
-    },
-    {
       title: "Buyer login",
-      status: "fail",
-      detail:
-        "Recurring buyer login is intentionally not active yet. The buyer login page is only a holding page.",
-      recommendation:
-        "Build real buyer auth before serious Vercel team/buyer testing so receipts, credit limits, and order history are protected.",
+      status: process.env.SESSION_SECRET ? "pass" : "fail",
+      detail: process.env.SESSION_SECRET ? "Signed buyer sessions and authoritative BuyerContact permissions are configured." : "SESSION_SECRET is missing, so signed buyer sessions cannot be trusted.",
+      recommendation: "Test an active approved buyer contact with each permission combination.",
     },
     {
       title: "Staff roles",
-      status: "warn",
-      detail:
-        "Staff roles and permission pages exist, but role enforcement is not connected to real auth yet.",
-      recommendation:
-        "Connect staff identities to roles through Supabase Auth or equivalent before team testing.",
+      status: staffPasswordHashes && process.env.SESSION_SECRET ? "pass" : "fail",
+      detail: staffPasswordHashes && process.env.SESSION_SECRET ? "Named staff login, signed sessions and server-side capabilities are configured." : "Staff credential hashes or the session secret are missing.",
+      recommendation: "Keep StaffUser roles authoritative and password hashes server-only.",
     },
     {
       title: "Payments",
-      status: "warn",
-      detail:
-        "Payments and receipts are manually recorded. Paystack links and webhooks are not active yet.",
-      recommendation:
-        "Manual finance workflow is acceptable for launch, but payment automation should come after stronger auth and database controls.",
+      status: configured(["PAYSTACK_SECRET_KEY", "PAYSTACK_PUBLIC_KEY", "FLUTTERWAVE_SECRET_KEY", "FLUTTERWAVE_PUBLIC_KEY"]) ? "pass" : "warn",
+      detail: configured(["PAYSTACK_SECRET_KEY", "PAYSTACK_PUBLIC_KEY", "FLUTTERWAVE_SECRET_KEY", "FLUTTERWAVE_PUBLIC_KEY"]) ? "Paystack and Flutterwave credentials are configured in this environment." : "One or more payment-provider credentials are missing in this environment.",
+      recommendation: "Provider readiness requires configured credentials and successful webhook acceptance, not code files alone.",
     },
+    {title: "Public bot protection", status: configured(["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"]) ? "pass" : "fail", detail: configured(["NEXT_PUBLIC_TURNSTILE_SITE_KEY", "TURNSTILE_SECRET_KEY"]) ? "Turnstile client and server keys are configured." : "Turnstile site or secret key is missing.", recommendation: "Keep the secret server-only and verify hostname and action for every protected intake."},
     {
       title: "Runtime environment",
       status: nodeEnv === "production" && isSqlite ? "fail" : "pass",
-      detail: `NODE_ENV is ${nodeEnv}.`,
+      detail: `This is ${nodeEnv === "production" ? "Vercel production" : "local/non-production"} readiness (NODE_ENV=${nodeEnv}).`,
       recommendation:
         nodeEnv === "production" && isSqlite
           ? "Production runtime must use the approved Postgres database connection."
