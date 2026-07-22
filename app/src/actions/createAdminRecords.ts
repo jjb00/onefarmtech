@@ -534,6 +534,205 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
   redirect("/admin/buyer-access");
 }
 
+
+export async function sendBuyerAccountInviteAction(formData: FormData) {
+  const staff = await requireCapability("manage_buyer_access");
+  const inviteId = readText(formData, "inviteId");
+  const channel = readText(formData, "channel").toLowerCase();
+
+  if (!inviteId || !["email", "whatsapp"].includes(channel)) {
+    redirect("/admin/buyer-access?delivery=invalid");
+  }
+
+  const invite = await prisma.buyerAccountInvite.findUnique({
+    where: {id: inviteId},
+    include: {customer: true},
+  });
+
+  if (!invite) {
+    redirect("/admin/buyer-access?delivery=not-found");
+  }
+
+  if (invite.status.toLowerCase().includes("cancel")) {
+    redirect("/admin/buyer-access?delivery=cancelled");
+  }
+
+  const loginUrl = `${getEmailBaseUrl()}/buyer-login`;
+
+  if (channel === "email") {
+    if (!invite.email) {
+      redirect("/admin/buyer-access?delivery=missing-email");
+    }
+
+    const result = await sendTransactionalEmail({
+      deduplicationKey: `buyer-invite:${invite.id}`,
+      template: "buyer-invite",
+      to: invite.email,
+      content: emailTemplates.buyerInvite(
+        invite.customer.name,
+        invite.inviteCode,
+        getEmailBaseUrl(),
+      ),
+      relatedType: "BuyerAccountInvite",
+      relatedId: invite.id,
+    });
+
+    if (!result.ok) {
+      redirect(
+        `/admin/buyer-access?delivery=email-failed&detail=${encodeURIComponent(
+          result.error || result.status,
+        ).slice(0, 220)}`,
+      );
+    }
+
+    const updated = await prisma.buyerAccountInvite.update({
+      where: {id: invite.id},
+      data: {
+        status: invite.status === "Accepted" ? invite.status : "Sent",
+        sentAt: invite.sentAt || new Date(),
+      },
+    });
+
+    await createAuditLog({
+      action: "Sent buyer account invite by email",
+      entityType: "BuyerAccountInvite",
+      entityId: invite.id,
+      entityLabel: `${invite.customer.name} · ${invite.email}`,
+      previousValue: invite,
+      newValue: updated,
+      actorRole: staff.role,
+    });
+
+    revalidatePath("/admin/buyer-access");
+    revalidatePath("/admin/buyer-messages");
+    revalidatePath("/admin/audit-log");
+    redirect(`/admin/buyer-access?delivery=email-${result.status.toLowerCase()}`);
+  }
+
+  if (!invite.phone) {
+    redirect("/admin/buyer-access?delivery=missing-phone");
+  }
+
+  const {
+    normaliseWhatsAppPhone,
+    sendWhatsAppBuyerInviteTemplate,
+    WhatsAppProviderError,
+  } = await import("@/lib/whatsapp/provider");
+
+  let normalizedRecipient: string;
+
+  try {
+    normalizedRecipient = normaliseWhatsAppPhone(invite.phone);
+  } catch (error) {
+    const detail =
+      error instanceof Error
+        ? error.message
+        : "WhatsApp recipient phone is invalid.";
+
+    redirect(
+      `/admin/buyer-access?delivery=whatsapp-recipient&detail=${encodeURIComponent(
+        detail,
+      ).slice(0, 220)}`,
+    );
+  }
+
+  const messageLog = await prisma.buyerMessage.create({
+    data: {
+      customerId: invite.customerId,
+      title: "Buyer access code sent by WhatsApp",
+      body: `A buyer access code was sent securely to ${normalizedRecipient}.`,
+      channel: "WhatsApp",
+      direction: "Outbound",
+      status: "Pending",
+      recipient: normalizedRecipient,
+      source: "WhatsApp API",
+      relatedType: "BuyerAccountInvite",
+      relatedId: invite.id,
+      metadata: JSON.stringify({
+        provider: "Meta WhatsApp Cloud API",
+        attemptedAt: new Date().toISOString(),
+        normalizedRecipient,
+      }),
+    },
+  });
+
+  try {
+    const result = await sendWhatsAppBuyerInviteTemplate({
+      to: invite.phone,
+      buyerName: invite.customer.name,
+      accessCode: invite.inviteCode,
+      loginUrl,
+    });
+
+    await prisma.buyerMessage.update({
+      where: {id: messageLog.id},
+      data: {
+        status: "Sent",
+        sentAt: new Date(),
+        metadata: JSON.stringify({
+          provider: result.provider,
+          messageId: result.messageId,
+          metaHttpStatus: result.httpStatus,
+          normalizedRecipient: result.normalizedTo,
+          messageType: result.messageType,
+        }),
+      },
+    });
+
+    const updated = await prisma.buyerAccountInvite.update({
+      where: {id: invite.id},
+      data: {
+        status: invite.status === "Accepted" ? invite.status : "Sent",
+        sentAt: invite.sentAt || new Date(),
+      },
+    });
+
+    await createAuditLog({
+      action: "Sent buyer account invite by WhatsApp",
+      entityType: "BuyerAccountInvite",
+      entityId: invite.id,
+      entityLabel: `${invite.customer.name} · ${normalizedRecipient}`,
+      previousValue: invite,
+      newValue: updated,
+      actorRole: staff.role,
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "WhatsApp send failed.";
+    const details =
+      error instanceof WhatsAppProviderError ? error.details : {};
+
+    await prisma.buyerMessage.update({
+      where: {id: messageLog.id},
+      data: {
+        status: "Failed",
+        metadata: JSON.stringify({
+          provider: "Meta WhatsApp Cloud API",
+          normalizedRecipient,
+          error: message,
+          ...details,
+        }),
+      },
+    });
+
+    revalidatePath("/admin/buyer-access");
+    revalidatePath("/admin/buyer-messages");
+
+    redirect(
+      `/admin/buyer-access?delivery=whatsapp-failed&detail=${encodeURIComponent(
+        message,
+      ).slice(0, 220)}`,
+    );
+  }
+
+  revalidatePath("/admin/buyer-access");
+  revalidatePath("/admin/buyer-messages");
+  revalidatePath("/buyer-account/inbox");
+  revalidatePath("/admin/audit-log");
+  redirect("/admin/buyer-access?delivery=whatsapp-accepted");
+}
+
+
 export async function updateBuyerAccountInviteStatusAction(formData: FormData) {
   await requireCapability("manage_buyer_access");
   const {revalidatePath} = await import("next/cache");

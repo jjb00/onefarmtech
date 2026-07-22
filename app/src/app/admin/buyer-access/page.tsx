@@ -5,6 +5,7 @@ import {prisma} from "@/lib/prisma";
 import {
   createBuyerAccountInviteAction,
   createBuyerContactAction,
+  sendBuyerAccountInviteAction,
   updateBuyerAccountInviteStatusAction,
 } from "@/actions/createAdminRecords";
 
@@ -20,7 +21,71 @@ const buyerContactRoles = [
   "Buyer user",
 ];
 
-export default async function BuyerAccessPage() {
+export default async function BuyerAccessPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{
+    delivery?: string;
+    detail?: string;
+  }>;
+}) {
+  const params = await searchParams;
+  const delivery = params?.delivery || "";
+  const detail = params?.detail || "";
+
+  const deliveryMessages: Record<string, {tone: "success" | "error"; text: string}> = {
+    "email-accepted": {
+      tone: "success",
+      text: "The buyer access email was accepted for delivery.",
+    },
+    "email-duplicate": {
+      tone: "success",
+      text: "This buyer access email was already sent.",
+    },
+    "email-skipped": {
+      tone: "success",
+      text: "The buyer access email was recorded without external delivery.",
+    },
+    "whatsapp-accepted": {
+      tone: "success",
+      text: "Meta accepted the buyer access WhatsApp message.",
+    },
+    "missing-email": {
+      tone: "error",
+      text: "This access record has no email address.",
+    },
+    "missing-phone": {
+      tone: "error",
+      text: "This access record has no WhatsApp phone number.",
+    },
+    "email-failed": {
+      tone: "error",
+      text: detail || "The buyer access email could not be sent.",
+    },
+    "whatsapp-failed": {
+      tone: "error",
+      text: detail || "The buyer access WhatsApp message could not be sent.",
+    },
+    "whatsapp-recipient": {
+      tone: "error",
+      text: detail || "The WhatsApp phone number is invalid.",
+    },
+    cancelled: {
+      tone: "error",
+      text: "Cancelled access codes cannot be sent.",
+    },
+    "not-found": {
+      tone: "error",
+      text: "The buyer access record could not be found.",
+    },
+    invalid: {
+      tone: "error",
+      text: "Choose a valid access record and delivery channel.",
+    },
+  };
+
+  const deliveryMessage = deliveryMessages[delivery];
+
   const [customers, contacts, invites] = await Promise.all([
     prisma.customer.findMany({
       orderBy: {createdAt: "desc"},
@@ -54,6 +119,18 @@ export default async function BuyerAccessPage() {
       actionLabel="Open Buyers workspace"
     >
       <div className="grid gap-6">
+      {deliveryMessage ? (
+        <div
+          role="status"
+          className={`rounded-2xl border px-5 py-4 text-sm font-bold ${
+            deliveryMessage.tone === "success"
+              ? "border-[#1f7a3f]/20 bg-[#eef8f0] text-[#155c2f]"
+              : "border-red-200 bg-red-50 text-red-800"
+          }`}
+        >
+          {deliveryMessage.text}
+        </div>
+      ) : null}
 
       <section className="grid gap-4 md:grid-cols-4">
         <AdminCompactMetric label="Buyer contacts" value={String(contacts.length)} tone="blue" />
@@ -195,7 +272,7 @@ export default async function BuyerAccessPage() {
             Use this after a buyer account has been approved. Choose the approved buyer, add the buyer email or phone, then generate the code they will use in the Buyer login pop-up.
           </p>
           <div className="mt-4 rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#405348]">
-            This does not send WhatsApp or email automatically yet. After the code is generated, copy the message shown below and send it manually.
+            Email is attempted when the code is generated. You can also send or retry email and WhatsApp delivery from the access-code list below.
           </div>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -338,7 +415,7 @@ export default async function BuyerAccessPage() {
                 <th className="px-4 py-3">Send to</th>
                 <th className="px-4 py-3">Role</th>
                 <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Message</th>
+                <th className="px-4 py-3">Delivery</th>
               </tr>
             </thead>
             <tbody>
@@ -383,14 +460,50 @@ export default async function BuyerAccessPage() {
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  {canReveal ? (
-                    <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
-                      <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Copy message</summary>
-                      <p className="mt-2 text-sm leading-6 text-[#405348]">{shareMessage}</p>
-                    </details>
-                  ) : (
-                    <span className="text-xs font-bold text-[#587063]">Hidden after issue. Regenerate if needed.</span>
-                  )}
+                  <div className="grid gap-2">
+                    {invite.email ? (
+                      <form action={sendBuyerAccountInviteAction}>
+                        <input type="hidden" name="inviteId" value={invite.id} />
+                        <input type="hidden" name="channel" value="email" />
+                        <button
+                          type="submit"
+                          disabled={invite.status === "Cancelled"}
+                          className="w-full rounded-full border border-[#1f7a3f]/20 bg-white px-3 py-2 text-xs font-black text-[#1f7a3f] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Send email
+                        </button>
+                      </form>
+                    ) : null}
+
+                    {invite.phone ? (
+                      <form action={sendBuyerAccountInviteAction}>
+                        <input type="hidden" name="inviteId" value={invite.id} />
+                        <input type="hidden" name="channel" value="whatsapp" />
+                        <button
+                          type="submit"
+                          disabled={invite.status === "Cancelled"}
+                          className="w-full rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          Send WhatsApp
+                        </button>
+                      </form>
+                    ) : null}
+
+                    {canReveal ? (
+                      <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
+                        <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">
+                          Copy manually
+                        </summary>
+                        <p className="mt-2 text-sm leading-6 text-[#405348]">
+                          {shareMessage}
+                        </p>
+                      </details>
+                    ) : (
+                      <span className="text-xs font-bold text-[#587063]">
+                        Code hidden after issue. Regenerate if needed.
+                      </span>
+                    )}
+                  </div>
                 </td>
               </tr>
             );
