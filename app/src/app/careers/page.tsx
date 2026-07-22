@@ -1,6 +1,8 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
+import CareerApplicationModal from "@/components/CareerApplicationModal";
+import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
 
 type Role = {
   title: string;
@@ -150,6 +152,10 @@ export default async function CareersPage({
     department?: string;
     location?: string;
     stage?: string;
+    role?: string;
+    apply?: string;
+    submitted?: string;
+    error?: string;
   }>;
 }) {
   const params = await searchParams;
@@ -157,6 +163,14 @@ export default async function CareersPage({
   const department = params?.department || "All";
   const location = params?.location || "All";
   const stage = params?.stage || "All";
+  const selectedRole = String(params?.role || "").trim();
+  const showApplication = params?.apply === "1" && Boolean(selectedRole);
+  const submitted = params?.submitted === "1";
+  const errorMessage = params?.error
+    ? params.error === "validation"
+      ? "Complete every required field and confirm your consent."
+      : publicIntakeErrorMessage(params.error)
+    : null;
 
   const filtered = roles.filter((role) => {
     return (
@@ -277,7 +291,7 @@ export default async function CareersPage({
                   </p>
 
                   <Link
-                    href={`/careers/apply?role=${encodeURIComponent(role.title)}`}
+                    href={`/careers?apply=1&role=${encodeURIComponent(role.title)}`}
                     className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
                   >
                     Apply for this role
@@ -299,6 +313,14 @@ export default async function CareersPage({
       </section>
 
       <PublicFooter />
+
+      {showApplication ? (
+        <CareerApplicationModal
+          role={selectedRole}
+          errorMessage={errorMessage}
+          submitted={submitted}
+        />
+      ) : null}
     </main>
   );
 }

@@ -19,18 +19,18 @@ export async function createCareerApplicationAction(formData: FormData) {
     consent: formData.get("consent") === "on",
   };
   if (!values.name || !values.email || !values.phone || !values.location || !values.role || !values.experience || !values.consent) {
-    redirect(`/careers/apply?role=${encodeURIComponent(values.role)}&error=validation`);
+    redirect(`/careers?apply=1&role=${encodeURIComponent(values.role)}&error=validation`);
   }
   try {
     await protectPublicIntake({formType: "career", action: "career_application", token: text(formData, "cf-turnstile-response"), honeypot: text(formData, "website"), values: Object.values(values)});
   } catch (error) {
-    redirect(`/careers/apply?role=${encodeURIComponent(values.role)}&error=${intakeError(error)}`);
+    redirect(`/careers?apply=1&role=${encodeURIComponent(values.role)}&error=${intakeError(error)}`);
   }
   const application = await prisma.careerApplication.create({data: {...values, source: "Careers page"}});
   await sendTransactionalEmail({deduplicationKey: `career-ack:${application.id}`, template: "career-acknowledgement", to: application.email, content: emailTemplates.careerAcknowledgement(application.name, application.role), relatedType: "CareerApplication", relatedId: application.id});
   await sendAdminTransactionalEmail({deduplicationKeyPrefix: `career-admin:${application.id}`, template: "career-admin", content: emailTemplates.careerAdmin(application.name, application.role, application.location, getEmailBaseUrl()), relatedType: "CareerApplication", relatedId: application.id});
   revalidatePath("/admin/career-applications");
-  redirect(`/careers/apply?role=${encodeURIComponent(values.role)}&submitted=1`);
+  redirect(`/careers?apply=1&role=${encodeURIComponent(values.role)}&submitted=1`);
 }
 
 export async function createSupplierEnquiryAction(formData: FormData) {
