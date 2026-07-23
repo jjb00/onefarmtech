@@ -28,6 +28,22 @@ export const emailTemplates = {
   supplierAdmin: (business: string, relationship: string, url: string) => content("New supplier / partner enquiry", [
     `Business: ${business}`, `Relationship: ${relationship}`, `Review: ${url}/admin/contact-enquiries?type=supplier`,
   ]),
+  contactAdminEmail: (input: {
+    name: string;
+    organisation: string;
+    email: string;
+    phone: string;
+    enquiryType: string;
+    message: string;
+  }) => content(`Website enquiry: ${input.enquiryType}`, [
+    `Name: ${input.name}`,
+    `Organisation: ${input.organisation || "Not provided"}`,
+    `Email: ${input.email || "Not provided"}`,
+    `Phone: ${input.phone || "Not provided"}`,
+    `Type: ${input.enquiryType}`,
+    "",
+    input.message,
+  ]),
   contactAcknowledgement: (name: string) => content("We received your OneFarmTech enquiry", [
     `Hello ${name},`, "Your enquiry has been received. Our team will review it and follow up using the details you provided.", "OneFarmTech",
   ]),
@@ -39,6 +55,44 @@ export const emailTemplates = {
   ]),
   accountRequestAdmin: (name: string, organisation: string | null, url: string) => content("New buyer-account request", [
     `Contact: ${name}`, organisation ? `Organisation: ${organisation}` : null, `Review: ${url}/admin/buyer-account-requests`,
+  ]),
+  careerAdminEmail: (input: {
+    name: string;
+    email: string;
+    phone: string;
+    location: string;
+    role: string;
+    experience: string;
+  }) => content(`Job application: ${input.role}`, [
+    `Applicant: ${input.name}`,
+    `Email: ${input.email}`,
+    `Phone: ${input.phone}`,
+    `Location: ${input.location}`,
+    `Role: ${input.role}`,
+    "",
+    "Experience / suitability:",
+    input.experience,
+    "",
+    "The applicant's CV is attached to this email.",
+  ]),
+  supplierAdminEmail: (input: {
+    business: string;
+    name: string;
+    phone: string;
+    email: string;
+    location: string;
+    products: string;
+    capacity: string;
+    relationship: string;
+  }) => content(`Supplier or partner enquiry: ${input.business}`, [
+    `Business: ${input.business}`,
+    `Contact: ${input.name}`,
+    `Email: ${input.email || "Not provided"}`,
+    `Phone: ${input.phone}`,
+    `Location: ${input.location}`,
+    `Products: ${input.products}`,
+    `Capacity: ${input.capacity || "Not provided"}`,
+    `Relationship sought: ${input.relationship || "Not provided"}`,
   ]),
   buyerInvite: (name: string, code: string, url: string) => content("Your OneFarmTech buyer access code", [
     `Hello ${name},`, `Access code: ${code}`, `Sign in: ${url}/buyer-login`, "Keep this code private. It is linked to your approved buyer account.",
