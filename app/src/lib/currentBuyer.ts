@@ -65,7 +65,7 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
 
   return {
     isAuthenticated,
-    customerId,
+    customerId: isAuthenticated ? customerId : null,
     inviteId: isAuthenticated && authMode === "invite-code" ? inviteId : null,
     contactId: isAuthenticated ? contactId : null,
     contactName: isAuthenticated ? contact!.name : null,

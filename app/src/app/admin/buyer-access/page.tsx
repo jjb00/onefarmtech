@@ -23,6 +23,14 @@ const buyerContactRoles = [
   "Buyer user",
 ];
 
+function buyerLoginState(customer: {
+  status: string;
+  accountLoginReady: boolean;
+}) {
+  if (customer.status !== "Active") return "Inactive for login";
+  return customer.accountLoginReady ? "Approved for login" : "Pending login approval";
+}
+
 export default async function BuyerAccessPage({
   searchParams,
 }: {
@@ -97,6 +105,7 @@ export default async function BuyerAccessPage({
         buyerType: true,
         phone: true,
         email: true,
+        status: true,
         accountStatus: true,
         accountLoginReady: true,
       },
@@ -164,7 +173,7 @@ export default async function BuyerAccessPage({
         />
         <AdminCompactMetric
           label="Approved accounts"
-          value={String(customers.filter((customer) => customer.accountStatus.includes("Approved")).length)}
+          value={String(customers.filter((customer) => customer.status === "Active" && customer.accountLoginReady).length)}
           tone="green"
         />
       </section>
@@ -195,7 +204,7 @@ export default async function BuyerAccessPage({
                 <option value="">Select buyer</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
-                    {customer.name} · {customer.buyerType} · {customer.accountStatus}
+                    {customer.name} · {customer.buyerType} · {buyerLoginState(customer)}
                   </option>
                 ))}
               </select>
@@ -315,7 +324,7 @@ export default async function BuyerAccessPage({
                 <option value="">Select buyer</option>
                 {customers.map((customer) => (
                   <option key={customer.id} value={customer.id}>
-                    {customer.name} · {customer.buyerType} · {customer.accountStatus}
+                    {customer.name} · {customer.buyerType} · {buyerLoginState(customer)}
                   </option>
                 ))}
               </select>

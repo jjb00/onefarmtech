@@ -17,7 +17,10 @@ import {
 } from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {createBuyerSession} from "@/lib/buyerSession";
-import {isBuyerLoginEligible} from "@/lib/buyerOtp";
+import {
+  BUYER_OTP_CHALLENGE_COOKIE,
+  isBuyerLoginEligible,
+} from "@/lib/buyerOtp";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -160,6 +163,7 @@ export async function buyerLogoutAction() {
     BUYER_CONTACT_ID_COOKIE,
     BUYER_CONTACT_REVISION_COOKIE,
     BUYER_AUTH_MODE_COOKIE,
+    BUYER_OTP_CHALLENGE_COOKIE,
   ]) {
     cookieStore.set(cookieName, "", {
       httpOnly: true,

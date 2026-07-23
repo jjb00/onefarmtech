@@ -10,6 +10,7 @@ import {
   BUYER_SESSION_COOKIE,
 } from "@/lib/currentBuyer";
 import {createSessionToken} from "@/lib/sessionToken";
+import {BUYER_OTP_CHALLENGE_COOKIE} from "@/lib/buyerOtp";
 
 export async function createBuyerSession(input: {
   customerId: string;
@@ -38,6 +39,7 @@ export async function createBuyerSession(input: {
   cookieStore.set(BUYER_CONTACT_NAME_COOKIE, input.contact.name, cookieOptions);
   cookieStore.set(BUYER_CONTACT_ROLE_COOKIE, input.contact.role, cookieOptions);
   cookieStore.set(BUYER_AUTH_MODE_COOKIE, input.authMode, cookieOptions);
+  cookieStore.set(BUYER_OTP_CHALLENGE_COOKIE, "", {...cookieOptions, maxAge: 0});
 
   if (inviteId) cookieStore.set(BUYER_INVITE_ID_COOKIE, inviteId, cookieOptions);
   else cookieStore.set(BUYER_INVITE_ID_COOKIE, "", {...cookieOptions, maxAge: 0});

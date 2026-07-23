@@ -241,8 +241,14 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                 ["Email", customer.email || "Not set"],
                 ["Buyer type", customer.buyerType],
                 ["Location", customer.location || "Not set"],
-                ["Account status", customer.accountStatus],
-                ["Login readiness", customer.accountLoginReady ? "Login ready" : "Manual account"],
+                [
+                  "Account status",
+                  customer.status === "Active" && customer.accountLoginReady
+                    ? "Approved for login"
+                    : "Pending login approval",
+                ],
+                ["Internal account label", customer.accountStatus],
+                ["Login readiness", customer.accountLoginReady ? "Login ready" : "Not approved for login"],
                 ["Approved by", customer.approvedBy || "Not approved yet"],
                 ["Approved at", customer.approvedAt ? customer.approvedAt.toLocaleString() : "Not approved yet"],
               ]}

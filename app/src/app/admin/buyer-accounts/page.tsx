@@ -62,7 +62,9 @@ export default async function BuyerAccountsPage({searchParams}: PageProps) {
   });
 
   const accountReady = customers.filter((customer) => customer.accountLoginReady).length;
-  const approved = customers.filter((customer) => customer.accountStatus.toLowerCase().includes("approved")).length;
+  const approved = customers.filter(
+    (customer) => customer.status === "Active" && customer.accountLoginReady,
+  ).length;
   const totalCreditLimit = customers.reduce((sum, customer) => sum + customer.creditLimit, 0);
   const outstandingBalance = customers.reduce((sum, customer) => sum + customer.outstandingBalance, 0);
 
@@ -70,8 +72,9 @@ export default async function BuyerAccountsPage({searchParams}: PageProps) {
     const key = `${customer.accountStatus} ${customer.status}`.toLowerCase();
     const statusMatch =
       status === "all" ||
+      (status === "approved" && customer.status === "Active" && customer.accountLoginReady) ||
       (status === "login-ready" && customer.accountLoginReady) ||
-      key.includes(status);
+      (status !== "approved" && key.includes(status));
     return statusMatch && inDateRange(customer.createdAt, date);
   });
 
@@ -145,6 +148,10 @@ export default async function BuyerAccountsPage({searchParams}: PageProps) {
                 {sorted.map((customer) => {
                   const orderTotal = customer.orders.reduce((sum, order) => sum + order.estimatedTotal, 0);
                   const receiptTotal = customer.receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+                  const loginState =
+                    customer.status === "Active" && customer.accountLoginReady
+                      ? "Approved for login"
+                      : "Pending login approval";
 
                   return (
                     <tr key={customer.id} className="border-t border-[#102015]/10 text-[#405348]">
@@ -156,10 +163,10 @@ export default async function BuyerAccountsPage({searchParams}: PageProps) {
                       </td>
                       <td className="px-4 py-3">{customer.buyerType}</td>
                       <td className="px-4 py-3">
-                        <AdminStatusPill tone={adminToneFromStatus(customer.accountStatus)}>
-                          {customer.accountStatus}
+                        <AdminStatusPill tone={adminToneFromStatus(loginState)}>
+                          {loginState}
                         </AdminStatusPill>
-                        <p className="mt-1 text-xs">{customer.accountLoginReady ? "Login ready" : "Manual"}</p>
+                        <p className="mt-1 text-xs">Internal label: {customer.accountStatus}</p>
                       </td>
                       <td className="px-4 py-3 font-black text-[#102015]">{money(customer.creditLimit)}</td>
                       <td className="px-4 py-3 font-black text-[#102015]">{money(customer.outstandingBalance)}</td>

@@ -700,7 +700,9 @@ export async function POST(request: NextRequest) {
         continue;
       }
 
-      const contact = contacts.find((item: any) => String(item?.wa_id || "") === from);
+      const contact = contacts.find(
+        (item: any) => String(item?.wa_id || "").replace(/\D/g, "") === rawFrom.replace(/\D/g, ""),
+      );
       const body = getTextBody(message);
 
       const profileName = contact?.profile?.name || null;

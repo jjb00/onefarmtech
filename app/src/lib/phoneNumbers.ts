@@ -15,6 +15,9 @@ export function normalizeInternationalPhone(
 ) {
   const input = String(rawPhone || "").trim();
   if (!input) return "";
+  if (!/^[+\d\s().-]+$/.test(input)) {
+    throw new Error("Enter a phone number using digits and standard phone punctuation only.");
+  }
 
   let digits = input.replace(/\D/g, "");
   if (!digits) throw new Error("Enter a valid phone number.");

@@ -1,26 +1,29 @@
 "use server";
 
 import crypto from "node:crypto";
+import net from "node:net";
 import {cookies, headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
 import {
   BUYER_OTP_TTL_MS,
+  BUYER_OTP_CHALLENGE_COOKIE,
   buyerOtpCanBeVerified,
   buyerOtpMatches,
-  buyerOtpRequestAllowed,
+  buyerOtpRequestLimits,
+  consumeBuyerOtpChallenge,
   generateBuyerOtp,
   hashBuyerOtp,
+  hashOtpRequestIdentifier,
   isBuyerLoginEligible,
   isValidBuyerEmail,
   normalizeBuyerEmail,
+  recordFailedBuyerOtpAttempt,
   safeOtpRequestMetadata,
 } from "@/lib/buyerOtp";
 import {createBuyerSession} from "@/lib/buyerSession";
 import {sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
-
-const BUYER_OTP_CHALLENGE_COOKIE = "oft_buyer_otp_challenge";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -38,41 +41,34 @@ async function setChallengeCookie(challengeId: string) {
   });
 }
 
-async function requestMetadata(secret: string) {
+function validIpFromHeader(value: string | null, useLast = false) {
+  const values = String(value || "")
+    .split(",")
+    .map((candidate) => candidate.trim())
+    .filter(Boolean);
+  if (useLast) values.reverse();
+  return values.find((candidate) => net.isIP(candidate)) || null;
+}
+
+async function requestContext(secret: string) {
   const requestHeaders = await headers();
-  const forwarded = requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || null;
-  return safeOtpRequestMetadata(
-    forwarded,
-    requestHeaders.get("user-agent"),
-    secret,
-  );
+  // Prefer platform/proxy-owned headers. The last x-forwarded-for hop is safer
+  // than accepting a client-prepended first value when no Vercel header exists.
+  const ip =
+    validIpFromHeader(requestHeaders.get("x-vercel-forwarded-for")) ||
+    validIpFromHeader(requestHeaders.get("x-real-ip")) ||
+    validIpFromHeader(requestHeaders.get("x-forwarded-for"), true);
+  return {
+    ipHash: hashOtpRequestIdentifier(ip, secret),
+    metadata: safeOtpRequestMetadata(ip, requestHeaders.get("user-agent"), secret),
+  };
 }
 
 async function issueBuyerOtp(emailInput: string) {
   const email = normalizeBuyerEmail(emailInput);
   const secret = process.env.SESSION_SECRET || "";
   if (!secret) throw new Error("SESSION_SECRET is required for buyer OTP authentication.");
-  const metadata = await requestMetadata(secret);
-
-  const recentChallenges = await prisma.buyerOtpChallenge.findMany({
-    where: {
-      OR: [
-        {recipientEmail: email},
-        {requestMetadata: metadata},
-      ],
-      createdAt: {gte: new Date(Date.now() - 15 * 60 * 1000)},
-    },
-    orderBy: {createdAt: "desc"},
-    select: {id: true, recipientEmail: true, createdAt: true},
-  });
-  const requestDecision = buyerOtpRequestAllowed(recentChallenges);
-  if (!requestDecision.allowed) {
-    const sameRecipientChallenge = recentChallenges.find(
-      (challenge) => challenge.recipientEmail === email,
-    );
-    if (sameRecipientChallenge) await setChallengeCookie(sameRecipientChallenge.id);
-    return;
-  }
+  const context = await requestContext(secret);
 
   const matchingContacts = await prisma.buyerContact.findMany({
     where: {email: {equals: email, mode: "insensitive"}},
@@ -87,42 +83,89 @@ async function issueBuyerOtp(emailInput: string) {
   const challengeId = crypto.randomUUID();
   const otp = generateBuyerOtp();
   const now = new Date();
+  const since = new Date(now.getTime() - 15 * 60 * 1000);
+  let issueResult:
+    | {created: true}
+    | {created: false};
 
-  await prisma.$transaction([
-    prisma.buyerOtpChallenge.updateMany({
-      where: {
-        recipientEmail: email,
-        consumedAt: null,
-        invalidatedAt: null,
-      },
-      data: {invalidatedAt: now},
-    }),
-    prisma.buyerOtpChallenge.create({
-      data: {
-        id: challengeId,
-        recipientEmail: email,
-        customerId: eligible ? contact!.customerId : null,
-        buyerContactId: eligible ? contact!.id : null,
-        otpHash: hashBuyerOtp(challengeId, otp, secret),
-        expiresAt: new Date(now.getTime() + BUYER_OTP_TTL_MS),
-        requestMetadata: metadata,
-      },
-    }),
-  ]);
+  try {
+    issueResult = await prisma.$transaction(async (tx) => {
+      const [recipientChallenges, ipChallenges] = await Promise.all([
+        tx.buyerOtpChallenge.findMany({
+          where: {recipientEmail: email, createdAt: {gte: since}},
+          orderBy: {createdAt: "desc"},
+          select: {createdAt: true},
+        }),
+        context.ipHash
+          ? tx.buyerOtpChallenge.findMany({
+              where: {requestIpHash: context.ipHash, createdAt: {gte: since}},
+              orderBy: {createdAt: "desc"},
+              select: {createdAt: true},
+            })
+          : Promise.resolve([]),
+      ]);
+      const limits = buyerOtpRequestLimits(recipientChallenges, ipChallenges, now);
+      if (!limits.allowed) {
+        return {
+          created: false as const,
+        };
+      }
+
+      await tx.buyerOtpChallenge.updateMany({
+        where: {
+          recipientEmail: email,
+          consumedAt: null,
+          invalidatedAt: null,
+        },
+        data: {invalidatedAt: now},
+      });
+      await tx.buyerOtpChallenge.create({
+        data: {
+          id: challengeId,
+          recipientEmail: email,
+          customerId: eligible ? contact!.customerId : null,
+          buyerContactId: eligible ? contact!.id : null,
+          otpHash: hashBuyerOtp(challengeId, otp, secret),
+          expiresAt: new Date(now.getTime() + BUYER_OTP_TTL_MS),
+          requestIpHash: context.ipHash,
+          requestMetadata: context.metadata,
+        },
+      });
+      return {created: true as const};
+    }, {isolationLevel: "Serializable"});
+  } catch (error) {
+    // A serializable conflict means a concurrent request won. Suppress this
+    // request rather than issuing another email or exposing account state.
+    if ((error as {code?: string})?.code === "P2034") return;
+    throw error;
+  }
+
+  if (!issueResult.created) {
+    return;
+  }
 
   await setChallengeCookie(challengeId);
 
   if (!eligible) return;
 
-  const result = await sendTransactionalEmail({
-    deduplicationKey: `buyer-login-otp:${challengeId}`,
-    template: "buyer-login-otp",
-    to: email,
-    content: emailTemplates.buyerLoginOtp(contact!.name, otp),
-    storedContent: emailTemplates.buyerLoginOtpStored(),
-    relatedType: "BuyerOtpChallenge",
-    relatedId: challengeId,
-  });
+  let result;
+  try {
+    result = await sendTransactionalEmail({
+      deduplicationKey: `buyer-login-otp:${challengeId}`,
+      template: "buyer-login-otp",
+      to: email,
+      content: emailTemplates.buyerLoginOtp(contact!.name, otp),
+      storedContent: emailTemplates.buyerLoginOtpStored(),
+      relatedType: "BuyerOtpChallenge",
+      relatedId: challengeId,
+    });
+  } catch {
+    await prisma.buyerOtpChallenge.update({
+      where: {id: challengeId},
+      data: {invalidatedAt: new Date()},
+    });
+    return;
+  }
 
   if (!result.ok) {
     await prisma.buyerOtpChallenge.update({
@@ -151,7 +194,7 @@ export async function resendBuyerOtpAction() {
 }
 
 export async function verifyBuyerOtpAction(formData: FormData) {
-  const otp = readText(formData, "otp").replace(/\D/g, "");
+  const otp = readText(formData, "otp");
   const cookieStore = await cookies();
   const challengeId = cookieStore.get(BUYER_OTP_CHALLENGE_COOKIE)?.value;
   const secret = process.env.SESSION_SECRET || "";
@@ -173,14 +216,7 @@ export async function verifyBuyerOtpAction(formData: FormData) {
   }
 
   if (!buyerOtpMatches(challenge.id, otp, secret, challenge.otpHash)) {
-    const attempts = challenge.attempts + 1;
-    await prisma.buyerOtpChallenge.update({
-      where: {id: challenge.id},
-      data: {
-        attempts,
-        invalidatedAt: attempts >= 5 ? new Date() : undefined,
-      },
-    });
+    await recordFailedBuyerOtpAttempt(prisma, challenge.id);
     redirect("/buyer-login?step=verify&error=otp-invalid");
   }
 
@@ -200,15 +236,7 @@ export async function verifyBuyerOtpAction(formData: FormData) {
     redirect("/buyer-login?step=verify&error=otp-invalid");
   }
 
-  const consumed = await prisma.buyerOtpChallenge.updateMany({
-    where: {
-      id: challenge.id,
-      consumedAt: null,
-      invalidatedAt: null,
-      expiresAt: {gt: new Date()},
-    },
-    data: {consumedAt: new Date()},
-  });
+  const consumed = await consumeBuyerOtpChallenge(prisma, challenge.id);
   if (consumed.count !== 1) {
     redirect("/buyer-login?step=verify&error=otp-invalid");
   }

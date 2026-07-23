@@ -286,10 +286,12 @@ model BuyerOtpChallenge {
   attempts        Int           @default(0)
   consumedAt      DateTime?
   invalidatedAt   DateTime?
+  requestIpHash   String?
   requestMetadata String?
   createdAt       DateTime      @default(now())
 
   @@index([recipientEmail, createdAt])
+  @@index([requestIpHash, createdAt])
   @@index([buyerContactId, createdAt])
   @@index([expiresAt])
 }

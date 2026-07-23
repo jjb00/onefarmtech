@@ -8,6 +8,7 @@ CREATE TABLE "BuyerOtpChallenge" (
     "attempts" INTEGER NOT NULL DEFAULT 0,
     "consumedAt" TIMESTAMP(3),
     "invalidatedAt" TIMESTAMP(3),
+    "requestIpHash" TEXT,
     "requestMetadata" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
@@ -16,6 +17,9 @@ CREATE TABLE "BuyerOtpChallenge" (
 
 CREATE INDEX "BuyerOtpChallenge_recipientEmail_createdAt_idx"
 ON "BuyerOtpChallenge"("recipientEmail", "createdAt");
+
+CREATE INDEX "BuyerOtpChallenge_requestIpHash_createdAt_idx"
+ON "BuyerOtpChallenge"("requestIpHash", "createdAt");
 
 CREATE INDEX "BuyerOtpChallenge_buyerContactId_createdAt_idx"
 ON "BuyerOtpChallenge"("buyerContactId", "createdAt");
