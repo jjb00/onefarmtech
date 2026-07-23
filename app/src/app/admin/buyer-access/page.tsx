@@ -8,6 +8,7 @@ import {
   sendBuyerAccountInviteAction,
   updateBuyerAccountInviteStatusAction,
 } from "@/actions/createAdminRecords";
+import PendingSubmitButton from "@/components/admin/PendingSubmitButton";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -340,12 +341,11 @@ export default async function BuyerAccessPage({
             </label>
           </div>
 
-          <button
-            type="submit"
+          <PendingSubmitButton
+            label="Generate access code"
+            pendingLabel="Generating…"
             className="mt-6 rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white"
-          >
-            Generate access code
-          </button>
+          />
         </form>
         </details>
       </section>
@@ -450,12 +450,11 @@ export default async function BuyerAccessPage({
                         <option>Accepted later</option>
                         <option>Cancelled</option>
                       </select>
-                      <button
-                        type="submit"
+                      <PendingSubmitButton
+                        label="Save"
+                        pendingLabel="Saving…"
                         className="rounded-full border border-[#102015]/15 bg-white px-3 py-2 text-xs font-black text-[#102015]"
-                      >
-                        Save
-                      </button>
+                      />
                     </form>
                   </div>
                 </td>
@@ -465,13 +464,12 @@ export default async function BuyerAccessPage({
                       <form action={sendBuyerAccountInviteAction}>
                         <input type="hidden" name="inviteId" value={invite.id} />
                         <input type="hidden" name="channel" value="email" />
-                        <button
-                          type="submit"
+                        <PendingSubmitButton
+                          label="Send email"
+                          pendingLabel="Sending email…"
                           disabled={invite.status === "Cancelled"}
                           className="w-full rounded-full border border-[#1f7a3f]/20 bg-white px-3 py-2 text-xs font-black text-[#1f7a3f] disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Send email
-                        </button>
+                        />
                       </form>
                     ) : null}
 
@@ -479,13 +477,12 @@ export default async function BuyerAccessPage({
                       <form action={sendBuyerAccountInviteAction}>
                         <input type="hidden" name="inviteId" value={invite.id} />
                         <input type="hidden" name="channel" value="whatsapp" />
-                        <button
-                          type="submit"
+                        <PendingSubmitButton
+                          label="Send WhatsApp"
+                          pendingLabel="Sending WhatsApp…"
                           disabled={invite.status === "Cancelled"}
                           className="w-full rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          Send WhatsApp
-                        </button>
+                        />
                       </form>
                     ) : null}
 

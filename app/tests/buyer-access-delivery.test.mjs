@@ -57,3 +57,29 @@ test("buyer access page exposes delivery feedback and channel-specific actions",
   assert.match(page, /deliveryMessages/);
   assert.match(page, /Copy manually/);
 });
+
+test("buyer access delivery controls disable duplicate submits and show clear pending labels", () => {
+  const page = read("src/app/admin/buyer-access/page.tsx");
+  const button = read("src/components/admin/PendingSubmitButton.tsx");
+
+  assert.match(button, /useFormStatus/);
+  assert.match(button, /const isDisabled = disabled \|\| pending/);
+  assert.match(button, /disabled=\{isDisabled\}/);
+  assert.match(button, /aria-disabled=\{isDisabled\}/);
+  assert.match(button, /pending \? pendingLabel : label/);
+
+  assert.match(page, /label="Generate access code"[\s\S]*pendingLabel="Generating…"/);
+  assert.match(page, /label="Send email"[\s\S]*pendingLabel="Sending email…"/);
+  assert.match(page, /label="Send WhatsApp"[\s\S]*pendingLabel="Sending WhatsApp…"/);
+  assert.match(page, /label="Save"[\s\S]*pendingLabel="Saving…"/);
+});
+
+test("loading controls preserve cancelled-invite disabling and existing delivery forms", () => {
+  const page = read("src/app/admin/buyer-access/page.tsx");
+
+  assert.match(page, /disabled=\{invite\.status === "Cancelled"\}/);
+  assert.match(page, /form action=\{sendBuyerAccountInviteAction\}/);
+  assert.match(page, /form action=\{updateBuyerAccountInviteStatusAction\}/);
+  assert.match(page, /form action=\{createBuyerAccountInviteAction\}/);
+  assert.match(page, /canReveal \? invite\.inviteCode : maskSecret\(invite\.inviteCode\)/);
+});
