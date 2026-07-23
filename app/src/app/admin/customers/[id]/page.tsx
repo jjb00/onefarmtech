@@ -221,7 +221,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                   className="h-4 w-4"
                   defaultChecked={customer.accountLoginReady}
                 />
-                Mark buyer as login-ready after admin approval and access-code setup
+                Mark buyer as login-ready after approval and contact verification
               </label>
             </div>
 
@@ -269,7 +269,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
             <div>
               <h2 className="text-2xl font-black">Buyer access controls</h2>
               <p className="mt-1 text-sm text-[#405348]">
-                Add authorised contacts and generate access codes for approved buyer login.
+                Add authorised contacts, correct email addresses and permissions. Email OTP is recommended; access codes remain a legacy fallback.
               </p>
             </div>
             <Link

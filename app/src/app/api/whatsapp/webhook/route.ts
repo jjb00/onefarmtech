@@ -10,6 +10,7 @@ import {
   buildWhatsAppProductListMessage,
   isProductAvailableForWhatsApp,
 } from "@/lib/whatsapp/productCatalogue";
+import {normalizeInternationalPhone} from "@/lib/phoneNumbers";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -689,8 +690,15 @@ export async function POST(request: NextRequest) {
     }
 
     for (const message of messages) {
-      const from = String(message?.from || "").trim();
-      if (!from) continue;
+      const rawFrom = String(message?.from || "").trim();
+      if (!rawFrom) continue;
+      let from: string;
+      try {
+        // Meta sends wa_id/from as country-coded digits without a leading plus.
+        from = normalizeInternationalPhone(`+${rawFrom.replace(/\D/g, "")}`);
+      } catch {
+        continue;
+      }
 
       const contact = contacts.find((item: any) => String(item?.wa_id || "") === from);
       const body = getTextBody(message);

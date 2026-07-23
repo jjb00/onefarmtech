@@ -18,6 +18,7 @@ type SendTransactionalEmailInput = {
   content: TransactionalEmail;
   relatedType?: string;
   relatedId?: string;
+  storedContent?: TransactionalEmail;
 };
 
 function baseUrl() {
@@ -64,9 +65,9 @@ export async function sendTransactionalEmail(input: SendTransactionalEmailInput)
       deduplicationKey: input.deduplicationKey,
       template: input.template,
       recipient,
-      subject: input.content.subject,
-      textBody: input.content.text,
-      htmlBody: input.content.html,
+      subject: (input.storedContent || input.content).subject,
+      textBody: (input.storedContent || input.content).text,
+      htmlBody: (input.storedContent || input.content).html,
       relatedType: input.relatedType,
       relatedId: input.relatedId,
     },
@@ -115,6 +116,9 @@ export async function sendTransactionalEmail(input: SendTransactionalEmailInput)
 export async function retryEmailDelivery(deliveryId: string) {
   const delivery = await prisma.emailDelivery.findUnique({where: {id: deliveryId}});
   if (!delivery) return {ok: false, status: "Failed" as const, error: "Email delivery record not found."};
+  if (delivery.template === "buyer-login-otp") {
+    return {ok: false, status: "Failed" as const, deliveryId, error: "Security codes cannot be replayed. Request a new buyer login code."};
+  }
   if (!delivery.textBody || !delivery.htmlBody) return {ok: false, status: "Failed" as const, deliveryId, error: "Stored email content is unavailable for retry."};
   return sendTransactionalEmail({
     deduplicationKey: delivery.deduplicationKey,

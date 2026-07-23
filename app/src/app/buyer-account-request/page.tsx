@@ -6,6 +6,7 @@ import BuyerLoginModal from "@/components/BuyerLoginModal";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
+import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
 
 const buyerLoginMessages: Record<string, string> = {
   missing: "Please enter both your email/phone and buyer access code.",
@@ -200,12 +201,26 @@ Your account request has been received. We’ll review your details and get back
 
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="grid gap-2 text-sm font-bold text-[#102015]">
-                  Phone
+                  Phone country
+                  <select
+                    name="phoneCountryCode"
+                    defaultValue="234"
+                    className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                  >
+                    {buyerPhoneCountryOptions.map((option) => (
+                      <option key={option.code} value={option.code}>{option.label}</option>
+                    ))}
+                  </select>
+                </label>
+
+                <label className="grid gap-2 text-sm font-bold text-[#102015]">
+                  Phone number
                   <input
                     name="phone"
                     required
+                    inputMode="tel"
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                    placeholder="+234..."
+                    placeholder="0801 234 5678"
                   />
                 </label>
 

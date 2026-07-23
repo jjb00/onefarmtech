@@ -13,9 +13,11 @@ import {
   BUYER_CONTACT_ID_COOKIE,
   BUYER_CONTACT_REVISION_COOKIE,
   BUYER_SESSION_COOKIE,
+  BUYER_AUTH_MODE_COOKIE,
 } from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
-import {createSessionToken} from "@/lib/sessionToken";
+import {createBuyerSession} from "@/lib/buyerSession";
+import {isBuyerLoginEligible} from "@/lib/buyerOtp";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -118,7 +120,7 @@ export async function buyerLoginAction(formData: FormData) {
     redirect("/buyer-login?error=expired");
   }
 
-  if (customer.status !== "Active" || !customer.accountLoginReady) {
+  if (!isBuyerLoginEligible(customer, matchingContact)) {
     redirect("/buyer-login?error=not-ready");
   }
 
@@ -136,35 +138,12 @@ export async function buyerLoginAction(formData: FormData) {
     },
   });
 
-  const cookieStore = await cookies();
-
-  const cookieOptions = {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  };
-
-  cookieStore.set(
-    BUYER_SESSION_COOKIE,
-    createSessionToken("buyer", `${customer.id}:${updatedInvite.id}:${matchingContact.id}:${matchingContact.updatedAt.toISOString()}`),
-    cookieOptions,
-  );
-  cookieStore.set(BUYER_CUSTOMER_ID_COOKIE, customer.id, cookieOptions);
-  cookieStore.set(BUYER_INVITE_ID_COOKIE, updatedInvite.id, cookieOptions);
-  cookieStore.set(BUYER_CONTACT_ID_COOKIE, matchingContact.id, cookieOptions);
-  cookieStore.set(BUYER_CONTACT_REVISION_COOKIE, matchingContact.updatedAt.toISOString(), cookieOptions);
-  cookieStore.set(
-    BUYER_CONTACT_NAME_COOKIE,
-    matchingContact?.name || customer.name,
-    cookieOptions,
-  );
-  cookieStore.set(
-    BUYER_CONTACT_ROLE_COOKIE,
-    matchingContact?.role || invite.role,
-    cookieOptions,
-  );
+  await createBuyerSession({
+    customerId: customer.id,
+    contact: matchingContact,
+    authMode: "invite-code",
+    inviteId: updatedInvite.id,
+  });
 
   redirect("/buyer-account");
 }
@@ -180,6 +159,7 @@ export async function buyerLogoutAction() {
     BUYER_INVITE_ID_COOKIE,
     BUYER_CONTACT_ID_COOKIE,
     BUYER_CONTACT_REVISION_COOKIE,
+    BUYER_AUTH_MODE_COOKIE,
   ]) {
     cookieStore.set(cookieName, "", {
       httpOnly: true,

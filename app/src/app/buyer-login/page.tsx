@@ -18,12 +18,14 @@ const messages: Record<string, string> = {
   contact:
     "Your buyer contact is inactive or not configured for portal access. Contact OneFarmTech support.",
   required: "Please sign in to view your buyer account.",
+  "otp-invalid":
+    "That code is invalid or has expired. Request a new code and try again.",
 };
 
 export default async function BuyerLoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{error?: string}>;
+  searchParams?: Promise<{error?: string; step?: string; sent?: string}>;
 }) {
   const params = await searchParams;
   const errorMessage = params?.error
@@ -45,6 +47,8 @@ export default async function BuyerLoginPage({
         <BuyerLoginModal
           defaultOpen
           errorMessage={errorMessage}
+          otpStep={params?.step === "verify"}
+          otpSent={params?.sent === "1"}
           showTrigger={false}
           allowClose={false}
         />

@@ -2,6 +2,7 @@ import {cookies} from "next/headers";
 import {redirect} from "next/navigation";
 import {prisma} from "@/lib/prisma";
 import {verifySessionToken} from "@/lib/sessionToken";
+import {isBuyerLoginEligible} from "@/lib/buyerOtp";
 
 export const BUYER_SESSION_COOKIE = "oft_buyer_session";
 export const BUYER_CUSTOMER_ID_COOKIE = "oft_buyer_customer_id";
@@ -10,6 +11,7 @@ export const BUYER_CONTACT_ROLE_COOKIE = "oft_buyer_contact_role";
 export const BUYER_INVITE_ID_COOKIE = "oft_buyer_invite_id";
 export const BUYER_CONTACT_ID_COOKIE = "oft_buyer_contact_id";
 export const BUYER_CONTACT_REVISION_COOKIE = "oft_buyer_contact_revision";
+export const BUYER_AUTH_MODE_COOKIE = "oft_buyer_auth_mode";
 
 export type CurrentBuyerActor = {
   isAuthenticated: boolean;
@@ -21,7 +23,7 @@ export type CurrentBuyerActor = {
   canPlaceOrders: boolean;
   canViewReceipts: boolean;
   canViewCredit: boolean;
-  authMode: "invite-code";
+  authMode: "invite-code" | "email-otp";
 };
 
 export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
@@ -31,30 +33,47 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
   const inviteId = cookieStore.get(BUYER_INVITE_ID_COOKIE)?.value || null;
   const contactId = cookieStore.get(BUYER_CONTACT_ID_COOKIE)?.value || null;
   const contactRevision = cookieStore.get(BUYER_CONTACT_REVISION_COOKIE)?.value || null;
-  const contact = contactId ? await prisma.buyerContact.findUnique({where: {id: contactId}}) : null;
-  const invite = inviteId ? await prisma.buyerAccountInvite.findUnique({where: {id: inviteId}}) : null;
+  const authMode = cookieStore.get(BUYER_AUTH_MODE_COOKIE)?.value === "email-otp"
+    ? "email-otp"
+    : "invite-code";
+  const [customer, contact, invite] = await Promise.all([
+    customerId ? prisma.customer.findUnique({where: {id: customerId}}) : null,
+    contactId ? prisma.buyerContact.findUnique({where: {id: contactId}}) : null,
+    authMode === "invite-code" && inviteId
+      ? prisma.buyerAccountInvite.findUnique({where: {id: inviteId}})
+      : null,
+  ]);
+  const subject = authMode === "email-otp"
+    ? `${customerId}:email-otp:${contactId}:${contactRevision}`
+    : `${customerId}:${inviteId}:${contactId}:${contactRevision}`;
   const isAuthenticated = Boolean(
-    customerId && inviteId && contactId && contactRevision && contact && invite &&
-    contact.customerId === customerId && contact.status === "Active" && contact.updatedAt.toISOString() === contactRevision &&
-    invite.customerId === customerId && !invite.status.toLowerCase().includes("cancel") &&
+    customerId && contactId && contactRevision && contact &&
+    isBuyerLoginEligible(customer, contact) &&
+    contact.customerId === customerId && contact.status === "Active" &&
+    contact.updatedAt.toISOString() === contactRevision &&
+    (authMode === "email-otp" || Boolean(
+      invite &&
+      invite.customerId === customerId &&
+      !invite.status.toLowerCase().includes("cancel")
+    )) &&
     verifySessionToken(
       cookieStore.get(BUYER_SESSION_COOKIE)?.value,
       "buyer",
-      `${customerId}:${inviteId}:${contactId}:${contactRevision}`,
+      subject,
     ),
   );
 
   return {
     isAuthenticated,
     customerId,
-    inviteId,
+    inviteId: isAuthenticated && authMode === "invite-code" ? inviteId : null,
     contactId: isAuthenticated ? contactId : null,
     contactName: isAuthenticated ? contact!.name : null,
     contactRole: isAuthenticated ? contact!.role : null,
     canPlaceOrders: isAuthenticated ? contact!.canPlaceOrders : false,
     canViewReceipts: isAuthenticated ? contact!.canViewReceipts : false,
     canViewCredit: isAuthenticated ? contact!.canViewCredit : false,
-    authMode: "invite-code",
+    authMode,
   };
 }
 

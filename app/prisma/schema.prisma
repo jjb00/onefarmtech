@@ -27,6 +27,7 @@ model Customer {
   receipts                   Receipt[]
   buyerContacts              BuyerContact[]
   buyerInvites               BuyerAccountInvite[]
+  buyerOtpChallenges         BuyerOtpChallenge[]
   buyerProfileUpdateRequests BuyerProfileUpdateRequest[]
   buyerMessages              BuyerMessage[]
   createdAt                  DateTime                    @default(now())
@@ -240,19 +241,20 @@ model Receipt {
 }
 
 model BuyerContact {
-  id              String   @id @default(cuid())
+  id              String              @id @default(cuid())
   customerId      String
-  customer        Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer        Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
   name            String
   email           String?
   phone           String?
-  role            String   @default("Buyer user")
-  canPlaceOrders  Boolean  @default(true)
-  canViewReceipts Boolean  @default(true)
-  canViewCredit   Boolean  @default(false)
-  status          String   @default("Active")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  role            String              @default("Buyer user")
+  canPlaceOrders  Boolean             @default(true)
+  canViewReceipts Boolean             @default(true)
+  canViewCredit   Boolean             @default(false)
+  status          String              @default("Active")
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  otpChallenges   BuyerOtpChallenge[]
 }
 
 model BuyerAccountInvite {
@@ -270,6 +272,26 @@ model BuyerAccountInvite {
   createdBy  String    @default("Local staff user")
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+model BuyerOtpChallenge {
+  id              String        @id
+  recipientEmail  String
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  buyerContactId  String?
+  buyerContact    BuyerContact? @relation(fields: [buyerContactId], references: [id], onDelete: Cascade)
+  otpHash         String
+  expiresAt       DateTime
+  attempts        Int           @default(0)
+  consumedAt      DateTime?
+  invalidatedAt   DateTime?
+  requestMetadata String?
+  createdAt       DateTime      @default(now())
+
+  @@index([recipientEmail, createdAt])
+  @@index([buyerContactId, createdAt])
+  @@index([expiresAt])
 }
 
 model BuyerMessage {

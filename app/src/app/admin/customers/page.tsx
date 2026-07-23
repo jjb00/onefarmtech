@@ -48,7 +48,7 @@ function CreateBuyerForm() {
       <Field label="Account status"><select name="accountStatus" defaultValue="Manual WhatsApp" className="rounded-xl border px-4 py-3 font-normal"><option>Manual WhatsApp</option><option>Approved recurring buyer</option><option>Credit review</option><option>Account login pending</option><option>Account login ready</option><option>Paused</option></select></Field>
       <Field label="Status"><select name="status" defaultValue="Active" className="rounded-xl border px-4 py-3 font-normal"><option>Active</option><option>Needs review</option><option>Paused</option></select></Field>
       <Field label="Payment terms" wide><input name="paymentTerms" defaultValue="Full payment before order allocation" className="rounded-xl border px-4 py-3 font-normal" /></Field>
-      <label className="flex items-center gap-3 rounded-xl bg-[#f7f5ec] px-4 py-3 text-sm font-semibold md:col-span-2"><input name="accountLoginReady" type="checkbox" /> Mark buyer as login-ready</label>
+      <label className="flex items-center gap-3 rounded-xl bg-[#f7f5ec] px-4 py-3 text-sm font-semibold md:col-span-2"><input name="accountLoginReady" type="checkbox" /> Approve buyer for login (requires an active authorised contact)</label>
       <button type="submit" className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white md:col-span-2 md:justify-self-start">Save buyer</button>
     </form>
   </details>;

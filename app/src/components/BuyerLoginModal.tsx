@@ -3,12 +3,21 @@
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
 import {buyerLoginAction} from "@/actions/auth";
+import {
+  requestBuyerOtpAction,
+  resendBuyerOtpAction,
+  verifyBuyerOtpAction,
+} from "@/actions/buyerOtp";
+import PendingSubmitButton from "@/components/admin/PendingSubmitButton";
+import BuyerOtpResendButton from "@/components/BuyerOtpResendButton";
 
 type BuyerLoginModalProps = {
   defaultOpen?: boolean;
   errorMessage?: string | null;
   showTrigger?: boolean;
   allowClose?: boolean;
+  otpStep?: boolean;
+  otpSent?: boolean;
 };
 
 export default function BuyerLoginModal({
@@ -16,6 +25,8 @@ export default function BuyerLoginModal({
   errorMessage = null,
   showTrigger = true,
   allowClose = true,
+  otpStep = false,
+  otpSent = false,
 }: BuyerLoginModalProps) {
   const [open, setOpen] = useState(defaultOpen);
   const identifierRef = useRef<HTMLInputElement>(null);
@@ -78,8 +89,8 @@ export default function BuyerLoginModal({
                   Buyer login
                 </h1>
                 <p className="mt-2 text-sm leading-7 text-[#405348]">
-                  Approved buyers can sign in using the access code shared by
-                  the OneFarmTech team.
+                  Approved buyer contacts can receive a secure one-time code by
+                  email. The code expires after 10 minutes.
                 </p>
               </div>
 
@@ -104,39 +115,77 @@ export default function BuyerLoginModal({
               </div>
             ) : null}
 
-            <form action={buyerLoginAction} className="mt-6 grid gap-4">
-              <label className="grid gap-2 text-sm font-black text-[#102015]">
-                Email or phone
-                <input
-                  ref={identifierRef}
-                  name="buyerIdentifier"
-                  type="text"
-                  required
-                  autoComplete="username"
-                  placeholder="buyer@example.com or phone number"
-                  className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
-                />
-              </label>
+            {otpSent ? (
+              <div role="status" className="mt-4 rounded-2xl bg-[#eef8f0] p-4 text-sm font-bold text-[#155c2f]">
+                If that email is approved for buyer access, a login code has been sent.
+              </div>
+            ) : null}
 
-              <label className="grid gap-2 text-sm font-black text-[#102015]">
-                Access code
-                <input
-                  name="buyerAccessCode"
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  placeholder="Enter your buyer access code"
-                  className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+            {otpStep ? (
+              <div className="mt-6 grid gap-4">
+                <form action={verifyBuyerOtpAction} className="grid gap-4">
+                  <label className="grid gap-2 text-sm font-black text-[#102015]">
+                    Six-digit code
+                    <input
+                      ref={identifierRef}
+                      name="otp"
+                      inputMode="numeric"
+                      pattern="[0-9]{6}"
+                      maxLength={6}
+                      required
+                      autoComplete="one-time-code"
+                      placeholder="000000"
+                      className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-center text-xl font-black tracking-[0.35em] outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+                    />
+                  </label>
+                  <PendingSubmitButton
+                    label="Verify and sign in"
+                    pendingLabel="Verifying…"
+                    className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
+                  />
+                </form>
+                <form action={resendBuyerOtpAction}>
+                  <BuyerOtpResendButton />
+                </form>
+                <Link href="/buyer-login" className="text-center text-sm font-bold text-[#405348] underline">
+                  Use a different email
+                </Link>
+              </div>
+            ) : (
+              <form action={requestBuyerOtpAction} className="mt-6 grid gap-4">
+                <label className="grid gap-2 text-sm font-black text-[#102015]">
+                  Approved email address
+                  <input
+                    ref={identifierRef}
+                    name="email"
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="buyer@example.com"
+                    className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+                  />
+                </label>
+                <PendingSubmitButton
+                  label="Email me a login code"
+                  pendingLabel="Sending code…"
+                  className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
                 />
-              </label>
+              </form>
+            )}
 
-              <button
-                type="submit"
-                className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f7a3f] focus-visible:ring-offset-2"
-              >
-                Sign in
-              </button>
-            </form>
+            <details className="mt-5 rounded-2xl border border-[#101712]/10 bg-[#fbfff8] p-4">
+              <summary className="cursor-pointer text-sm font-black text-[#405348]">
+                Legacy access-code login
+              </summary>
+              <p className="mt-2 text-xs leading-6 text-[#587063]">
+                Use this only if OneFarmTech previously issued you a permanent access code.
+              </p>
+              <form action={buyerLoginAction} className="mt-4 grid gap-3">
+                <input name="buyerIdentifier" required autoComplete="username" placeholder="Email or phone" className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm" />
+                <input name="buyerAccessCode" type="password" required autoComplete="current-password" placeholder="Legacy access code" className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm" />
+                <PendingSubmitButton label="Sign in with legacy code" pendingLabel="Signing in…" className="rounded-full border border-[#1f7a3f]/20 bg-white px-5 py-3 text-sm font-black text-[#1f7a3f] disabled:opacity-60" />
+              </form>
+            </details>
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">

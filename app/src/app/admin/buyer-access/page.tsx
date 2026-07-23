@@ -9,6 +9,7 @@ import {
   updateBuyerAccountInviteStatusAction,
 } from "@/actions/createAdminRecords";
 import PendingSubmitButton from "@/components/admin/PendingSubmitButton";
+import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -87,7 +88,7 @@ export default async function BuyerAccessPage({
 
   const deliveryMessage = deliveryMessages[delivery];
 
-  const [customers, contacts, invites] = await Promise.all([
+  const [customers, contacts, invites, buyerEmailDeliveries] = await Promise.all([
     prisma.customer.findMany({
       orderBy: {createdAt: "desc"},
       select: {
@@ -110,12 +111,32 @@ export default async function BuyerAccessPage({
       include: {customer: true},
       take: 100,
     }),
+    prisma.emailDelivery.findMany({
+      where: {
+        template: {in: ["buyer-login-otp", "buyer-invite"]},
+      },
+      select: {recipient: true, status: true},
+      orderBy: {updatedAt: "desc"},
+      take: 300,
+    }),
   ]);
+  const latestEmailStatusByRecipient = new Map<string, string>();
+  for (const delivery of buyerEmailDeliveries) {
+    const recipient = delivery.recipient.toLowerCase();
+    if (!latestEmailStatusByRecipient.has(recipient)) {
+      latestEmailStatusByRecipient.set(recipient, delivery.status);
+    }
+  }
+  const failedEmailByRecipient = new Map(
+    [...latestEmailStatusByRecipient].filter(([, status]) =>
+      ["Bounced", "Complained"].includes(status),
+    ),
+  );
 
   return (
     <AdminPageShell
       title="Buyer access"
-      description="Manage authorised contacts and buyer portal access."
+      description="Approve the buyer, keep an active authorised contact with a correct email, and assign portal permissions. Email OTP is the recommended login."
       actionHref="/admin/customers?view=access"
       actionLabel="Open Buyers workspace"
     >
@@ -214,11 +235,18 @@ export default async function BuyerAccessPage({
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
-              Phone
+              Phone country
+              <select name="phoneCountryCode" defaultValue="234" className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal">
+                {buyerPhoneCountryOptions.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}
+              </select>
+            </label>
+            <label className="grid gap-2 text-sm font-semibold">
+              Phone number
               <input
                 name="phone"
+                inputMode="tel"
                 className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
-                placeholder="+234..."
+                placeholder="0801 234 5678"
               />
             </label>
 
@@ -263,14 +291,14 @@ export default async function BuyerAccessPage({
         <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
           <summary className="cursor-pointer list-none">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-xl font-black text-[#102015]">Generate access code</h2>
+              <h2 className="text-xl font-black text-[#102015]">Legacy access-code fallback</h2>
               <span className="rounded-full bg-[#f3f8ef] px-4 py-2 text-sm font-black text-[#1f7a3f]">Open</span>
             </div>
           </summary>
         <form action={createBuyerAccountInviteAction} className="mt-5">
-          <h2 className="text-2xl font-black text-[#102015]">Generate buyer login access code</h2>
+          <h2 className="text-2xl font-black text-[#102015]">Generate legacy buyer access code</h2>
           <p className="mt-2 text-sm leading-7 text-[#405348]">
-            Use this after a buyer account has been approved. Choose the approved buyer, add the buyer email or phone, then generate the code they will use in the Buyer login pop-up.
+            Email OTP is the recommended login method. Generate a permanent code only as a temporary legacy fallback for an existing buyer.
           </p>
           <div className="mt-4 rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-7 text-[#405348]">
             Email is attempted when the code is generated. You can also send or retry email and WhatsApp delivery from the access-code list below.
@@ -304,11 +332,19 @@ export default async function BuyerAccessPage({
             </label>
 
             <label className="grid gap-2 text-sm font-semibold">
+              Phone country
+              <select name="phoneCountryCode" defaultValue="234" className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 font-normal">
+                {buyerPhoneCountryOptions.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}
+              </select>
+            </label>
+
+            <label className="grid gap-2 text-sm font-semibold">
               Buyer login phone
               <input
                 name="phone"
+                inputMode="tel"
                 className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-[#102015] font-normal outline-none focus:border-[#1f7a3f]"
-                placeholder="+234..."
+                placeholder="0801 234 5678"
               />
             </label>
 
@@ -371,6 +407,11 @@ export default async function BuyerAccessPage({
                     <div className="text-xs text-[#587063]">
                       {contact.email || "No email"} · {contact.phone || "No phone"}
                     </div>
+                    {contact.email && failedEmailByRecipient.has(contact.email.toLowerCase()) ? (
+                      <div className="mt-1 text-xs font-black text-red-700">
+                        Email {failedEmailByRecipient.get(contact.email.toLowerCase())?.toLowerCase()}: correct the address before retrying.
+                      </div>
+                    ) : null}
                   </td>
                   <td className="py-4 pr-4">
                     <Link
@@ -405,7 +446,7 @@ export default async function BuyerAccessPage({
       </section>
 
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-black text-[#102015]">Access codes</h2>
+        <h2 className="text-xl font-black text-[#102015]">Legacy access codes</h2>
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-[900px] w-full text-left text-sm">
             <thead className="bg-[#f7f5ec] text-xs uppercase tracking-[0.14em] text-[#405348]">

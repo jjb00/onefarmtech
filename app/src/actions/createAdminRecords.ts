@@ -17,6 +17,7 @@ import {initialFulfilmentStatus, isPickupMethod, validateOrderStatusTransition} 
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {isStaffRole} from "@/lib/permissions";
+import {normalizeInternationalPhone} from "@/lib/phoneNumbers";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -422,7 +423,10 @@ export async function createBuyerContactAction(formData: FormData) {
   const customerId = readText(formData, "customerId");
   const name = readText(formData, "name");
   const email = readText(formData, "email");
-  const phone = readText(formData, "phone");
+  const phoneInput = readText(formData, "phone");
+  const phone = phoneInput
+    ? normalizeInternationalPhone(phoneInput, readText(formData, "phoneCountryCode", "234"))
+    : "";
   const role = readText(formData, "role", "Buyer user");
   const canPlaceOrders = readBoolean(formData, "canPlaceOrders");
   const canViewReceipts = readBoolean(formData, "canViewReceipts");
@@ -475,7 +479,10 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
   const authoritativeStaff = await requireCapability("manage_buyer_access");
   const customerId = readText(formData, "customerId");
   const email = readText(formData, "email");
-  const phone = readText(formData, "phone");
+  const phoneInput = readText(formData, "phone");
+  const phone = phoneInput
+    ? normalizeInternationalPhone(phoneInput, readText(formData, "phoneCountryCode", "234"))
+    : "";
   const role = readText(formData, "role", "Buyer user");
   const status = readText(formData, "status", "Draft");
 
@@ -859,7 +866,10 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   const contactName = readText(formData, "contactName");
   const organisationName = readText(formData, "organisationName");
   const buyerType = readText(formData, "buyerType", "Business buyer");
-  const phone = readText(formData, "phone");
+  const phone = normalizeInternationalPhone(
+    readText(formData, "phone"),
+    readText(formData, "phoneCountryCode", "234"),
+  );
   const email = readText(formData, "email");
   const location = readText(formData, "location");
   const usualProduceNeeds = readText(formData, "usualProduceNeeds");
