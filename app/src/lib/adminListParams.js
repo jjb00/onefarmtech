@@ -1,8 +1,8 @@
-export const ADMIN_PAGE_SIZES = [10, 25, 50];
+export const ADMIN_PAGE_SIZES = [25, 50, 100];
 
 export function parseAdminPageSize(value) {
   const size = Number.parseInt(String(value || ""), 10);
-  return ADMIN_PAGE_SIZES.includes(size) ? size : 10;
+  return ADMIN_PAGE_SIZES.includes(size) ? size : 25;
 }
 
 export function parseAdminPage(value) {

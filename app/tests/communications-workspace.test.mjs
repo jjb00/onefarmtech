@@ -6,8 +6,8 @@ import {COMMUNICATION_VIEWS, communicationViewHref, resolveCommunicationView} fr
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("buyer messages remains the canonical Inbox with safe supported views", async () => {
-  assert.deepEqual(COMMUNICATION_VIEWS, ["needs-reply", "whatsapp", "enquiries", "failed", "all", "email", "reconciliation", "operations"]);
-  assert.equal(resolveCommunicationView("unknown"), "needs-reply");
+  assert.deepEqual(COMMUNICATION_VIEWS, ["all", "whatsapp", "enquiries", "email", "reconciliation", "operations"]);
+  assert.equal(resolveCommunicationView("unknown"), "all");
   const page = await read("src/app/admin/buyer-messages/page.tsx");
   assert.match(page, /title="Inbox"/);
   assert.match(page, /compactHeader/);
@@ -24,14 +24,13 @@ test("source views use database pagination, stable ordering and existing actions
   const page = await read("src/app/admin/buyer-messages/page.tsx");
   const enquiries = await read("src/components/admin/ContactEnquiriesList.tsx");
   assert.match(page, /channel: "WhatsApp"/);
-  assert.match(page, /prisma\.contactEnquiry\.findMany/);
+  assert.match(page, /prisma\.contactEnquiry\.count/);
   assert.match(page, /prisma\.emailDelivery\.count/);
-  assert.doesNotMatch(page, /prisma\.paymentReconciliationIncident\.count/);
+  assert.match(page, /prisma\.paymentReconciliationIncident\.count/);
   assert.match(page, /orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/);
   assert.match(page, /retryFailedEmailAction/);
   assert.match(enquiries, /updateContactEnquiryStatusAction/);
-  const payments = await read("src/app/admin/payment-requests/page.tsx");
-  assert.match(payments, /resolvePaymentIncidentAction/);
+  assert.match(page, /resolvePaymentIncidentAction/);
   assert.match(page, /\/admin\/customers\//);
   assert.match(page, /\/admin\/orders\//);
 });

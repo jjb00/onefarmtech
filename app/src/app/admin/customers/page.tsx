@@ -24,7 +24,6 @@ export default async function CustomersPage({searchParams}: {searchParams?: Prom
   return <AdminPageShell title="Buyers" description="Buyer master records, applications, access and account update workflows." compactHeader>
     <div className="grid gap-5"><BuyersViewSwitcher activeView={view} role={staff.role} params={params}/>
       {view === "all" ? <CreateBuyerForm /> : null}
-      {view === "active" ? <BuyersList raw={{...(raw || {}), status: "Active"}}/> : null}
       {view === "all" ? <BuyersList raw={raw || {}}/> : null}
       {view === "guests" ? <GuestBuyersPage searchParams={Promise.resolve(raw || {})} embedded/> : null}
       {view === "applications" ? <BuyerAccountRequestsPage searchParams={Promise.resolve(raw || {})} embedded/> : null}

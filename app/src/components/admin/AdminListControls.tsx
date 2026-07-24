@@ -14,7 +14,7 @@ export function AdminListToolbar({search, filters, pageSize, resetHref, searchLa
       </label>)}
       <label className="grid gap-1 text-xs font-black text-[#405348]">Per page
         <select name="pageSize" defaultValue={String(pageSize)} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2.5 text-sm font-normal outline-none focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/20">
-          {[10, 25, 50].map((size) => <option key={size} value={size}>{size}</option>)}
+          {[25, 50, 100].map((size) => <option key={size} value={size}>{size}</option>)}
         </select>
       </label>
       <div className="flex items-end gap-2"><button type="submit" className="rounded-xl bg-[#102015] px-4 py-2.5 text-sm font-black text-white focus:outline-none focus:ring-2 focus:ring-[#1f7a3f]">Apply</button><Link href={resetHref} className="rounded-xl border border-[#102015]/15 px-4 py-2.5 text-sm font-black text-[#405348] focus:outline-none focus:ring-2 focus:ring-[#1f7a3f]">Reset</Link></div>

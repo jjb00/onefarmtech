@@ -14,68 +14,6 @@ test("daily admin navigation excludes recruitment, general enquiries and launch 
   assert.match(navigation, /Orders/);
   assert.match(navigation, /WhatsApp/);
   assert.match(navigation, /Buyers/);
-  assert.match(navigation, /Payments/);
-  assert.match(navigation, /Products/);
-  assert.doesNotMatch(navigation, /title: "Settings"/);
-  assert.doesNotMatch(navigation, /title: "Money"/);
-});
-
-test("profile menu is role-aware and sidebar state persists", () => {
-  const chrome = read("src/components/admin/AdminChrome.tsx");
-  assert.match(chrome, /Staff management/);
-  assert.match(chrome, /staff\.role === "Super admin"/);
-  assert.match(chrome, /\["Super admin", "Admin"\]\.includes\(staff\.role\)/);
-  assert.match(chrome, /localStorage\.setItem\(SIDEBAR_KEY/);
-  assert.match(chrome, /event\.key === "Escape"/);
-  assert.match(chrome, /setMobileOpen\(false\)/);
-});
-
-test("Today is bounded and contains operational queues only", () => {
-  const today = read("src/app/admin/page.tsx");
-  assert.match(today, /const LIMIT = 8/);
-  assert.match(today, /New order requests/);
-  assert.match(today, /Payments to follow up/);
-  assert.match(today, /Unknown WhatsApp order contacts/);
-  assert.doesNotMatch(today, /Operational events|Email delivery|reconciliation/i);
-  assert.match(today, /isOperationalUnknownWhatsAppContact/);
-});
-
-test("order and payment workspaces default to needs action with bounded pagination", () => {
-  const orders = read("src/app/admin/orders/page.tsx");
-  const payments = read("src/app/admin/payment-requests/page.tsx");
-  assert.match(orders, /"needs-action"/);
-  assert.match(orders, /parseAdminPageSize/);
-  assert.match(orders, /skip: \(page - 1\) \* pageSize/);
-  assert.match(orders, /take: pageSize/);
-  assert.doesNotMatch(orders, /include:\s*\{\s*payments:/);
-  assert.match(payments, /params\?\.view \|\| "needs-action"/);
-  assert.match(payments, /parseAdminPageSize/);
-  assert.match(payments, /take: pageSize/);
-  assert.match(payments, /roleHasCapability\(staff\.role, "manage_payments"\)/);
-});
-
-test("recruitment WhatsApp is conservatively excluded from operational contacts", async () => {
-  const {classifyUnknownWhatsAppContact, isOperationalUnknownWhatsAppContact} =
-    await import("../src/lib/whatsappClassification.js");
-  assert.equal(classifyUnknownWhatsAppContact({message: "I want to submit my CV for a job application"}), "recruitment");
-  assert.equal(isOperationalUnknownWhatsAppContact({message: "I want to submit my CV for a job application"}), false);
-  assert.equal(classifyUnknownWhatsAppContact({message: "Can I place an order for tomatoes?"}), "operational order contact");
-  assert.equal(isOperationalUnknownWhatsAppContact({message: "Can I place an order for tomatoes?"}), true);
-  assert.equal(classifyUnknownWhatsAppContact({message: "Hello"}), "unknown");
-});
-
-test("six primary areas provide accessible loading feedback", () => {
-  for (const path of [
-    "src/app/admin/loading.tsx",
-    "src/app/admin/orders/loading.tsx",
-    "src/app/admin/buyer-messages/loading.tsx",
-    "src/app/admin/customers/loading.tsx",
-    "src/app/admin/payment-requests/loading.tsx",
-    "src/app/admin/products/loading.tsx",
-  ]) assert.match(read(path), /AdminRouteLoading/);
-  const loading = read("src/components/admin/AdminRouteLoading.tsx");
-  assert.match(loading, /aria-busy="true"/);
-  assert.match(loading, /role="status"/);
 });
 
 test("future careers and supplier submissions are email-first", () => {

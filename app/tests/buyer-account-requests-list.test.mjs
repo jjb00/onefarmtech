@@ -6,7 +6,7 @@ import {adminListHref, adminResultRange, parseAdminPageSize} from "../src/lib/ad
 const page = fs.readFileSync(new URL("../src/app/admin/buyer-account-requests/page.tsx", import.meta.url), "utf8");
 
 test("Buyer applications reuse shared paging and preserve filters", () => {
-  assert.equal(parseAdminPageSize(), 10); for (const size of [10, 25, 50]) assert.equal(parseAdminPageSize(size), size); assert.equal(parseAdminPageSize(30), 10); assert.deepEqual(adminResultRange(3, 25, 62), {start: 51, end: 62});
+  assert.equal(parseAdminPageSize(), 25); for (const size of [25, 50, 100]) assert.equal(parseAdminPageSize(size), size); assert.equal(parseAdminPageSize(30), 25); assert.deepEqual(adminResultRange(3, 25, 62), {start: 51, end: 62});
   const href = adminListHref("/admin/buyer-account-requests", {q: "market", status: "New", source: "Buyer account request page", type: "Business buyer", conversion: "not-converted", pageSize: 50}, {page: 2});
   for (const key of ["q=market", "status=New", "source=Buyer+account+request+page", "type=Business+buyer", "conversion=not-converted", "pageSize=50", "page=2"]) assert.equal(href.includes(key), true);
 });

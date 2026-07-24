@@ -5,10 +5,7 @@ import {
   AdminViewBar,
   adminToneFromStatus,
 } from "@/components/admin/AdminViewControls";
-import {AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
-import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
-import {prisma} from "@/lib/prisma";
-import type {Prisma} from "@/generated/prisma/client";
+import { getDbProducts } from "@/data/dbAdmin";
 import {
   createProductAction,
   seedBaselineProductsAction,
@@ -27,9 +24,6 @@ type ProductsPageProps = {
     status?: string;
     category?: string;
     sort?: string;
-    q?: string;
-    page?: string;
-    pageSize?: string;
   }>;
 };
 
@@ -41,11 +35,11 @@ function formatNaira(amount: number) {
   }).format(amount);
 }
 
-function hrefFor(params: Record<string, string | number | undefined>) {
+function hrefFor(params: Record<string, string | undefined>) {
   const search = new URLSearchParams();
 
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") search.set(key, String(value));
+    if (value) search.set(key, value);
   }
 
   const query = search.toString();
@@ -57,25 +51,33 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
   const status = params?.status || "all";
   const category = params?.category || "all";
   const sort = params?.sort || "name";
-  const q = params?.q?.trim() || "";
-  const page = parseAdminPage(params?.page);
-  const pageSize = parseAdminPageSize(params?.pageSize);
-  const where = {
-    ...(q ? {OR: [{name: {contains: q, mode: "insensitive" as const}}, {category: {contains: q, mode: "insensitive" as const}}]} : {}),
-    ...(category !== "all" ? {category} : {}),
-    ...(status === "active" ? {status: "Active"} : status === "available" ? {availability: "Available"} : status === "paused" ? {status: "Paused"} : status === "unavailable" ? {OR: [{availability: {not: "Available"}}, {status: {not: "Active"}}]} : {}),
-  };
-  const [total, activeCount, availableCount, unavailableCount] = await Promise.all([
-    prisma.product.count({where}),
-    prisma.product.count({where: {status: "Active"}}),
-    prisma.product.count({where: {availability: "Available"}}),
-    prisma.product.count({where: {OR: [{availability: {not: "Available"}}, {status: {not: "Active"}}]}}),
-  ]);
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const base = {status, category, sort, q, pageSize};
-  const orderBy = sort === "price-high" ? [{basePrice: "desc" as const}, {id: "asc" as const}] : sort === "price-low" ? [{basePrice: "asc" as const}, {id: "asc" as const}] : sort === "orders" ? [{orderItems: {_count: "desc" as const}}, {id: "asc" as const}] : [{name: "asc" as const}, {id: "asc" as const}];
-  const sorted = await prisma.product.findMany({where, orderBy, skip: (page - 1) * pageSize, take: pageSize, include: {_count: {select: {orderItems: true}}}});
-  const range = adminResultRange(page, pageSize, total);
+
+  const products = await getDbProducts();
+
+  const activeProducts = products.filter((product) => product.status === "Active");
+  const availableProducts = products.filter((product) => product.availability === "Available");
+  const unavailableProducts = products.filter(
+    (product) => product.availability !== "Available" || product.status !== "Active",
+  );
+
+  const filtered = products.filter((product) => {
+    const statusMatch =
+      status === "all" ||
+      `${product.status} ${product.availability}`.toLowerCase().includes(status);
+
+    const categoryMatch = category === "all" || product.category === category;
+
+    return statusMatch && categoryMatch;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    if (sort === "price-high") return b.basePrice - a.basePrice;
+    if (sort === "price-low") return a.basePrice - b.basePrice;
+    if (sort === "orders") return b.orderItems.length - a.orderItems.length;
+    return a.name.localeCompare(b.name);
+  });
+
+  const base = {status, category, sort};
 
   return (
     <AdminPageShell
@@ -84,10 +86,10 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
     >
       <div className="grid gap-5">
         <section className="grid gap-3 md:grid-cols-4">
-          <AdminCompactMetric label="Products" value={String(total)} tone="blue" />
-          <AdminCompactMetric label="Active" value={String(activeCount)} tone="green" href={hrefFor({...base, status: "active"})} />
-          <AdminCompactMetric label="Available" value={String(availableCount)} tone="green" href={hrefFor({...base, status: "available"})} />
-          <AdminCompactMetric label="Unavailable / paused" value={String(unavailableCount)} tone="amber" href={hrefFor({...base, status: "unavailable"})} />
+          <AdminCompactMetric label="Products" value={String(products.length)} tone="blue" />
+          <AdminCompactMetric label="Active" value={String(activeProducts.length)} tone="green" href={hrefFor({...base, status: "active"})} />
+          <AdminCompactMetric label="Available" value={String(availableProducts.length)} tone="green" href={hrefFor({...base, status: "available"})} />
+          <AdminCompactMetric label="Unavailable / paused" value={String(unavailableProducts.length)} tone="amber" href={hrefFor({...base, status: "unavailable"})} />
         </section>
 
         <AdminViewBar
@@ -133,8 +135,6 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
             ))}
           </div>
         </AdminViewBar>
-        <AdminListToolbar search={q} filters={[]} pageSize={pageSize} resetHref="/admin/products" hiddenParams={{status, category, sort}} searchLabel="Search products" searchPlaceholder="Product or category" />
-        <AdminResultCount {...range} total={total} label="products" />
 
         <details className="rounded-2xl border border-[#102015]/10 bg-white p-4 text-[#102015] shadow-sm">
           <summary className="cursor-pointer list-none">
@@ -240,7 +240,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
                         {product.availability} · {product.status}
                       </AdminStatusPill>
                     </td>
-                    <td className="px-4 py-3">{product._count.orderItems}</td>
+                    <td className="px-4 py-3">{product.orderItems.length}</td>
                     <td className="px-4 py-3">
                       <ProductEditForm product={product} />
                     </td>
@@ -258,7 +258,6 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
             </table>
           </div>
         </section>
-        <AdminPagination page={page} totalPages={totalPages} previousHref={page > 1 ? adminListHref("/admin/products", base, {page: page - 1}) : undefined} nextHref={page < totalPages ? adminListHref("/admin/products", base, {page: page + 1}) : undefined} />
 
         <section className="grid gap-3 md:hidden">
           {sorted.map((product) => (
@@ -294,9 +293,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
   );
 }
 
-type ProductListItem = Prisma.ProductGetPayload<{include: {_count: {select: {orderItems: true}}}}>;
-
-function ProductEditForm({product}: {product: ProductListItem}) {
+function ProductEditForm({product}: {product: any}) {
   return (
     <details className="rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
       <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Edit</summary>

@@ -28,10 +28,10 @@ export async function resolvePaymentIncidentAction(formData: FormData) {
   const resolutionNote = text(formData, "resolutionNote");
   const allowed = ["Investigating", "Resolved as paid", "Resolved as unpaid", "Ignored as invalid/test"];
   if (!incidentId || !allowed.includes(status) || resolutionNote.length < 3) {
-    redirect("/admin/payment-requests?view=exceptions&error=resolution-required");
+    redirect("/admin/buyer-messages?view=reconciliation&error=resolution-required");
   }
   const previous = await prisma.paymentReconciliationIncident.findUnique({where: {id: incidentId}});
-  if (!previous) redirect("/admin/payment-requests?view=exceptions&error=incident-not-found");
+  if (!previous) redirect("/admin/buyer-messages?view=reconciliation&error=incident-not-found");
   const resolved = await prisma.paymentReconciliationIncident.update({where: {id: incidentId}, data: {
     status,
     resolutionNote,
@@ -40,7 +40,7 @@ export async function resolvePaymentIncidentAction(formData: FormData) {
     resolvedAt: status === "Investigating" ? null : new Date(),
   }});
   await createAuditLog({action: "Updated payment reconciliation incident", entityType: "PaymentReconciliationIncident", entityId: resolved.id, entityLabel: resolved.internalReference || resolved.providerReference || resolved.id, previousValue: previous, newValue: resolved});
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/buyer-messages");
   revalidatePath("/admin/audit-log");
-  redirect("/admin/payment-requests?view=exceptions&resolved=1");
+  redirect("/admin/buyer-messages?view=reconciliation&resolved=1");
 }

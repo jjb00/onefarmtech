@@ -1,70 +1,416 @@
 import Link from "next/link";
 import AdminShell from "@/components/admin/AdminShell";
+import AdminDisclosure from "@/components/admin/AdminDisclosure";
+import StatusBadge from "@/components/admin/StatusBadge";
+import {getDbOrders, getDbOrderStats, formatOrderTotal} from "@/data/dbOrders";
+import {
+  getDbComplaints,
+  getDbCustomers,
+  getDbPayments,
+  getDbProducts,
+  getDbSuppliers,
+} from "@/data/dbAdmin";
+import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
-import {isOperationalUnknownWhatsAppContact} from "@/lib/whatsappClassification.js";
-import {requireStaff} from "@/lib/auth";
+import {getCurrentStaffActor} from "@/lib/currentStaff";
+import {canAccessAdminPath} from "@/lib/adminAccess";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const LIMIT = 8;
-const age = (value: Date) => {
-  const hours = Math.max(0, Math.floor((Date.now() - value.getTime()) / 3_600_000));
-  return hours < 24 ? `${hours}h old` : `${Math.floor(hours / 24)}d old`;
+type AdminDashboardPageProps = {
+  searchParams?: Promise<{
+    access?: string;
+    blocked?: string;
+  }>;
 };
 
-type QueueItem = {id: string; title: string; detail: string; state: string; updatedAt: Date; href: string; action: string};
+export default async function AdminDashboardPage({searchParams}: AdminDashboardPageProps) {
+  const params = await searchParams;
+  const staff = await getCurrentStaffActor();
+  const accessDenied = params?.access === "denied";
+  const today = new Date(); today.setHours(0, 0, 0, 0);
 
-function Queue({title, items, allHref}: {title: string; items: QueueItem[]; allHref: string}) {
+  const [
+    orders,
+    stats,
+    customers,
+    products,
+    suppliers,
+    payments,
+    complaints,
+    receipts,
+    auditLogs,
+    staffUsers,
+    buyerAccountRequests,
+    buyerProfileUpdateRequests,
+    failedEmailCount,
+    openPaymentIncidentCount,
+    recentOperationalEventCount,
+    unprocessedContactCount,
+  ] = await Promise.all([
+    getDbOrders(),
+    getDbOrderStats(),
+    getDbCustomers(),
+    getDbProducts(),
+    getDbSuppliers(),
+    getDbPayments(),
+    getDbComplaints(),
+    prisma.receipt.findMany({orderBy: {issuedAt: "desc"}, take: 5}),
+    prisma.auditLog.findMany({orderBy: {createdAt: "desc"}, take: 5}),
+    prisma.staffUser.findMany({orderBy: {createdAt: "desc"}, take: 10}),
+    prisma.buyerAccountRequest.findMany({orderBy: {createdAt: "desc"}, take: 20}),
+    prisma.buyerProfileUpdateRequest.findMany({
+      orderBy: {createdAt: "desc"},
+      include: {customer: true},
+      take: 20,
+    }),
+    prisma.emailDelivery.count({where: {status: {in: ["Failed", "Bounced", "Complained"]}, updatedAt: {gte: today}}}),
+    prisma.paymentReconciliationIncident.count({where: {status: {in: ["Open", "Investigating"]}}}),
+    prisma.operationalEvent.count({where: {status: "Open"}}),
+    prisma.contactEnquiry.count({where: {status: "New", createdAt: {gte: today}}}),
+  ]);
+
+  const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
+  const receiptTotal = receipts.reduce((sum, receipt) => sum + receipt.amount, 0);
+  const activeComplaints = complaints.filter(
+    (complaint) => !["Closed", "Resolved"].includes(complaint.status),
+  );
+  const recentOrders = orders.slice(0, 5);
+  const buyerLoginReady = customers.filter((customer) => customer.accountLoginReady).length;
+  const totalCreditLimit = customers.reduce((sum, customer) => sum + customer.creditLimit, 0);
+  const outstandingBalance = customers.reduce(
+    (sum, customer) => sum + customer.outstandingBalance,
+    0,
+  );
+  const newBuyerAccountRequests = buyerAccountRequests.filter(
+    (request) => request.status === "New",
+  );
+  const reviewingBuyerAccountRequests = buyerAccountRequests.filter(
+    (request) => request.status === "Reviewing",
+  );
+  const openBuyerProfileUpdateRequests = buyerProfileUpdateRequests.filter(
+    (request) => ["New", "Reviewing"].includes(request.status),
+  );
+
+  const quickActions = [
+    ["Order desk", "/admin/operations"],
+    ["Add customer", "/admin/customers"],
+    ["Buyer accounts", "/admin/buyer-accounts"],
+    ["Buyer access", "/admin/buyer-access"],
+    ["Profile updates", "/admin/buyer-profile-requests"],
+    ["Message centre", "/admin/whatsapp"],
+    ["Payment requests", "/admin/payment-requests"],
+    ["Audit log", "/admin/audit-log"],
+    ["Staff & roles", "/admin/staff"],
+    ["Deployment readiness", "/admin/deployment-readiness"],
+    ["Operating manual", "/admin/operating-manual"],
+  ].filter(([, href]) => canAccessAdminPath(staff.role, href));
+
   return (
-    <section className="rounded-2xl border border-[#102015]/10 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between gap-3"><h2 className="text-xl font-black">{title}</h2><Link href={allHref} className="min-h-11 rounded-full px-4 py-3 text-sm font-black text-[#1f7a3f]">View all</Link></div>
-      <div className="mt-3 divide-y divide-[#102015]/10">
-        {items.length ? items.map((item) => (
-          <article key={item.id} className="grid gap-3 py-4 sm:grid-cols-[1fr_auto] sm:items-center">
-            <div><p className="font-black">{item.title}</p><p className="mt-1 text-sm text-[#405348]">{item.detail}</p><p className="mt-1 text-xs font-bold text-[#587063]">{item.state} · {age(item.updatedAt)}</p></div>
-            <Link href={item.href} className="inline-flex min-h-11 items-center justify-center rounded-full bg-[#1f7a3f] px-4 text-sm font-black text-white">{item.action}</Link>
-          </article>
-        )) : <p className="py-6 text-sm text-[#587063]">Nothing needs attention here.</p>}
-      </div>
-    </section>
+    <AdminShell
+      title="Company dashboard"
+      description="High-level operating snapshot for orders, buyers, payments, fulfilment, issues and account readiness."
+      action={
+        <Link
+          href="/admin/operations"
+          className="rounded-full bg-[#9ee6ad] px-6 py-4 text-center font-semibold text-[#102015]"
+        >
+          Create order
+        </Link>
+      }
+    >
+      <section className="mt-10 grid gap-8">
+        {accessDenied ? (
+          <div className="rounded-[2rem] border border-[#C95F3D]/20 bg-[#C95F3D]/10 p-5 text-[#102015]">
+            <p className="text-lg font-black">Access not available for this role</p>
+            <p className="mt-2 text-sm leading-6 text-[#405348]">
+              Your current session role is <strong>{staff.role}</strong>. That role does not have access to the page you tried to open.
+              Use the visible navigation links for the areas available to this role, or sign out and use the correct staff role.
+            </p>
+          </div>
+        ) : null}
+
+        {(failedEmailCount || openPaymentIncidentCount || recentOperationalEventCount || unprocessedContactCount) ? <section className="rounded-[2rem] border border-[#C95F3D]/20 bg-[#fff8f3] p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#C95F3D]">Operational attention</p><h2 className="mt-2 text-2xl font-black">Production follow-up</h2></div><Link href="/admin/buyer-messages?view=operations" className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white">Open communications</Link></div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Failed today" value={String(failedEmailCount)} href="/admin/buyer-messages?view=email&status=Failed" /><MetricCard label="Unresolved payments" value={String(openPaymentIncidentCount)} href="/admin/buyer-messages?view=reconciliation" /><MetricCard label="Needs attention" value={String(recentOperationalEventCount)} href="/admin/buyer-messages?view=operations&status=Open" /><MetricCard label="New today" value={String(unprocessedContactCount)} href="/admin/buyer-messages?view=enquiries&status=New" /></div>
+        </section> : null}
+
+        {openBuyerProfileUpdateRequests.length ? (
+          <section className="rounded-[2rem] border border-[#3E7A4C]/20 bg-[#eef8ed] p-5 text-[#102015] shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1f7a3f]">
+                  Buyer profile updates
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {openBuyerProfileUpdateRequests.length} profile update request{openBuyerProfileUpdateRequests.length === 1 ? "" : "s"} need review
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[#405348]">
+                  Review buyer-submitted company, contact, finance and partner-readiness updates before changing approved account records.
+                </p>
+              </div>
+
+              <Link
+                href="/admin/buyer-profile-requests"
+                className="rounded-2xl bg-[#1f7a3f] px-5 py-4 text-center text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+              >
+                Review profile updates
+              </Link>
+            </div>
+
+            <div className="mt-5 grid gap-3 md:grid-cols-3">
+              {openBuyerProfileUpdateRequests.slice(0, 3).map((request) => (
+                <Link
+                  key={request.id}
+                  href="/admin/buyer-profile-requests"
+                  className="rounded-2xl bg-white p-4 text-sm shadow-sm transition hover:bg-[#f3f8ef]"
+                >
+                  <p className="font-black text-[#102015]">{request.customer.name}</p>
+                  <p className="mt-1 text-xs leading-5 text-[#587063]">
+                    {request.status} · {request.requestType}
+                  </p>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {newBuyerAccountRequests.length || reviewingBuyerAccountRequests.length ? (
+          <section className="rounded-[2rem] border border-[#F2B84B]/30 bg-[#fff8e4] p-5 text-[#102015] shadow-sm">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#C95F3D]">
+                  Buyer account attention
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {newBuyerAccountRequests.length} new request{newBuyerAccountRequests.length === 1 ? "" : "s"} need review
+                </h2>
+                <p className="mt-2 text-sm leading-7 text-[#405348]">
+                  Review new buyer account requests, approve suitable buyers, then generate a buyer login access code in Buyer access.
+                </p>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[28rem]">
+                <Link
+                  href="/admin/buyer-account-requests"
+                  className="rounded-2xl bg-[#1f7a3f] px-5 py-4 text-center text-sm font-black text-white shadow-sm transition hover:bg-[#155c2f]"
+                >
+                  Review buyer requests
+                </Link>
+                <Link
+                  href="/admin/buyer-access"
+                  className="rounded-2xl border border-[#102015]/10 bg-white px-5 py-4 text-center text-sm font-black text-[#102015] shadow-sm transition hover:bg-[#f3f8ef]"
+                >
+                  Generate access code
+                </Link>
+              </div>
+            </div>
+
+            {buyerAccountRequests.length ? (
+              <div className="mt-5 grid gap-3 md:grid-cols-3">
+                {buyerAccountRequests.slice(0, 3).map((request) => (
+                  <Link
+                    key={request.id}
+                    href="/admin/buyer-account-requests"
+                    className="rounded-2xl bg-white p-4 text-sm shadow-sm transition hover:bg-[#f3f8ef]"
+                  >
+                    <p className="font-black text-[#102015]">
+                      {request.organisationName || request.contactName}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-[#587063]">
+                      {request.status} · {request.buyerType} · {request.phone}
+                    </p>
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+
+        <div className="grid gap-4 md:grid-cols-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="rounded-3xl border border-[#102015]/10 bg-white p-5 text-[#102015]"
+            >
+              <p className="text-sm text-[#587063]">{stat.label}</p>
+              <p className="mt-2 text-3xl font-black">{stat.value}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-4">
+          <MetricCard label="Customers" value={String(customers.length)} href="/admin/customers" />
+          <MetricCard label="Buyer login ready" value={String(buyerLoginReady)} href="/admin/buyer-accounts" />
+          <MetricCard label="Credit exposure" value={formatNaira(totalCreditLimit)} href="/admin/buyer-accounts" />
+          <MetricCard label="Outstanding balance" value={formatNaira(outstandingBalance)} href="/admin/buyer-accounts" />
+          <MetricCard label="Products" value={String(products.length)} href="/admin/products" />
+          <MetricCard label="Supply partners" value={String(suppliers.length)} href="/admin/suppliers" />
+          <MetricCard label="Payments recorded" value={formatNaira(paymentTotal)} href="/admin/payments" />
+          <MetricCard label="Receipts issued" value={formatNaira(receiptTotal)} href="/admin/receipts" />
+        </div>
+
+        <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
+          <AdminDisclosure title="Recent orders" defaultOpen={false}>
+            <section className="rounded-[2rem] bg-white p-6 text-[#102015] shadow-sm">
+              <div className="flex items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold">Recent orders</h2>
+                <p className="mt-1 text-sm text-[#405348]">
+                  Latest database orders requiring admin attention.
+                </p>
+              </div>
+              <Link
+                href="/admin/orders"
+                className="rounded-full border border-[#1f7a3f]/20 px-4 py-2 text-sm font-bold text-[#1f7a3f]"
+              >
+                View all
+              </Link>
+            </div>
+
+            <div className="mt-6 grid gap-4">
+              {recentOrders.map((order) => (
+                <Link
+                  key={order.id}
+                  href={`/admin/orders/${order.code}`}
+                  className="rounded-2xl bg-[#f7f5ec] p-5 transition hover:bg-[#eef1e4]"
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-sm font-bold text-[#1f7a3f]">
+                        {order.code}
+                      </p>
+                      <h3 className="mt-1 text-xl font-black">{order.buyerName}</h3>
+                      <p className="mt-1 text-sm text-[#405348]">
+                        {order.deliveryMethod}
+                      </p>
+                    </div>
+                    <div className="grid gap-2 md:justify-items-end">
+                      <StatusBadge status={order.paymentStatus} />
+                      <p className="font-bold">{formatOrderTotal(order.estimatedTotal)}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+
+              {!recentOrders.length ? (
+                <p className="rounded-2xl bg-[#f7f5ec] p-5 text-sm text-[#405348]">
+                  No orders yet.
+                </p>
+              ) : null}
+            </div>
+            </section>
+          </AdminDisclosure>
+
+          <aside className="grid gap-8">
+            <AdminDisclosure title="Issue watch" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Issue watch</h2>
+              <p className="mt-2 text-sm text-[#587063]">
+                Active complaints and unresolved order issues.
+              </p>
+
+              <div className="mt-6 grid gap-4">
+                {activeComplaints.length === 0 ? (
+                  <p className="rounded-2xl bg-white p-4 text-sm text-[#405348]">
+                    No active complaints.
+                  </p>
+                ) : (
+                  activeComplaints.slice(0, 4).map((complaint) => (
+                    <Link
+                      key={complaint.id}
+                      href={`/admin/orders/${complaint.order.code}`}
+                      className="rounded-2xl bg-white p-4"
+                    >
+                      <p className="font-bold text-[#1f7a3f]">{complaint.code}</p>
+                      <p className="mt-1 text-sm text-[#405348]">{complaint.issue}</p>
+                      <p className="mt-2 text-xs text-[#587063]">
+                        Order {complaint.order.code} · {complaint.priority}
+                      </p>
+                    </Link>
+                  ))
+                )}
+              </div>
+              </section>
+            </AdminDisclosure>
+
+            <AdminDisclosure title="Recent audit activity" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Recent audit activity</h2>
+              <div className="mt-6 grid gap-3">
+                {auditLogs.map((log) => (
+                  <Link
+                    key={log.id}
+                    href="/admin/audit-log"
+                    className="rounded-2xl bg-white p-4"
+                  >
+                    <p className="font-bold text-[#1f7a3f]">{log.action}</p>
+                    <p className="mt-1 text-xs text-[#587063]">
+                      {log.entityType}
+                      {log.entityLabel ? ` · ${log.entityLabel}` : ""} ·{" "}
+                      {log.createdAt.toLocaleString()}
+                    </p>
+                  </Link>
+                ))}
+
+                {!auditLogs.length ? (
+                  <p className="rounded-2xl bg-white p-4 text-sm text-[#405348]">
+                    No audit activity yet.
+                  </p>
+                ) : null}
+              </div>
+              </section>
+            </AdminDisclosure>
+
+            <AdminDisclosure title="Control readiness" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Control readiness</h2>
+              <div className="mt-6 grid gap-3 text-sm">
+                <ControlRow label="Staff records" value={String(staffUsers.length)} href="/admin/staff" />
+                <ControlRow label="Audit events" value={String(auditLogs.length)} href="/admin/audit-log" />
+                <ControlRow label="Receipt records" value={String(receipts.length)} href="/admin/receipts" />
+              </div>
+              </section>
+            </AdminDisclosure>
+
+            <AdminDisclosure title="Quick actions" defaultOpen={false}>
+              <section className="rounded-[2rem] bg-white p-6 text-[#102015]">
+                <h2 className="text-2xl font-bold">Quick actions</h2>
+              <div className="mt-6 grid gap-3">
+                {quickActions.map(([label, href]) => (
+                  <Link
+                    key={href}
+                    href={href}
+                    className="rounded-2xl bg-white px-4 py-3 font-semibold text-[#1f7a3f]"
+                  >
+                    {label}
+                  </Link>
+                ))}
+              </div>
+              </section>
+            </AdminDisclosure>
+          </aside>
+        </div>
+      </section>
+    </AdminShell>
   );
 }
 
-export default async function TodayPage({searchParams}: {searchParams?: Promise<{access?: string}>}) {
-  const params = await searchParams;
-  const staff = await requireStaff();
-  const canOperate = ["Super admin", "Admin", "Operations"].includes(staff.role);
-  const canFinance = ["Super admin", "Admin", "Finance"].includes(staff.role);
-  const canSupport = ["Super admin", "Admin", "Support", "Operations"].includes(staff.role);
-  const canManageBuyers = ["Super admin", "Admin", "Support", "Buyer account manager"].includes(staff.role);
-  const [requests, orders, paymentRequests, deliveries, buyerRequests, whatsappCandidates, complaints] = await Promise.all([
-    canOperate ? prisma.orderRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, buyerName: true, items: true, status: true, updatedAt: true}}) : [],
-    canOperate ? prisma.order.findMany({where: {OR: [
-      {paymentStatus: {in: ["Unpaid", "Pending"]}},
-      {fulfilmentStatus: {in: ["New order", "Pending", "Confirmed", "Preparing", "Ready for pickup", "Paid"]}},
-      {complaints: {some: {status: {notIn: ["Resolved", "Closed"]}}}},
-    ]}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, code: true, buyerName: true, paymentStatus: true, fulfilmentStatus: true, deliveryMethod: true, updatedAt: true}}) : [],
-    canFinance ? prisma.paymentRequest.findMany({where: {OR: [{status: {in: ["Pending", "Failed", "Expired"]}}, {providerError: {not: null}}]}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, reference: true, status: true, provider: true, providerError: true, updatedAt: true, order: {select: {id: true, code: true, buyerName: true}}}}) : [],
-    canOperate ? prisma.delivery.findMany({where: {status: {notIn: ["Delivered", "Collected", "Cancelled"]}}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, status: true, deliveryMethod: true, updatedAt: true, order: {select: {id: true, code: true, buyerName: true}}}}) : [],
-    canManageBuyers ? prisma.buyerAccountRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, contactName: true, organisationName: true, status: true, updatedAt: true}}) : [],
-    canSupport ? prisma.contactEnquiry.findMany({where: {enquiryType: "WhatsApp inbound", status: {in: ["New", "Open"]}}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: 40, select: {id: true, name: true, phone: true, message: true, status: true, source: true, enquiryType: true, adminNote: true, updatedAt: true}}) : [],
-    canSupport ? prisma.complaint.findMany({where: {status: {notIn: ["Resolved", "Closed"]}}, orderBy: [{updatedAt: "asc"}, {id: "asc"}], take: LIMIT, select: {id: true, code: true, issue: true, status: true, updatedAt: true, order: {select: {id: true, code: true, buyerName: true}}}}) : [],
-  ]);
-  const whatsapp = whatsappCandidates.filter(isOperationalUnknownWhatsAppContact).slice(0, LIMIT);
-  const queues = [
-    {title: "New order requests", allHref: "/admin/orders?view=new-requests", items: requests.map((x) => ({id: x.id, title: x.buyerName, detail: x.items, state: x.status, updatedAt: x.updatedAt, href: `/admin/orders?view=new-requests&focus=${x.id}`, action: "Review request"}))},
-    {title: "Orders needing action", allHref: "/admin/orders?view=needs-action", items: orders.map((x) => ({id: x.id, title: `${x.code} · ${x.buyerName}`, detail: `${x.paymentStatus} · ${x.deliveryMethod}`, state: x.fulfilmentStatus, updatedAt: x.updatedAt, href: `/admin/orders/${x.id}`, action: "Open order"}))},
-    {title: "Payments to follow up", allHref: "/admin/payment-requests?view=needs-action", items: paymentRequests.map((x) => ({id: x.id, title: `${x.order.code} · ${x.order.buyerName}`, detail: x.providerError || `${x.provider} payment request`, state: x.status, updatedAt: x.updatedAt, href: `/admin/payment-requests?focus=${x.id}`, action: "Review payment"}))},
-    {title: "Delivery and pickup", allHref: "/admin/deliveries", items: deliveries.map((x) => ({id: x.id, title: `${x.order.code} · ${x.order.buyerName}`, detail: x.deliveryMethod, state: x.status, updatedAt: x.updatedAt, href: `/admin/orders/${x.order.id}`, action: "Update fulfilment"}))},
-    {title: "Buyer account requests", allHref: "/admin/customers?view=applications", items: buyerRequests.map((x) => ({id: x.id, title: x.organisationName || x.contactName, detail: "Buyer account approval requested", state: x.status, updatedAt: x.updatedAt, href: `/admin/customers?view=applications&focus=${x.id}`, action: "Review buyer"}))},
-    {title: "Unknown WhatsApp order contacts", allHref: "/admin/buyer-messages?view=enquiries&type=WhatsApp+inbound", items: whatsapp.map((x) => ({id: x.id, title: x.name || x.phone || "Unknown contact", detail: x.message, state: x.status, updatedAt: x.updatedAt, href: `/admin/buyer-messages?view=enquiries&type=WhatsApp+inbound&focus=${x.id}`, action: "Review message"}))},
-    {title: "Open customer complaints", allHref: "/admin/complaints", items: complaints.map((x) => ({id: x.id, title: `${x.code} · ${x.order.buyerName}`, detail: x.issue, state: x.status, updatedAt: x.updatedAt, href: `/admin/orders/${x.order.id}`, action: "Resolve issue"}))},
-  ];
+function MetricCard({label, value, href}: {label: string; value: string; href: string}) {
   return (
-    <AdminShell title="Today" description="Operational work that needs a clear next action." compactHeader action={<Link href="/admin/create-order" className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white">Create order</Link>}>
-      {params?.access === "denied" ? <p role="alert" className="mb-5 rounded-xl bg-[#fff4ef] p-4 font-bold text-[#9b2f12]">That page is not available for your role.</p> : null}
-      <div className="grid gap-5 xl:grid-cols-2">{queues.filter((queue) => queue.items.length > 0).map((queue) => <Queue key={queue.title} {...queue} />)}</div>
-    </AdminShell>
+    <Link href={href} className="rounded-3xl bg-white p-5 text-[#102015] transition hover:translate-y-[-1px]">
+      <p className="text-sm text-[#405348]">{label}</p>
+      <p className="mt-2 text-2xl font-black">{value}</p>
+    </Link>
+  );
+}
+
+function ControlRow({label, value, href}: {label: string; value: string; href: string}) {
+  return (
+    <Link href={href} className="flex items-center justify-between rounded-2xl bg-white px-4 py-3">
+      <span className="font-semibold text-[#405348]">{label}</span>
+      <span className="font-black text-[#1f7a3f]">{value}</span>
+    </Link>
   );
 }

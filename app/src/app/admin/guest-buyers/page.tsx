@@ -8,8 +8,6 @@ import {
 } from "@/components/admin/AdminViewControls";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
-import {AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
-import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -86,16 +84,13 @@ type GuestBuyersPageProps = {
     status?: string;
     date?: string;
     sort?: string;
-    q?: string;
-    page?: string;
-    pageSize?: string;
   }>;
 };
 
-function hrefFor(params: Record<string, string | number | undefined>) {
+function hrefFor(params: Record<string, string | undefined>) {
   const search = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== "") search.set(key, String(value));
+    if (value) search.set(key, value);
   }
   const query = search.toString();
   return query ? `/admin/guest-buyers?${query}` : "/admin/guest-buyers";
@@ -123,20 +118,15 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
   const status = params?.status || "all";
   const date = params?.date || "all";
   const sort = params?.sort || "value";
-  const q = params?.q?.trim() || "";
-  const page = parseAdminPage(params?.page);
-  const pageSize = parseAdminPageSize(params?.pageSize);
-  const where = {customerId: null, ...(q ? {OR: [{buyerName: {contains: q, mode: "insensitive" as const}}, {phone: {contains: q}}, {sourcePhone: {contains: q}}]} : {})};
-  const total = await prisma.order.count({where});
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const orders = await prisma.order.findMany({
-    where,
+    where: {
+      customerId: null,
+    },
     orderBy: {
       createdAt: "desc",
     },
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    take: 500,
     select: {
       id: true,
       code: true,
@@ -208,8 +198,7 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
   );
 
   const totalGuestSpend = guestGroups.reduce((sum, group) => sum + group.totalSpend, 0);
-  const base = {status, date, sort, q, pageSize};
-  const range = adminResultRange(page, pageSize, total);
+  const base = {status, date, sort};
 
   return (
     <AdminPage
@@ -217,7 +206,7 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
       subtitle="Unlinked WhatsApp, event and one-off buyers grouped by phone number."
       embedded={embedded}
     >
-      <div className="mb-4 rounded-xl bg-[#fff6d6] px-4 py-3 text-sm"><p>Guest identity is grouped by the stored phone value within this page of unlinked orders.</p></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#fff6d6] px-4 py-3 text-sm"><p>This is a bounded recent view of up to 500 unlinked orders. Guest identity is grouped by the stored phone value.</p><Link href="/admin/customers?view=guests" className="font-black text-[#1f7a3f]">Open Buyers workspace</Link></div>
       <section className="grid gap-3 md:grid-cols-3">
         <AdminCompactMetric label="Guest phones" value={String(guestGroups.length)} tone="blue" />
         <AdminCompactMetric label="Guest value" value={formatNaira(totalGuestSpend)} tone="green" />
@@ -247,8 +236,6 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
           {label: "Name", href: hrefFor({...base, sort: "name"}), active: sort === "name"},
         ]}
       />
-      <AdminListToolbar search={q} filters={[]} pageSize={pageSize} resetHref="/admin/customers?view=guests" hiddenParams={{view: "guests", status, date, sort}} searchLabel="Search guest buyers" searchPlaceholder="Buyer name or phone" />
-      <div className="my-4"><AdminResultCount {...range} total={total} label="unlinked guest orders" /></div>
 
       <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -272,10 +259,10 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
               New WhatsApp order
             </Link>
             <Link
-              href="/admin/customers?view=applications"
+              href="/admin/buyer-account-requests"
               className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
             >
-              Account requests
+              Buyer requests
             </Link>
           </div>
         </div>
@@ -370,7 +357,6 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
           )}
         </div>
       </section>
-      <div className="mt-5"><AdminPagination page={page} totalPages={totalPages} previousHref={page > 1 ? adminListHref("/admin/customers", {...base, view: "guests"}, {page: page - 1}) : undefined} nextHref={page < totalPages ? adminListHref("/admin/customers", {...base, view: "guests"}, {page: page + 1}) : undefined}/></div>
     </AdminPage>
   );
 }

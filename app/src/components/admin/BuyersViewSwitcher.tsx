@@ -1,12 +1,11 @@
 import Link from "next/link";
 
 const views = [
-  ["active", "Active buyers"],
-  ["applications", "Account requests"],
+  ["all", "Customers"],
+  ["guests", "Guest activity"],
+  ["applications", "Account applications"],
   ["access", "Login access"],
-  ["guests", "Guest buyers"],
   ["updates", "Profile changes"],
-  ["all", "All buyers"],
 ] as const;
 
 export default function BuyersViewSwitcher({
@@ -18,14 +17,14 @@ export default function BuyersViewSwitcher({
   role: string;
   params: Record<string, string>;
 }) {
-  const permitted = role === "Finance" ? ["active", "access", "all"] : views.map(([value]) => value);
+  void role;
 
   return (
     <nav
       aria-label="Buyer workspace"
       className="flex gap-2 overflow-x-auto pb-1"
     >
-      {views.filter(([value]) => permitted.includes(value)).map(([value, label]) => {
+      {views.map(([value, label]) => {
         const query = new URLSearchParams({
           ...Object.fromEntries(
             Object.entries(params).filter(([, item]) => Boolean(item)),

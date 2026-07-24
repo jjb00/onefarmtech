@@ -1,19 +1,5 @@
-import {requireStaff} from "@/lib/auth";
-
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-export const metadata = {
-  robots: {
-    index: false,
-    follow: false,
-    nocache: true,
-    googleBot: {
-      index: false,
-      follow: false,
-      noimageindex: true,
-    },
-  },
-};
 
 export default async function AdminLayout({
   children,
@@ -23,3 +9,4 @@ export default async function AdminLayout({
   await requireStaff();
   return children;
 }
+import {requireStaff} from "@/lib/auth";

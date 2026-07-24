@@ -68,8 +68,8 @@ test("Orders query includes all Order rows and order-number href uses implemente
   const data = fs.readFileSync(new URL("../src/data/dbOrders.ts", import.meta.url), "utf8");
   const list = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
-  assert.match(list, /prisma\.order\.findMany/);
-  assert.match(list, /viewWhere\(view\)/);
+  assert.match(data, /prisma\.order\.findMany\(\{\s*orderBy:/);
+  assert.doesNotMatch(data, /prisma\.order\.findMany\(\{\s*where:/);
   assert.match(list, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
   assert.match(detail, /where: \{OR: \[\{id\}, \{code: id\}\]\}/);
 });

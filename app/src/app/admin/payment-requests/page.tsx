@@ -20,10 +20,6 @@ import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTempla
 import {isReusablePaymentRequest} from "@/lib/payments/paymentInitialization.js";
 import {verifyPaystackPaymentAction} from "@/actions/verifyPaystackPayment";
 import {verifyFlutterwavePaymentAction} from "@/actions/verifyFlutterwavePayment";
-import {AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
-import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
-import {roleHasCapability} from "@/lib/permissions";
-import {resolvePaymentIncidentAction} from "@/actions/communications";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -31,10 +27,6 @@ export const runtime = "nodejs";
 type PageProps = {
   searchParams?: Promise<{
     status?: string;
-    view?: string;
-    q?: string;
-    page?: string;
-    pageSize?: string;
     provider?: string;
     date?: string;
     sort?: string;
@@ -101,45 +93,17 @@ function inDateRange(value: Date, range: string) {
 }
 
 export default async function AdminPaymentRequestsPage({searchParams}: PageProps) {
-  const staff = await requireStaff();
+  await requireStaff();
 
   const params = await searchParams;
-  const view = params?.view || "needs-action";
-  const status = params?.status || "";
+  const status = params?.status || "all";
   const provider = params?.provider || "all";
   const date = params?.date || "all";
   const sort = params?.sort || "newest";
-  const q = params?.q?.trim() || "";
-  const page = parseAdminPage(params?.page);
-  const pageSize = parseAdminPageSize(params?.pageSize);
-  const canManagePayments = roleHasCapability(staff.role, "manage_payments");
-  const exceptionCount = canManagePayments ? await prisma.paymentReconciliationIncident.count({where: {status: {in: ["Open", "Investigating"]}}}) : 0;
-  if (view === "exceptions") return <PaymentExceptionsPage q={q} page={page} pageSize={pageSize} />;
-  const viewStatus =
-    view === "pending" ? ["Pending"] :
-    view === "failed" ? ["Failed", "Cancelled"] :
-    view === "paid" ? ["Paid", "Successful"] :
-    view === "expired" ? ["Expired", "Superseded"] :
-    view === "all" ? undefined : ["Pending", "Failed", "Expired"];
-  const where = {
-    ...(viewStatus ? {status: {in: viewStatus}} : {}),
-    ...(status ? {status: {equals: status, mode: "insensitive" as const}} : {}),
-    ...(provider !== "all" ? {provider: {equals: provider, mode: "insensitive" as const}} : {}),
-    ...(q ? {OR: [
-      {reference: {contains: q, mode: "insensitive" as const}},
-      {gatewayReference: {contains: q, mode: "insensitive" as const}},
-      {order: {code: {contains: q, mode: "insensitive" as const}}},
-      {order: {buyerName: {contains: q, mode: "insensitive" as const}}},
-    ]} : {}),
-  };
-  const total = await prisma.paymentRequest.count({where});
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   const paymentRequests = await prisma.paymentRequest.findMany({
-    where,
-    orderBy: sort === "oldest" ? [{updatedAt: "asc"}, {id: "asc"}] : [{updatedAt: "desc"}, {id: "desc"}],
-    skip: (page - 1) * pageSize,
-    take: pageSize,
+    orderBy: {createdAt: "desc"},
+    take: 200,
     include: {
       order: {
         select: {
@@ -199,7 +163,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
   const totalPendingValue = pending.reduce((sum, request) => sum + request.amount, 0);
 
   const filtered = paymentRequests.filter((request) => {
-    const statusMatch = !status || status === "all" || request.status.toLowerCase() === status;
+    const statusMatch = status === "all" || request.status.toLowerCase() === status;
     const providerMatch = provider === "all" || request.provider.toLowerCase() === provider;
     const dateMatch = inDateRange(request.createdAt, date);
     return statusMatch && providerMatch && dateMatch;
@@ -212,8 +176,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
     return b.createdAt.getTime() - a.createdAt.getTime();
   });
 
-  const base = {view, status, provider, date, sort, q};
-  const range = adminResultRange(page, pageSize, total);
+  const base = {status, provider, date, sort};
 
   return (
     <AdminPage
@@ -223,26 +186,6 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
       {params?.error ? <div role="alert" className="mb-4 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{params.detail || params.error}</div> : null}
       {params?.whatsapp === "accepted" ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment link created separately. WhatsApp accepted the notification for sending; delivery status will update from Meta.</div> : null}
       {params?.verified ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">The provider verified payment {params.verified}. The payment request, order and receipt records are now reconciled.</div> : null}
-      <nav aria-label="Payment views" className="mb-4 flex gap-2 overflow-x-auto pb-2">
-        {[
-          ["needs-action", "Needs action"], ["pending", "Pending"], ["failed", "Failed"],
-          ["paid", "Paid"], ["expired", "Expired"], ["receipts", "Receipts"],
-          ...(canManagePayments && exceptionCount ? [["exceptions", "Payment exceptions"]] : []),
-        ].map(([value, label]) => (
-          <Link
-            key={value}
-            href={value === "receipts" ? "/admin/receipts" : hrefFor({...base, view: value, status: undefined})}
-            aria-current={view === value ? "page" : undefined}
-            className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-black ${view === value ? "bg-[#102015] text-white" : "border bg-white"}`}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="mb-4">
-        <AdminListToolbar search={q} pageSize={pageSize} resetHref="/admin/payment-requests?view=needs-action" hiddenParams={{view, provider}} searchLabel="Search payments" searchPlaceholder="Reference, order or buyer" />
-      </div>
-      <AdminResultCount {...range} total={total} label="payment requests" />
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
         <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
@@ -495,35 +438,6 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
           </table>
         </div>
       </section>
-      <div className="mt-5">
-        <AdminPagination page={page} totalPages={totalPages} previousHref={page > 1 ? adminListHref("/admin/payment-requests", base, {page: page - 1}) : undefined} nextHref={page < totalPages ? adminListHref("/admin/payment-requests", base, {page: page + 1}) : undefined} />
-      </div>
     </AdminPage>
   );
-}
-
-async function PaymentExceptionsPage({q, page, pageSize}: {q: string; page: number; pageSize: number}) {
-  await requireStaff();
-  const where = {
-    status: {in: ["Open", "Investigating"]},
-    ...(q ? {OR: [
-      {provider: {contains: q, mode: "insensitive"}},
-      {internalReference: {contains: q, mode: "insensitive"}},
-      {providerReference: {contains: q, mode: "insensitive"}},
-      {reason: {contains: q, mode: "insensitive"}},
-    ]} : {}),
-  };
-  const total = await prisma.paymentReconciliationIncident.count({where});
-  const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const base = {view: "exceptions", q, pageSize};
-  const incidents = await prisma.paymentReconciliationIncident.findMany({where, orderBy: [{createdAt: "desc"}, {id: "desc"}], skip: (page - 1) * pageSize, take: pageSize});
-  const range = adminResultRange(page, pageSize, total);
-  return <AdminPage title="Payment exceptions" subtitle="Provider-paid mismatches, missing webhooks, duplicate references, reversals and manual verification exceptions.">
-    <nav aria-label="Payment views" className="mb-4 flex gap-2 overflow-x-auto pb-2"><Link href="/admin/payment-requests?view=needs-action" className="rounded-full border bg-white px-4 py-2.5 text-sm font-black">Needs action</Link><span aria-current="page" className="rounded-full bg-[#102015] px-4 py-2.5 text-sm font-black text-white">Payment exceptions</span></nav>
-    <AdminListToolbar search={q} filters={[]} pageSize={pageSize} resetHref="/admin/payment-requests?view=exceptions" hiddenParams={{view: "exceptions"}} searchLabel="Search exceptions" searchPlaceholder="Provider, reference or reason" />
-    <div className="my-4"><AdminResultCount {...range} total={total} label="payment exceptions" /></div>
-    <div className="grid gap-3">{incidents.map((incident) => <article key={incident.id} className="rounded-2xl border bg-white p-4"><div className="flex flex-wrap justify-between gap-3"><div><p className="font-black">{incident.provider} · {incident.internalReference || incident.providerReference || "Unknown reference"}</p><p className="mt-1 text-sm text-[#405348]">{incident.reason}</p></div><AdminStatusPill tone={adminToneFromStatus(incident.status)}>{incident.status}</AdminStatusPill></div><form action={resolvePaymentIncidentAction} className="mt-4 grid gap-2 md:grid-cols-[12rem_1fr_auto]"><input type="hidden" name="incidentId" value={incident.id}/><select name="status" required className="rounded-lg border px-3 py-2"><option>Investigating</option><option>Resolved as paid</option><option>Resolved as unpaid</option><option>Ignored as invalid/test</option></select><input name="resolutionNote" required minLength={3} placeholder="Required resolution note" className="rounded-lg border px-3 py-2"/><button className="rounded-lg bg-[#102015] px-3 py-2 font-black text-white">Update</button></form></article>)}</div>
-    {!incidents.length ? <p className="rounded-2xl bg-white p-6 text-sm text-[#587063]">No open payment exceptions.</p> : null}
-    <div className="mt-5"><AdminPagination page={page} totalPages={totalPages} previousHref={page > 1 ? adminListHref("/admin/payment-requests", base, {page: page - 1}) : undefined} nextHref={page < totalPages ? adminListHref("/admin/payment-requests", base, {page: page + 1}) : undefined}/></div>
-  </AdminPage>;
 }
