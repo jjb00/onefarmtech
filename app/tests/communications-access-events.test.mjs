@@ -21,7 +21,8 @@ test("direct URL and sidebar access use query-aware reconciliation rules", async
   assert.match(access, /buyer-messages\?view=reconciliation/);
   assert.match(access, /URLSearchParams/);
   assert.match(proxy, /canAccessAdminPath\(claims\.role, `\$\{pathname\}\$\{search\}`\)/);
-  assert.match(navigation, /buyer-messages\?view=reconciliation/);
+  assert.doesNotMatch(navigation, /buyer-messages\?view=reconciliation/);
+  assert.match(navigation, /title: "Money"/);
 });
 
 test("reconciliation action has independent role protection", async () => {

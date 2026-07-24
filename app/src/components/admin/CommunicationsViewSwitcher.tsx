@@ -4,7 +4,7 @@ import {communicationViewHref, communicationViewsForRole} from "@/lib/communicat
 const views = [
   ["all", "All activity"],
   ["whatsapp", "WhatsApp"],
-  ["enquiries", "Enquiries"],
+  ["enquiries", "Unknown WhatsApp"],
   ["email", "Email delivery"],
   ["reconciliation", "Reconciliation"],
   ["operations", "Operational events"],

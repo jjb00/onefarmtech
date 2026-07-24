@@ -38,21 +38,18 @@ export default async function AdminBuyerMessagesPage({searchParams}: {searchPara
   if ((requestedView && requestedView !== normalizedView) || normalizedView !== view) redirect(`${PATH}?view=${view}`);
   const params = {q: value(raw?.q), status: value(raw?.status), direction: value(raw?.direction), type: value(raw?.type), source: value(raw?.source), pageSize: parseAdminPageSize(value(raw?.pageSize))};
 
-  return <AdminPageShell title="Inbox" description="Buyer communications, enquiries, delivery evidence and reconciliation follow-up." compactHeader>
+  return <AdminPageShell title="Inbox" description="Operational buyer conversations, unmatched WhatsApp contacts and follow-up evidence." compactHeader>
     <div className="grid gap-5">
       <CommunicationsViewSwitcher activeView={view} params={params} role={staff.role} />
       {staff.role !== "Finance" ? <div className="flex flex-wrap gap-2 text-sm font-bold">
         <Link href="/admin/order-requests" className="rounded-lg border bg-white px-3 py-2">Order requests</Link>
         <Link href="/admin/buyer-account-requests" className="rounded-lg border bg-white px-3 py-2">Buyer requests</Link>
-        <Link href="/admin/career-applications" className="rounded-lg border bg-white px-3 py-2">Career applications</Link>
-        <Link href="/admin/buyer-messages?view=enquiries&type=Supplier+%2F+partner+enquiry" className="rounded-lg border bg-white px-3 py-2">Supplier enquiries</Link>
-        <Link href="/admin/whatsapp-drafts" className="rounded-lg border bg-white px-3 py-2">WhatsApp drafts</Link>
         <Link href="/admin/whatsapp-tools" className="rounded-lg border bg-white px-3 py-2">WhatsApp tools</Link>
         <Link href="/admin/customers" className="rounded-lg border bg-white px-3 py-2">All buyers</Link>
       </div> : null}
       {view === "all" ? <AllActivity /> : null}
       {view === "whatsapp" ? <WhatsAppView raw={raw || {}} /> : null}
-      {view === "enquiries" ? <ContactEnquiriesList raw={raw || {}} pathname={PATH} hiddenParams={{view: "enquiries"}} /> : null}
+      {view === "enquiries" ? <ContactEnquiriesList raw={{...(raw || {}), type: "WhatsApp inbound"}} pathname={PATH} hiddenParams={{view: "enquiries", type: "WhatsApp inbound"}} /> : null}
       {view === "email" ? <EmailView raw={raw || {}} /> : null}
       {view === "reconciliation" ? <ReconciliationView raw={raw || {}} canResolve={["Super admin", "Admin", "Finance"].includes(staff.role)} /> : null}
       {view === "operations" ? <OperationalEventsView raw={raw || {}} /> : null}
@@ -61,10 +58,9 @@ export default async function AdminBuyerMessagesPage({searchParams}: {searchPara
 }
 
 async function AllActivity() {
-  const [messages, enquiries, careers, buyerRequests, orderRequests, emails, incidents, operationalEvents, unknownCount] = await Promise.all([
+  const [messages, unmatchedWhatsApp, buyerRequests, orderRequests, emails, incidents, operationalEvents, unknownCount] = await Promise.all([
     prisma.buyerMessage.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8, include: {customer: {select: {id: true, name: true}}}}),
-    prisma.contactEnquiry.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
-    prisma.careerApplication.findMany({where: {status: {not: "Archived"}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
+    prisma.contactEnquiry.findMany({where: {enquiryType: "WhatsApp inbound"}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.buyerAccountRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.orderRequest.findMany({where: {status: {in: ["New", "Reviewing"]}}, orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
     prisma.emailDelivery.findMany({orderBy: [{createdAt: "desc"}, {id: "desc"}], take: 8}),
@@ -74,8 +70,7 @@ async function AllActivity() {
   ]);
   const sections = [
     {title: "Buyer messages", href: `${PATH}?view=whatsapp`, items: messages.map((x) => ({id: x.id, title: `${x.customer.name} · ${x.channel} · ${x.direction}`, detail: preview(x.title), date: x.createdAt}))},
-    {title: `Enquiries${unknownCount ? ` · ${unknownCount} unmatched WhatsApp` : ""}`, href: `${PATH}?view=enquiries`, items: enquiries.map((x) => ({id: x.id, title: `${x.name} · ${x.enquiryType}`, detail: preview(x.message), date: x.createdAt}))},
-    {title: "Career applications", href: "/admin/career-applications", items: careers.map((x) => ({id: x.id, title: `${x.name} · ${x.role}`, detail: x.status, date: x.createdAt}))},
+    {title: `Unknown WhatsApp${unknownCount ? ` · ${unknownCount}` : ""}`, href: `${PATH}?view=enquiries&type=WhatsApp+inbound`, items: unmatchedWhatsApp.map((x) => ({id: x.id, title: x.name || x.phone || "Unknown WhatsApp contact", detail: preview(x.message), date: x.createdAt}))},
     {title: "Buyer requests", href: "/admin/buyer-account-requests", items: buyerRequests.map((x) => ({id: x.id, title: x.organisationName || x.contactName, detail: x.status, date: x.createdAt}))},
     {title: "Order requests", href: "/admin/order-requests", items: orderRequests.map((x) => ({id: x.id, title: x.buyerName, detail: preview(x.items), date: x.createdAt}))},
     {title: "Email delivery", href: `${PATH}?view=email`, items: emails.map((x) => ({id: x.id, title: `${x.recipient} · ${x.status}`, detail: preview(x.subject), date: x.createdAt}))},

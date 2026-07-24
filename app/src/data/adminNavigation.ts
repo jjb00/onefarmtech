@@ -7,48 +7,99 @@ export type AdminNavigationLink = {
 };
 
 export const adminNavigationGroups: Array<{title: string; links: AdminNavigationLink[]}> = [
-  {title: "Dashboard", links: [
-    {title: "Company dashboard", href: "/admin", description: "Company performance and operational attention."},
-  ]},
-  {title: "Operations", links: [
-    {title: "Order desk", href: "/admin/operations", description: "Daily intake, payment, delivery and support work.", activePaths: ["/admin/launch-inbox", "/admin/order-requests", "/admin/drafts", "/admin/whatsapp-drafts"], priority: true},
-    {title: "Orders", href: "/admin/orders", description: "All orders and transaction control.", activePaths: ["/admin/create-order", "/admin/whatsapp-orders/new"], priority: true},
-    {title: "Deliveries", href: "/admin/deliveries", description: "Assignment, handoff and delivery status."},
-    {title: "Issues", href: "/admin/complaints", description: "Current complaint queue and issue follow-up."},
-  ]},
-  {title: "Communications", links: [
-    {title: "Inbox", href: "/admin/buyer-messages", description: "All new intake, messages, email delivery and unresolved incidents.", activePaths: ["/admin/whatsapp", "/admin/whatsapp-inbox", "/admin/contact-enquiries", "/admin/career-applications", "/admin/order-requests", "/admin/buyer-account-requests"], priority: true},
-    {title: "WhatsApp tools", href: "/admin/whatsapp-tools", description: "Send storefront menus and product messages."},
-  ]},
-  {title: "Buyers", links: [
-    {title: "All buyers", href: "/admin/customers", description: "Buyer master records and account status.", activePaths: ["/admin/buyer-accounts"], priority: true},
-    {title: "Guest buyers", href: "/admin/customers?view=guests", description: "Unlinked buyers and account candidates.", activePaths: ["/admin/guest-buyers"]},
-    {title: "Applications", href: "/admin/customers?view=applications", description: "New buyer applications awaiting review.", activePaths: ["/admin/buyer-account-requests"]},
-    {title: "Access", href: "/admin/customers?view=access", description: "Buyer contacts, invitations and portal access.", activePaths: ["/admin/buyer-access"]},
-    {title: "Update requests", href: "/admin/customers?view=updates", description: "Buyer-submitted profile and account changes.", activePaths: ["/admin/buyer-profile-requests"]},
-  ]},
-  {title: "Finance", links: [
-    {title: "Payment requests", href: "/admin/payment-requests", description: "Payment links and buyer follow-up.", priority: true},
-    {title: "Payments", href: "/admin/payments", description: "Confirmed payments and transaction records."},
-    {title: "Receipts", href: "/admin/receipts", description: "Issued receipt records."},
-    {title: "Reconciliation", href: "/admin/buyer-messages?view=reconciliation", description: "Payment incidents requiring finance review."},
-  ]},
-  {title: "Catalogue & supply", links: [
-    {title: "Products", href: "/admin/products", description: "Catalogue, prices and availability.", priority: true},
-    {title: "Group buys", href: "/admin/group-buys", description: "Bulk-buy windows and reservations."},
-    {title: "Suppliers", href: "/admin/suppliers", description: "Supply partners and sourcing relationships."},
-    {title: "Pickup locations", href: "/admin/pickup-locations", description: "Collection points and pickup readiness."},
-    {title: "Delivery partners", href: "/admin/delivery-partners", description: "Logistics partners and delivery access."},
-  ]},
-  {title: "Reports", links: [
-    {title: "Reports", href: "/admin/reports", description: "Company metrics and performance reporting."},
-  ]},
-  {title: "System & settings", links: [
-    {title: "Staff & roles", href: "/admin/staff", description: "Staff records and role planning."},
-    {title: "Audit log", href: "/admin/audit-log", description: "Administrative action history."},
-    {title: "System status", href: "/admin/launch-readiness", description: "Production, deployment and integration readiness.", activePaths: ["/admin/deployment-readiness", "/admin/integration-readiness", "/admin/launch-smoke-test", "/admin/security", "/admin/permissions", "/admin/workflows", "/admin/whatsapp-workflow"]},
-    {title: "Operating manual", href: "/admin/operating-manual", description: "Staff operating procedures and workflow guidance."},
-  ]},
+  {
+    title: "Daily work",
+    links: [
+      {
+        title: "Today",
+        href: "/admin",
+        description: "Work requiring attention now.",
+        priority: true,
+      },
+      {
+        title: "Orders",
+        href: "/admin/orders",
+        description: "Orders, fulfilment, delivery and complaints.",
+        activePaths: [
+          "/admin/operations",
+          "/admin/order-requests",
+          "/admin/create-order",
+          "/admin/whatsapp-orders",
+          "/admin/deliveries",
+          "/admin/complaints",
+        ],
+        priority: true,
+      },
+      {
+        title: "WhatsApp",
+        href: "/admin/buyer-messages?view=whatsapp",
+        description: "Operational WhatsApp conversations and unknown contacts.",
+        activePaths: [
+          "/admin/buyer-messages",
+          "/admin/whatsapp",
+          "/admin/whatsapp-inbox",
+          "/admin/whatsapp-tools",
+          "/admin/whatsapp-drafts",
+          "/admin/drafts",
+        ],
+        priority: true,
+      },
+      {
+        title: "Buyers",
+        href: "/admin/customers",
+        description: "Customers, guests, applications and login access.",
+        activePaths: [
+          "/admin/buyer-accounts",
+          "/admin/guest-buyers",
+          "/admin/buyer-account-requests",
+          "/admin/buyer-access",
+          "/admin/buyer-profile-requests",
+        ],
+        priority: true,
+      },
+      {
+        title: "Money",
+        href: "/admin/payment-requests",
+        description: "Payment follow-up, confirmed payments and receipts.",
+        activePaths: [
+          "/admin/payments",
+          "/admin/receipts",
+        ],
+        priority: true,
+      },
+      {
+        title: "Products",
+        href: "/admin/products",
+        description: "Products, prices, supply and collection points.",
+        activePaths: [
+          "/admin/group-buys",
+          "/admin/suppliers",
+          "/admin/pickup-locations",
+          "/admin/delivery-partners",
+        ],
+        priority: true,
+      },
+      {
+        title: "Settings",
+        href: "/admin/staff",
+        description: "Staff, roles and restricted system tools.",
+        activePaths: [
+          "/admin/audit-log",
+          "/admin/security",
+          "/admin/permissions",
+          "/admin/operational-events",
+          "/admin/deployment-readiness",
+          "/admin/integration-readiness",
+          "/admin/launch-readiness",
+          "/admin/launch-smoke-test",
+          "/admin/operating-manual",
+          "/admin/workflows",
+          "/admin/whatsapp-workflow",
+          "/admin/reports",
+        ],
+      },
+    ],
+  },
 ];
 
 export function isAdminNavigationLinkActive(link: AdminNavigationLink, pathname: string, search = "") {

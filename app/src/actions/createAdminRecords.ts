@@ -2,6 +2,8 @@
 // @ts-nocheck -- temporary build stabilisation for broad admin action file
 "use server";
 
+import crypto from "node:crypto";
+
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
 import {requireBuyer, requireBuyerCapability} from "@/lib/currentBuyer";
@@ -9,7 +11,7 @@ import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
 import {requireAnyCapability, requireCapability, requireStaff} from "@/lib/auth";
-import {getEmailBaseUrl, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
+import {getEmailBaseUrl, getOperationalEmailRecipients, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
 import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
@@ -778,33 +780,43 @@ export async function updateBuyerAccountInviteStatusAction(formData: FormData) {
 export async function createContactEnquiryAction(formData: FormData) {
   const name = readText(formData, "name");
   const organisation = readText(formData, "organisation");
-  const email = readText(formData, "email");
+  const email = readText(formData, "email").toLowerCase();
   const phone = readText(formData, "phone");
   const enquiryType = readText(formData, "enquiryType", "General enquiry");
   const message = readText(formData, "message");
 
-  if (!name || !message) {
-    throw new Error("Name and message are required.");
-  }
+  await protectPublicIntake({
+    formType: "contact",
+    action: "contact_enquiry",
+    token: readText(formData, "cf-turnstile-response"),
+    honeypot: readText(formData, "website"),
+    values: [name, organisation, email, phone, enquiryType, message],
+  });
 
-  if (!email && !phone) {
-    throw new Error("Please provide an email or phone number.");
-  }
-
-  try {
-    await protectPublicIntake({formType: "contact", action: "contact", token: readText(formData, "cf-turnstile-response"), honeypot: readText(formData, "website"), values: [name, organisation, email, phone, enquiryType, message]});
-  } catch (error) {
-    const code = error instanceof PublicIntakeError ? error.code : "bot-check";
-    redirect(`/contact?intakeError=${encodeURIComponent(code)}`);
+  if (!name || (!email && !phone) || !message) {
+    throw new Error("Please provide your name, message and an email or phone number.");
   }
 
   if (enquiryType === "Buyer account request") {
+    if (!phone) {
+      throw new Error("A phone number is required for a buyer account request.");
+    }
+
     const request = await prisma.buyerAccountRequest.create({
       data: {
         contactName: name,
         organisationName: organisation || null,
-        phone,
+        buyerType: organisation ? "Business buyer" : "Individual buyer",
+        phone: normalizeInternationalPhone(phone, "234"),
         email: email || null,
+        location: null,
+        usualProduceNeeds: null,
+        orderFrequency: null,
+        estimatedSpend: null,
+        businessRegNumber: null,
+        preferredPaymentMethod: null,
+        needsReceipts: false,
+        interestedInCredit: false,
         message,
         status: "New",
         source: "Contact page",
@@ -820,45 +832,71 @@ export async function createContactEnquiryAction(formData: FormData) {
     });
 
     if (request.email) {
-      await sendTransactionalEmail({deduplicationKey: `account-request-ack:${request.id}`, template: "account-request-acknowledgement", to: request.email, content: emailTemplates.accountRequestAcknowledgement(request.contactName), relatedType: "BuyerAccountRequest", relatedId: request.id});
+      await sendTransactionalEmail({
+        deduplicationKey: `account-request-ack:${request.id}`,
+        template: "account-request-acknowledgement",
+        to: request.email,
+        content: emailTemplates.accountRequestAcknowledgement(
+          request.contactName,
+        ),
+        relatedType: "BuyerAccountRequest",
+        relatedId: request.id,
+      });
     }
-    await sendAdminTransactionalEmail({deduplicationKeyPrefix: `account-request-admin:${request.id}`, template: "account-request-admin", content: emailTemplates.accountRequestAdmin(request.contactName, request.organisationName, getEmailBaseUrl()), relatedType: "BuyerAccountRequest", relatedId: request.id});
 
-    revalidatePath("/contact");
+    await sendAdminTransactionalEmail({
+      deduplicationKeyPrefix: `account-request-admin:${request.id}`,
+      template: "account-request-admin",
+      content: emailTemplates.accountRequestAdmin(
+        request.contactName,
+        request.organisationName,
+        getEmailBaseUrl(),
+      ),
+      relatedType: "BuyerAccountRequest",
+      relatedId: request.id,
+    });
+
     revalidatePath("/admin/buyer-account-requests");
+    revalidatePath("/admin/customers");
     revalidatePath("/admin/audit-log");
+
     redirect("/contact?submitted=1");
   }
 
-  const enquiry = await prisma.contactEnquiry.create({
-    data: {
-      name,
-      organisation: organisation || null,
-      email: email || null,
-      phone: phone || null,
-      enquiryType,
-      message,
-      status: "New",
-      source: "Contact page",
-    },
-  });
+  const submissionId = crypto.randomUUID();
 
-  await createAuditLog({
-    action: "Created contact enquiry",
-    entityType: "ContactEnquiry",
-    entityId: enquiry.id,
-    entityLabel: `${enquiry.enquiryType} · ${enquiry.name}`,
-    newValue: enquiry,
-  });
-
-  if (enquiry.email) {
-    await sendTransactionalEmail({deduplicationKey: `contact-ack:${enquiry.id}`, template: "contact-acknowledgement", to: enquiry.email, content: emailTemplates.contactAcknowledgement(enquiry.name), relatedType: "ContactEnquiry", relatedId: enquiry.id});
+  if (email) {
+    await sendTransactionalEmail({
+      deduplicationKey: `contact-ack:${submissionId}:${email}`,
+      template: "contact-acknowledgement",
+      to: email,
+      content: emailTemplates.contactAcknowledgement(name),
+    });
   }
-  await sendAdminTransactionalEmail({deduplicationKeyPrefix: `contact-admin:${enquiry.id}`, template: "contact-admin", content: emailTemplates.contactAdmin(enquiry.name, enquiry.enquiryType, enquiry.message, getEmailBaseUrl()), relatedType: "ContactEnquiry", relatedId: enquiry.id});
 
-  revalidatePath("/contact");
-  revalidatePath("/admin/contact-enquiries");
-  revalidatePath("/admin/audit-log");
+  const recipients = getOperationalEmailRecipients("contact");
+  if (!recipients.length) {
+    throw new Error("No contact enquiry email recipient is configured.");
+  }
+
+  await Promise.all(
+    recipients.map((recipient) =>
+      sendTransactionalEmail({
+        deduplicationKey: `contact-admin:${submissionId}:${recipient}`,
+        template: "contact-admin",
+        to: recipient,
+        content: emailTemplates.contactAdminEmail({
+          name,
+          organisation,
+          email,
+          phone,
+          enquiryType,
+          message,
+        }),
+      }),
+    ),
+  );
+
   redirect("/contact?submitted=1");
 }
 

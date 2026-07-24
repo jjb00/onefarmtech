@@ -18,11 +18,12 @@ test("customers is the canonical role-aware Buyers workspace", async () => {
 test("All buyers uses database pagination and lightweight relations", async () => {
   const list = await read("src/components/admin/BuyersList.tsx");
   assert.match(list, /prisma\.customer\.count\(\{where\}\)/);
-  assert.match(list, /skip: \(page - 1\) \* pageSize, take: pageSize/);
+  assert.match(list, /skip: \(page - 1\) \* pageSize/);
+  assert.match(list, /take: pageSize/);
   assert.match(list, /orderBy: \[\{updatedAt: "desc"\}, \{id: "desc"\}\]/);
   assert.match(list, /_count: \{select: \{orders: true\}\}/);
   assert.doesNotMatch(list, /include: \{\s*orders/);
-  assert.match(list, /View buyer/); assert.match(list, /md:hidden/);
+  assert.match(list, /Open customer/); assert.match(list, /md:hidden/);
 });
 
 test("Guest buyers remains an honestly bounded phone-grouped view", async () => {

@@ -1,4 +1,51 @@
 import Link from "next/link";
-import {buyerViewHref, buyerViewsForRole} from "@/lib/buyersWorkspace.js";
-const views = [["all", "All buyers"], ["guests", "Guest buyers"], ["applications", "Applications"], ["access", "Access"], ["updates", "Update requests"]] as const;
-export default function BuyersViewSwitcher({activeView, role, params}: {activeView: string; role: string; params: Record<string, unknown>}) { const allowed = buyerViewsForRole(role); return <nav aria-label="Buyer workspace views" className="flex gap-2 overflow-x-auto border-b border-[#102015]/10 pb-3">{views.filter(([view]) => allowed.includes(view)).map(([view, label]) => <Link key={view} href={buyerViewHref(view, params)} aria-current={activeView === view ? "page" : undefined} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-black focus:outline-none focus:ring-2 focus:ring-[#1f7a3f] ${activeView === view ? "bg-[#102015] text-white" : "bg-white text-[#405348]"}`}>{label}</Link>)}</nav>; }
+
+const views = [
+  ["all", "Customers"],
+  ["guests", "Guest activity"],
+  ["applications", "Account applications"],
+  ["access", "Login access"],
+  ["updates", "Profile changes"],
+] as const;
+
+export default function BuyersViewSwitcher({
+  activeView,
+  role,
+  params,
+}: {
+  activeView: string;
+  role: string;
+  params: Record<string, string>;
+}) {
+  void role;
+
+  return (
+    <nav
+      aria-label="Buyer workspace"
+      className="flex gap-2 overflow-x-auto pb-1"
+    >
+      {views.map(([value, label]) => {
+        const query = new URLSearchParams({
+          ...Object.fromEntries(
+            Object.entries(params).filter(([, item]) => Boolean(item)),
+          ),
+          view: value,
+        });
+
+        return (
+          <Link
+            key={value}
+            href={`/admin/customers?${query.toString()}`}
+            className={`whitespace-nowrap rounded-full px-4 py-2.5 text-sm font-black transition ${
+              activeView === value
+                ? "bg-[#1f7a3f] text-white"
+                : "border bg-white text-[#294b37] hover:bg-[#f1f7ee]"
+            }`}
+          >
+            {label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}

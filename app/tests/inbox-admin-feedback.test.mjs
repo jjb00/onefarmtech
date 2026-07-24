@@ -3,11 +3,19 @@ import fs from "node:fs";
 import test from "node:test";
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Inbox separates intake sources and defaults incidents to unresolved", () => {
+test("Inbox keeps operational sources and defaults incidents to unresolved", () => {
   const inbox = read("src/app/admin/buyer-messages/page.tsx");
-  for (const label of ["Career applications", "Supplier enquiries", "Buyer requests", "Order requests"]) assert.match(inbox, new RegExp(label));
+
+  assert.doesNotMatch(inbox, /Career applications/);
+  assert.doesNotMatch(inbox, /Supplier enquiries/);
+  assert.match(inbox, /Buyer requests/);
+  assert.match(inbox, /Order requests/);
+  assert.match(inbox, /Unknown WhatsApp/);
   assert.match(inbox, /status = value\(raw\.status\) \|\| "Open"/);
-  assert.match(inbox, /operationalEvent\.findMany\(\{where: \{status: "Open"\}/);
+  assert.match(
+    inbox,
+    /operationalEvent\.findMany\(\{where: \{status: "Open"\}/,
+  );
 });
 
 test("dashboard attention metrics use today and unresolved states", () => {

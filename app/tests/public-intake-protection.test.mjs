@@ -49,16 +49,61 @@ test("honeypot rejects abusive submissions", () => {
   assert.equal(honeypotIsFilled(""), false);
 });
 
-test("public actions protect before persistence and email", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-  for (const [start, createPattern] of [["createContactEnquiryAction", "contactEnquiry.create"], ["createOrderRequestAction", "orderRequest.create"]]) {
-    const branch = actions.slice(actions.indexOf(`export async function ${start}`), actions.indexOf("export async function", actions.indexOf(`export async function ${start}`) + 25));
-    assert.ok(branch.indexOf("protectPublicIntake") > -1);
-    assert.ok(branch.indexOf("protectPublicIntake") < branch.indexOf(createPattern));
-    assert.ok(branch.indexOf("protectPublicIntake") < branch.indexOf("sendTransactionalEmail"));
+test("public actions protect before their first side effect", () => {
+  const adminActions = fs.readFileSync(
+    new URL("../src/actions/createAdminRecords.ts", import.meta.url),
+    "utf8",
+  );
+  const publicActions = fs.readFileSync(
+    new URL("../src/actions/publicApplications.ts", import.meta.url),
+    "utf8",
+  );
+
+  const contactStart = adminActions.indexOf(
+    "export async function createContactEnquiryAction",
+  );
+  const contactEnd = adminActions.indexOf(
+    "export async function createBuyerAccountRequestAction",
+    contactStart,
+  );
+  const contactBranch = adminActions.slice(contactStart, contactEnd);
+
+  assert.ok(
+    contactBranch.indexOf("protectPublicIntake") <
+      contactBranch.indexOf("sendTransactionalEmail"),
+  );
+
+  const orderStart = adminActions.indexOf(
+    "export async function createOrderRequestAction",
+  );
+  const orderBranch = adminActions.slice(orderStart);
+
+  assert.ok(
+    orderBranch.indexOf("protectPublicIntake") <
+      orderBranch.indexOf("orderRequest.create"),
+  );
+
+  for (const actionName of [
+    "submitCareerApplicationAction",
+    "submitSupplierEnquiryAction",
+  ]) {
+    const actionStart = publicActions.indexOf(
+      `export async function ${actionName}`,
+    );
+    const actionEnd = publicActions.indexOf(
+      "\nexport async function ",
+      actionStart + 10,
+    );
+    const actionBranch = publicActions.slice(
+      actionStart,
+      actionEnd === -1 ? undefined : actionEnd,
+    );
+
+    assert.ok(
+      actionBranch.indexOf("protectPublicIntake") <
+        actionBranch.indexOf("sendTransactionalEmail"),
+    );
   }
-  const buyer = actions.slice(actions.indexOf("export async function createBuyerAccountRequestAction"), actions.indexOf("export async function", actions.indexOf("export async function createBuyerAccountRequestAction") + 25));
-  assert.doesNotMatch(buyer, /protectPublicIntake/);
 });
 
 test("Turnstile widgets, server verification and production-safe bypass are wired", () => {

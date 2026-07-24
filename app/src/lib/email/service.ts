@@ -11,6 +11,12 @@ export type EmailSendResult = {
   error?: string;
 };
 
+export type EmailAttachment = {
+  filename: string;
+  content: string;
+  contentType?: string;
+};
+
 type SendTransactionalEmailInput = {
   deduplicationKey: string;
   template: string;
@@ -19,6 +25,7 @@ type SendTransactionalEmailInput = {
   relatedType?: string;
   relatedId?: string;
   storedContent?: TransactionalEmail;
+  attachments?: EmailAttachment[];
 };
 
 function baseUrl() {
@@ -36,8 +43,28 @@ export function getEmailBaseUrl() {
   }
 }
 
+function parseRecipients(value: string | undefined) {
+  return (value || "")
+    .split(",")
+    .map((recipient) => recipient.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export function getAdminEmailRecipients() {
-  return (process.env.EMAIL_ADMIN_RECIPIENTS || "").split(",").map((value) => value.trim()).filter(Boolean);
+  return parseRecipients(process.env.EMAIL_ADMIN_RECIPIENTS);
+}
+
+export function getOperationalEmailRecipients(
+  group: "careers" | "contact" | "supplier",
+) {
+  const environmentKey = {
+    careers: "EMAIL_CAREERS_RECIPIENTS",
+    contact: "EMAIL_CONTACT_RECIPIENTS",
+    supplier: "EMAIL_SUPPLIER_RECIPIENTS",
+  }[group];
+
+  const configured = parseRecipients(process.env[environmentKey]);
+  return configured.length ? configured : getAdminEmailRecipients();
 }
 
 function safeError(error: unknown) {
@@ -95,6 +122,11 @@ export async function sendTransactionalEmail(input: SendTransactionalEmailInput)
         subject: input.content.subject,
         text: input.content.text,
         html: input.content.html,
+        attachments: input.attachments?.map((attachment) => ({
+          filename: attachment.filename,
+          content: attachment.content,
+          content_type: attachment.contentType,
+        })),
       }),
       signal: AbortSignal.timeout(10_000),
     });

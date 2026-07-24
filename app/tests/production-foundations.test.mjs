@@ -165,11 +165,24 @@ test("delivery workflow retains partner scope, status propagation, buyer notific
   assert.match(actions, /Updated delivery status/);
 });
 
-test("public forms persist before notification attempts and preserve group-buy interest", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-  for (const model of ["contactEnquiry.create", "buyerAccountRequest.create", "orderRequest.create"]) assert.match(actions, new RegExp(model.replace(".", "\\.")));
+test("public forms use their intended storage and notification paths", () => {
+  const actions = fs.readFileSync(
+    new URL("../src/actions/createAdminRecords.ts", import.meta.url),
+    "utf8",
+  );
+  const publicApplications = fs.readFileSync(
+    new URL("../src/actions/publicApplications.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(actions, /buyerAccountRequest\.create/);
+  assert.match(actions, /orderRequest\.create/);
   assert.match(actions, /groupBuyInterest/);
-  assert.ok(actions.indexOf("prisma.contactEnquiry.create") < actions.indexOf("contact-ack:"));
-  assert.ok(actions.indexOf("prisma.buyerAccountRequest.create") < actions.indexOf("account-request-ack:"));
-  assert.ok(actions.indexOf("prisma.orderRequest.create") < actions.indexOf("order-request-ack:"));
+
+  assert.doesNotMatch(actions, /contactEnquiry\.create/);
+  assert.doesNotMatch(publicApplications, /careerApplication\.create/);
+  assert.doesNotMatch(publicApplications, /contactEnquiry\.create/);
+
+  assert.match(publicApplications, /sendTransactionalEmail/);
+  assert.match(publicApplications, /attachments: \[cv\]/);
 });
