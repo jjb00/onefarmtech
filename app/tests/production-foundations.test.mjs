@@ -95,11 +95,8 @@ test("WhatsApp routes retain signature, known\/unknown routing, duplicate and ou
 
 test("admin navigation uses the approved job-based destinations and canonical buyer views", () => {
   const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
-  for (const group of ["Dashboard", "Operations", "Communications", "Buyers", "Finance", "Catalogue & supply", "Reports", "System & settings"]) assert.match(navigation, new RegExp(`title: "${group.replace("&", "&")}"`));
-  for (const href of ["/admin/operations", "/admin/orders", "/admin/deliveries", "/admin/complaints", "/admin/buyer-messages", "/admin/whatsapp-tools", "/admin/customers", "/admin/customers?view=guests", "/admin/customers?view=applications", "/admin/customers?view=access", "/admin/customers?view=updates", "/admin/payment-requests", "/admin/payments", "/admin/receipts", "/admin/products", "/admin/group-buys", "/admin/suppliers", "/admin/pickup-locations", "/admin/delivery-partners", "/admin/reports", "/admin/staff", "/admin/audit-log", "/admin/launch-readiness", "/admin/operating-manual"]) assert.match(navigation, new RegExp(`href: "${href.replace("?", "\\?")}"`));
-  for (const legacy of ["/admin/guest-buyers", "/admin/buyer-account-requests", "/admin/buyer-access", "/admin/buyer-profile-requests"]) assert.match(navigation, new RegExp(legacy.replaceAll("/", "\\/")));
-  assert.match(navigation, /\/admin\/buyer-messages\?view=reconciliation/);
-  assert.doesNotMatch(navigation, /title: "Sales"/);
+  for (const item of ["Today", "Orders", "WhatsApp", "Buyers", "Payments", "Products"]) assert.match(navigation, new RegExp(`title: "${item}"`));
+  for (const hidden of ["Settings", "Money", "Reports", "System & settings"]) assert.doesNotMatch(navigation, new RegExp(`title: "${hidden}"`));
 });
 
 test("every visible Phase 1 sidebar destination resolves to an existing route", () => {
@@ -111,18 +108,17 @@ test("every visible Phase 1 sidebar destination resolves to an existing route", 
   }
 });
 
-test("sidebar is collapsed by default, role-filtered, and highlights main and legacy routes", () => {
-  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminSidebarGroup.tsx", import.meta.url), "utf8");
+test("sidebar is open by default, persisted, role-filtered, and mobile-safe", () => {
+  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminChrome.tsx", import.meta.url), "utf8");
   const layout = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
   const access = fs.readFileSync(new URL("../src/lib/adminAccess.ts", import.meta.url), "utf8");
   const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
-  assert.match(sidebar, /<details className=/);
-  assert.doesNotMatch(sidebar, /<details[^>]* open=/);
-  assert.doesNotMatch(sidebar, /localStorage|useEffect|useState/);
-  assert.match(sidebar, /aria-current=\{active \? "page"/);
+  assert.match(sidebar, /localStorage\.getItem\(SIDEBAR_KEY\)/);
+  assert.match(sidebar, /localStorage\.setItem\(SIDEBAR_KEY/);
+  assert.match(sidebar, /setMobileOpen\(false\)/);
   assert.match(layout, /filterAdminLinksForRole/);
   assert.match(access, /canAccessAdminPath\(role, link\.href\)/);
-  for (const legacy of ["/admin/whatsapp-inbox", "/admin/contact-enquiries", "/admin/whatsapp-drafts", "/admin/buyer-accounts", "/admin/deployment-readiness", "/admin/security", "/admin/permissions"]) assert.match(navigation, new RegExp(legacy.replaceAll("/", "\\/")));
+  for (const hidden of ["/admin/contact-enquiries", "/admin/deployment-readiness", "/admin/security", "/admin/permissions"]) assert.doesNotMatch(navigation, new RegExp(hidden.replaceAll("/", "\\/")));
 });
 
 test("Orders, Deliveries and Customers use the compact header without losing existing actions", () => {

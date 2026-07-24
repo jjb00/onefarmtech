@@ -3,25 +3,22 @@ import fs from "node:fs";
 import test from "node:test";
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Inbox keeps operational sources and defaults incidents to unresolved", () => {
+test("WhatsApp keeps only the five operational views in routine navigation", () => {
   const inbox = read("src/app/admin/buyer-messages/page.tsx");
+  const switcher = read("src/components/admin/CommunicationsViewSwitcher.tsx");
 
   assert.doesNotMatch(inbox, /Career applications/);
   assert.doesNotMatch(inbox, /Supplier enquiries/);
-  assert.match(inbox, /Buyer requests/);
-  assert.match(inbox, /Order requests/);
-  assert.match(inbox, /Unknown WhatsApp/);
-  assert.match(inbox, /status = value\(raw\.status\) \|\| "Open"/);
-  assert.match(
-    inbox,
-    /operationalEvent\.findMany\(\{where: \{status: "Open"\}/,
-  );
+  for (const label of ["Needs reply", "Known buyers", "Unknown order contacts", "Failed operational messages", "All operational conversations"]) assert.match(switcher, new RegExp(label));
+  assert.doesNotMatch(switcher, /Email delivery|Reconciliation|Operational events/);
+  assert.match(inbox, /isOperationalUnknownWhatsAppContact/);
 });
 
-test("dashboard attention metrics use today and unresolved states", () => {
+test("Today uses bounded unresolved operational queues", () => {
   const dashboard = read("src/app/admin/page.tsx");
-  assert.match(dashboard, /today\.setHours\(0, 0, 0, 0\)/); assert.match(dashboard, /Failed today/);
-  assert.match(dashboard, /Unresolved payments/); assert.match(dashboard, /Needs attention/);
+  assert.match(dashboard, /const LIMIT = 8/);
+  assert.match(dashboard, /Payments to follow up/);
+  assert.match(dashboard, /Open customer complaints/);
 });
 
 test("staff deactivation remains guarded and now requires confirmation", () => {

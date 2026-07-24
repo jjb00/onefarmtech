@@ -4,9 +4,9 @@ import test from "node:test";
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "../src/lib/adminListParams.js";
 
 test("admin list pagination validates page sizes and pages", () => {
-  assert.equal(parseAdminPageSize(undefined), 25);
-  for (const size of [25, 50, 100]) assert.equal(parseAdminPageSize(String(size)), size);
-  for (const size of [0, 10, 101, "bad"]) assert.equal(parseAdminPageSize(size), 25);
+  assert.equal(parseAdminPageSize(undefined), 10);
+  for (const size of [10, 25, 50]) assert.equal(parseAdminPageSize(String(size)), size);
+  for (const size of [0, 100, 101, "bad"]) assert.equal(parseAdminPageSize(size), 10);
   assert.equal(parseAdminPage("3"), 3); assert.equal(parseAdminPage("-1"), 1);
 });
 

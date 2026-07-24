@@ -1,12 +1,12 @@
-export const COMMUNICATION_VIEWS = ["all", "whatsapp", "enquiries", "email", "reconciliation", "operations"];
+export const COMMUNICATION_VIEWS = ["needs-reply", "whatsapp", "enquiries", "failed", "all", "email", "reconciliation", "operations"];
 
-const broadViews = [...COMMUNICATION_VIEWS];
-const supportViews = ["all", "whatsapp", "enquiries", "email", "operations"];
+const supportViews = ["needs-reply", "whatsapp", "enquiries", "failed", "all"];
 
 export function communicationViewsForRole(role) {
-  if (role === "Finance") return ["reconciliation"];
+  if (role === "Finance") return [];
   if (role === "Support") return supportViews;
-  if (["Super admin", "Admin", "Operations"].includes(role)) return broadViews;
+  if (role === "Super admin") return [...COMMUNICATION_VIEWS];
+  if (["Admin", "Operations"].includes(role)) return supportViews;
   return [];
 }
 
@@ -17,8 +17,8 @@ export function resolveCommunicationViewForRole(value, role) {
 }
 
 export function resolveCommunicationView(value) {
-  const view = String(value || "all").trim().toLowerCase();
-  return COMMUNICATION_VIEWS.includes(view) ? view : "all";
+  const view = String(value || "needs-reply").trim().toLowerCase();
+  return COMMUNICATION_VIEWS.includes(view) ? view : "needs-reply";
 }
 
 export function communicationViewHref(view, params = {}) {

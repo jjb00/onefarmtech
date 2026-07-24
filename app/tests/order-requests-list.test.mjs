@@ -6,7 +6,7 @@ import {adminListHref, adminResultRange, parseAdminPageSize} from "../src/lib/ad
 const page = fs.readFileSync(new URL("../src/app/admin/order-requests/page.tsx", import.meta.url), "utf8");
 
 test("Order requests reuses validated shared pagination", () => {
-  assert.equal(parseAdminPageSize(), 25); for (const size of [25, 50, 100]) assert.equal(parseAdminPageSize(size), size); assert.equal(parseAdminPageSize(75), 25);
+  assert.equal(parseAdminPageSize(), 10); for (const size of [10, 25, 50]) assert.equal(parseAdminPageSize(size), size); assert.equal(parseAdminPageSize(75), 10);
   assert.deepEqual(adminResultRange(2, 25, 61), {start: 26, end: 50});
   const href = adminListHref("/admin/order-requests", {q: "tomato", status: "New", source: "Order request page", type: "Restaurant", conversion: "not-converted", pageSize: 50}, {page: 2});
   for (const key of ["q=tomato", "status=New", "source=Order+request+page", "type=Restaurant", "conversion=not-converted", "pageSize=50", "page=2"]) assert.equal(href.includes(key), true);

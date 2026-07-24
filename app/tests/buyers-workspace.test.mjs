@@ -5,9 +5,9 @@ import {BUYER_VIEWS, buyerViewHref, buyerViewsForRole, resolveBuyerView, resolve
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("customers is the canonical role-aware Buyers workspace", async () => {
-  assert.deepEqual(BUYER_VIEWS, ["all", "guests", "applications", "access", "updates"]);
-  assert.equal(resolveBuyerView("bad"), "all");
-  assert.equal(resolveBuyerViewForRole("access", "Operations"), "all");
+  assert.deepEqual(BUYER_VIEWS, ["active", "applications", "guests", "access", "updates", "all"]);
+  assert.equal(resolveBuyerView("bad"), "active");
+  assert.equal(resolveBuyerViewForRole("access", "Operations"), "active");
   assert.ok(buyerViewsForRole("Buyer account manager").includes("access"));
   assert.equal(buyerViewsForRole("Finance").length, 0);
   assert.equal(buyerViewHref("all", {q: "farm", page: 9, pageSize: 50}), "/admin/customers?view=all&q=farm&pageSize=50");
@@ -28,7 +28,7 @@ test("All buyers uses database pagination and lightweight relations", async () =
 
 test("Guest buyers remains an honestly bounded phone-grouped view", async () => {
   const guests = await read("src/app/admin/guest-buyers/page.tsx");
-  assert.match(guests, /take: 500/); assert.match(guests, /bounded recent view/); assert.match(guests, /grouped by the stored phone value/); assert.match(guests, /customers\?view=guests/);
+  assert.match(guests, /skip: \(page - 1\) \* pageSize/); assert.match(guests, /take: pageSize/); assert.match(guests, /grouped by the stored phone value/); assert.match(guests, /customers\?view=guests/);
 });
 
 test("Applications reuses the scalable conversion-integrity queue", async () => {
