@@ -21,11 +21,12 @@ test("daily admin navigation excludes recruitment, general enquiries and launch 
 });
 
 test("profile menu is role-aware and sidebar state persists", () => {
-  const chrome = read("src/components/admin/AdminChrome.tsx");
+  const chrome = read("src/components/admin/AdminLayoutFrame.tsx");
+  const sidebar = read("src/components/admin/AdminSidebarGroup.tsx");
   assert.match(chrome, /Staff management/);
   assert.match(chrome, /staff\.role === "Super admin"/);
   assert.match(chrome, /\["Super admin", "Admin"\]\.includes\(staff\.role\)/);
-  assert.match(chrome, /localStorage\.setItem\(SIDEBAR_KEY/);
+  assert.match(sidebar, /localStorage\.setItem\(storageKey/);
   assert.match(chrome, /event\.key === "Escape"/);
   assert.match(chrome, /setMobileOpen\(false\)/);
 });

@@ -109,7 +109,7 @@ test("every visible Phase 1 sidebar destination resolves to an existing route", 
 });
 
 test("sidebar is open by default, persisted, role-filtered, and mobile-safe", () => {
-  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminChrome.tsx", import.meta.url), "utf8");
+  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
   const layout = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
   const access = fs.readFileSync(new URL("../src/lib/adminAccess.ts", import.meta.url), "utf8");
   const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");

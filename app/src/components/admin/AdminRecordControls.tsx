@@ -1,7 +1,7 @@
 import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";
 import {archiveAdminMessageAction, permanentlyDeleteAdminMessageAction} from "@/actions/adminRecordDeletion";
 
-export default function AdminRecordControls({recordType, recordId, canDelete}: {recordType: "ContactEnquiry" | "BuyerMessage"; recordId: string; canDelete: boolean}) {
+export default function AdminRecordControls({recordType, recordId, canDelete}: {recordType: "ContactEnquiry" | "BuyerMessage" | "OrderRequest" | "Order"; recordId: string; canDelete: boolean}) {
   return <div className="mt-3 grid gap-2">
     <form action={archiveAdminMessageAction}>
       <input type="hidden" name="recordType" value={recordType}/><input type="hidden" name="recordId" value={recordId}/>

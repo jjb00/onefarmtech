@@ -25,10 +25,10 @@ test("source views use database pagination, stable ordering and existing actions
   const enquiries = await read("src/components/admin/ContactEnquiriesList.tsx");
   assert.match(page, /channel: "WhatsApp"/);
   assert.match(page, /prisma\.contactEnquiry\.findMany/);
-  assert.match(page, /prisma\.emailDelivery\.count/);
+  assert.doesNotMatch(page, /prisma\.emailDelivery\.count/);
   assert.doesNotMatch(page, /prisma\.paymentReconciliationIncident\.count/);
   assert.match(page, /orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/);
-  assert.match(page, /retryFailedEmailAction/);
+  assert.doesNotMatch(page, /retryFailedEmailAction/);
   assert.match(enquiries, /updateContactEnquiryStatusAction/);
   const payments = await read("src/app/admin/payment-requests/page.tsx");
   assert.match(payments, /resolvePaymentIncidentAction/);

@@ -33,20 +33,86 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   if (error || !staff.email || !verifyStaffPassword(staff.email, password)) redirect(`/admin/buyer-messages?view=needs-reply&error=${error || "confirmation-failed"}`);
 
   await prisma.$transaction(async (tx) => {
-    if (recordType === "ContactEnquiry") await tx.contactEnquiry.delete({where: {id: recordId}});
-    else await tx.buyerMessage.delete({where: {id: recordId}});
+    if (recordType === "ContactEnquiry") {
+      await tx.contactEnquiry.delete({where: {id: recordId}});
+    } else if (recordType === "BuyerMessage") {
+      await tx.buyerMessage.delete({where: {id: recordId}});
+    } else if (recordType === "OrderRequest") {
+      const request = await tx.orderRequest.findUnique({
+        where: {id: recordId},
+        select: {status: true},
+      });
+
+      if (!request || request.status === "Converted to order") {
+        throw new Error("ORDER_REQUEST_DELETE_BLOCKED");
+      }
+
+      await tx.orderRequest.delete({where: {id: recordId}});
+    } else if (recordType === "Order") {
+      const order = await tx.order.findUnique({
+        where: {id: recordId},
+        select: {
+          paymentStatus: true,
+          fulfilmentStatus: true,
+          _count: {
+            select: {
+              payments: true,
+              receipts: true,
+              paymentRequests: true,
+              complaints: true,
+            },
+          },
+          delivery: {select: {id: true}},
+        },
+      });
+
+      const protectedPayment = ["Paid", "Approved", "Partially paid"].includes(
+        order?.paymentStatus || "",
+      );
+      const protectedFulfilment = [
+        "Delivered",
+        "Collected",
+        "Completed",
+      ].includes(order?.fulfilmentStatus || "");
+
+      if (
+        !order ||
+        protectedPayment ||
+        protectedFulfilment ||
+        order.delivery ||
+        order._count.payments ||
+        order._count.receipts ||
+        order._count.paymentRequests ||
+        order._count.complaints
+      ) {
+        throw new Error("ORDER_DELETE_BLOCKED");
+      }
+
+      await tx.orderItem.deleteMany({where: {orderId: recordId}});
+      await tx.order.delete({where: {id: recordId}});
+    } else {
+      throw new Error("INVALID_DELETE_TYPE");
+    }
+
     await tx.auditLog.create({data: {
       actorName: staff.name,
       actorEmail: staff.email,
       actorRole: staff.role,
-      action: "Permanently deleted admin communication record",
+      action: "Permanently deleted admin record",
       entityType: recordType,
       entityId: recordId,
-      entityLabel: "Deleted communication record",
+      entityLabel: "Deleted admin record",
       metadata: JSON.stringify({actorId: staff.id, deletionReason: reason, deletedAt: new Date().toISOString()}),
     }});
   });
   revalidatePath("/admin/buyer-messages");
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/order-requests");
   revalidatePath("/admin/audit-log");
+
+  if (recordType === "Order" || recordType === "OrderRequest") {
+    redirect("/admin/orders?deleted=1");
+  }
+
   redirect("/admin/buyer-messages?view=needs-reply&deleted=1");
 }

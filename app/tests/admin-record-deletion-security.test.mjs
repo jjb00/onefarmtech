@@ -6,7 +6,7 @@ import {validatePermanentDeletionInput} from "../src/lib/adminRecordDeletion.js"
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("permanent deletion requires record allowlist, reason, DELETE and password", () => {
-  assert.equal(validatePermanentDeletionInput({recordType: "Order", recordId: "1", reason: "valid reason here", confirmation: "DELETE", password: "secret"}), "invalid-record-type");
+  assert.equal(validatePermanentDeletionInput({recordType: "UnsupportedRecord", recordId: "1", reason: "valid reason here", confirmation: "DELETE", password: "secret"}), "invalid-record-type");
   assert.equal(validatePermanentDeletionInput({recordType: "BuyerMessage", recordId: "1", reason: "short", confirmation: "DELETE", password: "secret"}), "deletion-reason-required");
   assert.equal(validatePermanentDeletionInput({recordType: "BuyerMessage", recordId: "1", reason: "valid reason here", confirmation: "delete", password: "secret"}), "delete-confirmation-required");
   assert.equal(validatePermanentDeletionInput({recordType: "ContactEnquiry", recordId: "1", reason: "valid reason here", confirmation: "DELETE", password: ""}), "password-confirmation-required");
