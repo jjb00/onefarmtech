@@ -3,6 +3,7 @@ import BrandMark from "@/components/BrandMark";
 import AdminSidebarGroup from "@/components/admin/AdminSidebarGroup";
 import AdminNavigationLink from "@/components/admin/AdminNavigationLink";
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
+import AdminProfileMenu from "@/components/admin/AdminProfileMenu";
 import {adminNavigationGroups} from "@/data/adminNavigation";
 import {getCurrentStaffActor} from "@/lib/currentStaff";
 import {canAccessAdminPath, filterAdminLinksForRole, getRoleAccessSummary} from "@/lib/adminAccess";
@@ -34,6 +35,20 @@ export default async function AdminLayoutFrame({
   const securityHref = canAccessAdminPath(staff.role, "/admin/security")
     ? "/admin/security"
     : "/admin/deployment-readiness";
+
+  const profileLinks = [
+    {label: "My profile", href: "/admin/profile"},
+    ...(staff.role === "Super admin"
+      ? [{label: "Staff management", href: "/admin/staff"}]
+      : []),
+    ...(["Super admin", "Admin"].includes(staff.role)
+      ? [{label: "Audit log", href: "/admin/audit-log"}]
+      : []),
+    ...(staff.role === "Super admin"
+      ? [{label: "System tools", href: "/admin/system-tools"}]
+      : []),
+    {label: "Sign out", href: "/admin/logout"},
+  ];
 
   return (
     <main className="min-h-screen bg-[#f4f8ef] text-[#102015]">
@@ -70,12 +85,7 @@ export default async function AdminLayoutFrame({
           </div>
 
           <div className="mt-10 rounded-3xl border border-white/10 bg-white/[0.04] p-4">
-            <p className="text-sm font-bold text-[#9ee6ad]">Internal console</p>
-            <p className="mt-2 text-xs leading-5 text-white/60">
-              Start with Today’s work for daily WhatsApp orders, payment follow-up,
-              delivery handoff and support routing. Secondary tools stay grouped below.
-            </p>
-            <Link
+<Link
               href="/admin/logout"
               className="mt-4 inline-flex rounded-full border border-white/10 px-4 py-2 text-xs font-bold text-white/80"
             >
@@ -158,6 +168,14 @@ export default async function AdminLayoutFrame({
                 </div>
               </details>
             </div>
+          </div>
+
+          <div className="mb-5 flex justify-end">
+            <AdminProfileMenu
+              name={staff.name}
+              role={staff.role}
+              links={profileLinks}
+            />
           </div>
 
           <AdminPageHeader title={title} description={description} action={action} compact={compactHeader} eyebrow={eyebrow} />

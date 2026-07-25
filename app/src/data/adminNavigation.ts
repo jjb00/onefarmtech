@@ -32,7 +32,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       },
       {
         title: "WhatsApp",
-        href: "/admin/buyer-messages?view=whatsapp",
+        href: "/admin/buyer-messages?view=needs-reply",
         description: "Operational WhatsApp conversations and unknown contacts.",
         activePaths: [
           "/admin/buyer-messages",
@@ -58,7 +58,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
         priority: true,
       },
       {
-        title: "Money",
+        title: "Payments",
         href: "/admin/payment-requests",
         description: "Payment follow-up, confirmed payments and receipts.",
         activePaths: [
@@ -78,25 +78,6 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
           "/admin/delivery-partners",
         ],
         priority: true,
-      },
-      {
-        title: "Settings",
-        href: "/admin/staff",
-        description: "Staff, roles and restricted system tools.",
-        activePaths: [
-          "/admin/audit-log",
-          "/admin/security",
-          "/admin/permissions",
-          "/admin/operational-events",
-          "/admin/deployment-readiness",
-          "/admin/integration-readiness",
-          "/admin/launch-readiness",
-          "/admin/launch-smoke-test",
-          "/admin/operating-manual",
-          "/admin/workflows",
-          "/admin/whatsapp-workflow",
-          "/admin/reports",
-        ],
       },
     ],
   },
