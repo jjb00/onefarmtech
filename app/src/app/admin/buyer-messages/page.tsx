@@ -132,12 +132,12 @@ async function NeedsReplyView({
     ...(q
       ? {
           OR: [
-            {title: {contains: q, mode: "insensitive" as const}},
-            {body: {contains: q, mode: "insensitive" as const}},
-            {recipient: {contains: q, mode: "insensitive" as const}},
+            {title: {contains: q}},
+            {body: {contains: q}},
+            {recipient: {contains: q}},
             {
               customer: {
-                name: {contains: q, mode: "insensitive" as const},
+                name: {contains: q},
               },
             },
           ],
@@ -292,7 +292,6 @@ async function UnknownContactsView({
       {
         adminNote: {
           contains: "classification: operational",
-          mode: "insensitive" as const,
         },
       },
       {
@@ -300,7 +299,6 @@ async function UnknownContactsView({
           message: {
             not: {
               contains: phrase,
-              mode: "insensitive" as const,
             },
           },
         })),
@@ -311,9 +309,9 @@ async function UnknownContactsView({
           AND: [
             {
               OR: [
-                {name: {contains: q, mode: "insensitive" as const}},
+                {name: {contains: q}},
                 {phone: {contains: q}},
-                {message: {contains: q, mode: "insensitive" as const}},
+                {message: {contains: q}},
               ],
             },
           ],
