@@ -211,40 +211,63 @@ export default async function AdminOrderDetailPage({
     String(order.paymentStatus || "").toLowerCase().includes("paid") ||
     String(latestPaymentRequest?.status || "").toLowerCase() === "paid";
 
-  const operationalChecklist = [
-    {
-      title: "Buyer",
-      status: order.customerId ? "Linked account" : "Guest / unlinked",
-      note: order.customerId
-        ? "Buyer account history is connected."
-        : "Keep as guest for one-off buyers, or link if recurring.",
-      href: order.customerId ? `/admin/customers/${order.customerId}` : "#buyer-link",
-    },
-    {
-      title: "Payment",
-      status: latestPaymentRequest ? latestPaymentRequest.status : "No request",
-      note: latestPaymentRequest
-        ? `Reference ${latestPaymentRequest.reference}`
-        : "Create or review payment request from the payment section.",
-      href: "/admin/payment-requests",
-    },
-    {
-      title: "Delivery",
-      status: order.delivery?.status || "No delivery record",
-      note: order.delivery
-        ? order.delivery.deliveryPartner?.name || order.delivery.deliveryPartnerName || "Delivery record exists but partner is unassigned."
-        : "Create or assign delivery from the deliveries page.",
-      href: "/admin/deliveries",
-    },
-    {
-      title: "Receipt",
-      status: latestReceipt ? latestReceipt.status : "Not issued",
-      note: latestReceipt
-        ? `Receipt ${latestReceipt.code}`
-        : "Issue receipt after payment is confirmed.",
-      href: "/admin/receipts",
-    },
-  ];
+
+  const pickupOrder = isPickupMethod(order.deliveryMethod);
+  const fulfilmentFinal = pickupOrder
+    ? ["Collected", "Cancelled"].includes(order.fulfilmentStatus)
+    : ["Delivered", "Cancelled"].includes(order.fulfilmentStatus);
+
+  const fulfilmentSequence = fulfilmentStatusesFor(
+    order.deliveryMethod,
+    order.fulfilmentStatus,
+  );
+
+  const currentFulfilmentIndex = fulfilmentSequence.indexOf(
+    order.fulfilmentStatus,
+  );
+
+  const nextFulfilmentStatus =
+    currentFulfilmentIndex >= 0 &&
+    currentFulfilmentIndex < fulfilmentSequence.length - 1
+      ? fulfilmentSequence[currentFulfilmentIndex + 1]
+      : "";
+
+  const orderStage = paymentIsPaid
+    ? fulfilmentFinal
+      ? pickupOrder
+        ? "Collected"
+        : "Delivered"
+      : order.fulfilmentStatus
+    : latestPaymentRequest
+      ? paymentLinkReady
+        ? "Payment pending"
+        : "Payment setup"
+      : "Order confirmed";
+
+  const nextStepTitle = !latestPaymentRequest
+    ? "Create payment request"
+    : !paymentIsPaid && !paymentLinkReady
+      ? "Create payment link"
+      : !paymentIsPaid && !paymentRequestWhatsAppSent
+        ? "Send payment request"
+        : !paymentIsPaid
+          ? "Await payment confirmation"
+          : !fulfilmentFinal && nextFulfilmentStatus
+            ? `Move to ${nextFulfilmentStatus}`
+            : "Order complete";
+
+  const nextStepDescription = !latestPaymentRequest
+    ? "Create the payment obligation for this order."
+    : !paymentIsPaid && !paymentLinkReady
+      ? "Generate the secure payment link before contacting the buyer."
+      : !paymentIsPaid && !paymentRequestWhatsAppSent
+        ? "Send the prepared payment request to the buyer."
+        : !paymentIsPaid
+          ? "No fulfilment action is required until payment is confirmed."
+          : !fulfilmentFinal && nextFulfilmentStatus
+            ? `Advance fulfilment from ${order.fulfilmentStatus} to ${nextFulfilmentStatus}.`
+            : "Payment and fulfilment are complete.";
+
 
   const templateInput = {
     code: order.code,
@@ -303,7 +326,7 @@ export default async function AdminOrderDetailPage({
   return (
     <AdminPage
       title={`Order ${order.code}`}
-      subtitle="Order control centre for buyer, items, payment, delivery and communication evidence."
+      subtitle="See the current stage and complete the next required action."
     >
       <section className="rounded-[2rem] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -367,193 +390,109 @@ export default async function AdminOrderDetailPage({
         </div>
       </section>
 
-      <section className="rounded-[2rem] border border-[#1f7a3f]/15 bg-[#eef6ea] p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <section className="rounded-[2rem] border border-[#1f7a3f]/20 bg-[#eef6ea] p-6 shadow-sm">
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              WhatsApp sales handoff
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#1f7a3f]">
+              Current stage
             </p>
-            <h2 className="mt-2 text-2xl font-black text-[#102015]">
-              Next step after WhatsApp order
+            <h2 className="mt-2 text-3xl font-black text-[#102015]">
+              {orderStage}
             </h2>
-            <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
-              Use this panel to move the buyer from confirmed WhatsApp order to payment link, WhatsApp payment message, receipt and delivery.
+            <p className="mt-2 text-sm leading-7 text-[#405348]">
+              {nextStepDescription}
             </p>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusClass(order.paymentStatus)}`}>
+                Payment: {order.paymentStatus}
+              </span>
+              <span className={`rounded-full px-3 py-1.5 text-xs font-black ${statusClass(order.fulfilmentStatus)}`}>
+                Fulfilment: {order.fulfilmentStatus}
+              </span>
+              <span className="rounded-full bg-white px-3 py-1.5 text-xs font-black text-[#405348]">
+                {order.deliveryMethod}
+              </span>
+            </div>
           </div>
 
-          <Link
-            href="/admin/whatsapp"
-            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-          >
-            WhatsApp storefront
-          </Link>
-        </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Payment request
+          <div className="min-w-64 rounded-2xl bg-white p-5 shadow-sm">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#587063]">
+              Next action
             </p>
             <p className="mt-2 text-lg font-black text-[#102015]">
-              {latestPaymentRequest ? latestPaymentRequest.status : "Not created"}
+              {nextStepTitle}
             </p>
-            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
-              {latestPaymentRequest ? latestPaymentRequest.reference : "Create a payment request before sending payment instructions."}
-            </p>
-          </div>
 
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Payment link
-            </p>
-            <p className="mt-2 text-lg font-black text-[#102015]">
-              {paymentLinkReady ? "Ready" : "Not generated"}
-            </p>
-            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
-              {latestPaymentRequest?.provider || "Provider not selected"}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              WhatsApp sent
-            </p>
-            <p className="mt-2 text-lg font-black text-[#102015]">
-              {paymentRequestWhatsAppSent ? "Sent" : "Not sent"}
-            </p>
-            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
-              {latestPaymentWhatsAppMessage ? formatDate(latestPaymentWhatsAppMessage.sentAt || latestPaymentWhatsAppMessage.createdAt) : order.phone}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-white p-4">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Delivery
-            </p>
-            <p className="mt-2 text-lg font-black text-[#102015]">
-              {order.delivery?.status || "Not assigned"}
-            </p>
-            <p className="mt-1 text-xs font-bold leading-6 text-[#405348]">
-              {order.delivery?.deliveryPartner?.name || order.delivery?.deliveryPartnerName || "Assign after payment/fulfilment confirmation."}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          {!latestPaymentRequest ? (
-            <form action={createPaymentRequestFromOrderAction}>
-              <input type="hidden" name="orderId" value={order.id} />
-              <button
-                type="submit"
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
-              >
-                Create payment request
-              </button>
-            </form>
-          ) : null}
-
-          {latestPaymentRequest && !paymentIsPaid ? (
-            <>
-              <form action={generatePaymentLinkAction}>
-                <input type="hidden" name="id" value={latestPaymentRequest.id} />
-                <input type="hidden" name="provider" value="Paystack" />
-                <button
-                  type="submit"
-                  className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
+            <div className="mt-4">
+              {!latestPaymentRequest ? (
+                <form action={createPaymentRequestFromOrderAction}>
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <button
+                    type="submit"
+                    className="min-h-11 w-full rounded-full bg-[#1f7a3f] px-5 text-sm font-black text-white"
+                  >
+                    Create payment request
+                  </button>
+                </form>
+              ) : !paymentIsPaid && !paymentLinkReady ? (
+                <form action={generatePaymentLinkAction}>
+                  <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                  <input type="hidden" name="provider" value="Paystack" />
+                  <button
+                    type="submit"
+                    className="min-h-11 w-full rounded-full bg-[#1f7a3f] px-5 text-sm font-black text-white"
+                  >
+                    Create payment link
+                  </button>
+                </form>
+              ) : !paymentIsPaid && !paymentRequestWhatsAppSent ? (
+                <form action={sendPaymentRequestWhatsAppAction}>
+                  <input type="hidden" name="id" value={latestPaymentRequest.id} />
+                  <button
+                    type="submit"
+                    className="min-h-11 w-full rounded-full bg-[#102015] px-5 text-sm font-black text-white"
+                  >
+                    Send payment request
+                  </button>
+                </form>
+              ) : paymentIsPaid && !fulfilmentFinal && nextFulfilmentStatus ? (
+                <form action={updateAdminOrderControlAction}>
+                  <input type="hidden" name="orderId" value={order.id} />
+                  <input type="hidden" name="paymentStatus" value={order.paymentStatus} />
+                  <input type="hidden" name="fulfilmentStatus" value={nextFulfilmentStatus} />
+                  <button
+                    type="submit"
+                    className="min-h-11 w-full rounded-full bg-[#1f7a3f] px-5 text-sm font-black text-white"
+                  >
+                    Move to {nextFulfilmentStatus}
+                  </button>
+                </form>
+              ) : (
+                <Link
+                  href="/admin/orders"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#102015]/15 bg-white px-5 text-sm font-black text-[#102015]"
                 >
-                  {paymentLinkReady ? "Use existing payment link" : "Create Paystack link"}
-                </button>
-              </form>
-
-              <form action={generatePaymentLinkAction}>
-                <input type="hidden" name="id" value={latestPaymentRequest.id} />
-                <input type="hidden" name="provider" value="Flutterwave" />
-                <button
-                  type="submit"
-                  className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-                >
-                  Generate Flutterwave link
-                </button>
-              </form>
-            </>
-          ) : null}
-
-          {latestPaymentRequest && !paymentRequestWhatsAppSent && !paymentIsPaid ? (
-            <form action={sendPaymentRequestWhatsAppAction}>
-              <input type="hidden" name="id" value={latestPaymentRequest.id} />
-              <button
-                type="submit"
-                className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white hover:bg-[#1f3426]"
-              >
-                Send WhatsApp payment request
-              </button>
-            </form>
-          ) : null}
-
-          {paymentLinkReady && latestPaymentRequest?.paymentUrl ? (
-            <Link
-              href={latestPaymentRequest.paymentUrl}
-              target="_blank"
-              className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-            >
-              Open payment link
-            </Link>
-          ) : null}
-
-          <Link
-            href="/admin/payment-requests"
-            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-          >
-            Payment requests
-          </Link>
-
-          <Link
-            href="/admin/deliveries"
-            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-          >
-            Delivery handoff
-          </Link>
-
-          <Link
-            href="/admin/buyer-messages"
-            className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-          >
-            Message evidence
-          </Link>
+                  Back to orders
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Next actions
-            </p>
-            <h3 className="mt-2 text-2xl font-black text-[#102015]">
-              Operational checklist
-            </h3>
-            <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              Use this as the quick control strip before working through buyer, payment, delivery and receipt details below.
-            </p>
-          </div>
-        </div>
+      <details className="rounded-[2rem] border border-[#102015]/10 bg-white shadow-sm">
+        <summary className="cursor-pointer list-none px-6 py-5 text-lg font-black text-[#102015]">
+          More details
+          <span className="ml-2 text-sm font-bold text-[#587063]">
+            Buyer, items, payments, delivery, messages and notes
+          </span>
+        </summary>
 
-        <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {operationalChecklist.map((step) => (
-            <Link
-              key={step.title}
-              href={step.href}
-              className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-4 transition hover:-translate-y-0.5 hover:bg-[#f3f8ef]"
-            >
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-                {step.title}
-              </p>
-              <p className="mt-2 font-black text-[#102015]">{step.status}</p>
-              <p className="mt-2 text-sm leading-6 text-[#405348]">{step.note}</p>
-            </Link>
-          ))}
-        </div>
-      </section>
+        <div className="grid gap-6 border-t border-[#102015]/10 p-6">
+
+
+
 
       <section id="buyer-link" className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <div className="rounded-[2rem] bg-white p-6 shadow-sm">
@@ -1334,221 +1273,9 @@ export default async function AdminOrderDetailPage({
           )}
         </div>
       </section>
-      <section className="rounded-[2rem] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              WhatsApp delivery and receipt handoff
-            </p>
-            <h2 className="mt-2 text-2xl font-black text-[#102015]">
-              Complete the post-payment workflow
-            </h2>
-            <p className="mt-2 max-w-4xl text-sm leading-7 text-[#405348]">
-              Once payment is confirmed, assign delivery, track the delivery state, and use the receipt/delivery message as buyer-facing WhatsApp copy.
-            </p>
-          </div>
 
-          <div className="flex flex-wrap gap-2">
-            <span className={`rounded-full px-4 py-2 text-sm font-black ${statusClass(order.paymentStatus)}`}>
-              {order.paymentStatus}
-            </span>
-            <span className={`rounded-full px-4 py-2 text-sm font-black ${statusClass(order.delivery?.status || order.fulfilmentStatus)}`}>
-              {order.delivery?.status || order.fulfilmentStatus}
-            </span>
-          </div>
         </div>
-
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="rounded-2xl bg-[#f7f5ec] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Payment confirmation
-            </p>
-            <p className="mt-2 text-xl font-black text-[#102015]">
-              {paymentIsPaid ? "Payment confirmed" : "Awaiting payment"}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              {paymentIsPaid
-                ? "This order is ready for delivery handoff and receipt follow-up."
-                : "Keep delivery assignment cautious until payment is confirmed or manually approved."}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f5ec] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Delivery record
-            </p>
-            <p className="mt-2 text-xl font-black text-[#102015]">
-              {order.delivery?.status || "Not assigned"}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              {order.delivery?.deliveryPartner?.name ||
-                order.delivery?.deliveryPartnerName ||
-                "Assign a delivery partner or create a delivery record below."}
-            </p>
-          </div>
-
-          <div className="rounded-2xl bg-[#f7f5ec] p-5">
-            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#405348]">
-              Receipt status
-            </p>
-            <p className="mt-2 text-xl font-black text-[#102015]">
-              {latestReceipt ? latestReceipt.status : "Not issued"}
-            </p>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              {latestReceipt
-                ? `Receipt ${latestReceipt.code}`
-                : "Issue or record receipt once payment is confirmed."}
-            </p>
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <form action={createOrAssignDeliveryFromOrderAction} className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h3 className="text-xl font-black text-[#102015]">
-                  Create / update delivery handoff
-                </h3>
-                <p className="mt-2 text-sm leading-7 text-[#405348]">
-                  Use this to create the delivery record after payment confirmation or update the delivery assignment as the order progresses.
-                </p>
-              </div>
-              <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-[#405348]">
-                {deliveryPartners.length} partners
-              </span>
-            </div>
-
-            <input type="hidden" name="orderId" value={order.id} />
-
-            <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Delivery partner
-                <select
-                  name="deliveryPartnerId"
-                  defaultValue={order.delivery?.deliveryPartnerId || ""}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                >
-                  <option value="">Unassigned / manual delivery</option>
-                  {deliveryPartners.map((partner) => (
-                    <option key={partner.id} value={partner.id}>
-                      {partner.name} {partner.serviceArea ? `· ${partner.serviceArea}` : ""}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Status
-                <select
-                  name="status"
-                  defaultValue={order.delivery?.status || "Delivery assigned"}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                >
-                  <option value="Delivery pending assignment">Delivery pending assignment</option>
-                  <option value="Delivery assigned">Delivery assigned</option>
-                  <option value="Picked up by delivery partner">Picked up by delivery partner</option>
-                  <option value="Out for delivery">Out for delivery</option>
-                  <option value="Delivered">Delivered</option>
-                  <option value="Delivery issue">Delivery issue</option>
-                </select>
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Delivery method
-                <input
-                  name="deliveryMethod"
-                  defaultValue={order.delivery?.deliveryMethod || order.deliveryMethod || "OneFarmTech arranged"}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Delivery area
-                <input
-                  name="deliveryArea"
-                  defaultValue={order.delivery?.deliveryArea || ""}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                  placeholder="Lekki, VI, Ikeja..."
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348] md:col-span-2">
-                Delivery address / note
-                <textarea
-                  name="deliveryAddress"
-                  defaultValue={order.delivery?.deliveryAddress || order.deliveryNote || ""}
-                  rows={3}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                  placeholder="Buyer address, landmark, preferred timing, delivery instructions..."
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Delivery fee
-                <input
-                  name="deliveryFee"
-                  defaultValue={order.deliveryFee || order.delivery?.deliveryFee || ""}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                  placeholder="0"
-                />
-              </label>
-
-              <label className="grid gap-2 text-sm font-bold text-[#405348]">
-                Tracking reference
-                <input
-                  name="trackingReference"
-                  defaultValue={order.delivery?.trackingReference || ""}
-                  className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
-                  placeholder="Optional"
-                />
-              </label>
-            </div>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <button
-                type="submit"
-                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
-              >
-                Save delivery handoff
-              </button>
-              <Link
-                href="/admin/deliveries"
-                className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-              >
-                Open deliveries
-              </Link>
-            </div>
-          </form>
-
-          <div className="rounded-2xl border border-[#102015]/10 bg-[#f7f5ec] p-5">
-            <h3 className="text-xl font-black text-[#102015]">
-              WhatsApp receipt / delivery copy
-            </h3>
-            <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Copy this into WhatsApp after payment/receipt confirmation or delivery completion. It uses the same order template data already loaded on this page.
-            </p>
-
-            <pre className="mt-5 max-h-[26rem] overflow-auto whitespace-pre-wrap rounded-2xl bg-white p-5 text-sm leading-7 text-[#102015]">
-{buildDeliveredMessage(templateInput)}
-            </pre>
-
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link
-                href="/admin/receipts"
-                className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white hover:bg-[#1f3426]"
-              >
-                Open receipts
-              </Link>
-              <Link
-                href="/admin/buyer-messages"
-                className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-              >
-                Message evidence
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      </details>
 
     </AdminPage>
   );

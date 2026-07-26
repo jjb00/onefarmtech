@@ -21,13 +21,34 @@ test("Today contains only actionable queues", () => {
   assert.doesNotMatch(page, /Company dashboard|Control readiness|Routine automation|Buyer account attention/);
 });
 
-test("orders use four primary views and hide destructive row controls", () => {
-  const page = read("src/app/admin/orders/page.tsx");
-  assert.match(page, /Needs action/);
-  assert.match(page, /New requests/);
-  assert.match(page, /In fulfilment/);
-  assert.match(page, /Completed/);
-  assert.doesNotMatch(page, /Awaiting payment|All orders|AdminRecordControls|Delete permanently/);
+test("orders use four primary views and protect confirmed orders from destructive controls", () => {
+  const source = read("src/app/admin/orders/page.tsx");
+
+  for (const label of [
+    "Needs action",
+    "New requests",
+    "In fulfilment",
+    "Completed",
+  ]) {
+    assert.match(source, new RegExp(label));
+  }
+
+  assert.doesNotMatch(source, /Awaiting payment|All orders|Delete permanently/);
+
+  const confirmedOrdersSection = source.slice(
+    source.indexOf('const orders = await prisma.order.findMany'),
+    source.indexOf('async function NewRequestsView'),
+  );
+
+  assert.doesNotMatch(confirmedOrdersSection, /AdminRecordControls/);
+
+  const requestSection = source.slice(
+    source.indexOf('async function NewRequestsView'),
+  );
+
+  assert.match(requestSection, /AdminRecordControls/);
+  assert.match(requestSection, /recordType="OrderRequest"/);
+  assert.match(requestSection, /canDelete=\{staff\.role === "Super admin"\}|canDelete/);
 });
 
 test("buyer, payment and message pages avoid internal planning language", () => {

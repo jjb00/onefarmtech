@@ -1345,7 +1345,7 @@ export async function updateOrderRequestStatusAction(formData: FormData) {
       convertedOrderId = result.order.id;
     } catch (error) {
       const code = error instanceof OrderRequestConversionError ? error.code : "conversion-failed";
-      redirect(`/admin/order-requests?conversionError=${encodeURIComponent(code)}`);
+      redirect(`/admin/orders?view=new-requests&conversionError=${encodeURIComponent(code)}`);
     }
     revalidatePath("/admin/launch-inbox");
     revalidatePath("/admin/order-requests");
@@ -1368,7 +1368,9 @@ export async function updateOrderRequestStatusAction(formData: FormData) {
   });
 
   revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/orders");
   revalidatePath("/admin/audit-log");
+  redirect("/admin/orders?view=new-requests");
 }
 
 export async function updateContactEnquiryStatusAction(formData: FormData) {

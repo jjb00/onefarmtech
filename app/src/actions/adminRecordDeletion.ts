@@ -123,6 +123,7 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   revalidatePath("/admin/buyer-messages");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/orders");
   revalidatePath("/admin/customers");
   revalidatePath("/admin/buyer-account-requests");
   revalidatePath("/admin/audit-log");
