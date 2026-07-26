@@ -567,3 +567,19 @@ model PublicIntakeDedupe {
 
   @@index([createdAt])
 }
+
+model WhatsAppChatbotSession {
+  id                   String    @id @default(cuid())
+  phone                String    @unique
+  customerId           String?
+  step                 String    @default("MENU")
+  data                 String?
+  lastInboundMessageId String?   @unique
+  lastOutboundAt       DateTime?
+  expiresAt            DateTime?
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  @@index([step, updatedAt])
+  @@index([expiresAt])
+}

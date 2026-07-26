@@ -5,6 +5,7 @@ import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
 import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
+import {handleWhatsAppChatbotMessage} from "@/lib/whatsapp/chatbot";
 import {recordOperationalEvent} from "@/lib/operationalEvents";
 import {
   buildWhatsAppProductListMessage,
@@ -738,12 +739,26 @@ export async function POST(request: NextRequest) {
         metadata: {messageId, messageType: message?.type || "unknown", matched: inboundLog.matched},
       });
 
-      await createDraftOrderRequestFromInboundWhatsApp({
+      const chatbotResult = await handleWhatsAppChatbotMessage({
         from,
         profileName,
         body,
         messageId,
       });
+
+      /*
+       * The legacy parser may create a staff-review draft only when the
+       * guided chatbot is disabled or deliberately declines the message.
+       * A greeting or vague buying intent can never become an order.
+       */
+      if (!chatbotResult.handled) {
+        await createDraftOrderRequestFromInboundWhatsApp({
+          from,
+          profileName,
+          body,
+          messageId,
+        });
+      }
 
       try {
         await maybeCreateComplaintFromInbound({
@@ -770,14 +785,16 @@ export async function POST(request: NextRequest) {
         console.error("WhatsApp payment/delivery follow-up routing failed", error);
       }
 
-      try {
-        await maybeSendCatalogueAutoReply({
-          from,
-          parsedIntent,
-          matchedCustomerId: inboundLog.customerId,
-        });
-      } catch (error) {
-        console.error("WhatsApp catalogue auto-reply failed", error);
+      if (!chatbotResult.handled) {
+        try {
+          await maybeSendCatalogueAutoReply({
+            from,
+            parsedIntent,
+            matchedCustomerId: inboundLog.customerId,
+          });
+        } catch (error) {
+          console.error("WhatsApp catalogue auto-reply failed", error);
+        }
       }
 
       logged += 1;
