@@ -181,11 +181,11 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
   return (
     <AdminPage
       title="Payment requests"
-      subtitle="Payment links, buyer follow-up, status updates and receipt actions."
+      subtitle="Create payment links, follow up and confirm payment."
     >
       {params?.error ? <div role="alert" className="mb-4 rounded-2xl border border-[#C95F3D]/25 bg-[#fff4ef] px-4 py-3 text-sm font-bold text-[#9b2f12]">{params.detail || params.error}</div> : null}
-      {params?.whatsapp === "accepted" ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment link created separately. WhatsApp accepted the notification for sending; delivery status will update from Meta.</div> : null}
-      {params?.verified ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">The provider verified payment {params.verified}. The payment request, order and receipt records are now reconciled.</div> : null}
+      {params?.whatsapp === "accepted" ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment link created and the message was accepted for sending.</div> : null}
+      {params?.verified ? <div className="mb-4 rounded-2xl border border-[#1f7a3f]/20 bg-[#eef6ea] px-4 py-3 text-sm font-bold text-[#1f7a3f]">Payment {params.verified} was verified and recorded.</div> : null}
       <section className="grid gap-3 md:grid-cols-4">
         <AdminCompactMetric label="Pending" value={String(pending.length)} tone="amber" href={hrefFor({...base, status: "pending"})} />
         <AdminCompactMetric label="Pending value" value={formatNaira(totalPendingValue)} tone="amber" />
@@ -194,7 +194,7 @@ export default async function AdminPaymentRequestsPage({searchParams}: PageProps
       </section>
 
       <AdminViewBar
-        title="Payment request controls"
+        title="Filters"
         description={`${sorted.length} request${sorted.length === 1 ? "" : "s"} shown.`}
         filterOptions={[
           {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},

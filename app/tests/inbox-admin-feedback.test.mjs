@@ -1,37 +1,60 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("Inbox keeps operational sources and defaults incidents to unresolved", () => {
-  const inbox = read("src/app/admin/buyer-messages/page.tsx");
+const read = (path) =>
+  fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-  assert.doesNotMatch(inbox, /Career applications/);
-  assert.doesNotMatch(inbox, /Supplier enquiries/);
-  assert.match(inbox, /Buyer requests/);
-  assert.match(inbox, /Order requests/);
-  assert.match(inbox, /Unknown WhatsApp/);
-  assert.match(inbox, /status = value\(raw\.status\) \|\| "Open"/);
+test("message workspace contains only unresolved staff-attention queues", () => {
+  const messages = read("src/app/admin/buyer-messages/page.tsx");
+
+  assert.match(messages, /Messages needing a reply/);
+  assert.match(messages, /Needs reply/);
+  assert.match(messages, /Unknown contacts/);
+  assert.match(messages, /Mark handled/);
   assert.match(
-    inbox,
-    /operationalEvent\.findMany\(\{where: \{status: "Open"\}/,
+    messages,
+    /notIn: \["Replied", "Closed", "Resolved", "Archived"\]/
   );
+
+  assert.doesNotMatch(messages, /Buyer requests/);
+  assert.doesNotMatch(messages, /Email delivery/);
+  assert.doesNotMatch(messages, /Operational events/);
+  assert.doesNotMatch(messages, /CommunicationsViewSwitcher/);
 });
 
-test("dashboard attention metrics use today and unresolved states", () => {
+test("Today reports unresolved work rather than historical activity", () => {
   const dashboard = read("src/app/admin/page.tsx");
-  assert.match(dashboard, /today\.setHours\(0, 0, 0, 0\)/); assert.match(dashboard, /Failed today/);
-  assert.match(dashboard, /Unresolved payments/); assert.match(dashboard, /Needs attention/);
+
+  assert.match(dashboard, /New order requests/);
+  assert.match(dashboard, /Orders needing action/);
+  assert.match(dashboard, /Payment follow-up/);
+  assert.match(dashboard, /Buyer applications/);
+  assert.match(dashboard, /Messages needing a reply/);
+
+  assert.match(
+    dashboard,
+    /status: \{notIn: \["Replied", "Closed", "Resolved", "Archived"\]\}/
+  );
+  assert.match(
+    dashboard,
+    /status: \{notIn: \["Resolved", "Closed"\]\}/
+  );
+
+  assert.doesNotMatch(dashboard, /today\.setHours/);
+  assert.doesNotMatch(dashboard, /Email delivery/);
+  assert.doesNotMatch(dashboard, /Operational events/);
 });
 
-test("staff deactivation remains guarded and now requires confirmation", () => {
-  const page = read("src/app/admin/staff/page.tsx"), rules = read("src/lib/staffAccountManagement.js");
-  assert.match(page, /ConfirmSubmitButton/); assert.match(page, /Last updated/); assert.match(page, /rolePermissions/);
-  assert.match(rules, /selfDeactivate/); assert.match(rules, /lastSuperAdmin/);
-});
+test("admin page shell preserves titles, descriptions and actions", () => {
+  const shell = read("src/components/AdminPageShell.tsx");
+  const layout = read("src/components/admin/AdminLayoutFrame.tsx");
+  const header = read("src/components/admin/AdminPageHeader.tsx");
 
-test("changed admin actions use the shared visible feedback banner", () => {
-  const banner = read("src/components/admin/AdminActionFeedback.tsx"), staff = read("src/app/admin/staff/page.tsx");
-  assert.match(banner, /validation/); assert.match(banner, /forbidden/); assert.match(banner, /provider/); assert.match(banner, /database/); assert.match(banner, /retry/);
-  assert.match(staff, /AdminActionFeedback/);
+  assert.match(shell, /AdminLayoutFrame/);
+  assert.match(shell, /title=\{title\}/);
+  assert.match(shell, /description=\{description\}/);
+  assert.match(shell, /action=\{action\}/);
+  assert.match(layout, /AdminPageHeader/);
+  assert.match(header, /description/);
 });

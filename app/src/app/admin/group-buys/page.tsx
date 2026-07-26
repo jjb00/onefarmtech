@@ -86,7 +86,7 @@ export default async function GroupBuysPage() {
   return (
     <AdminPageShell
       title="Group buys"
-      description="Open buying windows, record paid reservations and let campaign status update automatically."
+      description="Create and manage group-buy windows."
     >
       <div className="grid gap-5">
         <nav
@@ -383,8 +383,7 @@ export default async function GroupBuysPage() {
                         </button>
 
                         <p className="text-xs leading-5 text-[#587063]">
-                          Paid quantity, payment status, minimum met and fully
-                          reserved are recalculated automatically.
+                          Confirmed payments update the group-buy progress.
                         </p>
                       </form>
 

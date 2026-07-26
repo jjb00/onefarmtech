@@ -28,7 +28,7 @@ test("All buyers uses database pagination and lightweight relations", async () =
 
 test("Guest buyers remains an honestly bounded phone-grouped view", async () => {
   const guests = await read("src/app/admin/guest-buyers/page.tsx");
-  assert.match(guests, /take: 500/); assert.match(guests, /bounded recent view/); assert.match(guests, /grouped by the stored phone value/); assert.match(guests, /customers\?view=guests/);
+  assert.match(guests, /take: 500/); assert.match(guests, /const phone = order\.sourcePhone \|\| order\.phone/); assert.match(guests, /customers\?view=guests/);
 });
 
 test("Applications reuses the scalable conversion-integrity queue", async () => {

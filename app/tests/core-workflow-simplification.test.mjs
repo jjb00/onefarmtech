@@ -16,20 +16,20 @@ test("routine admin navigation no longer contains a WhatsApp workspace", async (
   }
 });
 
-test("Today shows only a bounded WhatsApp exception queue", async () => {
+test("Today shows only messages requiring staff attention", async () => {
   const dashboard = await source("src/app/admin/page.tsx");
 
   assert.doesNotMatch(dashboard, /Production follow-up/);
   assert.doesNotMatch(dashboard, /failedEmailCount/);
-  assert.match(dashboard, /WhatsApp exception/);
-  assert.match(dashboard, /need a person/);
+  assert.match(dashboard, /Messages needing a reply/);
+  assert.match(dashboard, /Work that needs attention/);
 });
 
-test("WhatsApp route is a narrow human-exception queue", async () => {
+test("WhatsApp route shows only messages requiring staff attention", async () => {
   const page = await source("src/app/admin/buyer-messages/page.tsx");
 
-  assert.match(page, /WhatsApp exceptions/);
-  assert.match(page, /Needs human attention/);
+  assert.match(page, /Messages needing a reply/);
+  assert.match(page, /Needs reply/);
   assert.match(page, /Unknown contacts/);
   assert.match(page, /Mark handled/);
   assert.doesNotMatch(page, /CommunicationsViewSwitcher/);

@@ -83,7 +83,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
   return (
     <AdminPageShell
       title="Products"
-      description="Catalogue, prices, grades and availability."
+      description="Manage products, prices and availability."
     >
       <div className="grid gap-5">
         <nav
@@ -119,7 +119,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
         </section>
 
         <AdminViewBar
-          title="Product controls"
+          title="Filters"
           description={`${sorted.length} product${sorted.length === 1 ? "" : "s"} shown.`}
           filterOptions={[
             {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
@@ -178,7 +178,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
                 type="submit"
                 className="rounded-full border border-[#102015]/10 bg-[#fbfff8] px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
               >
-                Seed baseline catalogue
+                Add starter products
               </button>
             </form>
           </div>

@@ -21,7 +21,7 @@ export default async function CustomersPage({searchParams}: {searchParams?: Prom
   if (!view) redirect("/admin?access=denied&blocked=/admin/customers");
   if ((requested && requested !== normalized) || normalized !== view) redirect(`/admin/customers?view=${view}`);
   const params = {q: text(raw?.q), status: text(raw?.status), type: text(raw?.type), readiness: text(raw?.readiness), pageSize: text(raw?.pageSize)};
-  return <AdminPageShell title="Buyers" description="Buyer master records, applications, access and account update workflows." compactHeader>
+  return <AdminPageShell title="Buyers" description="Manage buyers, applications and account access." compactHeader>
     <div className="grid gap-5"><BuyersViewSwitcher activeView={view} role={staff.role} params={params}/>
       {view === "all" ? <CreateBuyerForm /> : null}
       {view === "all" ? <BuyersList raw={raw || {}}/> : null}

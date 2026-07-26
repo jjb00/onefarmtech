@@ -68,7 +68,7 @@ export default function OperatingManualPage() {
   return (
     <AdminPageShell
       title="Operating manual"
-      description="Practical working guide for the WhatsApp-first operations desk. This keeps staff aligned before automation, Paystack, Supabase Auth, and WhatsApp API are added."
+      description="Practical guidance for staff handling orders, buyers, payments, products, and customer messages."
     >
       <div className="grid gap-6">
         <section className="grid gap-5 lg:grid-cols-2">

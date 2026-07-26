@@ -21,19 +21,25 @@ export default function AdminPageShell({
   embedded,
 }: AdminPageShellProps) {
   if (embedded) return <section>{children}</section>;
+
   const action =
     actionHref && actionLabel ? (
       <Link
         href={actionHref}
-        className="rounded-full bg-[#1f7a3f] px-6 py-4 text-center font-black text-white shadow-sm hover:bg-[#155c2f]"
+        className="inline-flex min-h-11 items-center rounded-xl bg-[#1f7a3f] px-5 text-sm font-black text-white hover:bg-[#155c2f]"
       >
         {actionLabel}
       </Link>
     ) : undefined;
 
   return (
-    <AdminLayoutFrame title={title} description={description} action={action} compactHeader={compactHeader}>
-      <section className="mt-8">{children}</section>
+    <AdminLayoutFrame
+      title={title}
+      description={description}
+      action={action}
+      compactHeader={compactHeader}
+    >
+      {children}
     </AdminLayoutFrame>
   );
 }

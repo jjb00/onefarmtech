@@ -69,13 +69,13 @@ export default async function AdminBuyerMessagesPage({
 
   return (
     <AdminPageShell
-      title="WhatsApp exceptions"
-      description="Only conversations that need a person. Routine automation and message history stay out of the daily admin."
+      title="Messages needing a reply"
+      description="Review unresolved WhatsApp messages."
       compactHeader
     >
       <div className="grid gap-5">
         <nav
-          aria-label="WhatsApp exception views"
+          aria-label="Message views"
           className="flex gap-2 overflow-x-auto pb-1"
         >
           <Link
@@ -87,7 +87,7 @@ export default async function AdminBuyerMessagesPage({
                 : "border bg-white text-[#102015]"
             }`}
           >
-            Needs human attention
+            Needs reply
           </Link>
           <Link
             href={`${PATH}?view=unknown`}
@@ -178,11 +178,11 @@ async function NeedsReplyView({
         pageSize={pageSize}
         resetHref={`${PATH}?view=needs-reply`}
         hiddenParams={{view: "needs-reply"}}
-        searchLabel="Search exceptions"
+        searchLabel="Search messages"
         searchPlaceholder="Buyer, phone or message"
       />
 
-      <AdminResultCount {...range} total={total} label="exceptions" />
+      <AdminResultCount {...range} total={total} label="messages" />
 
       {messages.length ? (
         <section className="overflow-hidden rounded-2xl border bg-white">
@@ -254,7 +254,7 @@ async function NeedsReplyView({
         </section>
       ) : (
         <AdminEmptyState
-          title="No WhatsApp exceptions."
+          title="No messages need a reply."
           description="Routine automated conversations do not appear here."
           resetHref={`${PATH}?view=needs-reply`}
         />

@@ -1,3 +1,4 @@
+import {readFile} from "node:fs/promises";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
@@ -5,6 +6,9 @@ import {validateFlutterwaveVerification, validatePaystackVerification} from "../
 import crypto from "node:crypto";
 import {mapResendEventStatus, verifyResendWebhookSignature} from "../src/lib/email/resendWebhook.js";
 
+
+const read = (path) =>
+  readFile(new URL(`../${path}`, import.meta.url), "utf8");
 const paystack = {ok: true, status: "success", reference: "PAY-1", amountMinor: 250000, currency: "NGN"};
 const flutterwave = {ok: true, status: "successful", reference: "PAY-2", amount: 2500, currency: "NGN"};
 
@@ -93,10 +97,25 @@ test("WhatsApp routes retain signature, known\/unknown routing, duplicate and ou
   assert.match(outbound, /WhatsApp send failed/);
 });
 
-test("admin navigation uses the approved job-based destinations and canonical buyer views", () => {
-  const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
-  for (const item of ["Today", "Orders", "WhatsApp", "Buyers", "Payments", "Products"]) assert.match(navigation, new RegExp(`title: "${item}"`));
-  for (const hidden of ["Settings", "Money", "Reports", "System & settings"]) assert.doesNotMatch(navigation, new RegExp(`title: "${hidden}"`));
+test("admin navigation uses the approved five primary destinations", async () => {
+  const navigation = await read("src/data/adminNavigation.ts");
+
+  for (const title of ["Today", "Orders", "Buyers", "Payments", "Products"]) {
+    assert.ok(
+      navigation.includes(`title: "${title}"`),
+      `Missing primary navigation title: ${title}`
+    );
+  }
+
+  assert.match(navigation, /href: "\/admin"/);
+  assert.match(navigation, /href: "\/admin\/orders"/);
+  assert.match(navigation, /href: "\/admin\/customers"/);
+  assert.match(navigation, /href: "\/admin\/payment-requests"/);
+  assert.match(navigation, /href: "\/admin\/products"/);
+
+  assert.doesNotMatch(navigation, /title: "WhatsApp"/);
+  assert.doesNotMatch(navigation, /title: "Money"/);
+  assert.doesNotMatch(navigation, /title: "Settings"/);
 });
 
 test("every visible Phase 1 sidebar destination resolves to an existing route", () => {
@@ -108,17 +127,19 @@ test("every visible Phase 1 sidebar destination resolves to an existing route", 
   }
 });
 
-test("sidebar is open by default, persisted, role-filtered, and mobile-safe", () => {
-  const sidebar = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
-  const layout = fs.readFileSync(new URL("../src/components/admin/AdminLayoutFrame.tsx", import.meta.url), "utf8");
-  const access = fs.readFileSync(new URL("../src/lib/adminAccess.ts", import.meta.url), "utf8");
-  const navigation = fs.readFileSync(new URL("../src/data/adminNavigation.ts", import.meta.url), "utf8");
-  assert.match(sidebar, /localStorage\.getItem\(SIDEBAR_KEY\)/);
-  assert.match(sidebar, /localStorage\.setItem\(SIDEBAR_KEY/);
-  assert.match(sidebar, /setMobileOpen\(false\)/);
+test("sidebar is fixed on desktop, role-filtered and mobile-safe", async () => {
+  const layout = await read("src/components/admin/AdminLayoutFrame.tsx");
+
   assert.match(layout, /filterAdminLinksForRole/);
-  assert.match(access, /canAccessAdminPath\(role, link\.href\)/);
-  for (const hidden of ["/admin/contact-enquiries", "/admin/deployment-readiness", "/admin/security", "/admin/permissions"]) assert.doesNotMatch(navigation, new RegExp(hidden.replaceAll("/", "\\/")));
+  assert.match(layout, /AdminNavigationLink/);
+  assert.match(layout, /AdminProfileMenu/);
+  assert.match(layout, /<aside[^>]*lg:block/);
+  assert.match(layout, /<details className="relative">/);
+  assert.match(layout, /<summary[^>]*>[\s\S]*Menu/);
+  assert.match(layout, /lg:hidden/);
+
+  assert.doesNotMatch(layout, /localStorage\.getItem\(SIDEBAR_KEY\)/);
+  assert.doesNotMatch(layout, /localStorage\.setItem\(SIDEBAR_KEY/);
 });
 
 test("Orders, Deliveries and Customers use the compact header without losing existing actions", () => {

@@ -203,10 +203,10 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
   return (
     <AdminPage
       title="Guest buyers"
-      subtitle="Unlinked WhatsApp, event and one-off buyers grouped by phone number."
+      subtitle="Buyers without a linked account."
       embedded={embedded}
     >
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#fff6d6] px-4 py-3 text-sm"><p>This is a bounded recent view of up to 500 unlinked orders. Guest identity is grouped by the stored phone value.</p><Link href="/admin/customers?view=guests" className="font-black text-[#1f7a3f]">Open Buyers workspace</Link></div>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl bg-[#fff6d6] px-4 py-3 text-sm"><p>Showing recent orders from buyers who are not linked to an account.</p><Link href="/admin/customers?view=guests" className="font-black text-[#1f7a3f]">Open Buyers workspace</Link></div>
       <section className="grid gap-3 md:grid-cols-3">
         <AdminCompactMetric label="Guest phones" value={String(guestGroups.length)} tone="blue" />
         <AdminCompactMetric label="Guest value" value={formatNaira(totalGuestSpend)} tone="green" />
@@ -214,7 +214,7 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
       </section>
 
       <AdminViewBar
-        title="Guest buyer controls"
+        title="Filters"
         description={`${sortedGroups.length} guest buyer group${sortedGroups.length === 1 ? "" : "s"} shown.`}
         filterOptions={[
           {label: "All", href: hrefFor({...base, status: "all"}), active: status === "all"},
@@ -240,29 +240,26 @@ export default async function GuestBuyersPage({searchParams, embedded}: GuestBuy
       <section className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Guest intelligence
-            </p>
             <h2 className="mt-2 text-2xl font-black text-[#102015]">
-              Unlinked buyer activity
+              Guest buyers
             </h2>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[#405348]">
-              Keep one-off buyers as guests. Convert only repeat, high-value or relationship buyers into accounts.
+              Review order history and link repeat buyers to an account when needed.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-3">
             <Link
-              href="/admin/whatsapp-orders/new"
+              href="/admin/create-order"
               className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
             >
-              New WhatsApp order
+              New order
             </Link>
             <Link
-              href="/admin/buyer-account-requests"
+              href="/admin/customers?view=applications"
               className="rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
             >
-              Buyer requests
+              Applications
             </Link>
           </div>
         </div>

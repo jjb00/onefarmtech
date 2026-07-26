@@ -19,7 +19,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       {
         title: "Orders",
         href: "/admin/orders",
-        description: "Orders, fulfilment, delivery and complaints.",
+        description: "Orders and fulfilment.",
         activePaths: [
           "/admin/operations",
           "/admin/order-requests",
@@ -33,7 +33,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       {
         title: "Buyers",
         href: "/admin/customers",
-        description: "Customers, guests, applications and login access.",
+        description: "Buyers and account access.",
         activePaths: [
           "/admin/buyer-accounts",
           "/admin/guest-buyers",
@@ -46,7 +46,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       {
         title: "Payments",
         href: "/admin/payment-requests",
-        description: "Payment follow-up, confirmed payments and receipts.",
+        description: "Payment requests and receipts.",
         activePaths: [
           "/admin/payments",
           "/admin/receipts",
@@ -56,7 +56,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       {
         title: "Products",
         href: "/admin/products",
-        description: "Products, prices, supply and collection points.",
+        description: "Products and group buys.",
         activePaths: [
           "/admin/group-buys",
           "/admin/suppliers",
@@ -77,7 +77,7 @@ export function isAdminNavigationLinkActive(link: AdminNavigationLink, pathname:
 }
 
 export const adminQuickActions = [
-  {title: "Open order desk", href: "/admin/operations", description: "Review daily intake, payments, delivery and urgent issues."},
+  {title: "New order", href: "/admin/create-order", description: "Create an order."},
   {title: "Review orders", href: "/admin/orders", description: "Open all orders and transaction controls."},
   {title: "Check payment requests", href: "/admin/payment-requests", description: "Review payment links and provider status."},
   {title: "Review applications", href: "/admin/buyer-account-requests", description: "Review buyers requesting account access."},
