@@ -23,7 +23,7 @@ import {
   buildPaymentRequestMessage,
 } from "@/lib/communications/orderTemplates";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";
-import {fulfilmentStatusesFor} from "@/lib/orderStatusRules.js";
+import {fulfilmentStatusesFor, isPickupMethod} from "@/lib/orderStatusRules.js";
 import {isReusablePaymentRequest} from "@/lib/payments/paymentInitialization.js";
 
 export const dynamic = "force-dynamic";

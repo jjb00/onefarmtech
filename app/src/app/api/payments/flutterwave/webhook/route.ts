@@ -128,7 +128,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  for (const path of ["/admin/payment-requests", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
+  for (const path of ["/admin/payments", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
 
   return NextResponse.json({ok: true, duplicate: settlement.duplicate});
 }

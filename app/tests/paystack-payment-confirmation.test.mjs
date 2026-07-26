@@ -89,6 +89,6 @@ test("WhatsApp Read remains independent from payment confirmation", () => {
 
 test("successful confirmation revalidates payment, order, receipt and dashboard pages", () => {
   const route = fs.readFileSync(new URL("../src/app/api/payments/webhook/route.ts", import.meta.url), "utf8");
-  for (const path of ["/admin/payment-requests", "/admin/orders", "/admin/payments", "/admin/receipts", "/admin"]) assert.match(route, new RegExp(path.replaceAll("/", "\\/")));
+  for (const path of ["/admin/orders", "/admin/payments", "/admin/receipts", "/admin"]) assert.match(route, new RegExp(path.replaceAll("/", "\\/")));
   assert.match(route, /revalidatePath/);
 });

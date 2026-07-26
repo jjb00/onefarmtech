@@ -66,10 +66,24 @@ test("Access and update queues are server-paginated and preserve management acti
   assert.match(updates, /md:grid-cols/);
 });
 
-test("Buyer detail has bounded URL-driven operational sections", async () => {
+test("Buyer detail has simplified URL-driven operational sections", async () => {
   const detail = await read("src/app/admin/customers/[id]/page.tsx");
-  for (const section of ["overview", "access", "orders", "finance", "communications", "activity"]) assert.match(detail, new RegExp(`"${section}"`));
-  assert.match(detail, /aria-label="Buyer detail sections"/); assert.match(detail, /take: 25/); assert.match(detail, /updateCustomerAccountAction/);
+
+  for (const section of [
+    "overview",
+    "access",
+    "orders",
+    "finance",
+    "communications",
+  ]) {
+    assert.match(detail, new RegExp(`"${section}"`));
+  }
+
+  assert.doesNotMatch(detail, /section === "activity"/);
+  assert.match(detail, /searchParams/);
+  assert.match(detail, /take: 25/);
+  assert.match(detail, /Account controls/);
+  assert.match(detail, /Allow buyer portal login/);
 });
 
 test("legacy buyer routes remain and link to the canonical workspace", async () => {

@@ -2662,7 +2662,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
 
 
 export async function updatePaymentRequestStatusAction(formData: FormData) {
-  await requireCapability("manage_payments");
+  const authoritativeStaff = await requireCapability("manage_payments");
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
   const {requireStaff} = await import("@/lib/auth");
@@ -2734,10 +2734,41 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
       where: {id: paymentRequest.orderId},
       data: {
         paymentStatus: "Paid",
+        paymentReference: paymentRequest.reference,
         fulfilmentStatus: fulfilmentStatusAfterPaymentConfirmed(
           paymentRequest.order.deliveryMethod,
           paymentRequest.order.fulfilmentStatus,
         ),
+      },
+    });
+
+    const automaticReceiptCode = `RCT-${String(paymentRequest.reference)
+      .replace(/[^A-Z0-9-]/gi, "")
+      .toUpperCase()}`;
+
+    await prisma.receipt.upsert({
+      where: {code: automaticReceiptCode},
+      update: {
+        paymentId: payment.id,
+        status: "Issued",
+      },
+      create: {
+        code: automaticReceiptCode,
+        orderId: paymentRequest.orderId,
+        customerId: paymentRequest.customerId || null,
+        paymentId: payment.id,
+        buyerName:
+          paymentRequest.customer?.name ||
+          paymentRequest.order.buyerName ||
+          "Customer",
+        buyerEmail:
+          paymentRequest.customer?.receiptEmail ||
+          paymentRequest.customer?.email ||
+          null,
+        amount: paymentRequest.amount,
+        status: "Issued",
+        issuedBy: authoritativeStaff.name,
+        issuedAt: paidAt || new Date(),
       },
     });
 

@@ -164,6 +164,22 @@ export default async function PaymentsPage({
 
   const groups = groupPaymentRequestsByOrder(requests);
 
+  const receipts = groups.length
+    ? await prisma.receipt.findMany({
+        where: {orderId: {in: groups.map((group) => group.orderId)}},
+        orderBy: {issuedAt: "desc"},
+        select: {orderId: true, code: true},
+      })
+    : [];
+
+  const receiptByOrder = new Map<string, {code: string}>();
+
+  for (const receipt of receipts) {
+    if (!receiptByOrder.has(receipt.orderId)) {
+      receiptByOrder.set(receipt.orderId, receipt);
+    }
+  }
+
   const counts = {
     needsAction: groups.filter(
       (group) => paymentWorkspaceStatus(group) === "needs-action",
@@ -203,11 +219,8 @@ export default async function PaymentsPage({
   const error = errorMessage(params);
 
   const viewLabels = [
-    ["needs-action", "Needs action"],
-    ["pending", "Pending"],
-    ["paid", "Paid"],
+    ["all", "All payments"],
     ["cancelled", "Cancelled"],
-    ["all", "All"],
   ];
 
   return (
@@ -307,6 +320,7 @@ export default async function PaymentsPage({
           <div className="grid gap-4">
             {visible.map((group) => {
               const request = group.current;
+              const receipt = receiptByOrder.get(group.orderId);
               const reusableLink = isReusablePaymentRequest(request);
               const whatsappMessage = whatsappByRequest.get(request.id);
 
@@ -477,19 +491,30 @@ export default async function PaymentsPage({
                       </form>
                     ) : null}
 
-                    {request.status === "Paid" ? (
+                    {request.status === "Paid" && receipt ? (
+                      <Link
+                        href={`/admin/receipts/${receipt.code}`}
+                        className="inline-flex min-h-11 items-center rounded-full border bg-white px-4 text-sm font-black text-[#102015]"
+                      >
+                        View receipt
+                      </Link>
+                    ) : null}
+
+                    {request.status === "Paid" && !receipt ? (
                       <form action={issueReceiptFromPaymentRequestAction}>
                         <input type="hidden" name="id" value={request.id} />
-                        <button className="min-h-11 rounded-full border bg-white px-4 text-sm font-black text-[#102015]">
-                          Issue receipt
+                        <button className="min-h-11 rounded-full border bg-white px-4 text-sm font-black text-[#9b1c1c]">
+                          Retry receipt
                         </button>
                       </form>
                     ) : null}
                   </div>
 
                   <details className="mt-4 rounded-xl border bg-white p-4">
-                    <summary className="cursor-pointer font-black text-[#102015]">
-                      Manage current payment
+                    <summary className="cursor-pointer text-sm font-black text-[#587063]">
+                      {request.status === "Paid"
+                        ? "Manual correction"
+                        : "Manual payment backup"}
                     </summary>
 
                     <div className="mt-4 grid gap-4">

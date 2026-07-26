@@ -33,7 +33,7 @@ export async function initialisePayment({db, paymentRequestId, provider, createC
   const attempt = await db.paymentRequest.create({data: {orderId: source.orderId, customerId: source.customerId || null, provider: selectedProvider, reference, amount: source.amount, currency: String(source.currency || "NGN").toUpperCase(), status: "Initialising", paymentUrl: null, gatewayReference: reference, providerHttpStatus: null, providerError: null}});
 
   try {
-    const checkout = await createCheckout({provider: selectedProvider, reference, amount: source.amount, currency: String(source.currency || "NGN").toUpperCase(), buyerEmail: source.customer?.email || source.order.customer?.email || null, buyerName: source.customer?.name || source.order.customer?.name || source.order.buyerName, buyerPhone: source.order.phone, orderCode: source.order.code, callbackPath: `/admin/payment-requests?reference=${encodeURIComponent(reference)}`});
+    const checkout = await createCheckout({provider: selectedProvider, reference, amount: source.amount, currency: String(source.currency || "NGN").toUpperCase(), buyerEmail: source.customer?.email || source.order.customer?.email || null, buyerName: source.customer?.name || source.order.customer?.name || source.order.buyerName, buyerPhone: source.order.phone, orderCode: source.order.code, callbackPath: `/admin/payments?reference=${encodeURIComponent(reference)}`});
     if (!checkout?.paymentUrl || !/^https:\/\//.test(checkout.paymentUrl) || !checkout.gatewayReference) throw new Error("The provider returned an invalid checkout response.");
 
     const persistSuccess = async (tx) => {

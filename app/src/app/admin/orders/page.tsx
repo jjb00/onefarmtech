@@ -199,25 +199,50 @@ export default async function OrdersPage({
   ];
 
   const nextAction = (order: (typeof orders)[number]) => {
-    if (order.paymentRequests.length) return "Review failed payment";
-
-    if (["Unpaid", "Pending", "Failed"].includes(order.paymentStatus)) {
-      return "Request payment";
-    }
-
-    if (order.deliveryMethod.toLowerCase().includes("pickup")) {
-      return "Update pickup";
-    }
-
     if (
-      !["Delivered", "Collected", "Completed"].includes(
+      ["Delivered", "Collected", "Completed", "Cancelled"].includes(
         order.fulfilmentStatus,
       )
     ) {
-      return "Update fulfilment";
+      return "Open order";
     }
 
-    return "Open order";
+    if (order.paymentRequests.length) return "Review failed payment";
+
+    if (
+      [
+        "Pending confirmation",
+        "Payment pending",
+        "Unpaid",
+        "Part-paid",
+        "Payment failed",
+        "Payment cancelled",
+        "Pending",
+        "Failed",
+      ].includes(order.paymentStatus)
+    ) {
+      return "Request payment";
+    }
+
+    const pickup = order.deliveryMethod.toLowerCase().includes("pickup");
+
+    if (pickup) {
+      if (order.fulfilmentStatus === "Preparing") {
+        return "Mark ready for collection";
+      }
+
+      if (order.fulfilmentStatus === "Ready for pickup") {
+        return "Mark collected";
+      }
+
+      return "Update pickup";
+    }
+
+    if (order.fulfilmentStatus === "Preparing") {
+      return "Assign delivery";
+    }
+
+    return "Update fulfilment";
   };
 
   const range = adminResultRange(page, pageSize, total);

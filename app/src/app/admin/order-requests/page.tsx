@@ -1,8 +1,7 @@
 import {redirect} from "next/navigation";
 
 export const dynamic = "force-dynamic";
-export const runtime = "nodejs";
 
-export default function OrderRequestsPage() {
+export default function RetiredPage() {
   redirect("/admin/orders?view=new-requests");
 }

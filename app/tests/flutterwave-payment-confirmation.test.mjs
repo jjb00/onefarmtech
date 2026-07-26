@@ -54,5 +54,5 @@ test("manual Flutterwave recovery verifies by tx_ref and is finance restricted",
 });
 
 test("Flutterwave webhook revalidates operational pages", () => {
-  const source = fs.readFileSync(new URL("../src/app/api/payments/flutterwave/webhook/route.ts", import.meta.url), "utf8"); for (const path of ["/admin/payment-requests", "/admin/orders", "/admin/payments", "/admin/receipts"]) assert.match(source, new RegExp(path.replaceAll("/", "\\/"))); assert.match(source, /revalidatePath/);
+  const source = fs.readFileSync(new URL("../src/app/api/payments/flutterwave/webhook/route.ts", import.meta.url), "utf8"); for (const path of ["/admin/orders", "/admin/payments", "/admin/receipts"]) assert.match(source, new RegExp(path.replaceAll("/", "\\/"))); assert.match(source, /revalidatePath/);
 });

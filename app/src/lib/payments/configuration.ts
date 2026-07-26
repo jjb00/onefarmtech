@@ -23,7 +23,7 @@ export function paymentConfigurationSummary() {
     paystack: {configured: Boolean(paystackKey), mode: paymentKeyMode("Paystack", paystackKey)},
     flutterwave: {configured: Boolean(flutterwaveKey), mode: paymentKeyMode("Flutterwave", flutterwaveKey)},
     appBaseUrl: baseUrl,
-    paystackCallbackUrl: `${baseUrl}/admin/payment-requests?reference=<payment-reference>`,
-    flutterwaveRedirectUrl: `${baseUrl}/admin/payment-requests?reference=<payment-reference>`,
+    paystackCallbackUrl: `${baseUrl}/admin/payments?reference=<payment-reference>`,
+    flutterwaveRedirectUrl: `${baseUrl}/admin/payments?reference=<payment-reference>`,
   };
 }

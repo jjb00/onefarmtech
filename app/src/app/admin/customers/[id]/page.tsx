@@ -1,5 +1,4 @@
 import Link from "next/link";
-import BuyerWhatsAppComposeButton from "@/components/admin/BuyerWhatsAppComposeButton";
 import {notFound} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -16,15 +15,17 @@ type CustomerDetailPageProps = {
   }>;
   searchParams?: Promise<{section?: string}>;
 };
-const detailSections = ["overview", "access", "orders", "finance", "communications", "activity"];
+const detailSections = ["overview", "access", "orders", "finance", "communications"];
 
 const accountStatuses = [
   "Manual WhatsApp",
   "Approved recurring buyer",
   "Credit review",
+  "Credit hold",
   "Account login pending",
   "Account login ready",
   "Paused",
+  "Archived",
 ];
 
 export default async function CustomerDetailPage({params, searchParams}: CustomerDetailPageProps) {
@@ -89,7 +90,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
   return (
     <AdminPageShell
       title={customer.name}
-      description="Buyer account control page for credit, balance, receipts, order history, and login-readiness."
+      description="Buyer details, access, orders and account controls."
     >
       <div className="grid gap-8">
         <div className="flex flex-wrap gap-3">
@@ -97,19 +98,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
             href="/admin/customers"
             className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
           >
-            Back to customers
-          </Link>
-          <Link
-            href="/admin/buyer-accounts"
-            className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
-          >
-            Buyer accounts
-          </Link>
-          <Link
-            href="/admin/receipts"
-            className="rounded-full border border-[#102015]/15 px-4 py-2 text-sm font-bold text-[#405348]"
-          >
-            Issue receipt
+            Back to buyers
           </Link>
         </div>
 
@@ -130,19 +119,11 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
           >
             <input type="hidden" name="customerId" value={customer.id} />
 
-            <h2 className="text-2xl font-black">Manual account settings</h2>
+            <h2 className="text-2xl font-black">Account controls</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
-              Use this panel to approve and maintain the buyer account manually. Credit limits,
-              payment terms, balances, receipt email, and login readiness are set by the
-              OneFarmTech admin team.
+              Keep ordering, login and finance settings accurate. These controls are the
+              manual backup when an automated process needs intervention.
             </p>
-
-            <div className="mt-5 rounded-2xl border border-[#F2B84B]/40 bg-[#fff8e6] p-4 text-sm leading-7 text-[#5d4716]">
-              <strong className="text-[#102015]">Credit approval note:</strong>{" "}
-              buyer interest in credit is only a request signal. Credit is not approved until
-              admin sets the credit limit, payment terms, customer status, and marks the account
-              as ready.
-            </div>
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-semibold">
@@ -202,7 +183,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
               </label>
 
               <label className="grid gap-2 text-sm font-semibold">
-                Customer status
+                Ordering status
                 <select
                   name="status"
                   defaultValue={customer.status}
@@ -211,6 +192,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                   <option>Active</option>
                   <option>Needs review</option>
                   <option>Paused</option>
+                  <option>Archived</option>
                 </select>
               </label>
 
@@ -221,7 +203,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                   className="h-4 w-4"
                   defaultChecked={customer.accountLoginReady}
                 />
-                Mark buyer as login-ready after approval and contact verification
+                Allow buyer portal login
               </label>
             </div>
 
@@ -247,10 +229,10 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                     ? "Approved for login"
                     : "Pending login approval",
                 ],
-                ["Internal account label", customer.accountStatus],
-                ["Login readiness", customer.accountLoginReady ? "Login ready" : "Not approved for login"],
+                ["Account type", customer.accountStatus],
+                ["Portal access", customer.accountLoginReady ? "Enabled" : "Disabled"],
+                ["Ordering status", customer.status],
                 ["Approved by", customer.approvedBy || "Not approved yet"],
-                ["Approved at", customer.approvedAt ? customer.approvedAt.toLocaleString() : "Not approved yet"],
               ]}
             />
 
@@ -414,7 +396,6 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
           </div>
         </section> : null}
         {section === "communications" ? <section className="rounded-[2rem] bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">Recent communications</h2><div className="mt-4 grid gap-3">{customer.buyerMessages.map((message) => <article key={message.id} className="rounded-xl bg-[#f3f8ef] p-4"><p className="font-black">{message.title}</p><p className="mt-1 text-sm text-[#405348]">{message.channel} · {message.direction} · {message.status}</p><p className="mt-2 text-sm">{message.body.slice(0, 180)}{message.body.length > 180 ? "…" : ""}</p></article>)}</div><Link href={`/admin/buyer-messages?q=${encodeURIComponent(customer.name)}`} className="mt-4 inline-flex font-black text-[#1f7a3f]">View all communications</Link></section> : null}
-        {section === "activity" ? <section className="rounded-[2rem] bg-white p-6 shadow-sm"><h2 className="text-2xl font-black">Recent account activity</h2><p className="mt-3 text-sm text-[#405348]">Last master-record update: {customer.updatedAt.toLocaleString()}</p><p className="mt-2 text-sm text-[#405348]">Recent previews are bounded to 25 records per section.</p><Link href="/admin/audit-log" className="mt-4 inline-flex font-black text-[#1f7a3f]">Open audit log</Link></section> : null}
       </div>
     </AdminPageShell>
   );

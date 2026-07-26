@@ -40,7 +40,7 @@ export function getPaymentCallbackUrls() {
   return {
     paystack: `${baseUrl}/api/payments/webhook`,
     flutterwave: `${baseUrl}/api/payments/flutterwave/webhook`,
-    returnUrl: `${baseUrl}/admin/payment-requests`,
+    returnUrl: `${baseUrl}/admin/payments`,
   };
 }
 
@@ -64,7 +64,7 @@ export async function createPaymentCheckout(
 
   const callbackPath =
     input.callbackPath ||
-    `/admin/payment-requests?reference=${encodeURIComponent(input.reference)}`;
+    `/admin/payments?reference=${encodeURIComponent(input.reference)}`;
 
   if (provider === "Paystack") {
     const checkout = await createPaystackCheckout({
