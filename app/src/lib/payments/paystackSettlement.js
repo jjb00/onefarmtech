@@ -1,3 +1,4 @@
+import {fulfilmentStatusAfterPaymentConfirmed} from "../orderStatusRules.js";
 import {validatePaystackVerification} from "./verificationRules.js";
 
 function receiptCode(reference) {
@@ -23,7 +24,17 @@ export async function settleVerifiedPaystackPayment({db, paymentRequest, verific
       create: {orderId: paymentRequest.orderId, reference: paymentRequest.reference, provider: "Paystack", amount: paymentRequest.amount, status: "Paid", paidAt},
     });
     await tx.paymentRequest.update({where: {id: paymentRequest.id}, data: {provider: "Paystack", gatewayReference: verification.reference, status: "Paid", paidAt}});
-    await tx.order.update({where: {id: paymentRequest.orderId}, data: {paymentStatus: "Paid", paymentReference: paymentRequest.reference}});
+    await tx.order.update({
+      where: {id: paymentRequest.orderId},
+      data: {
+        paymentStatus: "Paid",
+        paymentReference: paymentRequest.reference,
+        fulfilmentStatus: fulfilmentStatusAfterPaymentConfirmed(
+          paymentRequest.order?.deliveryMethod,
+          paymentRequest.order?.fulfilmentStatus,
+        ),
+      },
+    });
 
     if (current.status !== "Paid" || !current.paidAt) {
       await tx.auditLog.create({data: {

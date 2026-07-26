@@ -361,10 +361,10 @@ export default async function AdminOrderDetailPage({
             All orders
           </Link>
           <Link
-            href="/admin/payment-requests"
+            href="/admin/payments"
             className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-center text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
           >
-            Payment requests
+            Payments
           </Link>
           <Link
             href="/admin/deliveries"
@@ -724,11 +724,11 @@ export default async function AdminOrderDetailPage({
                 Payment
               </p>
               <h3 className="mt-2 text-2xl font-black text-[#102015]">
-                Payment requests
+                Payments
               </h3>
             </div>
             <Link
-              href="/admin/payment-requests"
+              href="/admin/payments"
               className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
             >
               Manage payments

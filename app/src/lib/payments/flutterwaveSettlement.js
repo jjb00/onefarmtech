@@ -1,3 +1,4 @@
+import {fulfilmentStatusAfterPaymentConfirmed} from "../orderStatusRules.js";
 import {validateFlutterwaveVerification} from "./verificationRules.js";
 
 function receiptCode(reference) {
@@ -17,7 +18,17 @@ export async function settleVerifiedFlutterwavePayment({db, paymentRequest, veri
       create: {orderId: paymentRequest.orderId, reference: paymentRequest.reference, provider: "Flutterwave", amount: paymentRequest.amount, status: "Paid", paidAt},
     });
     await tx.paymentRequest.update({where: {id: paymentRequest.id}, data: {provider: "Flutterwave", gatewayReference: verification.providerId || verification.reference, status: "Paid", paidAt}});
-    await tx.order.update({where: {id: paymentRequest.orderId}, data: {paymentStatus: "Paid", paymentReference: paymentRequest.reference}});
+    await tx.order.update({
+      where: {id: paymentRequest.orderId},
+      data: {
+        paymentStatus: "Paid",
+        paymentReference: paymentRequest.reference,
+        fulfilmentStatus: fulfilmentStatusAfterPaymentConfirmed(
+          paymentRequest.order?.deliveryMethod,
+          paymentRequest.order?.fulfilmentStatus,
+        ),
+      },
+    });
     if (current.status !== "Paid" || !current.paidAt) {
       await tx.auditLog.create({data: {
         actorName: "Flutterwave", actorRole: "System", action: "Verified Flutterwave payment", entityType: "PaymentRequest", entityId: paymentRequest.id, entityLabel: paymentRequest.reference,

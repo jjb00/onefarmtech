@@ -21,6 +21,21 @@ export function initialFulfilmentStatus(deliveryMethod, deliveryDefault = "New o
   return isPickupMethod(deliveryMethod) ? "Pending pickup" : deliveryDefault;
 }
 
+export function fulfilmentStatusAfterPaymentConfirmed(
+  deliveryMethod,
+  currentStatus,
+) {
+  if (isPickupMethod(deliveryMethod)) {
+    return currentStatus === "Pending pickup" ? "Confirmed" : currentStatus;
+  }
+
+  return ["New order", "Buyer request", "WhatsApp order received"].includes(
+    currentStatus,
+  )
+    ? "Confirmed"
+    : currentStatus;
+}
+
 export function fulfilmentStatusesFor(deliveryMethod, currentStatus = "") {
   const allowed = isPickupMethod(deliveryMethod) ? PICKUP_FULFILMENT_STATUSES : DELIVERY_FULFILMENT_STATUSES;
   return currentStatus && !allowed.includes(currentStatus) ? [currentStatus, ...allowed] : allowed;

@@ -15,7 +15,12 @@ import {getEmailBaseUrl, getOperationalEmailRecipients, sendAdminTransactionalEm
 import {emailTemplates} from "@/lib/email/templates";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
 import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
-import {initialFulfilmentStatus, isPickupMethod, validateOrderStatusTransition} from "@/lib/orderStatusRules.js";
+import {
+  fulfilmentStatusAfterPaymentConfirmed,
+  initialFulfilmentStatus,
+  isPickupMethod,
+  validateOrderStatusTransition,
+} from "@/lib/orderStatusRules.js";
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {isStaffRole} from "@/lib/permissions";
@@ -2729,6 +2734,10 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
       where: {id: paymentRequest.orderId},
       data: {
         paymentStatus: "Paid",
+        fulfilmentStatus: fulfilmentStatusAfterPaymentConfirmed(
+          paymentRequest.order.deliveryMethod,
+          paymentRequest.order.fulfilmentStatus,
+        ),
       },
     });
 
