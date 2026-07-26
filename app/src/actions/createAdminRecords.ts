@@ -1298,7 +1298,9 @@ export async function updateBuyerAccountRequestStatusAction(formData: FormData) 
   });
 
   revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/customers");
   revalidatePath("/admin/audit-log");
+  redirect("/admin/customers?view=applications&queue=active&updated=1");
 }
 
 export async function convertBuyerAccountRequestToCustomerAction(formData: FormData) {

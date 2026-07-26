@@ -152,12 +152,28 @@ test("Orders, Deliveries and Customers use the compact header without losing exi
   assert.match(customers, /createCustomerAction/);
 });
 
-test("legacy admin operational routes remain present and guest orders use the accepted id", () => {
-  for (const route of ["whatsapp", "whatsapp-inbox", "contact-enquiries", "launch-inbox", "order-requests", "drafts", "whatsapp-drafts", "buyer-accounts", "workflows", "whatsapp-workflow", "security", "permissions", "deployment-readiness", "integration-readiness", "launch-smoke-test"]) assert.equal(fs.existsSync(new URL(`../src/app/admin/${route}/page.tsx`, import.meta.url)), true);
-  const guests = fs.readFileSync(new URL("../src/app/admin/guest-buyers/page.tsx", import.meta.url), "utf8");
-  const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
-  assert.match(guests, /href=\{`\/admin\/orders\/\$\{order\.id\}`\}/);
-  assert.match(detail, /where: \{OR: \[\{id\}, \{code: id\}\]\}/);
+test("legacy admin operational routes remain present and guest buyers redirect to the unified workspace", () => {
+  const routes = [
+    "src/app/admin/buyer-accounts/page.tsx",
+    "src/app/admin/guest-buyers/page.tsx",
+    "src/app/admin/buyer-account-requests/page.tsx",
+    "src/app/admin/buyer-access/page.tsx",
+    "src/app/admin/buyer-profile-requests/page.tsx",
+  ];
+
+  for (const route of routes) {
+    assert.equal(fs.existsSync(new URL(`../${route}`, import.meta.url)), true);
+  }
+
+  const guests = fs.readFileSync(
+    new URL("../src/app/admin/guest-buyers/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    guests,
+    /redirect\("\/admin\/customers\?view=all&relationship=Guest\+buyer"\)/,
+  );
 });
 
 test("payment webhooks retain signature checks, reconciliation creation and idempotent settlement", () => {

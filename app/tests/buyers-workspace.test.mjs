@@ -5,7 +5,7 @@ import {BUYER_VIEWS, buyerViewHref, buyerViewsForRole, resolveBuyerView, resolve
 const read = (path) => readFile(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("customers is the canonical role-aware Buyers workspace", async () => {
-  assert.deepEqual(BUYER_VIEWS, ["all", "guests", "applications", "access", "updates"]);
+  assert.deepEqual(BUYER_VIEWS, ["all", "applications", "access", "updates"]);
   assert.equal(resolveBuyerView("bad"), "all");
   assert.equal(resolveBuyerViewForRole("access", "Operations"), "all");
   assert.ok(buyerViewsForRole("Buyer account manager").includes("access"));
@@ -15,20 +15,26 @@ test("customers is the canonical role-aware Buyers workspace", async () => {
   assert.match(page, /title="Buyers"/); assert.match(page, /BuyersViewSwitcher/); assert.match(page, /resolveBuyerViewForRole/);
 });
 
-test("All buyers uses database pagination and lightweight relations", async () => {
+test("All buyers combines account and guest identities in one paginated list", async () => {
   const list = await read("src/components/admin/BuyersList.tsx");
-  assert.match(list, /prisma\.customer\.count\(\{where\}\)/);
-  assert.match(list, /skip: \(page - 1\) \* pageSize/);
-  assert.match(list, /take: pageSize/);
-  assert.match(list, /orderBy: \[\{updatedAt: "desc"\}, \{id: "desc"\}\]/);
-  assert.match(list, /_count: \{select: \{orders: true\}\}/);
-  assert.doesNotMatch(list, /include: \{\s*orders/);
-  assert.match(list, /Open customer/); assert.match(list, /md:hidden/);
+  assert.match(list, /WITH account_buyers AS/);
+  assert.match(list, /guest_buyers AS/);
+  assert.match(list, /UNION ALL/);
+  assert.match(list, /customerId" IS NULL/);
+  assert.match(list, /sourcePhone/);
+  assert.match(list, /relationship: "Account buyer" \| "Guest buyer"/);
+  assert.match(list, /COUNT\(\*\) OVER\(\)/);
+  assert.match(list, /LIMIT \$5/);
+  assert.match(list, /OFFSET \$6/);
+  assert.match(list, /Open buyer/);
+  assert.match(list, /View latest order/);
+  assert.match(list, /md:hidden/);
 });
 
-test("Guest buyers remains an honestly bounded phone-grouped view", async () => {
+test("legacy guest buyers route redirects into the unified Buyers list", async () => {
   const guests = await read("src/app/admin/guest-buyers/page.tsx");
-  assert.match(guests, /take: 500/); assert.match(guests, /const phone = order\.sourcePhone \|\| order\.phone/); assert.match(guests, /customers\?view=guests/);
+  assert.match(guests, /redirect/);
+  assert.match(guests, /customers\?view=all&relationship=Guest\+buyer/);
 });
 
 test("Applications reuses the scalable conversion-integrity queue", async () => {
@@ -37,9 +43,27 @@ test("Applications reuses the scalable conversion-integrity queue", async () => 
 });
 
 test("Access and update queues are server-paginated and preserve management actions", async () => {
-  const access = await read("src/components/admin/BuyerAccessList.tsx"), accessRoute = await read("src/app/admin/buyer-access/page.tsx"), updates = await read("src/components/admin/BuyerUpdateRequestsList.tsx");
-  assert.match(access, /buyerContact\.count/); assert.match(access, /buyerAccountInvite\.count/); assert.match(access, /skip: \(contactPage - 1\) \* pageSize/); assert.match(accessRoute, /createBuyerContactAction/); assert.match(accessRoute, /createBuyerAccountInviteAction/); assert.match(accessRoute, /updateBuyerAccountInviteStatusAction/);
-  assert.match(updates, /buyerProfileUpdateRequest\.count/); assert.match(updates, /updateBuyerProfileUpdateRequestStatusAction/); assert.match(updates, /md:grid-cols/);
+  const access = await read("src/components/admin/BuyerAccessList.tsx");
+  const accessRoute = await read("src/app/admin/buyer-access/page.tsx");
+  const updates = await read("src/components/admin/BuyerUpdateRequestsList.tsx");
+
+  assert.match(access, /prisma\.customer\.count/);
+  assert.match(access, /skip: \(page - 1\) \* pageSize/);
+  assert.match(access, /take: pageSize/);
+  assert.match(access, /prisma\.buyerContact\.findMany/);
+  assert.match(access, /prisma\.buyerAccountInvite\.findMany/);
+  assert.match(access, /contactsByBuyer/);
+  assert.match(access, /invitesByBuyer/);
+  assert.match(access, /label="buyer accounts"/);
+  assert.match(access, /Manage access/);
+
+  assert.match(accessRoute, /createBuyerContactAction/);
+  assert.match(accessRoute, /createBuyerAccountInviteAction/);
+  assert.match(accessRoute, /updateBuyerAccountInviteStatusAction/);
+
+  assert.match(updates, /buyerProfileUpdateRequest\.count/);
+  assert.match(updates, /updateBuyerProfileUpdateRequestStatusAction/);
+  assert.match(updates, /md:grid-cols/);
 });
 
 test("Buyer detail has bounded URL-driven operational sections", async () => {

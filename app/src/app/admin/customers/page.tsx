@@ -5,7 +5,6 @@ import BuyersList from "@/components/admin/BuyersList";
 import BuyerAccountRequestsPage from "@/app/admin/buyer-account-requests/page";
 import BuyerAccessList from "@/components/admin/BuyerAccessList";
 import BuyerUpdateRequestsList from "@/components/admin/BuyerUpdateRequestsList";
-import GuestBuyersPage from "@/app/admin/guest-buyers/page";
 import {createCustomerAction} from "@/actions/createAdminRecords";
 import {buyerTypes} from "@/constants/orderOptions";
 import {requireStaff} from "@/lib/auth";
@@ -20,12 +19,11 @@ export default async function CustomersPage({searchParams}: {searchParams?: Prom
   const staff = await requireStaff(), raw = await searchParams, requested = text(raw?.view), normalized = resolveBuyerView(requested), view = resolveBuyerViewForRole(requested, staff.role);
   if (!view) redirect("/admin?access=denied&blocked=/admin/customers");
   if ((requested && requested !== normalized) || normalized !== view) redirect(`/admin/customers?view=${view}`);
-  const params = {q: text(raw?.q), status: text(raw?.status), type: text(raw?.type), readiness: text(raw?.readiness), pageSize: text(raw?.pageSize)};
+  const params = {q: text(raw?.q), status: text(raw?.status), type: text(raw?.type), readiness: text(raw?.readiness), queue: text(raw?.queue), pageSize: text(raw?.pageSize)};
   return <AdminPageShell title="Buyers" description="Manage buyers, applications and account access." compactHeader>
     <div className="grid gap-5"><BuyersViewSwitcher activeView={view} role={staff.role} params={params}/>
       {view === "all" ? <CreateBuyerForm /> : null}
       {view === "all" ? <BuyersList raw={raw || {}}/> : null}
-      {view === "guests" ? <GuestBuyersPage searchParams={Promise.resolve(raw || {})} embedded/> : null}
       {view === "applications" ? <BuyerAccountRequestsPage searchParams={Promise.resolve(raw || {})} embedded/> : null}
       {view === "access" ? <BuyerAccessList raw={raw || {}}/> : null}
       {view === "updates" ? <BuyerUpdateRequestsList raw={raw || {}} pathname="/admin/customers" hiddenParams={{view: "updates"}}/> : null}

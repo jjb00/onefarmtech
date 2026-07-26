@@ -135,7 +135,7 @@ export default async function LaunchReadinessPage() {
       title: "Guest buyer handling",
       detail: `${counts.guestOrders} unlinked guest orders. Guest buyers can remain unlinked unless they become recurring or high-value.`,
       ok: true,
-      href: "/admin/guest-buyers",
+      href: "/admin/customers?view=all&relationship=Guest+buyer",
     },
     {
       title: "Buyer communication evidence",

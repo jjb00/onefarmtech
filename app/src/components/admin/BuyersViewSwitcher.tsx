@@ -1,11 +1,10 @@
 import Link from "next/link";
 
 const views = [
-  ["all", "Customers"],
-  ["guests", "Guest activity"],
-  ["applications", "Account applications"],
-  ["access", "Login access"],
-  ["updates", "Profile changes"],
+  ["all", "Buyers"],
+  ["applications", "Applications"],
+  ["access", "Account access"],
+  ["updates", "Profile requests"],
 ] as const;
 
 export default function BuyersViewSwitcher({

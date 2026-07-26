@@ -26,6 +26,7 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   const staff = await requireStaffRole("Super admin");
   const recordType = text(formData, "recordType");
   const recordId = text(formData, "recordId");
+  const returnTo = text(formData, "returnTo");
   const reason = text(formData, "reason");
   const confirmation = text(formData, "confirmation");
   const password = text(formData, "password");
@@ -48,6 +49,20 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
       }
 
       await tx.orderRequest.delete({where: {id: recordId}});
+    } else if (recordType === "BuyerAccountRequest") {
+      const application = await tx.buyerAccountRequest.findUnique({
+        where: {id: recordId},
+        select: {status: true},
+      });
+
+      if (
+        !application ||
+        application.status === "Converted to customer"
+      ) {
+        throw new Error("BUYER_APPLICATION_DELETE_BLOCKED");
+      }
+
+      await tx.buyerAccountRequest.delete({where: {id: recordId}});
     } else if (recordType === "Order") {
       const order = await tx.order.findUnique({
         where: {id: recordId},
@@ -108,10 +123,29 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   revalidatePath("/admin/buyer-messages");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/order-requests");
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/buyer-account-requests");
   revalidatePath("/admin/audit-log");
 
-  if (recordType === "Order" || recordType === "OrderRequest") {
+  if (
+    returnTo.startsWith("/admin/") &&
+    !returnTo.startsWith("//") &&
+    !returnTo.includes("\n") &&
+    !returnTo.includes("\r")
+  ) {
+    redirect(returnTo);
+  }
+
+  if (recordType === "OrderRequest") {
+    redirect("/admin/orders?view=new-requests&deleted=1");
+  }
+
+  if (recordType === "Order") {
     redirect("/admin/orders?deleted=1");
+  }
+
+  if (recordType === "BuyerAccountRequest") {
+    redirect("/admin/customers?view=applications&queue=active&deleted=1");
   }
 
   redirect("/admin/buyer-messages?view=needs-reply&deleted=1");
