@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {redirect} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
 import {
@@ -388,6 +389,13 @@ async function WhatsAppReplyQueue({
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
+                    <Link
+                      href={`/admin/buyer-messages/${message.recordType}/${message.id}`}
+                      className="inline-flex min-h-11 items-center rounded-full bg-[#102015] px-4 text-sm font-black text-white"
+                    >
+                      Open conversation
+                    </Link>
+
                     {href ? (
                       <a
                         href={href}
