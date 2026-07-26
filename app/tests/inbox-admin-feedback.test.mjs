@@ -10,13 +10,17 @@ test("message workspace contains only unresolved staff-attention queues", () => 
 
   assert.match(messages, /Messages needing a reply/);
   assert.match(messages, /Needs reply/);
-  assert.match(messages, /Unknown contacts/);
+  assert.doesNotMatch(messages, />\s*Unknown contacts\s*</);
+  assert.match(messages, /buyerName: "Unknown buyer"/);
   assert.match(messages, /Mark handled/);
   assert.match(
     messages,
-    /notIn: \["Replied", "Closed", "Resolved", "Archived"\]/
+    /const CLOSED_BUYER_STATUSES = \["Replied", "Closed", "Resolved", "Archived"\]/,
   );
-
+  assert.match(
+    messages,
+    /notIn: \["Unread", \.\.\.CLOSED_BUYER_STATUSES\]/,
+  );
   assert.doesNotMatch(messages, /Buyer requests/);
   assert.doesNotMatch(messages, /Email delivery/);
   assert.doesNotMatch(messages, /Operational events/);
