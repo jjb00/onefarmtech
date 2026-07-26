@@ -78,7 +78,6 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
           {
             adminNote: {
               contains: "classification: operational",
-              mode: "insensitive",
             },
           },
           {
@@ -86,8 +85,7 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
               message: {
                 not: {
                   contains: phrase,
-                  mode: "insensitive",
-                },
+                    },
               },
             })),
           },
