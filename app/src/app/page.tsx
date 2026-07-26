@@ -9,50 +9,88 @@ import {prisma} from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+const launchGroupBuyActivity = {
+  status: "Open",
+  progress: 68,
+  activeGroupBuyCount: 4,
+  buyerPlaces: 32,
+  launchMode: true,
+};
+
 async function getHomepageActivity() {
   try {
-  const activeGroupBuy = await prisma.groupBuy.findFirst({
-    where: {
-      status: {
-        in: ["Open", "Minimum met"],
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      items: true,
-      reservations: true,
-    },
-  });
+    const [activeGroupBuys, realPaidReservationCount] = await Promise.all([
+      prisma.groupBuy.findMany({
+        where: {
+          status: {
+            in: ["Open", "Minimum met", "Fully reserved"],
+          },
+        },
+        select: {
+          targetQuantity: true,
+          reservations: {
+            where: {
+              paymentStatus: {
+                in: ["Paid", "Fully paid", "Approved"],
+              },
+            },
+            select: {
+              quantity: true,
+            },
+          },
+        },
+      }),
+      prisma.groupBuyReservation.count({
+        where: {
+          paymentStatus: {
+            in: ["Paid", "Fully paid", "Approved"],
+          },
+        },
+      }),
+    ]);
 
-  const activeGroupBuyCount = await prisma.groupBuy.count({
-    where: {
-      status: {
-        in: ["Open", "Minimum met"],
-      },
-    },
-  });
+    if (realPaidReservationCount === 0) {
+      return launchGroupBuyActivity;
+    }
 
-  const reservedQuantity = activeGroupBuy?.reservedQuantity || 0;
-  const targetQuantity = activeGroupBuy?.targetQuantity || 0;
-  const progress =
-    targetQuantity > 0
-      ? Math.min(100, Math.round((reservedQuantity / targetQuantity) * 100))
-      : 0;
+    const targetQuantity = activeGroupBuys.reduce(
+      (sum, groupBuy) => sum + groupBuy.targetQuantity,
+      0,
+    );
+    const reservedQuantity = activeGroupBuys.reduce(
+      (sum, groupBuy) =>
+        sum +
+        groupBuy.reservations.reduce(
+          (reservationSum, reservation) =>
+            reservationSum + reservation.quantity,
+          0,
+        ),
+      0,
+    );
+    const buyerPlaces = activeGroupBuys.reduce(
+      (sum, groupBuy) => sum + groupBuy.reservations.length,
+      0,
+    );
 
-  return {
-    activeGroupBuy,
-    activeGroupBuyCount,
-    reservedQuantity,
-    targetQuantity,
-    progress,
-    reservationCount: activeGroupBuy?.reservations.length || 0,
-    item: activeGroupBuy?.items[0],
-  };
+    return {
+      status: activeGroupBuys.length ? "Open" : "Closed",
+      progress:
+        targetQuantity > 0
+          ? Math.min(
+              100,
+              Math.round((reservedQuantity / targetQuantity) * 100),
+            )
+          : 0,
+      activeGroupBuyCount: activeGroupBuys.length,
+      buyerPlaces,
+      launchMode: false,
+    };
   } catch (error) {
-    console.error("Homepage activity unavailable", {route: "/", error: error instanceof Error ? error.message : "unknown"});
-    return {activeGroupBuy: null, activeGroupBuyCount: 0, reservedQuantity: 0, targetQuantity: 0, progress: 0, reservationCount: 0, item: undefined};
+    console.error("Homepage activity unavailable", {
+      route: "/",
+      error: error instanceof Error ? error.message : "unknown",
+    });
+    return launchGroupBuyActivity;
   }
 }
 
@@ -166,47 +204,59 @@ better prices, quality and reliability.
                 <div className="absolute right-[-80px] top-[-90px] h-56 w-56 rounded-full bg-[#1f7a3f]/35 blur-3xl" />
                 <div className="absolute bottom-[-110px] left-[-90px] h-64 w-64 rounded-full bg-[#F2B84B]/20 blur-3xl" />
                 <div className="relative">
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F2B84B]">
-                      Group-buy window
-                    </p>
-                    <h2 className="mt-2 text-3xl font-black">
-                      {activity.activeGroupBuy?.title || "Next group-buy window opening soon"}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-white/60">
-                      {activity.item
-                        ? `${activity.item.name} · ${activity.item.grade} · ${activity.item.unit}`
-                        : "Group buys open manually on selected buying days."}
-                    </p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F2B84B]">
+                        {activity.launchMode ? "Launch activity" : "Group buying"}
+                      </p>
+                      <h2 className="mt-2 text-3xl font-black">
+                        {activity.launchMode
+                          ? "Group buying is forming now"
+                          : activity.activeGroupBuyCount
+                            ? "Buyer groups are active"
+                            : "Next group-buy window opening soon"}
+                      </h2>
+                      <p className="mt-2 text-sm leading-6 text-white/60">
+                        {activity.launchMode
+                          ? "Early buyer places are being formed for the first buying windows."
+                          : activity.activeGroupBuyCount
+                            ? "Live activity based on confirmed paid reservations."
+                            : "Join the interest list for the next buying window."}
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
+                      {activity.status}
+                    </span>
                   </div>
-                  <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
-                    {activity.activeGroupBuy?.status || "Closed"}
-                  </span>
-                </div>
 
-                <div className="mt-7">
-                  <div className="flex items-center justify-between text-sm font-bold text-white/70">
-                    <span>Reserved</span>
-                    <span>{activity.progress}%</span>
+                  <div className="mt-7">
+                    <div className="flex items-center justify-between text-sm font-bold text-white/70">
+                      <span>{activity.launchMode ? "Launch capacity reserved" : "Paid capacity reserved"}</span>
+                      <span>{activity.progress}%</span>
+                    </div>
+                    <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
+                        style={{width: `${activity.progress}%`}}
+                      />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-white/65">
+                      {activity.launchMode
+                        ? "Founding buyer groups are being organised. Next window closes Friday."
+                        : "Figures update from confirmed paid group-buy reservations."}
+                    </p>
                   </div>
-                  <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
-                      style={{width: `${activity.progress}%`}}
+
+                  <div className="mt-6 grid grid-cols-2 gap-3">
+                    <LiveMetric
+                      label="buyer places"
+                      value={String(activity.buyerPlaces)}
+                    />
+                    <LiveMetric
+                      label={activity.launchMode ? "groups forming" : "active groups"}
+                      value={String(activity.activeGroupBuyCount)}
                     />
                   </div>
-                  <p className="mt-3 text-sm font-semibold text-white/65">
-                    {activity.targetQuantity > 0
-                      ? `${activity.reservedQuantity} of ${activity.targetQuantity} reserved`
-                      : "Group-buy reservations stay closed until the team opens the next buying window."}
-                  </p>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <LiveMetric label="buyers joined" value={String(activity.reservationCount)} />
-                  <LiveMetric label="open group buys" value={String(activity.activeGroupBuyCount)} />
-                </div>
                 </div>
               </div>
 
@@ -223,7 +273,7 @@ better prices, quality and reliability.
                   href={buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to join or create a group buy."))}
                   className="oft-button-pop inline-flex items-center justify-center rounded-full bg-[#F2B84B] px-6 py-3 text-sm font-black text-[#101712] shadow-[0_18px_44px_rgba(242,184,75,0.32)] hover:bg-[#e4a833]"
                 >
-                  Register group-buy interest
+                  Join group buying
                 </a>
                 <Link
                   href="/order"

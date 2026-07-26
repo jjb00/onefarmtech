@@ -1,3 +1,4 @@
+import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
 import {
   AdminCompactMetric,
@@ -85,6 +86,31 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
       description="Catalogue, prices, grades and availability."
     >
       <div className="grid gap-5">
+        <nav
+          aria-label="Product workspace"
+          className="flex gap-2 overflow-x-auto pb-1"
+        >
+          <Link
+            href="/admin/products"
+            aria-current="page"
+            className="whitespace-nowrap rounded-full bg-[#102015] px-4 py-2.5 text-sm font-black text-white"
+          >
+            Products
+          </Link>
+          <Link
+            href="/admin/group-buys"
+            className="whitespace-nowrap rounded-full border bg-white px-4 py-2.5 text-sm font-black text-[#102015]"
+          >
+            Group buys
+          </Link>
+          <Link
+            href="/admin/pickup-locations"
+            className="whitespace-nowrap rounded-full border bg-white px-4 py-2.5 text-sm font-black text-[#102015]"
+          >
+            Delivery & pickup
+          </Link>
+        </nav>
+
         <section className="grid gap-3 md:grid-cols-4">
           <AdminCompactMetric label="Products" value={String(products.length)} tone="blue" />
           <AdminCompactMetric label="Active" value={String(activeProducts.length)} tone="green" href={hrefFor({...base, status: "active"})} />

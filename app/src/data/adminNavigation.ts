@@ -31,20 +31,6 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
         priority: true,
       },
       {
-        title: "WhatsApp",
-        href: "/admin/buyer-messages?view=needs-reply",
-        description: "Operational WhatsApp conversations and unknown contacts.",
-        activePaths: [
-          "/admin/buyer-messages",
-          "/admin/whatsapp",
-          "/admin/whatsapp-inbox",
-          "/admin/whatsapp-tools",
-          "/admin/whatsapp-drafts",
-          "/admin/drafts",
-        ],
-        priority: true,
-      },
-      {
         title: "Buyers",
         href: "/admin/customers",
         description: "Customers, guests, applications and login access.",
@@ -94,7 +80,6 @@ export const adminQuickActions = [
   {title: "Open order desk", href: "/admin/operations", description: "Review daily intake, payments, delivery and urgent issues."},
   {title: "Review orders", href: "/admin/orders", description: "Open all orders and transaction controls."},
   {title: "Check payment requests", href: "/admin/payment-requests", description: "Review payment links and provider status."},
-  {title: "Open inbox", href: "/admin/buyer-messages", description: "Review buyer communications and delivery evidence."},
   {title: "Review applications", href: "/admin/buyer-account-requests", description: "Review buyers requesting account access."},
 ];
 

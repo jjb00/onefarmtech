@@ -14,6 +14,7 @@ import {formatNaira} from "@/lib/format";
 import {prisma} from "@/lib/prisma";
 import {getCurrentStaffActor} from "@/lib/currentStaff";
 import {canAccessAdminPath} from "@/lib/adminAccess";
+import {nonOperationalWhatsAppPhrases} from "@/lib/whatsappClassification.js";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,7 +30,6 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   const params = await searchParams;
   const staff = await getCurrentStaffActor();
   const accessDenied = params?.access === "denied";
-  const today = new Date(); today.setHours(0, 0, 0, 0);
 
   const [
     orders,
@@ -44,10 +44,8 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     staffUsers,
     buyerAccountRequests,
     buyerProfileUpdateRequests,
-    failedEmailCount,
-    openPaymentIncidentCount,
-    recentOperationalEventCount,
-    unprocessedContactCount,
+    knownWhatsAppExceptionCount,
+    unknownWhatsAppExceptionCount,
   ] = await Promise.all([
     getDbOrders(),
     getDbOrderStats(),
@@ -65,10 +63,37 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
       include: {customer: true},
       take: 20,
     }),
-    prisma.emailDelivery.count({where: {status: {in: ["Failed", "Bounced", "Complained"]}, updatedAt: {gte: today}}}),
-    prisma.paymentReconciliationIncident.count({where: {status: {in: ["Open", "Investigating"]}}}),
-    prisma.operationalEvent.count({where: {status: "Open"}}),
-    prisma.contactEnquiry.count({where: {status: "New", createdAt: {gte: today}}}),
+    prisma.buyerMessage.count({
+      where: {
+        channel: "WhatsApp",
+        direction: "Inbound",
+        status: {notIn: ["Replied", "Closed", "Resolved", "Archived"]},
+      },
+    }),
+    prisma.contactEnquiry.count({
+      where: {
+        enquiryType: "WhatsApp inbound",
+        status: {in: ["New", "Open"]},
+        OR: [
+          {
+            adminNote: {
+              contains: "classification: operational",
+              mode: "insensitive",
+            },
+          },
+          {
+            AND: nonOperationalWhatsAppPhrases.map((phrase) => ({
+              message: {
+                not: {
+                  contains: phrase,
+                  mode: "insensitive",
+                },
+              },
+            })),
+          },
+        ],
+      },
+    }),
   ]);
 
   const paymentTotal = payments.reduce((sum, payment) => sum + payment.amount, 0);
@@ -92,6 +117,8 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
   const openBuyerProfileUpdateRequests = buyerProfileUpdateRequests.filter(
     (request) => ["New", "Reviewing"].includes(request.status),
   );
+  const whatsappExceptionCount =
+    knownWhatsAppExceptionCount + unknownWhatsAppExceptionCount;
 
   const quickActions = [
     ["Order desk", "/admin/operations"],
@@ -99,7 +126,6 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
     ["Buyer accounts", "/admin/buyer-accounts"],
     ["Buyer access", "/admin/buyer-access"],
     ["Profile updates", "/admin/buyer-profile-requests"],
-    ["Message centre", "/admin/whatsapp"],
     ["Payment requests", "/admin/payment-requests"],
     ["Audit log", "/admin/audit-log"],
     ["Staff & roles", "/admin/staff"],
@@ -131,10 +157,30 @@ export default async function AdminDashboardPage({searchParams}: AdminDashboardP
           </div>
         ) : null}
 
-        {(failedEmailCount || openPaymentIncidentCount || recentOperationalEventCount || unprocessedContactCount) ? <section className="rounded-[2rem] border border-[#C95F3D]/20 bg-[#fff8f3] p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-xs font-black uppercase tracking-[0.2em] text-[#C95F3D]">Operational attention</p><h2 className="mt-2 text-2xl font-black">Production follow-up</h2></div><Link href="/admin/buyer-messages?view=operations" className="rounded-full bg-[#102015] px-5 py-3 text-sm font-black text-white">Open communications</Link></div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><MetricCard label="Failed today" value={String(failedEmailCount)} href="/admin/buyer-messages?view=email&status=Failed" /><MetricCard label="Unresolved payments" value={String(openPaymentIncidentCount)} href="/admin/buyer-messages?view=reconciliation" /><MetricCard label="Needs attention" value={String(recentOperationalEventCount)} href="/admin/buyer-messages?view=operations&status=Open" /><MetricCard label="New today" value={String(unprocessedContactCount)} href="/admin/buyer-messages?view=enquiries&status=New" /></div>
-        </section> : null}
+
+        {whatsappExceptionCount ? (
+          <section className="rounded-2xl border border-[#F2B84B]/30 bg-[#fff8e4] p-5 text-[#102015]">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.2em] text-[#7a4a00]">
+                  WhatsApp exception
+                </p>
+                <h2 className="mt-2 text-2xl font-black">
+                  {whatsappExceptionCount} conversation{whatsappExceptionCount === 1 ? "" : "s"} need a person
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-[#405348]">
+                  Routine automation stays out of the admin. This queue contains only unresolved or unknown contacts.
+                </p>
+              </div>
+              <Link
+                href="/admin/buyer-messages?view=needs-reply"
+                className="rounded-full bg-[#102015] px-5 py-3 text-center text-sm font-black text-white"
+              >
+                Review exceptions
+              </Link>
+            </div>
+          </section>
+        ) : null}
 
         {openBuyerProfileUpdateRequests.length ? (
           <section className="rounded-[2rem] border border-[#3E7A4C]/20 bg-[#eef8ed] p-5 text-[#102015] shadow-sm">
