@@ -97,7 +97,7 @@ export default async function AdminDashboardPage({
     {
       label: "Payment follow-up",
       value: paymentsNeedingFollowUp,
-      href: "/admin/payment-requests?status=pending",
+      href: "/admin/payments?status=pending",
       action: "Open payments",
     },
     {

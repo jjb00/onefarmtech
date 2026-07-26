@@ -45,7 +45,7 @@ export const adminNavigationGroups: Array<{title: string; links: AdminNavigation
       },
       {
         title: "Payments",
-        href: "/admin/payment-requests",
+        href: "/admin/payments",
         description: "Payment requests and receipts.",
         activePaths: [
           "/admin/payments",
@@ -79,7 +79,7 @@ export function isAdminNavigationLinkActive(link: AdminNavigationLink, pathname:
 export const adminQuickActions = [
   {title: "New order", href: "/admin/create-order", description: "Create an order."},
   {title: "Review orders", href: "/admin/orders", description: "Open all orders and transaction controls."},
-  {title: "Check payment requests", href: "/admin/payment-requests", description: "Review payment links and provider status."},
+  {title: "Check payment requests", href: "/admin/payments", description: "Review payment links and provider status."},
   {title: "Review applications", href: "/admin/buyer-account-requests", description: "Review buyers requesting account access."},
 ];
 

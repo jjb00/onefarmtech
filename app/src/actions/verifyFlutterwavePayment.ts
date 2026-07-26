@@ -13,7 +13,7 @@ export async function verifyFlutterwavePaymentAction(formData: FormData) {
   if (!["Super admin", "Admin", "Finance"].includes(staff.role)) throw new Error("Forbidden: finance access is required.");
   const id = String(formData.get("id") || "").trim();
   const paymentRequest = await prisma.paymentRequest.findUnique({where: {id}, include: {order: true, customer: true}});
-  if (!paymentRequest || paymentRequest.provider !== "Flutterwave") redirect("/admin/payment-requests?error=flutterwave-request-not-found");
+  if (!paymentRequest || paymentRequest.provider !== "Flutterwave") redirect("/admin/payments?error=flutterwave-request-not-found");
 
   let result;
   try {
@@ -21,13 +21,13 @@ export async function verifyFlutterwavePaymentAction(formData: FormData) {
     result = await settleVerifiedFlutterwavePayment({db: prisma, paymentRequest, verification, source: `Manual verification by ${staff.name}`});
   } catch (error) {
     await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: paymentRequest.gatewayReference, reason: "Manual Flutterwave verification failed.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
-    redirect("/admin/payment-requests?error=flutterwave-verification-failed");
+    redirect("/admin/payments?error=flutterwave-verification-failed");
   }
   if (!result.ok) {
     await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: paymentRequest.gatewayReference, reason: `Manual provider verification conflict: ${result.conflict}.`});
-    redirect(`/admin/payment-requests?error=verification-${result.conflict}`);
+    redirect(`/admin/payments?error=verification-${result.conflict}`);
   }
   if (result.receiptError) await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: paymentRequest.gatewayReference, reason: "Payment was verified and marked paid, but automatic receipt creation failed.", verificationMetadata: {receiptError: result.receiptError}});
-  for (const path of ["/admin/payment-requests", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
-  redirect(`/admin/payment-requests?verified=${encodeURIComponent(paymentRequest.reference)}`);
+  for (const path of ["/admin/payments", "/admin/orders", `/admin/orders/${paymentRequest.orderId}`, "/admin/payments", "/admin/receipts", "/admin", "/buyer-account"]) revalidatePath(path);
+  redirect(`/admin/payments?verified=${encodeURIComponent(paymentRequest.reference)}`);
 }

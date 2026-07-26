@@ -55,7 +55,7 @@ test("Today contains actionable operational queues only", () => {
 
 test("orders and payments retain bounded pagination and operational controls", () => {
   const orders = read("src/app/admin/orders/page.tsx");
-  const payments = read("src/app/admin/payment-requests/page.tsx");
+  const payments = read("src/app/admin/payments/page.tsx");
 
   assert.match(orders, /"needs-action"/);
   assert.match(orders, /parseAdminPageSize/);
@@ -64,8 +64,10 @@ test("orders and payments retain bounded pagination and operational controls", (
   assert.doesNotMatch(orders, /include:\s*\{\s*payments:/);
 
   assert.match(payments, /prisma\.paymentRequest\.findMany/);
-  assert.match(payments, /take: 200/);
-  assert.match(payments, /AdminViewBar/);
+  assert.match(payments, /groupPaymentRequestsByOrder/);
+  assert.match(payments, /parseAdminPageSize/);
+  assert.match(payments, /filtered\.slice/);
+  assert.match(payments, /AdminPagination/);
   assert.match(payments, /generatePaymentLinkAction/);
   assert.match(payments, /verifyPaystackPaymentAction/);
   assert.match(payments, /verifyFlutterwavePaymentAction/);
@@ -142,7 +144,10 @@ test("ordinary buyers are not labelled as awaiting account approval", () => {
   assert.match(relationship, /No account requested/);
   assert.match(relationship, /Awaiting account review/);
   assert.match(relationship, /Login active/);
-  assert.match(buyers, /buyerRelationshipLabel/);
+  assert.match(buyers, /"Account buyer" \| "Guest buyer"/);
+  assert.match(buyers, /'Account buyer'::text AS relationship/);
+  assert.match(buyers, /'Guest buyer'::text AS relationship/);
+  assert.doesNotMatch(buyers, /awaiting account approval/i);
   assert.doesNotMatch(buyers, />Pending login approval</);
 });
 

@@ -81,7 +81,7 @@ test("payment WhatsApp retry reuses the request and checkout URL while persistin
 });
 
 test("admin UI distinguishes Meta acceptance from delivery and allows failed retry", () => {
-  const page = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
+  const page = fs.readFileSync(new URL("../src/app/admin/payments/page.tsx", import.meta.url), "utf8");
   assert.match(page, /message was accepted for sending/i);
   assert.match(page, /whatsappMessage\.status === "Failed"/);
   assert.match(page, /Retry same link/);

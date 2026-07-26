@@ -140,10 +140,10 @@ test("provider configuration errors are clear and permanent production callbacks
 test("successful attempts are Pending with provider URLs and failed attempts have no open-link path", () => {
   const initialization = fs.readFileSync(new URL("../src/lib/payments/paymentInitialization.js", import.meta.url), "utf8");
   const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-  const page = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
+  const page = fs.readFileSync(new URL("../src/app/admin/payments/page.tsx", import.meta.url), "utf8");
   assert.match(initialization, /status: "Pending"/); assert.match(initialization, /status: "Failed", paymentUrl: null/);
-  assert.match(actions, /} catch \(error\) \{[\s\S]*redirect\(`\/admin\/payment-requests\?error=[\s\S]*\n  }\n\n  const \{source:/);
-  assert.match(actions, /redirect\(`\/admin\/payment-requests\?paymentLink=/);
+  assert.match(actions, /} catch \(error\) \{[\s\S]*redirect\(`\/admin\/payments\?error=[\s\S]*\n  }\n\n  const \{source:/);
+  assert.match(actions, /redirect\(`\/admin\/payments\?paymentLink=/);
   assert.match(page, /request\.status === "Failed" && request\.providerError/);
 });
 
@@ -170,7 +170,7 @@ test("status rules allow forward pickup and delivery progress but reject regress
 test("UI and actions keep pickup, payment and delivery assignment independent", () => {
   const orders = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
-  const payments = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
+  const payments = fs.readFileSync(new URL("../src/app/admin/payments/page.tsx", import.meta.url), "utf8");
   const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
   for (const source of [orders, detail, payments]) { assert.match(source, /paymentStatus/); assert.match(source, /fulfilmentStatus/); }
   assert.match(actions, /pickup-does-not-use-delivery-assignment/);

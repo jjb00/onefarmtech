@@ -2060,7 +2060,7 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
     await sendTransactionalEmail({deduplicationKey: `payment-request:${paymentRequest.id}`, template: "payment-request", to: order.customer.email, content: emailTemplates.paymentRequest(order.customer.name, order.code, new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(amount), paymentRequest.paymentUrl, getEmailBaseUrl()), relatedType: "PaymentRequest", relatedId: paymentRequest.id});
   }
 
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/payments");
   revalidatePath(`/admin/orders/${order.id}`);
   revalidatePath("/buyer-account/payments");
   revalidatePath(`/buyer-account/orders/${order.id}`);
@@ -2085,7 +2085,7 @@ export async function generatePaymentLinkAction(formData: FormData) {
   const provider = String(formData.get("provider") || "Paystack").trim() || "Paystack";
 
   if (!id) {
-    redirect("/admin/payment-requests?error=missing-id");
+    redirect("/admin/payments?error=missing-id");
   }
 
   let result;
@@ -2094,7 +2094,7 @@ export async function generatePaymentLinkAction(formData: FormData) {
   } catch (error) {
     const code = error instanceof PaymentInitializationError ? error.code : "payment-link-failed";
     const detail = error instanceof PaymentInitializationError ? error.message : "Payment initialisation failed unexpectedly.";
-    redirect(`/admin/payment-requests?error=${encodeURIComponent(code)}&detail=${encodeURIComponent(`${provider}: ${detail}`)}`);
+    redirect(`/admin/payments?error=${encodeURIComponent(code)}&detail=${encodeURIComponent(`${provider}: ${detail}`)}`);
   }
 
   const {source: sourcePaymentRequest, reused} = result;
@@ -2125,12 +2125,12 @@ export async function generatePaymentLinkAction(formData: FormData) {
 
   await createAuditLog({actorName: staff.name, actorEmail: staff.email, actorRole: staff.role, action: reused ? "Reused active payment link" : "Generated payment link", entityType: "PaymentRequest", entityId: paymentRequest.id, entityLabel: paymentRequest.order.code, newValue: {provider: paymentRequest.provider, reference: paymentRequest.reference, reused}});
 
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/payments");
   revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/payments");
   revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/inbox");
-  redirect(`/admin/payment-requests?paymentLink=${reused ? "reused" : "generated"}`);
+  redirect(`/admin/payments?paymentLink=${reused ? "reused" : "generated"}`);
 }
 
 
@@ -2544,7 +2544,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
   const id = String(formData.get("id") || "");
 
   if (!id) {
-    redirect("/admin/payment-requests?error=missing-id");
+    redirect("/admin/payments?error=missing-id");
   }
 
   const paymentRequest = await prisma.paymentRequest.findUnique({
@@ -2556,7 +2556,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
   });
 
   if (!paymentRequest) {
-    redirect("/admin/payment-requests?error=not-found");
+    redirect("/admin/payments?error=not-found");
   }
 
   const alreadySent = await prisma.buyerMessage.findFirst({
@@ -2572,7 +2572,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
   });
 
   if (alreadySent) {
-    redirect("/admin/payment-requests?whatsapp=already-sent");
+    redirect("/admin/payments?whatsapp=already-sent");
   }
 
   const body = buildPaymentInstructionMessage({
@@ -2594,7 +2594,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
     normalizedRecipient = normaliseWhatsAppPhone(recipient);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "WhatsApp recipient phone is invalid.";
-    redirect(`/admin/payment-requests?error=whatsapp-recipient&detail=${encodeURIComponent(detail)}`);
+    redirect(`/admin/payments?error=whatsapp-recipient&detail=${encodeURIComponent(detail)}`);
   }
 
   let customerId = paymentRequest.customerId || paymentRequest.order.customerId || null;
@@ -2640,7 +2640,7 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
     });
     await prisma.buyerMessage.update({where: {id: messageLog.id}, data: {status: "Sent", sentAt: new Date(), metadata: JSON.stringify({provider: result.provider, messageId: result.messageId, metaHttpStatus: result.httpStatus, normalizedRecipient: result.normalizedTo, messageType: result.messageType, paymentUrl: paymentRequest.paymentUrl})}});
 
-    revalidatePath("/admin/payment-requests");
+    revalidatePath("/admin/payments");
     revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
     revalidatePath("/admin/buyer-messages");
     revalidatePath("/buyer-account/inbox");
@@ -2648,11 +2648,11 @@ export async function sendPaymentRequestWhatsAppAction(formData: FormData) {
     const message = error instanceof Error ? error.message : "WhatsApp send failed.";
     const details = error instanceof WhatsAppProviderError ? error.details : {};
     await prisma.buyerMessage.update({where: {id: messageLog.id}, data: {status: "Failed", metadata: JSON.stringify({provider: "Meta WhatsApp Cloud API", normalizedRecipient, paymentUrl: paymentRequest.paymentUrl, error: message, ...details})}});
-    revalidatePath("/admin/payment-requests");
-    redirect(`/admin/payment-requests?error=whatsapp-failed&detail=${encodeURIComponent(message).slice(0, 220)}`);
+    revalidatePath("/admin/payments");
+    redirect(`/admin/payments?error=whatsapp-failed&detail=${encodeURIComponent(message).slice(0, 220)}`);
   }
 
-  redirect("/admin/payment-requests?whatsapp=accepted");
+  redirect("/admin/payments?whatsapp=accepted");
 }
 
 
@@ -2675,7 +2675,7 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
   const accountName = String(formData.get("accountName") || "").trim();
 
   if (!id) {
-    redirect("/admin/payment-requests?error=missing-id");
+    redirect("/admin/payments?error=missing-id");
   }
 
   const paymentRequest = await prisma.paymentRequest.findUnique({
@@ -2686,7 +2686,7 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
   });
 
   if (!paymentRequest) {
-    redirect("/admin/payment-requests?error=not-found");
+    redirect("/admin/payments?error=not-found");
   }
 
   const paidAt = status === "Paid" ? new Date() : null;
@@ -2764,13 +2764,13 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
     });
   }
 
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/payments");
   revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/orders");
   revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/inbox");
 
-  redirect("/admin/payment-requests?updated=1");
+  redirect("/admin/payments?updated=1");
 }
 
 export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
@@ -2785,7 +2785,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
   const id = String(formData.get("id") || "");
 
   if (!id) {
-    redirect("/admin/payment-requests?error=missing-id");
+    redirect("/admin/payments?error=missing-id");
   }
 
   const paymentRequest = await prisma.paymentRequest.findUnique({
@@ -2797,11 +2797,11 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
   });
 
   if (!paymentRequest) {
-    redirect("/admin/payment-requests?error=not-found");
+    redirect("/admin/payments?error=not-found");
   }
 
   if (paymentRequest.status !== "Paid") {
-    redirect("/admin/payment-requests?error=not-paid");
+    redirect("/admin/payments?error=not-paid");
   }
 
   const payment = await prisma.payment.findFirst({
@@ -2812,7 +2812,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
   });
 
   if (!payment) {
-    redirect("/admin/payment-requests?error=payment-missing");
+    redirect("/admin/payments?error=payment-missing");
   }
 
   const existingReceipt = await prisma.receipt.findFirst({
@@ -2861,13 +2861,13 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
     }
   }
 
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/payments");
   revalidatePath(`/admin/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/payments");
   revalidatePath(`/buyer-account/orders/${paymentRequest.orderId}`);
   revalidatePath("/buyer-account/inbox");
 
-  redirect("/admin/payment-requests?receipt=issued");
+  redirect("/admin/payments?receipt=issued");
 }
 
 export async function updateAdminOrderControlAction(formData: FormData) {
@@ -2909,7 +2909,7 @@ export async function updateAdminOrderControlAction(formData: FormData) {
 
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
-  revalidatePath("/admin/payment-requests");
+  revalidatePath("/admin/payments");
   revalidatePath("/admin/deliveries");
   revalidatePath("/buyer-account/orders");
   revalidatePath(`/buyer-account/orders/${orderId}`);

@@ -54,7 +54,7 @@ test("orders use four primary views and protect confirmed orders from destructiv
 test("buyer, payment and message pages avoid internal planning language", () => {
   const guest = read("src/app/admin/guest-buyers/page.tsx");
   const messages = read("src/app/admin/buyer-messages/page.tsx");
-  const payments = read("src/app/admin/payment-requests/page.tsx");
+  const payments = read("src/app/admin/payments/page.tsx");
   assert.doesNotMatch(guest, /Guest intelligence|bounded recent view/i);
   assert.doesNotMatch(messages, /WhatsApp exceptions|Routine automation/i);
   assert.doesNotMatch(payments, /Payment request controls/);
