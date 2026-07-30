@@ -25,6 +25,7 @@ import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paym
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {isStaffRole} from "@/lib/permissions";
 import {normalizeInternationalPhone} from "@/lib/phoneNumbers";
+import {isLoginRateLimited, loginFingerprint, randomAccessCode, recordLoginAttempt} from "@/lib/loginRateLimit.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -422,7 +423,7 @@ function makeInviteCode(customerName: string) {
     .replace(/[^A-Z0-9]/g, "")
     .slice(0, 6) || "BUYER";
 
-  return `INV-${cleanName}-${String(Date.now()).slice(-6)}`;
+  return `INV-${cleanName}-${randomAccessCode(8)}`;
 }
 
 export async function createBuyerContactAction(formData: FormData) {
@@ -1735,7 +1736,7 @@ export async function generateDeliveryPartnerAccessCodeAction(formData: FormData
     redirect("/admin/delivery-partners");
   }
 
-  const accessCode = `DP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+  const accessCode = `DP-${randomAccessCode(8)}`;
 
   await prisma.deliveryPartner.update({
     where: {id},
@@ -1751,13 +1752,32 @@ export async function generateDeliveryPartnerAccessCodeAction(formData: FormData
 
 export async function deliveryPartnerLoginAction(formData: FormData) {
   const {redirect} = await import("next/navigation");
+  const {headers} = await import("next/headers");
   const {prisma} = await import("@/lib/prisma");
   const {setDeliveryPartnerSession} = await import("@/lib/currentDeliveryPartner");
 
   const accessCode = String(formData.get("accessCode") || "").trim().toUpperCase();
+  const requestHeaders = await headers();
+  const ipAddress =
+    requestHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    requestHeaders.get("x-real-ip") ||
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
+  const fingerprint = loginFingerprint("delivery-partner", accessCode, ipAddress, process.env.SESSION_SECRET);
 
   if (!accessCode) {
     redirect("/delivery-partner/login?error=missing-code");
+  }
+
+  if (
+    await isLoginRateLimited({
+      db: prisma,
+      action: "Rejected delivery partner login",
+      fingerprint,
+    })
+  ) {
+    await recordLoginAttempt({db: prisma, action: "Rate limited delivery partner login", fingerprint});
+    redirect("/delivery-partner/login?error=too-many-attempts");
   }
 
   const partner = await prisma.deliveryPartner.findFirst({
@@ -1769,15 +1789,22 @@ export async function deliveryPartnerLoginAction(formData: FormData) {
   });
 
   if (!partner) {
+    await recordLoginAttempt({db: prisma, action: "Rejected delivery partner login", fingerprint});
     redirect("/delivery-partner/login?error=invalid-code");
   }
-
 
   await prisma.deliveryPartner.update({
     where: {id: partner.id},
     data: {lastLoginAt: new Date()},
   });
 
+  await recordLoginAttempt({
+    db: prisma,
+    action: "Completed delivery partner login",
+    fingerprint,
+    actorName: partner.name,
+    entityId: partner.id,
+  });
   await setDeliveryPartnerSession(partner.id);
   redirect("/delivery-partner/jobs");
 }

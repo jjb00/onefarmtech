@@ -4,6 +4,7 @@ import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {createSupplierEnquiryAction} from "@/actions/publicApplications";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 const partnerTypes = [
   "Farms",
@@ -15,6 +16,8 @@ const partnerTypes = [
   "Logistics partners",
   "Packaging partners",
 ];
+
+export const metadata = publicPageMetadata("/supplier-partners");
 
 export default async function SupplierPartnersPage({searchParams}: {searchParams?: Promise<{submitted?: string; error?: string}>}) {
   const params = await searchParams;

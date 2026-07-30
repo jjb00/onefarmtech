@@ -14,7 +14,13 @@ function readPoolMax() {
     return Math.floor(configured);
   }
 
-  return process.env.NODE_ENV === "production" ? 1 : 3;
+  // A single admin page routinely fires several queries in parallel
+  // (Promise.all). A pool of 1 forces every one of those onto the same
+  // connection, serialising work that should overlap. Default to 3 to
+  // match a typical pgbouncer connection_limit rather than defeating
+  // in-request parallelism; raise DATABASE_POOL_MAX explicitly if your
+  // pooler allows more.
+  return process.env.NODE_ENV === "production" ? 3 : 5;
 }
 
 function createPrismaClient() {

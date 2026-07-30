@@ -12,35 +12,48 @@ Use the Supabase Session Pooler URL, not local SQLite.
 Expected format:
 postgresql://postgres.xloyvtcawopixkzteiup:<password>@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=no-verify&pgbouncer=true&connection_limit=3
 
-### Admin access
+### Admin and buyer access
 
-ADMIN_PASSWORD=
-Set a strong password for the controlled launch staff gate.
+Named staff auth and signed sessions are live — there is no shared admin password.
 
-Do not rely on fallback local password:
-onefarmtech-admin
+SESSION_SECRET=
+Required in production. Signs staff, buyer and delivery-partner session cookies. Generate with
+`openssl rand -hex 32` and never reuse the local dev fallback value.
+
+STAFF_PASSWORD_HASHES=
+Required in production. JSON map of staff email → scrypt password hash. Each active `StaffUser`
+row must have a matching entry here; role and identity are resolved from the database, this only
+supplies the password check.
+
+### Database performance
+
+DATABASE_POOL_MAX=
+Match this to your pooler's connection_limit (e.g. Supabase pgbouncer `connection_limit=3` in the
+DATABASE_URL query string). Do not leave this at 1 in production — admin pages run several queries
+in parallel per request, and a pool of 1 forces them to queue instead of overlapping.
+
+Also confirm the Vercel project's function region is pinned near your database region (see
+`vercel.json`) — cross-region round trips on every query are a common cause of a slow-feeling
+admin panel.
 
 ## Launch status
 
-Current soft-launch status:
+Current status:
 
-- Public forms are database-backed.
-- Order requests save to Supabase/Postgres.
-- Buyer account requests save to Supabase/Postgres.
-- Contact enquiries save to Supabase/Postgres.
+- Public forms are database-backed (order requests, buyer account requests, contact enquiries).
 - Admin Launch Inbox reviews all incoming records.
-- Admin area is protected by staff login gate.
-- WhatsApp follow-up is manual from Launch Inbox.
-- Email follow-up is manual/mailto.
-- Buyer login is approval/invite-based and not yet full account auth.
-- Named staff accounts and role permissions are next phase.
-- Payment, wallet, bank, credit, and split-order automation are next phase.
+- Admin area is protected by named staff login — see `app/src/lib/permissions.ts` and
+  `app/src/lib/adminAccess.ts` for the role/capability model.
+- Buyer login supports invite-code access; email-OTP or other stronger flows should be preferred
+  where available.
+- Payment, wallet, bank, credit, and split-order automation remain manual/staff-driven.
 
 ## Vercel deployment steps
 
 1. Push current branch to GitHub.
 2. Import/project connect in Vercel.
-3. Set DATABASE_URL and ADMIN_PASSWORD.
+3. Set DATABASE_URL, SESSION_SECRET, STAFF_PASSWORD_HASHES, DATABASE_POOL_MAX, and the
+   Turnstile/payment/WhatsApp keys your environment needs.
 4. Deploy preview.
 5. Test:
    - /

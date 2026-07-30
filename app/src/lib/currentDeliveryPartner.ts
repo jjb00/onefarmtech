@@ -31,13 +31,14 @@ export async function getCurrentDeliveryPartner() {
 
 export async function setDeliveryPartnerSession(partnerId: string) {
   const cookieStore = await cookies();
+  const maxAgeSeconds = 60 * 60 * 24 * 14;
 
-  cookieStore.set(SESSION_COOKIE, createSessionToken("delivery-partner", partnerId), {
+  cookieStore.set(SESSION_COOKIE, createSessionToken("delivery-partner", partnerId, maxAgeSeconds * 1000), {
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 14,
+    maxAge: maxAgeSeconds,
   });
 
   cookieStore.set(PARTNER_ID_COOKIE, partnerId, {
@@ -45,7 +46,7 @@ export async function setDeliveryPartnerSession(partnerId: string) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 14,
+    maxAge: maxAgeSeconds,
   });
 }
 

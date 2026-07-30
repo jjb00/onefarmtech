@@ -24,15 +24,16 @@ export async function createBuyerSession(input: {
     ? `${input.customerId}:email-otp:${input.contact.id}:${revision}`
     : `${input.customerId}:${inviteId}:${input.contact.id}:${revision}`;
   const cookieStore = await cookies();
+  const maxAgeSeconds = 60 * 60 * 24 * 30;
   const cookieOptions = {
     httpOnly: true,
     sameSite: "lax" as const,
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 24 * 30,
+    maxAge: maxAgeSeconds,
   };
 
-  cookieStore.set(BUYER_SESSION_COOKIE, createSessionToken("buyer", subject), cookieOptions);
+  cookieStore.set(BUYER_SESSION_COOKIE, createSessionToken("buyer", subject, maxAgeSeconds * 1000), cookieOptions);
   cookieStore.set(BUYER_CUSTOMER_ID_COOKIE, input.customerId, cookieOptions);
   cookieStore.set(BUYER_CONTACT_ID_COOKIE, input.contact.id, cookieOptions);
   cookieStore.set(BUYER_CONTACT_REVISION_COOKIE, revision, cookieOptions);

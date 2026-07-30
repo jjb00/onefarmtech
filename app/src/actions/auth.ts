@@ -1,6 +1,6 @@
 "use server";
 
-import {cookies} from "next/headers";
+import {cookies, headers} from "next/headers";
 import {redirect} from "next/navigation";
 import {
   STAFF_SESSION_COOKIE,
@@ -21,6 +21,7 @@ import {
   BUYER_OTP_CHALLENGE_COOKIE,
   isBuyerLoginEligible,
 } from "@/lib/buyerOtp";
+import {isLoginRateLimited, loginFingerprint, recordLoginAttempt} from "@/lib/loginRateLimit.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -74,8 +75,36 @@ export async function buyerLoginAction(formData: FormData) {
   const buyerIdentifier = readText(formData, "buyerIdentifier");
   const buyerAccessCode = readText(formData, "buyerAccessCode").toUpperCase();
 
+  const requestHeaders = await headers();
+  const ipAddress =
+    requestHeaders.get("x-vercel-forwarded-for")?.split(",")[0]?.trim() ||
+    requestHeaders.get("x-real-ip") ||
+    requestHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    "unknown";
+  const fingerprint = loginFingerprint("buyer", buyerIdentifier, ipAddress, process.env.SESSION_SECRET);
+
+  async function reject(error: string): Promise<never> {
+    await recordLoginAttempt({
+      db: prisma,
+      action: "Rejected buyer login",
+      fingerprint,
+      actorEmail: buyerIdentifier || null,
+    });
+    redirect(`/buyer-login?error=${error}`);
+  }
+
   if (!buyerIdentifier || !buyerAccessCode) {
-    redirect("/buyer-login?error=missing");
+    return reject("missing");
+  }
+
+  if (await isLoginRateLimited({db: prisma, action: "Rejected buyer login", fingerprint})) {
+    await recordLoginAttempt({
+      db: prisma,
+      action: "Rate limited buyer login",
+      fingerprint,
+      actorEmail: buyerIdentifier || null,
+    });
+    redirect("/buyer-login?error=too-many-attempts");
   }
 
   const invite = await prisma.buyerAccountInvite.findUnique({
@@ -92,7 +121,7 @@ export async function buyerLoginAction(formData: FormData) {
   });
 
   if (!invite) {
-    redirect("/buyer-login?error=invalid");
+    return reject("invalid");
   }
 
   const customer = invite.customer;
@@ -112,23 +141,23 @@ export async function buyerLoginAction(formData: FormData) {
   );
 
   if (!inviteTargetMatches && !customerTargetMatches && !matchingContact) {
-    redirect("/buyer-login?error=identifier");
+    return reject("identifier");
   }
 
   if (invite.status.toLowerCase().includes("cancel")) {
-    redirect("/buyer-login?error=cancelled");
+    return reject("cancelled");
   }
 
   if (invite.expiresAt && invite.expiresAt < new Date()) {
-    redirect("/buyer-login?error=expired");
+    return reject("expired");
   }
 
   if (!isBuyerLoginEligible(customer, matchingContact)) {
-    redirect("/buyer-login?error=not-ready");
+    return reject("not-ready");
   }
 
   if (!matchingContact || matchingContact.status !== "Active") {
-    redirect("/buyer-login?error=contact");
+    return reject("contact");
   }
 
   const updatedInvite = await prisma.buyerAccountInvite.update({
@@ -139,6 +168,14 @@ export async function buyerLoginAction(formData: FormData) {
         ? "Accepted"
         : invite.status,
     },
+  });
+
+  await recordLoginAttempt({
+    db: prisma,
+    action: "Completed buyer login",
+    fingerprint,
+    actorEmail: buyerIdentifier,
+    entityId: customer.id,
   });
 
   await createBuyerSession({

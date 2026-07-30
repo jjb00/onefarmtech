@@ -3,6 +3,7 @@ import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
 import CareerApplicationModal from "@/components/CareerApplicationModal";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 type Role = {
   title: string;
@@ -144,6 +145,8 @@ const locations = ["All", ...Array.from(new Set(roles.flatMap((role) => role.loc
   if (b === "All") return 1;
   return a.localeCompare(b);
 });
+
+export const metadata = publicPageMetadata("/careers");
 
 export default async function CareersPage({
   searchParams,

@@ -5,6 +5,7 @@ import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -93,6 +94,8 @@ async function getHomepageActivity() {
     return launchGroupBuyActivity;
   }
 }
+
+export const metadata = publicPageMetadata("/");
 
 export default async function HomePage() {
   const activity = await getHomepageActivity();
