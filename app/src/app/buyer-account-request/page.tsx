@@ -7,6 +7,7 @@ import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
 import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 const buyerLoginMessages: Record<string, string> = {
   missing: "Please enter both your email/phone and buyer access code.",
@@ -17,6 +18,8 @@ const buyerLoginMessages: Record<string, string> = {
   "not-ready": "This buyer account is not login-ready yet. The OneFarmTech team may still be reviewing the account.",
   required: "Please sign in to view your buyer account.",
 };
+
+export const metadata = publicPageMetadata("/buyer-account-request");
 
 export default async function BuyerAccountRequestPage({
   searchParams,

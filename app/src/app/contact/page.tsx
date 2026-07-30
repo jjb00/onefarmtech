@@ -7,6 +7,7 @@ import {enquiryTypeOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 const partnerTypes = [
   {
@@ -50,6 +51,8 @@ const partnerTypes = [
       "Collaborate on food supply, informal commerce, digital trade, market access, African SME infrastructure, and food-system research.",
   },
 ];
+
+export const metadata = publicPageMetadata("/contact");
 
 export default async function ContactPage({
   searchParams,

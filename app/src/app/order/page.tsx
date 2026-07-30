@@ -4,8 +4,11 @@ import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"));
+
+export const metadata = publicPageMetadata("/order");
 
 export default function OrderPage() {
   return (

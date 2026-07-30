@@ -7,6 +7,9 @@ import {deliveryPreferenceOptions, orderBuyerTypeOptions, timingOptions} from "@
 import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/order-request");
 
 export default async function OrderRequestPage({
   searchParams,

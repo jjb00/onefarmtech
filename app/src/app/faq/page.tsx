@@ -1,6 +1,7 @@
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicPageShell from "@/components/PublicPageShell";
 import PublicFooter from "@/components/PublicFooter";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 const faqs = [
   {
@@ -34,6 +35,8 @@ const faqs = [
       "Most individual buyers pay before dispatch. Verified business buyers may qualify for deposit payment, purchase order processing, or short payment terms after approval.",
   },
 ];
+
+export const metadata = publicPageMetadata("/faq");
 
 export default function FAQPage() {
   return (

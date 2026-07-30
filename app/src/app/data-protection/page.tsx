@@ -1,6 +1,9 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/data-protection");
 
 export default function DataProtectionPage() {
   return (

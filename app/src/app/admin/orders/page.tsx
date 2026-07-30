@@ -154,42 +154,45 @@ export default async function OrdersPage({
     ],
   };
 
-  const total = await prisma.order.count({where});
+  // count and findMany don't depend on each other's result, so run them
+  // concurrently rather than paying two sequential round trips.
+  const [total, orders] = await Promise.all([
+    prisma.order.count({where}),
+    prisma.order.findMany({
+      where,
+      orderBy: [{updatedAt: "asc"}, {id: "asc"}],
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+      select: {
+        id: true,
+        code: true,
+        buyerName: true,
+        buyerType: true,
+        phone: true,
+        paymentStatus: true,
+        fulfilmentStatus: true,
+        estimatedTotal: true,
+        deliveryMethod: true,
+        updatedAt: true,
+        items: {
+          select: {name: true, quantity: true, unit: true},
+          take: 4,
+        },
+        paymentRequests: {
+          where: {status: {in: ["Failed", "Expired"]}},
+          select: {status: true},
+          take: 1,
+        },
+        _count: {select: {complaints: true}},
+      },
+    }),
+  ]);
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const base = {view, q, pageSize};
 
   if (page > pages) {
     redirect(adminListHref(PATH, base, {page: pages}));
   }
-
-  const orders = await prisma.order.findMany({
-    where,
-    orderBy: [{updatedAt: "asc"}, {id: "asc"}],
-    skip: (page - 1) * pageSize,
-    take: pageSize,
-    select: {
-      id: true,
-      code: true,
-      buyerName: true,
-      buyerType: true,
-      phone: true,
-      paymentStatus: true,
-      fulfilmentStatus: true,
-      estimatedTotal: true,
-      deliveryMethod: true,
-      updatedAt: true,
-      items: {
-        select: {name: true, quantity: true, unit: true},
-        take: 4,
-      },
-      paymentRequests: {
-        where: {status: {in: ["Failed", "Expired"]}},
-        select: {status: true},
-        take: 1,
-      },
-      _count: {select: {complaints: true}},
-    },
-  });
 
   const labels = [
     ["needs-action", "Needs action"],
