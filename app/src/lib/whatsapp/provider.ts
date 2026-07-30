@@ -113,6 +113,148 @@ export async function sendWhatsAppTextMessage(
   };
 }
 
+export type WhatsAppReplyButton = {id: string; title: string};
+
+export async function sendWhatsAppButtonsMessage(input: {
+  to: string;
+  body: string;
+  buttons: WhatsAppReplyButton[];
+}): Promise<WhatsAppSendResult> {
+  if (!input.buttons.length || input.buttons.length > 3) {
+    throw new Error("WhatsApp reply-button messages support 1-3 buttons.");
+  }
+
+  const {accessToken, phoneNumberId, apiVersion} = getMetaConfig();
+  const to = normaliseWhatsAppPhone(input.to);
+
+  const response = await fetch(
+    `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "button",
+          body: {text: input.body.slice(0, 1024)},
+          action: {
+            buttons: input.buttons.map((button) => ({
+              type: "reply",
+              reply: {id: button.id.slice(0, 256), title: button.title.slice(0, 20)},
+            })),
+          },
+        },
+      }),
+    },
+  );
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = payload?.error?.message || `WhatsApp send failed with HTTP ${response.status}.`;
+    const code = Number(payload?.error?.code) || undefined;
+    throw new WhatsAppProviderError(message, {
+      httpStatus: response.status,
+      code,
+      subcode: Number(payload?.error?.error_subcode) || undefined,
+      providerDetails: payload?.error?.error_data?.details || undefined,
+      templateRequired: code === 131047,
+    });
+  }
+
+  return {
+    provider: "Meta WhatsApp Cloud API",
+    status: "Sent",
+    httpStatus: response.status,
+    normalizedTo: to,
+    messageType: "text",
+    messageId: payload?.messages?.[0]?.id,
+    raw: payload,
+  };
+}
+
+export type WhatsAppListRow = {id: string; title: string; description?: string};
+export type WhatsAppListSection = {title: string; rows: WhatsAppListRow[]};
+
+export async function sendWhatsAppListMessage(input: {
+  to: string;
+  header?: string;
+  body: string;
+  buttonLabel: string;
+  sections: WhatsAppListSection[];
+}): Promise<WhatsAppSendResult> {
+  const totalRows = input.sections.reduce((sum, section) => sum + section.rows.length, 0);
+  if (!totalRows || totalRows > 10) {
+    throw new Error("WhatsApp list messages support 1-10 total rows across all sections.");
+  }
+
+  const {accessToken, phoneNumberId, apiVersion} = getMetaConfig();
+  const to = normaliseWhatsAppPhone(input.to);
+
+  const response = await fetch(
+    `https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "interactive",
+        interactive: {
+          type: "list",
+          ...(input.header ? {header: {type: "text", text: input.header.slice(0, 60)}} : {}),
+          body: {text: input.body.slice(0, 1024)},
+          action: {
+            button: input.buttonLabel.slice(0, 20),
+            sections: input.sections.map((section) => ({
+              title: section.title.slice(0, 24),
+              rows: section.rows.map((row) => ({
+                id: row.id.slice(0, 200),
+                title: row.title.slice(0, 24),
+                ...(row.description ? {description: row.description.slice(0, 72)} : {}),
+              })),
+            })),
+          },
+        },
+      }),
+    },
+  );
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    const message = payload?.error?.message || `WhatsApp send failed with HTTP ${response.status}.`;
+    const code = Number(payload?.error?.code) || undefined;
+    throw new WhatsAppProviderError(message, {
+      httpStatus: response.status,
+      code,
+      subcode: Number(payload?.error?.error_subcode) || undefined,
+      providerDetails: payload?.error?.error_data?.details || undefined,
+      templateRequired: code === 131047,
+    });
+  }
+
+  return {
+    provider: "Meta WhatsApp Cloud API",
+    status: "Sent",
+    httpStatus: response.status,
+    normalizedTo: to,
+    messageType: "text",
+    messageId: payload?.messages?.[0]?.id,
+    raw: payload,
+  };
+}
+
 export async function sendWhatsAppPaymentTemplate(input: {to: string; buyerName: string; orderCode: string; amount: string; reference: string; paymentUrl: string}) {
   const templateName = process.env.WHATSAPP_PAYMENT_TEMPLATE_NAME?.trim();
   if (!templateName) {

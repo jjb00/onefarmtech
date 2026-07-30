@@ -67,19 +67,25 @@ test("catalogue payment and delivery answers query live records", () => {
   assert.match(chatbot, /trackingReference/);
 });
 
-test("webhook uses chatbot before legacy draft creation", () => {
+test("webhook uses interactive ordering before legacy draft creation", () => {
+  // Superseded by the interactive (buttons/lists) ordering flow — see
+  // whatsapp-interactive-ordering.test.mjs. chatbot.ts and
+  // WhatsAppChatbotSession are kept only so July 27's historical
+  // conversation records still render in the admin panel; the webhook no
+  // longer routes live messages through them.
   const webhook = read("src/app/api/whatsapp/webhook/route.ts");
 
-  assert.match(webhook, /handleWhatsAppChatbotMessage/);
-  assert.match(webhook, /if \(!chatbotResult\.handled\)/);
+  assert.match(webhook, /handleInteractiveOrderingMessage/);
+  assert.match(webhook, /if \(!interactiveOrderingHandled\)/);
+  assert.doesNotMatch(webhook, /handleWhatsAppChatbotMessage/);
 
-  const chatbotPosition = webhook.indexOf(
-    "handleWhatsAppChatbotMessage",
+  const interactiveOrderingPosition = webhook.indexOf(
+    "handleInteractiveOrderingMessage",
   );
   const legacyDraftPosition = webhook.lastIndexOf(
     "createDraftOrderRequestFromInboundWhatsApp",
   );
 
-  assert.ok(chatbotPosition >= 0);
-  assert.ok(legacyDraftPosition > chatbotPosition);
+  assert.ok(interactiveOrderingPosition >= 0);
+  assert.ok(legacyDraftPosition > interactiveOrderingPosition);
 });
