@@ -8,12 +8,8 @@ import {
   AdminViewBar,
   adminToneFromStatus,
 } from "@/components/admin/AdminViewControls";
-import {
-  generatePaymentLinkAction,
-  issueReceiptFromPaymentRequestAction,
-  sendPaymentRequestWhatsAppAction,
-  updatePaymentRequestStatusAction,
-} from "@/actions/createAdminRecords";
+import {generatePaymentLinkAction, issueReceiptFromPaymentRequestAction, updatePaymentRequestStatusAction} from "@/actions/admin/payments";
+import {sendPaymentRequestWhatsAppAction} from "@/actions/admin/whatsapp";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {buildPaymentInstructionMessage} from "@/lib/communications/paymentTemplates";

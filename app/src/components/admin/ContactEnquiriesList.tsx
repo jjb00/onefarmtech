@@ -1,5 +1,5 @@
 import {redirect} from "next/navigation";
-import {updateContactEnquiryStatusAction} from "@/actions/createAdminRecords";
+import {updateContactEnquiryStatusAction} from "@/actions/admin/communications";
 import {AdminEmptyState, AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
 import {AdminStatusPill, adminToneFromStatus} from "@/components/admin/AdminViewControls";
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";

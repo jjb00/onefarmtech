@@ -3,13 +3,48 @@ import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
+import StructuredData from "@/components/StructuredData";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
+import {canonicalUrl, publicPageMetadata, SITE_URL} from "@/lib/publicSeo";
 
 const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"));
+export const metadata = publicPageMetadata("/order");
 
 export default function OrderPage() {
   return (
     <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
+      <StructuredData
+        data={[
+          {
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: SITE_URL,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Order fresh produce",
+                item: canonicalUrl("/order"),
+              },
+            ],
+          },
+          {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: "Fresh produce ordering and supply",
+            provider: {"@id": `${SITE_URL}/#organization`},
+            url: canonicalUrl("/order"),
+            description:
+              "WhatsApp-first and structured fresh produce ordering for business, group and household buyers.",
+            areaServed: { "@type": "Country", name: "Nigeria" },
+          },
+        ]}
+      />
       <PublicImageCollage
         images={[
           {

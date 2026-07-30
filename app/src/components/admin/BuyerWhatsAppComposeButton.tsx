@@ -1,7 +1,7 @@
 "use client";
 
 import {useTransition} from "react";
-import {logPreparedBuyerWhatsAppAction} from "@/actions/createAdminRecords";
+import {logPreparedBuyerWhatsAppAction} from "@/actions/admin/communications";
 import {makeWhatsAppComposeUrl} from "@/lib/communications/whatsapp";
 
 export default function BuyerWhatsAppComposeButton({

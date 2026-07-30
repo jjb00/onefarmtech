@@ -6,7 +6,7 @@ import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
 import {staffRoles} from "@/lib/permissions";
 import {staffStatusOptions} from "@/lib/formOptions";
-import {createStaffUserAction} from "@/actions/createAdminRecords";
+import {createStaffUserAction} from "@/actions/admin/staff";
 import {setStaffStatusAction, updateStaffAccountAction} from "@/actions/manageStaff";
 import {requireStaffRole} from "@/lib/auth";
 import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";

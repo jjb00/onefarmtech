@@ -1,5 +1,5 @@
 import Link from "next/link";
-import {createBuyerPortalOrderAction} from "@/actions/createAdminRecords";
+import {createBuyerPortalOrderAction} from "@/actions/admin/orders";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
 import {requireBuyerCapability} from "@/lib/currentBuyer";
 import {deliveryPreferenceOptions, timingOptions} from "@/lib/formOptions";

@@ -1,6 +1,9 @@
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicPageShell from "@/components/PublicPageShell";
-import PublicFooter from "@/components/PublicFooter";
+import StructuredData from "@/components/StructuredData";
+import {canonicalUrl, publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/faq");
 
 const faqs = [
   {
@@ -38,6 +41,18 @@ const faqs = [
 export default function FAQPage() {
   return (
     <PublicPageShell>
+      <StructuredData
+        data={{
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          "@id": `${canonicalUrl("/faq")}#faq`,
+          mainEntity: faqs.map((faq) => ({
+            "@type": "Question",
+            name: faq.question,
+            acceptedAnswer: {"@type": "Answer", text: faq.answer},
+          })),
+        }}
+      />
       <section className="relative overflow-hidden">
         <PublicImageCollage
           images={[

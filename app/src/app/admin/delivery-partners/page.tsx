@@ -1,11 +1,7 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
 import {AdminStatusPill, maskSecret} from "@/components/admin/AdminViewControls";
-import {
-  createDeliveryPartnerAction,
-  generateDeliveryPartnerAccessCodeAction,
-  updateDeliveryPartnerStatusAction,
-} from "@/actions/createAdminRecords";
+import {createDeliveryPartnerAction, generateDeliveryPartnerAccessCodeAction, sendDeliveryPartnerAccessCodeAction, updateDeliveryPartnerStatusAction} from "@/actions/admin/delivery";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 
@@ -193,15 +189,28 @@ export default async function DeliveryPartnersPage({searchParams}: DeliveryPartn
                             Copy this code now. It will be masked again after you leave this page.
                           </p>
                         ) : null}
-                        <form action={generateDeliveryPartnerAccessCodeAction}>
-                          <input type="hidden" name="id" value={partner.id} />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-[#102015]/15 px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]"
-                          >
-                            {partner.accessCode ? "Reset code" : "Create code"}
-                          </button>
-                        </form>
+                        <div className="flex flex-wrap gap-2">
+                          <form action={generateDeliveryPartnerAccessCodeAction}>
+                            <input type="hidden" name="id" value={partner.id} />
+                            <button
+                              type="submit"
+                              className="rounded-full border border-[#102015]/15 px-4 py-2 text-xs font-black text-[#102015] hover:bg-[#f3f8ef]"
+                            >
+                              {partner.accessCode ? "Reset code" : "Create code"}
+                            </button>
+                          </form>
+                          {partner.accessCode && partner.phone ? (
+                            <form action={sendDeliveryPartnerAccessCodeAction}>
+                              <input type="hidden" name="id" value={partner.id} />
+                              <button
+                                type="submit"
+                                className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white hover:bg-[#155c2f]"
+                              >
+                                Send via WhatsApp
+                              </button>
+                            </form>
+                          ) : null}
+                        </div>
                       </div>
                     </td>
                     <td className="px-5 py-4">

@@ -5,34 +5,37 @@ import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const metadata = publicPageMetadata("/");
 
 async function getHomepageActivity() {
   try {
-  const activeGroupBuy = await prisma.groupBuy.findFirst({
-    where: {
-      status: {
-        in: ["Open", "Minimum met"],
+  const [activeGroupBuy, activeGroupBuyCount] = await Promise.all([
+    prisma.groupBuy.findFirst({
+      where: {
+        status: {
+          in: ["Open", "Minimum met"],
+        },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-    include: {
-      items: true,
-      reservations: true,
-    },
-  });
-
-  const activeGroupBuyCount = await prisma.groupBuy.count({
-    where: {
-      status: {
-        in: ["Open", "Minimum met"],
+      orderBy: {
+        createdAt: "desc",
       },
-    },
-  });
+      include: {
+        items: true,
+        reservations: true,
+      },
+    }),
+    prisma.groupBuy.count({
+      where: {
+        status: {
+          in: ["Open", "Minimum met"],
+        },
+      },
+    }),
+  ]);
 
   const reservedQuantity = activeGroupBuy?.reservedQuantity || 0;
   const targetQuantity = activeGroupBuy?.targetQuantity || 0;
@@ -121,12 +124,11 @@ export default async function HomePage() {
               </div>
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
-                Fresh food supply for buyers who need{" "}
-better prices, quality and reliability.
+                Fresh produce supply for Nigerian buyers who need quality and reliable fulfilment.
               </h1>
 
               <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
-                Dependable supply, transparent pricing and reliable fulfilment for businesses and consumers
+                Order fruits, vegetables and other fresh food through a WhatsApp-first process built for restaurants, hotels, caterers, retailers, offices, groups and households.
               </p>
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">
@@ -159,6 +161,9 @@ better prices, quality and reliability.
                   </div>
                 ))}
               </div>
+              <p className="mt-6 max-w-2xl text-sm leading-7 text-[#405348]">
+                For bulk or recurring produce procurement, send your requirements and the team will confirm availability, pricing, payment and fulfilment before the order proceeds.
+              </p>
             </section>
 
             <section className="oft-fade-up-delay-3 oft-quiet-float rounded-[2rem] border border-[#101712]/10 bg-white/95 p-5 shadow-[0_18px_48px_rgba(16,23,18,0.10)] backdrop-blur">

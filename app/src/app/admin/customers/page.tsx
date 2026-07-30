@@ -6,7 +6,7 @@ import BuyerAccountRequestsPage from "@/app/admin/buyer-account-requests/page";
 import BuyerAccessList from "@/components/admin/BuyerAccessList";
 import BuyerUpdateRequestsList from "@/components/admin/BuyerUpdateRequestsList";
 import GuestBuyersPage from "@/app/admin/guest-buyers/page";
-import {createCustomerAction} from "@/actions/createAdminRecords";
+import {createCustomerAction} from "@/actions/admin/customers";
 import {buyerTypes} from "@/constants/orderOptions";
 import {requireStaff} from "@/lib/auth";
 import {resolveBuyerView, resolveBuyerViewForRole} from "@/lib/buyersWorkspace.js";

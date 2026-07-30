@@ -1,4 +1,4 @@
-import {deliveryPartnerLogoutAction, updateDeliveryJobStatusAction} from "@/actions/createAdminRecords";
+import {deliveryPartnerLogoutAction, updateDeliveryJobStatusAction} from "@/actions/admin/delivery";
 import {getCurrentDeliveryPartner} from "@/lib/currentDeliveryPartner";
 import {prisma} from "@/lib/prisma";
 import {redirect} from "next/navigation";

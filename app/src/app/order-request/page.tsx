@@ -2,11 +2,14 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
-import {createOrderRequestAction} from "@/actions/createAdminRecords";
+import {createOrderRequestAction} from "@/actions/admin/orders";
 import {deliveryPreferenceOptions, orderBuyerTypeOptions, timingOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/order-request");
 
 export default async function OrderRequestPage({
   searchParams,
@@ -91,6 +94,7 @@ export default async function OrderRequestPage({
 
           <form
             action={createOrderRequestAction}
+            data-analytics-start="order_request_started"
             className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6"
           >
             <h2 className="text-2xl font-black">Order details</h2>

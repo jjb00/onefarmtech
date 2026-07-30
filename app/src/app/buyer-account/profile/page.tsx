@@ -1,6 +1,6 @@
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import SupportChatLauncher from "@/components/SupportChatLauncher";
-import {createBuyerProfileUpdateRequestAction} from "@/actions/createAdminRecords";
+import {createBuyerProfileUpdateRequestAction} from "@/actions/admin/customers";
 import {requireBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 

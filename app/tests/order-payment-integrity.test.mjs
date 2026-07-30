@@ -7,12 +7,13 @@ import {PaymentProviderError} from "../src/lib/payments/providerError.js";
 import {freshPaymentReference, initialisePayment} from "../src/lib/payments/paymentInitialization.js";
 import {uniqueOrdersById} from "../src/lib/orderListIntegrity.js";
 import {fulfilmentStatusesFor, initialFulfilmentStatus, validateFulfilmentStatus, validateOrderStatusTransition} from "../src/lib/orderStatusRules.js";
+import {readAdminActions} from "./helpers/adminActions.mjs";
 
 test("canonical Orders query includes website, WhatsApp and admin Order rows without source filtering", () => {
   const data = fs.readFileSync(new URL("../src/data/dbOrders.ts", import.meta.url), "utf8");
   const page = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
   const conversion = fs.readFileSync(new URL("../src/lib/orderRequestConversion.js", import.meta.url), "utf8");
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   const admin = fs.readFileSync(new URL("../src/actions/createOrder.ts", import.meta.url), "utf8");
   assert.match(data, /prisma\.order\.findMany\(\{\s*orderBy:/);
   assert.doesNotMatch(data, /findMany\(\{\s*where:/);
@@ -139,7 +140,7 @@ test("provider configuration errors are clear and permanent production callbacks
 
 test("successful attempts are Pending with provider URLs and failed attempts have no open-link path", () => {
   const initialization = fs.readFileSync(new URL("../src/lib/payments/paymentInitialization.js", import.meta.url), "utf8");
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   const page = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
   assert.match(initialization, /status: "Pending"/); assert.match(initialization, /status: "Failed", paymentUrl: null/);
   assert.match(actions, /} catch \(error\) \{[\s\S]*redirect\(`\/admin\/payment-requests\?error=[\s\S]*\n  }\n\n  const \{source:/);
@@ -171,7 +172,7 @@ test("UI and actions keep pickup, payment and delivery assignment independent", 
   const orders = fs.readFileSync(new URL("../src/app/admin/orders/page.tsx", import.meta.url), "utf8");
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
   const payments = fs.readFileSync(new URL("../src/app/admin/payment-requests/page.tsx", import.meta.url), "utf8");
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   for (const source of [orders, detail, payments]) { assert.match(source, /paymentStatus/); assert.match(source, /fulfilmentStatus/); }
   assert.match(actions, /pickup-does-not-use-delivery-assignment/);
   assert.match(actions, /initialisePayment/);

@@ -2,12 +2,7 @@ import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
 import {AdminCompactMetric, AdminStatusPill, maskSecret} from "@/components/admin/AdminViewControls";
 import {prisma} from "@/lib/prisma";
-import {
-  createBuyerAccountInviteAction,
-  createBuyerContactAction,
-  sendBuyerAccountInviteAction,
-  updateBuyerAccountInviteStatusAction,
-} from "@/actions/createAdminRecords";
+import {createBuyerAccountInviteAction, createBuyerContactAction, sendBuyerAccountInviteAction, updateBuyerAccountInviteStatusAction} from "@/actions/admin/customers";
 import PendingSubmitButton from "@/components/admin/PendingSubmitButton";
 import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
 

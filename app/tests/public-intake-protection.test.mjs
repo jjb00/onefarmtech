@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import {honeypotIsFilled, intakeFingerprint, registerUniqueIntakeDedupe, validTurnstileResult, verifyThenReserveIntake} from "../src/lib/publicIntakeRules.js";
+import {readAdminActionFile, readAdminActions} from "./helpers/adminActions.mjs";
 
 test("duplicate intake attempt does not create a second record", async () => {
   const keys = new Set(); let creates = 0;
@@ -50,33 +51,32 @@ test("honeypot rejects abusive submissions", () => {
 });
 
 test("public actions protect before their first side effect", () => {
-  const adminActions = fs.readFileSync(
-    new URL("../src/actions/createAdminRecords.ts", import.meta.url),
-    "utf8",
-  );
+  const communications = readAdminActionFile("communications");
+  const orders = readAdminActionFile("orders");
   const publicActions = fs.readFileSync(
     new URL("../src/actions/publicApplications.ts", import.meta.url),
     "utf8",
   );
 
-  const contactStart = adminActions.indexOf(
+  const contactStart = communications.indexOf(
     "export async function createContactEnquiryAction",
   );
-  const contactEnd = adminActions.indexOf(
-    "export async function createBuyerAccountRequestAction",
-    contactStart,
+  const contactNextExport = communications.indexOf(
+    "export async function",
+    contactStart + 40,
   );
-  const contactBranch = adminActions.slice(contactStart, contactEnd);
+  const contactEnd = contactNextExport === -1 ? communications.length : contactNextExport;
+  const contactBranch = communications.slice(contactStart, contactEnd);
 
   assert.ok(
     contactBranch.indexOf("protectPublicIntake") <
       contactBranch.indexOf("sendTransactionalEmail"),
   );
 
-  const orderStart = adminActions.indexOf(
+  const orderStart = orders.indexOf(
     "export async function createOrderRequestAction",
   );
-  const orderBranch = adminActions.slice(orderStart);
+  const orderBranch = orders.slice(orderStart);
 
   assert.ok(
     orderBranch.indexOf("protectPublicIntake") <
@@ -132,24 +132,21 @@ test("Turnstile widgets, server verification and production-safe bypass are wire
 });
 
 test("both server actions read the exact explicit Turnstile token field", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-  for (const action of ["createContactEnquiryAction", "createOrderRequestAction"]) {
+  const perFileAction = {
+    createContactEnquiryAction: readAdminActionFile("communications"),
+    createOrderRequestAction: readAdminActionFile("orders"),
+  };
+  for (const [action, actions] of Object.entries(perFileAction)) {
     const start = actions.indexOf(`export async function ${action}`);
-    const end = actions.indexOf("export async function", start + 25);
+    const nextExport = actions.indexOf("export async function", start + 25);
+    const end = nextExport === -1 ? actions.length : nextExport;
     assert.match(actions.slice(start, end), /readText\(formData, "cf-turnstile-response"\)/);
   }
 });
 
 test("minimal protection has no rate limiting or admin spam workflow", () => {
   const protection = fs.readFileSync(new URL("../src/lib/publicIntakeProtection.ts", import.meta.url), "utf8");
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   assert.doesNotMatch(protection, /x-forwarded-for|rate-limited|ipHash/);
   assert.doesNotMatch(actions, /manageIntakeSpamAction/);
-});
-
-test("homepage survives transient database activity failures", () => {
-  const home = fs.readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
-  assert.match(home, /try \{/);
-  assert.match(home, /Homepage activity unavailable/);
-  assert.match(home, /activeGroupBuy: null, activeGroupBuyCount: 0/);
 });

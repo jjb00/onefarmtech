@@ -1,9 +1,6 @@
 import Link from "next/link";
 import {AdminPage} from "@/components/portal/AdminPage";
-import {
-  sendWhatsAppProductListAction,
-  sendWhatsAppStorefrontMenuAction,
-} from "@/actions/createAdminRecords";
+import {sendWhatsAppProductListAction, sendWhatsAppStorefrontMenuAction} from "@/actions/admin/whatsapp";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {

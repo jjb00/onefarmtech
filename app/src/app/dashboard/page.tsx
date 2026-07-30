@@ -1,6 +1,9 @@
 import Link from "next/link";
 import {BrandMark} from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import {PRIVATE_NOINDEX_METADATA} from "@/lib/publicSeo";
+
+export const metadata = PRIVATE_NOINDEX_METADATA;
 
 const requestSteps = [
   {

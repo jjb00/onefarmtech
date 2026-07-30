@@ -68,9 +68,10 @@ test("Meta template-required error remains structured and actionable", async () 
 });
 
 test("payment WhatsApp retry reuses the request and checkout URL while persisting outcomes", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = fs.readFileSync(new URL("../src/actions/admin/whatsapp.ts", import.meta.url), "utf8");
   const start = actions.indexOf("export async function sendPaymentRequestWhatsAppAction");
-  const end = actions.indexOf("export async function", start + 30);
+  const nextExport = actions.indexOf("export async function", start + 30);
+  const end = nextExport === -1 ? actions.length : nextExport;
   const branch = actions.slice(start, end);
   assert.doesNotMatch(branch, /paymentRequest\.create/);
   assert.match(branch, /paymentUrl: paymentRequest\.paymentUrl/);

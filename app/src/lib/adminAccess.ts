@@ -5,6 +5,7 @@ const fullAccessRoles: StaffRole[] = ["Super admin", "Admin"];
 const sharedAdminPaths = [
   "/admin",
   "/admin/logout",
+  "/admin/profile",
   "/admin/deployment-readiness",
   "/admin/operating-manual",
 ];
@@ -34,6 +35,7 @@ const roleAllowedPaths: Record<StaffRole, string[]> = {
   Finance: [
     ...sharedAdminPaths,
     "/admin/payments",
+    "/admin/payment-requests",
     "/admin/receipts",
     "/admin/reports",
     "/admin/buyer-accounts",

@@ -45,6 +45,11 @@ model Product {
   basePrice    Int         @default(0)
   availability String      @default("Available")
   status       String      @default("Active")
+  // "Stocked" items (potato, onion, and other longer-shelf-life staples kept
+  // on hand) can fulfil same/next-day. Everything else defaults to
+  // "Fresh sourced", which needs the usual 1-2 day farm sourcing lead time.
+  // Used to set realistic auto-confirmed fulfilment expectations.
+  stockType    String      @default("Fresh sourced")
   orderItems   OrderItem[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -445,6 +450,9 @@ model PaymentRequest {
   gatewayReference   String?
   expiresAt          DateTime?
   paidAt             DateTime?
+  // Last time an automated payment-reconciliation reminder was sent for
+  // this request, so the scheduled job doesn't re-send too often.
+  reminderSentAt     DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
@@ -566,4 +574,22 @@ model PublicIntakeDedupe {
   createdAt DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// Holds the in-progress cart/step for one WhatsApp phone number while they
+// move through the interactive ordering flow across separate, stateless
+// webhook calls. One open session per phone number; expires and is safe to
+// delete/ignore once stale.
+model WhatsAppOrderSession {
+  id               String    @id @default(cuid())
+  phone            String    @unique
+  step             String    @default("browsing")
+  cart             String    @default("[]")
+  pendingProductId String?
+  customerId       String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  expiresAt        DateTime
+
+  @@index([expiresAt])
 }

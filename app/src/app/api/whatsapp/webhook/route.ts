@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import {NextRequest, NextResponse} from "next/server";
 import {prisma} from "@/lib/prisma";
-import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
 import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
@@ -11,6 +10,9 @@ import {
   isProductAvailableForWhatsApp,
 } from "@/lib/whatsapp/productCatalogue";
 import {normalizeInternationalPhone} from "@/lib/phoneNumbers";
+import {findCustomerByWhatsAppPhone} from "@/lib/whatsapp/matchCustomer";
+import {handleInteractiveOrderingMessage} from "@/lib/whatsapp/interactiveOrdering";
+import {replyWithOrderStatus} from "@/lib/whatsapp/statusReply";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -50,50 +52,6 @@ function getTextBody(message: any) {
 
   return `[${message?.type || "unknown"} message received]`;
 }
-
-async function findCustomerByWhatsAppPhone(phone: string) {
-  const candidates = phoneMatchCandidates(phone);
-
-  if (candidates.length === 0) return null;
-
-  const directCustomer = await prisma.customer.findFirst({
-    where: {
-      OR: [
-        {phone: {in: candidates}},
-        {phone: {contains: candidates[0]}},
-      ],
-    },
-    select: {
-      id: true,
-      name: true,
-      phone: true,
-    },
-  });
-
-  if (directCustomer) return directCustomer;
-
-  const contact = await prisma.buyerContact.findFirst({
-    where: {
-      OR: [
-        {phone: {in: candidates}},
-        {phone: {contains: candidates[0]}},
-      ],
-    },
-    select: {
-      customer: {
-        select: {
-          id: true,
-          name: true,
-          phone: true,
-        },
-      },
-    },
-  });
-
-  return contact?.customer || null;
-}
-
-
 
 async function makeComplaintCode() {
   const count = await prisma.complaint.count();
@@ -770,14 +728,49 @@ export async function POST(request: NextRequest) {
         console.error("WhatsApp payment/delivery follow-up routing failed", error);
       }
 
+      // Instant, database-backed status answer for natural-language
+      // "where's my order" / "have you received my payment" questions, in
+      // addition to the staff follow-up already logged above.
+      if (["payment_follow_up", "delivery_follow_up"].includes(parsedIntent.intent)) {
+        try {
+          await replyWithOrderStatus({to: from, customerId: inboundLog.customerId});
+        } catch (error) {
+          console.error("WhatsApp automated status reply failed", error);
+        }
+      }
+
+      let interactiveOrderingHandled = false;
+
       try {
-        await maybeSendCatalogueAutoReply({
+        const result = await handleInteractiveOrderingMessage({
           from,
-          parsedIntent,
-          matchedCustomerId: inboundLog.customerId,
+          body,
+          message,
+          customerId: inboundLog.customerId,
+          // Gated behind the same opt-in flag as the text-only catalogue
+          // reply it replaces, so the bot stays off until deliberately
+          // enabled. Interactive button/list replies above are always
+          // handled regardless of this flag, since by definition they only
+          // happen once a buyer is already mid-flow.
+          triggerMenu:
+            shouldAutoSendCatalogue(parsedIntent.intent) &&
+            process.env.WHATSAPP_AUTO_REPLY_CATALOGUE === "true",
         });
+        interactiveOrderingHandled = result.handled;
       } catch (error) {
-        console.error("WhatsApp catalogue auto-reply failed", error);
+        console.error("WhatsApp interactive ordering flow failed", error);
+      }
+
+      if (!interactiveOrderingHandled) {
+        try {
+          await maybeSendCatalogueAutoReply({
+            from,
+            parsedIntent,
+            matchedCustomerId: inboundLog.customerId,
+          });
+        } catch (error) {
+          console.error("WhatsApp catalogue auto-reply failed", error);
+        }
       }
 
       logged += 1;

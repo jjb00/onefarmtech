@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
 import {convertOrderRequestIntegrity, convertedOrderFromNote} from "../src/lib/orderRequestConversion.js";
+import {readAdminActions} from "./helpers/adminActions.mjs";
 
 const actor = {name: "Test Admin", email: "admin@example.test", role: "Admin"};
 const initialRequest = {id: "request-abcdefgh", buyerName: "Buyer", phone: "+2341", buyerType: "Business", deliveryPreference: "Delivery", timing: "Tomorrow", items: "Tomatoes", message: "Call first", source: "Order request page", status: "New", adminNote: null};
@@ -75,7 +76,7 @@ test("Orders query includes all Order rows and order-number href uses implemente
 });
 
 test("WhatsApp-created order IDs and legacy code links resolve in the detail route", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   const detail = fs.readFileSync(new URL("../src/app/admin/orders/[id]/page.tsx", import.meta.url), "utf8");
   assert.match(actions, /redirect\(`\/admin\/orders\/\$\{order\.id\}`\)/);
   assert.match(detail, /\{id\}, \{code: id\}/);

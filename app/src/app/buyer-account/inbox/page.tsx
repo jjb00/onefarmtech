@@ -2,7 +2,7 @@
 // @ts-nocheck -- temporary build stabilisation for new commerce pages
 import BuyerPortalFrame from "@/components/BuyerPortalFrame";
 import BuyerMessageStatusPill from "@/components/buyer/BuyerMessageStatusPill";
-import {markBuyerMessageReadAction} from "@/actions/createAdminRecords";
+import {markBuyerMessageReadAction} from "@/actions/admin/communications";
 import {getCurrentBuyer} from "@/lib/currentBuyer";
 import {prisma} from "@/lib/prisma";
 import {redirect} from "next/navigation";

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import {readAdminActionFile} from "./helpers/adminActions.mjs";
 
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("buyer access delivery is capability protected and supports email and WhatsApp", () => {
-  const actions = read("src/actions/createAdminRecords.ts");
+  const actions = readAdminActionFile("customers");
 
   assert.match(
     actions,
@@ -30,7 +31,7 @@ test("WhatsApp buyer access delivery uses an approved configurable template", ()
 });
 
 test("buyer access delivery records outcomes without exposing the access code in message logs", () => {
-  const actions = read("src/actions/createAdminRecords.ts");
+  const actions = readAdminActionFile("customers");
 
   assert.match(actions, /relatedType: "BuyerAccountInvite"/);
   assert.match(actions, /status: "Pending"/);

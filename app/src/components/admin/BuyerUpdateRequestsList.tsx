@@ -1,6 +1,6 @@
 import Link from "next/link";
 import {redirect} from "next/navigation";
-import {updateBuyerProfileUpdateRequestStatusAction} from "@/actions/createAdminRecords";
+import {updateBuyerProfileUpdateRequestStatusAction} from "@/actions/admin/customers";
 import {AdminEmptyState, AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
 import {AdminStatusPill, adminToneFromStatus} from "@/components/admin/AdminViewControls";
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";

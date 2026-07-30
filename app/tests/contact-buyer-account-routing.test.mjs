@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import test from "node:test";
+import {readAdminActionFile} from "./helpers/adminActions.mjs";
 
-const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-const start = actions.indexOf("export async function createContactEnquiryAction");
-const end = actions.indexOf("export async function createBuyerAccountRequestAction", start);
-const contactAction = actions.slice(start, end);
+const communications = readAdminActionFile("communications");
+const start = communications.indexOf("export async function createContactEnquiryAction");
+const nextExport = communications.indexOf("export async function", start + 40);
+const end = nextExport === -1 ? communications.length : nextExport;
+const contactAction = communications.slice(start, end);
 
 test("contact-page buyer applications are routed to the buyer application model", () => {
   assert.match(contactAction, /enquiryType === "Buyer account request"/);

@@ -6,7 +6,7 @@ import {
   adminToneFromStatus,
 } from "@/components/admin/AdminViewControls";
 import { getDbSuppliers } from "@/data/dbAdmin";
-import { createSupplierAction } from "@/actions/createAdminRecords";
+import {createSupplierAction} from "@/actions/admin/products";
 
 type SuppliersPageProps = {
   searchParams?: Promise<{

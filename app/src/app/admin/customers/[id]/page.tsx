@@ -5,7 +5,7 @@ import AdminPageShell from "@/components/AdminPageShell";
 import StatusBadge from "@/components/admin/StatusBadge";
 import {prisma} from "@/lib/prisma";
 import {formatNaira} from "@/lib/format";
-import {updateCustomerAccountAction} from "@/actions/createAdminRecords";
+import {updateCustomerAccountAction} from "@/actions/admin/customers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

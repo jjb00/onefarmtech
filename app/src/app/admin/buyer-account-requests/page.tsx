@@ -3,7 +3,7 @@ import {redirect} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
 import {AdminEmptyState, AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/admin/AdminListControls";
 import {AdminStatusPill, adminToneFromStatus} from "@/components/admin/AdminViewControls";
-import {convertBuyerAccountRequestToCustomerAction, updateBuyerAccountRequestStatusAction} from "@/actions/createAdminRecords";
+import {convertBuyerAccountRequestToCustomerAction, updateBuyerAccountRequestStatusAction} from "@/actions/admin/customers";
 import {prisma} from "@/lib/prisma";
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
 

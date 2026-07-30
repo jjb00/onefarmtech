@@ -3,12 +3,9 @@ import AdminPageShell from "@/components/AdminPageShell";
 import AdminDisclosure from "@/components/admin/AdminDisclosure";
 import {prisma} from "@/lib/prisma";
 import {convertedOrderFromNote} from "@/lib/orderRequestConversion.js";
-import {
-  convertBuyerAccountRequestToCustomerAction,
-  updateBuyerAccountRequestStatusAction,
-  updateContactEnquiryStatusAction,
-  updateOrderRequestStatusAction,
-} from "@/actions/createAdminRecords";
+import {convertBuyerAccountRequestToCustomerAction, updateBuyerAccountRequestStatusAction} from "@/actions/admin/customers";
+import {updateContactEnquiryStatusAction} from "@/actions/admin/communications";
+import {updateOrderRequestStatusAction} from "@/actions/admin/orders";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

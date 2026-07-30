@@ -4,6 +4,9 @@ import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {createSupplierEnquiryAction} from "@/actions/publicApplications";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/supplier-partners");
 
 const partnerTypes = [
   "Farms",
@@ -74,7 +77,7 @@ export default async function SupplierPartnersPage({searchParams}: {searchParams
           <h2 className="text-2xl font-black">Become a supplier or partner</h2>
           {params?.submitted === "1" ? <div role="status" className="mt-4 rounded-xl bg-[#eef8ef] p-4 font-bold text-[#155c2f]">Your supplier enquiry has been received.</div> : null}
           {params?.error ? <div role="alert" className="mt-4 rounded-xl bg-red-50 p-4 font-bold text-red-700">{params.error === "validation" ? "Complete the required supplier details." : publicIntakeErrorMessage(params.error)}</div> : null}
-          <form action={createSupplierEnquiryAction} className="mt-5 grid gap-4 sm:grid-cols-2">
+          <form action={createSupplierEnquiryAction} data-analytics-start="supplier_enquiry_started" className="mt-5 grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-bold">Business / farm name<input name="businessName" required className="rounded-xl border px-4 py-3 font-normal" /></label>
             <label className="grid gap-2 text-sm font-bold">Contact person<input name="contactName" required className="rounded-xl border px-4 py-3 font-normal" /></label>
             <label className="grid gap-2 text-sm font-bold">Phone<input name="phone" required className="rounded-xl border px-4 py-3 font-normal" /></label>

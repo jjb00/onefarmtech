@@ -9,16 +9,13 @@ import {AdminListToolbar, AdminPagination, AdminResultCount} from "@/components/
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
 import {prisma} from "@/lib/prisma";
 import type {Prisma} from "@/generated/prisma/client";
-import {
-  createProductAction,
-  seedBaselineProductsAction,
-  updateProductDetailsAction,
-} from "@/actions/createAdminRecords";
+import {createProductAction, seedBaselineProductsAction, updateProductDetailsAction} from "@/actions/admin/products";
 import { produceGrades } from "@/constants/orderOptions";
 import {
   productAvailabilityOptions,
   productCategoryOptions,
   productStatusOptions,
+  productStockTypeOptions,
   productUnitOptions,
 } from "@/lib/formOptions";
 
@@ -203,6 +200,16 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
               </select>
             </label>
 
+            <label className="grid gap-2 text-sm font-semibold">
+              Fulfilment
+              <select name="stockType" defaultValue="Fresh sourced" className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]">
+                {productStockTypeOptions.map((item) => <option key={item}>{item}</option>)}
+              </select>
+              <span className="text-xs font-normal text-[#587063]">
+                Stocked = same/next-day. Fresh sourced = usual 1-2 day sourcing lead time.
+              </span>
+            </label>
+
             <div className="md:col-span-2">
               <button type="submit" className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]">
                 Save product
@@ -222,6 +229,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
                   <th className="px-4 py-3">Grade</th>
                   <th className="px-4 py-3">Price</th>
                   <th className="px-4 py-3">Availability</th>
+                  <th className="px-4 py-3">Fulfilment</th>
                   <th className="px-4 py-3">Orders</th>
                   <th className="px-4 py-3">Edit</th>
                 </tr>
@@ -240,6 +248,7 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
                         {product.availability} · {product.status}
                       </AdminStatusPill>
                     </td>
+                    <td className="px-4 py-3">{product.stockType}</td>
                     <td className="px-4 py-3">{product._count.orderItems}</td>
                     <td className="px-4 py-3">
                       <ProductEditForm product={product} />
@@ -331,6 +340,10 @@ function ProductEditForm({product}: {product: ProductListItem}) {
             {productStatusOptions.map((item) => <option key={item}>{item}</option>)}
           </select>
         </div>
+
+        <select name="stockType" defaultValue={product.stockType} className="rounded-xl border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]">
+          {productStockTypeOptions.map((item) => <option key={item}>{item}</option>)}
+        </select>
 
         <button type="submit" className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">
           Save

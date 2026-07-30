@@ -1,6 +1,6 @@
 import Link from "next/link";
 import DeliveryPartnerMobileMenu from "@/components/DeliveryPartnerMobileMenu";
-import {deliveryPartnerLoginAction} from "@/actions/createAdminRecords";
+import {deliveryPartnerLoginAction} from "@/actions/admin/delivery";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

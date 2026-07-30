@@ -37,14 +37,17 @@ test("capability matrix prevents role escalation", async () => {
 });
 
 test("sensitive actions enforce capabilities inside server actions", async () => {
-  const admin = await read("src/actions/createAdminRecords.ts");
+  const staff = await read("src/actions/admin/staff.ts");
+  const payments = await read("src/actions/admin/payments.ts");
+  const delivery = await read("src/actions/admin/delivery.ts");
+  const orders = await read("src/actions/admin/orders.ts");
   const order = await read("src/actions/createOrder.ts");
   const operations = await read("src/actions/orderOperations.ts");
-  assert.match(admin, /createStaffUserAction[\s\S]{0,100}requireCapability\("manage_staff"\)/);
-  assert.match(admin, /generatePaymentLinkAction[\s\S]{0,100}requireCapability\("manage_payments"\)/);
-  assert.match(admin, /generateDeliveryPartnerAccessCodeAction[\s\S]{0,120}requireCapability\("manage_delivery_access"\)/);
-  assert.match(admin, /paymentStatus !== existingOrder\.paymentStatus[\s\S]{0,100}manage_payments/);
-  assert.match(admin, /fulfilmentStatus !== existingOrder\.fulfilmentStatus[\s\S]{0,100}manage_fulfilment/);
+  assert.match(staff, /createStaffUserAction[\s\S]{0,100}requireCapability\("manage_staff"\)/);
+  assert.match(payments, /generatePaymentLinkAction[\s\S]{0,100}requireCapability\("manage_payments"\)/);
+  assert.match(delivery, /generateDeliveryPartnerAccessCodeAction[\s\S]{0,120}requireCapability\("manage_delivery_access"\)/);
+  assert.match(orders, /paymentStatus !== existingOrder\.paymentStatus[\s\S]{0,100}manage_payments/);
+  assert.match(orders, /fulfilmentStatus !== existingOrder\.fulfilmentStatus[\s\S]{0,100}manage_fulfilment/);
   assert.match(order, /requireCapability\("manage_orders"\)/);
   assert.match(operations, /requireCapability\("manage_payments"\)/);
   assert.match(operations, /requireCapability\("manage_fulfilment"\)/);

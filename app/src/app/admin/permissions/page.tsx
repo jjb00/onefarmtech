@@ -5,7 +5,7 @@ export default function PermissionsPage() {
   return (
     <AdminPageShell
       title="Permissions matrix"
-      description="Role and permission plan for the proper auth phase. Current access is still protected by the temporary staff password gate, so these permissions are planning rules until real auth is connected."
+      description="Roles are enforced by named staff sign-in and server-side capability checks on every page and action. This matrix documents what each role can currently do."
     >
       <div className="grid gap-6">
         <section className="grid gap-4 lg:grid-cols-2">

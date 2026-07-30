@@ -23,7 +23,6 @@ test("daily admin navigation excludes recruitment, general enquiries and launch 
 test("profile menu is role-aware and sidebar state persists", () => {
   const chrome = read("src/components/admin/AdminLayoutFrame.tsx");
   const sidebar = read("src/components/admin/AdminSidebarGroup.tsx");
-  const sidebar = read("src/components/admin/AdminSidebarGroup.tsx");
   assert.match(chrome, /Staff management/);
   assert.match(chrome, /staff\.role === "Super admin"/);
   assert.match(chrome, /\["Super admin", "Admin"\]\.includes\(staff\.role\)/);

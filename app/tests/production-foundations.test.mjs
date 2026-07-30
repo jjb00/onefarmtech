@@ -4,6 +4,7 @@ import test from "node:test";
 import {validateFlutterwaveVerification, validatePaystackVerification} from "../src/lib/payments/verificationRules.js";
 import crypto from "node:crypto";
 import {mapResendEventStatus, verifyResendWebhookSignature} from "../src/lib/email/resendWebhook.js";
+import {readAdminActions} from "./helpers/adminActions.mjs";
 
 const paystack = {ok: true, status: "success", reference: "PAY-1", amountMinor: 250000, currency: "NGN"};
 const flutterwave = {ok: true, status: "successful", reference: "PAY-2", amount: 2500, currency: "NGN"};
@@ -154,7 +155,7 @@ test("payment webhooks retain signature checks, reconciliation creation and idem
 });
 
 test("delivery workflow retains partner scope, status propagation, buyer notification and audit evidence", () => {
-  const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
+  const actions = readAdminActions();
   assert.match(actions, /deliveryPartnerId: partner\.id/);
   assert.match(actions, /fulfilmentStatus/);
   assert.match(actions, /Delivery update:/);
@@ -162,10 +163,7 @@ test("delivery workflow retains partner scope, status propagation, buyer notific
 });
 
 test("public forms use their intended storage and notification paths", () => {
-  const actions = fs.readFileSync(
-    new URL("../src/actions/createAdminRecords.ts", import.meta.url),
-    "utf8",
-  );
+  const actions = readAdminActions();
   const publicApplications = fs.readFileSync(
     new URL("../src/actions/publicApplications.ts", import.meta.url),
     "utf8",

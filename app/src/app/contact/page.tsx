@@ -2,11 +2,14 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
-import {createContactEnquiryAction} from "@/actions/createAdminRecords";
+import {createContactEnquiryAction} from "@/actions/admin/communications";
 import {enquiryTypeOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
 import TurnstileWidget from "@/components/TurnstileWidget";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/contact");
 
 const partnerTypes = [
   {
@@ -146,7 +149,7 @@ export default async function ContactPage({
             </div>
           </div>
 
-          <form action={createContactEnquiryAction} className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6">
+          <form action={createContactEnquiryAction} data-analytics-start="contact_form_started" className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6">
             <h2 className="text-2xl font-black">Send an enquiry</h2>
             <p className="mt-2 text-sm leading-7 text-[#405348]">
               Tell us what you are interested in and the team will review it.

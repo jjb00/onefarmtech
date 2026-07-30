@@ -6,6 +6,7 @@ import {
   loadAuthorizedRecentReceipts,
   visibleBuyerPaymentStatus,
 } from "../src/lib/buyerFinancialAccess.js";
+import {readAdminActionFile} from "./helpers/adminActions.mjs";
 
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
@@ -77,7 +78,7 @@ test("the dedicated payment route remains server-side capability protected", () 
 test("neighbouring buyer permissions and authoritative session invalidation remain enforced", () => {
   const overview = read("src/app/buyer-account/page.tsx");
   const orderPage = read("src/app/buyer-account/order/page.tsx");
-  const actions = read("src/actions/createAdminRecords.ts");
+  const actions = readAdminActionFile("orders");
   const currentBuyer = read("src/lib/currentBuyer.ts");
 
   assert.match(overview, /buyer\.canViewCredit \? <Metric label="Available credit"/);

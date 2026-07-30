@@ -104,3 +104,10 @@ export const productStatusOptions = [
   "Paused",
   "Archived",
 ] as const;
+
+// "Stocked" items fulfil same/next-day. Everything else needs the usual
+// 1-2 day farm sourcing lead time before it can be confirmed.
+export const productStockTypeOptions = [
+  "Fresh sourced",
+  "Stocked",
+] as const;

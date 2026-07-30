@@ -3,6 +3,9 @@ import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
 import CareerApplicationModal from "@/components/CareerApplicationModal";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/careers");
 
 type Role = {
   title: string;

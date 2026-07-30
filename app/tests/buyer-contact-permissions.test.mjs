@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
+import {readAdminActionFile} from "./helpers/adminActions.mjs";
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
 test("buyer login offers email OTP with legacy fallback and sessions bind authoritative BuyerContact permissions", () => {
@@ -31,7 +32,7 @@ test("buyer login offers email OTP with legacy fallback and sessions bind author
 });
 
 test("buyer server actions and protected queries enforce contact capabilities", () => {
-  assert.match(read("src/actions/createAdminRecords.ts"), /requireBuyerCapability\("canPlaceOrders"\)/);
+  assert.match(readAdminActionFile("orders"), /requireBuyerCapability\("canPlaceOrders"\)/);
   assert.match(read("src/app/buyer-account/payments/page.tsx"), /requireBuyerCapability\("canViewReceipts"\)/);
   assert.match(read("src/app/buyer-account/order/page.tsx"), /requireBuyerCapability\("canPlaceOrders"\)/);
 });

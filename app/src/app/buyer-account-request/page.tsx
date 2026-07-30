@@ -3,10 +3,13 @@ import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import BuyerLoginModal from "@/components/BuyerLoginModal";
-import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
+import {createBuyerAccountRequestAction} from "@/actions/admin/customers";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
 import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/buyer-account-request");
 
 const buyerLoginMessages: Record<string, string> = {
   missing: "Please enter both your email/phone and buyer access code.",
@@ -135,6 +138,7 @@ export default async function BuyerAccountRequestPage({
           <form
             id="buyer-account-request-form"
             action={createBuyerAccountRequestAction}
+            data-analytics-start="buyer_account_request_started"
             className="oft-fade-up-delay-3 oft-public-card rounded-[2rem] p-6"
           >
             <h2 className="text-2xl font-black">Account setup details</h2>

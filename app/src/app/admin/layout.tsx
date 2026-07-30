@@ -1,5 +1,9 @@
+import {requireStaff} from "@/lib/auth";
+import {PRIVATE_NOINDEX_METADATA} from "@/lib/publicSeo";
+
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+export const metadata = PRIVATE_NOINDEX_METADATA;
 
 export default async function AdminLayout({
   children,
@@ -9,4 +13,3 @@ export default async function AdminLayout({
   await requireStaff();
   return children;
 }
-import {requireStaff} from "@/lib/auth";

@@ -7,7 +7,7 @@ import {
   AdminViewBar,
   adminToneFromStatus,
 } from "@/components/admin/AdminViewControls";
-import {assignDeliveryPartnerAction} from "@/actions/createAdminRecords";
+import {assignDeliveryPartnerAction} from "@/actions/admin/delivery";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 
