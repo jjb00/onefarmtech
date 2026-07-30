@@ -5,7 +5,8 @@ import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 import {createDraftOrderRequestFromInboundWhatsApp} from "@/lib/whatsapp/draftOrders";
 import {parseWhatsAppOrderMessage} from "@/lib/whatsapp/orderParser";
 import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
-import {handleWhatsAppChatbotMessage} from "@/lib/whatsapp/chatbot";
+import {handleInteractiveOrderingMessage} from "@/lib/whatsapp/interactiveOrdering";
+import {replyWithOrderStatus} from "@/lib/whatsapp/statusReply";
 import {recordOperationalEvent} from "@/lib/operationalEvents";
 import {
   buildWhatsAppProductListMessage,
@@ -739,27 +740,6 @@ export async function POST(request: NextRequest) {
         metadata: {messageId, messageType: message?.type || "unknown", matched: inboundLog.matched},
       });
 
-      const chatbotResult = await handleWhatsAppChatbotMessage({
-        from,
-        profileName,
-        body,
-        messageId,
-      });
-
-      /*
-       * The legacy parser may create a staff-review draft only when the
-       * guided chatbot is disabled or deliberately declines the message.
-       * A greeting or vague buying intent can never become an order.
-       */
-      if (!chatbotResult.handled) {
-        await createDraftOrderRequestFromInboundWhatsApp({
-          from,
-          profileName,
-          body,
-          messageId,
-        });
-      }
-
       try {
         await maybeCreateComplaintFromInbound({
           from,
@@ -785,7 +765,51 @@ export async function POST(request: NextRequest) {
         console.error("WhatsApp payment/delivery follow-up routing failed", error);
       }
 
-      if (!chatbotResult.handled) {
+      // Instant, database-backed status answer for natural-language
+      // "where's my order" / "have you received my payment" questions, in
+      // addition to the staff follow-up already logged above.
+      if (["payment_follow_up", "delivery_follow_up"].includes(parsedIntent.intent)) {
+        try {
+          await replyWithOrderStatus({to: from, customerId: inboundLog.customerId});
+        } catch (error) {
+          console.error("WhatsApp automated status reply failed", error);
+        }
+      }
+
+      let interactiveOrderingHandled = false;
+
+      try {
+        const result = await handleInteractiveOrderingMessage({
+          from,
+          body,
+          message,
+          customerId: inboundLog.customerId,
+          // Gated behind the same opt-in flag as the text-only catalogue
+          // reply it replaces, so the bot stays off until deliberately
+          // enabled. Interactive button/list replies above are always
+          // handled regardless of this flag, since by definition they only
+          // happen once a buyer is already mid-flow.
+          triggerMenu:
+            shouldAutoSendCatalogue(parsedIntent.intent) &&
+            process.env.WHATSAPP_AUTO_REPLY_CATALOGUE === "true",
+        });
+        interactiveOrderingHandled = result.handled;
+      } catch (error) {
+        console.error("WhatsApp interactive ordering flow failed", error);
+      }
+
+      // The guided ordering flow above handles buyers who are already
+      // mid-conversation (button taps, quantity replies, checkout). Any
+      // message it doesn't recognise still gets a staff-visible draft so
+      // nothing silently falls through.
+      if (!interactiveOrderingHandled) {
+        await createDraftOrderRequestFromInboundWhatsApp({
+          from,
+          profileName,
+          body,
+          messageId,
+        });
+
         try {
           await maybeSendCatalogueAutoReply({
             from,

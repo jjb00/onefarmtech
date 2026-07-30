@@ -45,6 +45,10 @@ model Product {
   basePrice    Int         @default(0)
   availability String      @default("Available")
   status       String      @default("Active")
+  // "Stocked" items can fulfil same/next-day; everything else defaults to
+  // "Fresh sourced" and needs the usual farm sourcing lead time. Drives the
+  // fulfilment estimate the WhatsApp ordering bot quotes at checkout.
+  stockType    String      @default("Fresh sourced")
   orderItems   OrderItem[]
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
@@ -581,5 +585,23 @@ model WhatsAppChatbotSession {
   updatedAt            DateTime  @updatedAt
 
   @@index([step, updatedAt])
+  @@index([expiresAt])
+}
+
+// Cart/step state for the interactive (buttons/lists) WhatsApp ordering
+// flow — a separate, active session model from WhatsAppChatbotSession
+// above, which the July 27 text-menu chatbot used and is kept only so its
+// historical conversation records still render in the admin panel.
+model WhatsAppOrderSession {
+  id                String   @id @default(cuid())
+  phone             String   @unique
+  step              String   @default("browsing")
+  cart              String   @default("[]")
+  pendingProductId  String?
+  customerId        String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  expiresAt         DateTime
+
   @@index([expiresAt])
 }
