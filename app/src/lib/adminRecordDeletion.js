@@ -1,4 +1,4 @@
-export const DELETABLE_ADMIN_RECORD_TYPES = ["ContactEnquiry", "BuyerMessage", "OrderRequest", "BuyerAccountRequest", "Order"];
+export const DELETABLE_ADMIN_RECORD_TYPES = ["ContactEnquiry", "BuyerMessage", "OrderRequest", "BuyerAccountRequest", "Order", "Conversation"];
 
 export function validatePermanentDeletionInput({recordType, recordId, reason, confirmation, password}) {
   if (!DELETABLE_ADMIN_RECORD_TYPES.includes(String(recordType || ""))) return "invalid-record-type";

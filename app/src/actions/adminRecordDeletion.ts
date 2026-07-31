@@ -7,6 +7,7 @@ import {createAuditLog} from "@/lib/auditLog";
 import {validatePermanentDeletionInput} from "@/lib/adminRecordDeletion.js";
 import {prisma} from "@/lib/prisma";
 import {verifyStaffPassword} from "@/lib/staffAuthorization";
+import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) || "").trim();
 
@@ -63,6 +64,31 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
       }
 
       await tx.buyerAccountRequest.delete({where: {id: recordId}});
+    } else if (recordType === "Conversation") {
+      // recordId holds the phone number for this type -- there's no single
+      // "Conversation" row, it's every BuyerMessage/ContactEnquiry that
+      // matches the same phone the conversation viewer aggregates by.
+      const candidates = phoneMatchCandidates(recordId);
+      if (!candidates.length) throw new Error("INVALID_DELETE_TYPE");
+
+      const customer = await tx.customer.findFirst({where: {phone: {in: candidates}}, select: {id: true}});
+      const contact = await tx.buyerContact.findFirst({where: {phone: {in: candidates}}, select: {customerId: true}});
+      const customerId = customer?.id || contact?.customerId || null;
+
+      await tx.buyerMessage.deleteMany({
+        where: {
+          OR: [
+            {recipient: {in: candidates}},
+            ...(customerId ? [{customerId}] : []),
+          ],
+        },
+      });
+      await tx.contactEnquiry.deleteMany({
+        where: {
+          enquiryType: "WhatsApp inbound",
+          phone: {in: candidates},
+        },
+      });
     } else if (recordType === "Order") {
       const order = await tx.order.findUnique({
         where: {id: recordId},

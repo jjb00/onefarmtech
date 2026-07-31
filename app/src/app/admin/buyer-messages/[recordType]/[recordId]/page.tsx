@@ -10,6 +10,8 @@ import {
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
 import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
+import {permanentlyDeleteAdminMessageAction} from "@/actions/adminRecordDeletion";
+import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -36,7 +38,7 @@ export default async function WhatsAppConversationPage({
   params: Promise<{recordType: string; recordId: string}>;
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  await requireStaff();
+  const staff = await requireStaff();
 
   const {recordType: rawRecordType, recordId} = await params;
   const query = (await searchParams) || {};
@@ -195,6 +197,40 @@ export default async function WhatsAppConversationPage({
             </button>
           </form>
         </div>
+
+        {staff.role === "Super admin" && sourcePhone ? (
+          <details className="rounded-2xl border border-[#9b2f12]/20 bg-[#fff4ef] p-4">
+            <summary className="cursor-pointer text-sm font-black text-[#9b2f12]">
+              Delete this conversation
+            </summary>
+            <p className="mt-2 text-xs font-semibold text-[#587063]">
+              Permanently removes every message in this thread for {sourcePhone}. This cannot be undone.
+            </p>
+            <form action={permanentlyDeleteAdminMessageAction} className="mt-3 grid gap-2 sm:max-w-sm">
+              <input type="hidden" name="recordType" value="Conversation" />
+              <input type="hidden" name="recordId" value={sourcePhone} />
+              <input type="hidden" name="returnTo" value="/admin/buyer-messages" />
+              <label className="grid gap-1 text-xs font-bold">
+                Deletion reason
+                <input name="reason" required minLength={10} className="rounded-lg border px-3 py-2" />
+              </label>
+              <label className="grid gap-1 text-xs font-bold">
+                Type DELETE
+                <input name="confirmation" required pattern="DELETE" autoComplete="off" className="rounded-lg border px-3 py-2" />
+              </label>
+              <label className="grid gap-1 text-xs font-bold">
+                Confirm your password
+                <input name="password" type="password" required autoComplete="current-password" className="rounded-lg border px-3 py-2" />
+              </label>
+              <ConfirmSubmitButton
+                label="Delete conversation permanently"
+                pendingLabel="Deleting…"
+                confirmMessage="Final confirmation: permanently delete every message in this conversation? This cannot be undone."
+                className="rounded-lg bg-[#9b2f12] px-3 py-2 text-xs font-black text-white"
+              />
+            </form>
+          </details>
+        ) : null}
 
         {error ? (
           <div className="rounded-2xl border border-[#d9471f]/25 bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">

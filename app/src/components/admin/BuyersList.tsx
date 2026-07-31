@@ -146,6 +146,14 @@ export default async function BuyersList({raw}: {raw: Params}) {
             OR ($4 = 'not-enabled' AND "accessState" = 'Login not enabled')
             OR ($4 = 'guest' AND relationship = 'Guest buyer')
           )
+          -- A Customer row can exist purely because an automated WhatsApp
+          -- reply was sent to a number, with no order and no real login.
+          -- That's not a buyer yet -- don't list it alongside ones who are.
+          AND NOT (
+            relationship = 'Account buyer'
+            AND "orderCount" = 0
+            AND "accessState" != 'Login active'
+          )
       )
       SELECT
         *,
