@@ -69,3 +69,39 @@ export async function replyWithOrderStatus(input: {to: string; customerId: strin
   await sendWhatsAppTextMessage({to: input.to, body: statusMessageForOrder(order)});
   return {sent: true, reason: "status-sent" as const, orderCode: order.code};
 }
+
+function isPickupDeliveryMethod(deliveryMethod: string) {
+  return String(deliveryMethod || "").trim().toLowerCase().includes("pickup");
+}
+
+/**
+ * Sends a WhatsApp payment confirmation straight to the order's phone
+ * number -- not gated on the order having a linked Customer account, since
+ * a first-time WhatsApp buyer (the common case for new growth) often
+ * doesn't have one yet. This is the buyer's primary channel; the portal
+ * message + email in the webhook handlers are supplementary for buyers who
+ * do have an account.
+ */
+export async function sendPaymentConfirmationWhatsApp(order: {
+  code: string;
+  phone: string;
+  deliveryMethod: string;
+  fulfilmentStatus: string;
+}, amount: number) {
+  const pickup = isPickupDeliveryMethod(order.deliveryMethod);
+  const nextStep = pickup
+    ? "The team will confirm your pickup location and timing shortly."
+    : "The team will confirm delivery timing and any delivery fee shortly.";
+
+  const body = [
+    `Payment received for order ${order.code} ✅`,
+    `Amount: ${formatWhatsAppNaira(amount)}`,
+    "",
+    `Fulfilment: ${order.fulfilmentStatus}`,
+    nextStep,
+    "",
+    'Reply "menu" any time for order status or support.',
+  ].join("\n");
+
+  await sendWhatsAppTextMessage({to: order.phone, body});
+}

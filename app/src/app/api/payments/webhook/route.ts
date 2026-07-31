@@ -8,6 +8,7 @@ import {emailTemplates} from "@/lib/email/templates";
 import {validatePaystackVerification} from "@/lib/payments/verificationRules";
 import {settleVerifiedPaystackPayment} from "@/lib/payments/paystackSettlement.js";
 import {validatePaystackWebhookPayment, verifyPaystackWebhookSignature} from "@/lib/payments/paystackWebhookRules.js";
+import {sendPaymentConfirmationWhatsApp} from "@/lib/whatsapp/statusReply";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
@@ -102,29 +103,40 @@ export async function POST(request: NextRequest) {
     await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: "Payment was verified and marked paid, but automatic receipt creation failed.", verificationMetadata: {receiptError: settlement.receiptError}});
   }
 
-  if (paymentRequest.customerId && !settlement.duplicate) {
-    await prisma.buyerMessage.create({
-      data: {
-        customerId: paymentRequest.customerId,
-        title: `Payment received for ${paymentRequest.order.code}`,
-        body: `Paystack confirmed payment for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${formatNaira(paymentRequest.amount)}\\nStatus: Paid`,
-        channel: "Portal",
-        direction: "Outbound",
-        status: "Unread",
-        recipient: paymentRequest.order.phone,
-        source: "Paystack webhook",
-        relatedType: "Payment",
-        relatedId: settlement.payment.id,
-        metadata: JSON.stringify({
-          provider: "Paystack",
-          gatewayReference,
-          event: event.event,
-        }),
-      },
-    });
+  if (!settlement.duplicate) {
+    // The buyer's primary channel -- not gated on having a linked Customer
+    // account, since a first-time WhatsApp buyer usually doesn't have one.
+    try {
+      await sendPaymentConfirmationWhatsApp(paymentRequest.order, paymentRequest.amount);
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "paystack-payment-confirmation-whatsapp"}, extra: {internalReference: paymentRequest.reference}});
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: "Payment was verified and marked paid, but the WhatsApp confirmation failed to send.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+    }
 
-    if (paymentRequest.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
+    if (paymentRequest.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: paymentRequest.customerId,
+          title: `Payment received for ${paymentRequest.order.code}`,
+          body: `Paystack confirmed payment for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${formatNaira(paymentRequest.amount)}\\nStatus: Paid`,
+          channel: "Portal",
+          direction: "Outbound",
+          status: "Unread",
+          recipient: paymentRequest.order.phone,
+          source: "Paystack webhook",
+          relatedType: "Payment",
+          relatedId: settlement.payment.id,
+          metadata: JSON.stringify({
+            provider: "Paystack",
+            gatewayReference,
+            event: event.event,
+          }),
+        },
+      });
+
+      if (paymentRequest.customer?.email) {
+        await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
+      }
     }
   }
 

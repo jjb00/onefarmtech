@@ -2366,7 +2366,7 @@ export async function sendWhatsAppStorefrontMenuAction(formData: FormData) {
       body,
       channel: "WhatsApp",
       direction: "Outbound",
-      status: {in: ["Sent", "Delivered", "Read"]},
+      status: "Sent",
       recipient: sourcePhone,
       source: "WhatsApp storefront menu",
       relatedType: "WhatsAppStorefrontMenu",

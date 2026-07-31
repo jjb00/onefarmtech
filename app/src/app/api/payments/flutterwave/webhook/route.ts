@@ -8,6 +8,7 @@ import {emailTemplates} from "@/lib/email/templates";
 import {validateFlutterwaveVerification} from "@/lib/payments/verificationRules";
 import {settleVerifiedFlutterwavePayment} from "@/lib/payments/flutterwaveSettlement.js";
 import {validateFlutterwaveWebhookPayment, verifyFlutterwaveWebhookSignature} from "@/lib/payments/flutterwaveWebhookRules.js";
+import {sendPaymentConfirmationWhatsApp} from "@/lib/whatsapp/statusReply";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
@@ -102,29 +103,40 @@ export async function POST(request: NextRequest) {
   }
   if (settlement.receiptError) await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Payment was verified and marked paid, but automatic receipt creation failed.", verificationMetadata: {receiptError: settlement.receiptError}});
 
-  if (paymentRequest.customerId && !settlement.duplicate) {
-    await prisma.buyerMessage.create({
-      data: {
-        customerId: paymentRequest.customerId,
-        title: `Payment received for ${paymentRequest.order.code}`,
-        body: `Flutterwave confirmed payment for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${formatNaira(paymentRequest.amount)}\\nStatus: Paid`,
-        channel: "Portal",
-        direction: "Outbound",
-        status: "Unread",
-        recipient: paymentRequest.order.phone,
-        source: "Flutterwave webhook",
-        relatedType: "Payment",
-        relatedId: settlement.payment.id,
-        metadata: JSON.stringify({
-          provider: "Flutterwave",
-          txRef,
-          transactionId,
-        }),
-      },
-    });
+  if (!settlement.duplicate) {
+    // The buyer's primary channel -- not gated on having a linked Customer
+    // account, since a first-time WhatsApp buyer usually doesn't have one.
+    try {
+      await sendPaymentConfirmationWhatsApp(paymentRequest.order, paymentRequest.amount);
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "flutterwave-payment-confirmation-whatsapp"}, extra: {internalReference: paymentRequest.reference}});
+      await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Payment was verified and marked paid, but the WhatsApp confirmation failed to send.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+    }
 
-    if (paymentRequest.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
+    if (paymentRequest.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: paymentRequest.customerId,
+          title: `Payment received for ${paymentRequest.order.code}`,
+          body: `Flutterwave confirmed payment for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${formatNaira(paymentRequest.amount)}\\nStatus: Paid`,
+          channel: "Portal",
+          direction: "Outbound",
+          status: "Unread",
+          recipient: paymentRequest.order.phone,
+          source: "Flutterwave webhook",
+          relatedType: "Payment",
+          relatedId: settlement.payment.id,
+          metadata: JSON.stringify({
+            provider: "Flutterwave",
+            txRef,
+            transactionId,
+          }),
+        },
+      });
+
+      if (paymentRequest.customer?.email) {
+        await sendTransactionalEmail({deduplicationKey: `payment-confirmation:${settlement.payment.id}`, template: "payment-confirmation", to: paymentRequest.customer.email, content: emailTemplates.paymentConfirmation(paymentRequest.customer.name, paymentRequest.order.code, formatNaira(paymentRequest.amount), getEmailBaseUrl()), relatedType: "Payment", relatedId: settlement.payment.id});
+      }
     }
   }
 
