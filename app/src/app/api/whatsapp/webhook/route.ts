@@ -784,14 +784,12 @@ export async function POST(request: NextRequest) {
           body,
           message,
           customerId: inboundLog.customerId,
-          // Gated behind the same opt-in flag as the text-only catalogue
-          // reply it replaces, so the bot stays off until deliberately
-          // enabled. Interactive button/list replies above are always
-          // handled regardless of this flag, since by definition they only
-          // happen once a buyer is already mid-flow.
-          triggerMenu:
-            shouldAutoSendCatalogue(parsedIntent.intent) &&
-            process.env.WHATSAPP_AUTO_REPLY_CATALOGUE === "true",
+          // Always show the main menu to a phone number with no active
+          // ordering session, matching the prior chatbot's always-on
+          // behaviour (it had no opt-in flag). handleInteractiveOrderingMessage
+          // only actually sends it when there's no session, so an
+          // in-progress conversation isn't interrupted.
+          triggerMenu: true,
         });
         interactiveOrderingHandled = result.handled;
       } catch (error) {
