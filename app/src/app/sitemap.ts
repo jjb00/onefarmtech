@@ -12,6 +12,7 @@ const routeSettings: Record<
   "/order": {changeFrequency: "monthly", priority: 0.9},
   "/order-request": {changeFrequency: "monthly", priority: 0.9},
   "/buyer-account-request": {changeFrequency: "monthly", priority: 0.8},
+  "/group-buy-request": {changeFrequency: "monthly", priority: 0.7},
   "/contact": {changeFrequency: "monthly", priority: 0.6},
   "/faq": {changeFrequency: "monthly", priority: 0.7},
   "/careers": {changeFrequency: "weekly", priority: 0.6},

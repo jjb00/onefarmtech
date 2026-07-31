@@ -4,6 +4,8 @@ import {redirect} from "next/navigation";
 import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {requireCapability} from "@/lib/auth";
+import {createAuditLog} from "@/lib/auditLog";
+import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {
   deriveGroupBuyState,
   isPaidGroupBuyReservationStatus,
@@ -137,6 +139,89 @@ export async function createGroupBuyAction(formData: FormData) {
   redirect("/admin/group-buys");
 }
 
+export async function createGroupBuyProposalAction(formData: FormData) {
+  const buyerName = readText(formData, "buyerName");
+  const phone = readText(formData, "phone");
+  const email = readText(formData, "email");
+  const productName = readText(formData, "productName");
+  const unit = readText(formData, "unit", "unit");
+  const targetQuantity = readNumber(formData, "targetQuantity");
+  const pickupWindow = readText(formData, "pickupWindow");
+  const closingDate = readDate(formData, "closingDate");
+  const message = readText(formData, "message");
+
+  if (!buyerName || !phone || !productName || targetQuantity <= 0) {
+    throw new Error("Your name, phone, item, and target quantity are required.");
+  }
+
+  try {
+    await protectPublicIntake({
+      formType: "group-buy-request",
+      action: "group_buy_request",
+      token: readText(formData, "cf-turnstile-response"),
+      honeypot: readText(formData, "website"),
+      values: [buyerName, phone, email, productName, unit, targetQuantity, pickupWindow, message],
+    });
+  } catch (error) {
+    const code = error instanceof PublicIntakeError ? error.code : "bot-check";
+    redirect(`/group-buy-request?intakeError=${encodeURIComponent(code)}`);
+  }
+
+  const code = await createNextGroupBuyCode();
+  const contactNote = [
+    `Proposed by: ${buyerName}`,
+    `Phone: ${phone}`,
+    email ? `Email: ${email}` : "",
+    message ? `Message: ${message}` : "",
+    "",
+    "Set a real unit price and review the target quantity before approving and opening this group buy.",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const groupBuy = await prisma.groupBuy.create({
+    data: {
+      code,
+      title: `${productName} group buy — proposed by ${buyerName}`,
+      status: "Proposed",
+      minQuantity: 0,
+      targetQuantity,
+      reservedQuantity: 0,
+      unit,
+      closingDate,
+      pickupWindow: pickupWindow || null,
+      paymentStatus: "Not collecting",
+      fulfilmentStatus: "Planning",
+      adminNote: contactNote,
+      items: {
+        create: [
+          {
+            name: productName,
+            grade: "Standard",
+            quantity: targetQuantity,
+            unit,
+            unitPrice: 0,
+            lineTotal: 0,
+          },
+        ],
+      },
+    },
+  });
+
+  await createAuditLog({
+    action: "Buyer proposed a self-serve group buy",
+    entityType: "GroupBuy",
+    entityId: groupBuy.id,
+    entityLabel: groupBuy.title,
+    actorName: buyerName,
+    actorRole: "Buyer",
+    newValue: {code: groupBuy.code, productName, unit, targetQuantity, phone},
+  });
+
+  refreshGroupBuyPaths();
+  redirect("/group-buy-request?submitted=1");
+}
+
 export async function createGroupBuyReservationAction(formData: FormData) {
   await requireCapability("manage_group_buys");
 
@@ -258,12 +343,14 @@ export async function updateGroupBuyAction(formData: FormData) {
   const groupBuyId = readText(formData, "groupBuyId");
   const status = readText(formData, "status") || undefined;
 
-  // Quick-action buttons (Open/Close/Cancel) only submit groupBuyId and
-  // status -- omitted fields must stay untouched rather than reset to a
-  // default, or a one-click status change would silently wipe the
-  // fulfilment stage and internal note the full "Manage group buy" form set.
+  // Quick-action buttons (Open/Close/Cancel/Approve) only submit
+  // groupBuyId and status -- omitted fields must stay untouched rather
+  // than reset to a default, or a one-click status change would silently
+  // wipe the fulfilment stage and internal note the full "Manage group
+  // buy" form set.
   const fulfilmentStatusRaw = formData.get("fulfilmentStatus");
   const adminNoteRaw = formData.get("adminNote");
+  const itemUnitPriceRaw = formData.get("itemUnitPrice");
 
   if (!groupBuyId) {
     throw new Error("Group-buy ID is required.");
@@ -279,6 +366,23 @@ export async function updateGroupBuyAction(formData: FormData) {
 
   if (Object.keys(data).length) {
     await prisma.groupBuy.update({where: {id: groupBuyId}, data});
+  }
+
+  // A self-serve proposal is created with unitPrice 0 -- this is where
+  // staff set the real price before approving and opening it. Applies to
+  // the group buy's first/only item, matching the single-item shape both
+  // createGroupBuyAction and createGroupBuyProposalAction create.
+  if (typeof itemUnitPriceRaw === "string" && itemUnitPriceRaw.trim()) {
+    const itemUnitPrice = Number(itemUnitPriceRaw);
+    if (Number.isFinite(itemUnitPrice) && itemUnitPrice >= 0) {
+      const firstItem = await prisma.groupBuyItem.findFirst({where: {groupBuyId}, orderBy: {id: "asc"}});
+      if (firstItem) {
+        await prisma.groupBuyItem.update({
+          where: {id: firstItem.id},
+          data: {unitPrice: Math.round(itemUnitPrice), lineTotal: Math.round(itemUnitPrice) * firstItem.quantity},
+        });
+      }
+    }
   }
 
   await syncGroupBuyState(groupBuyId, status);

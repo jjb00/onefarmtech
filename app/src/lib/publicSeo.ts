@@ -10,6 +10,7 @@ export const INDEXABLE_PUBLIC_ROUTES = [
   "/order",
   "/order-request",
   "/buyer-account-request",
+  "/group-buy-request",
   "/contact",
   "/faq",
   "/careers",
@@ -40,6 +41,11 @@ export const PUBLIC_ROUTE_METADATA = {
     title: "Request a Recurring Buyer Account",
     description:
       "Request a OneFarmTech buyer account for recurring produce procurement, structured order records, receipts and business supply support.",
+  },
+  "/group-buy-request": {
+    title: "Start a Group Buy",
+    description:
+      "Propose a group buy for your street, office or business. OneFarmTech reviews and opens it once pricing and quantity are confirmed.",
   },
   "/contact": {
     title: "Contact OneFarmTech",

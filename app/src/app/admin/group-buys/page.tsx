@@ -31,6 +31,7 @@ function formatDate(date: Date | null) {
 }
 
 const groupBuyStatuses = [
+  "Proposed",
   "Draft",
   "Open",
   "Paused",
@@ -310,6 +311,25 @@ export default async function GroupBuysPage() {
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {groupBuy.status === "Proposed" ? (
+                        unitPrice > 0 ? (
+                          <form action={updateGroupBuyAction}>
+                            <input type="hidden" name="groupBuyId" value={groupBuy.id} />
+                            <input type="hidden" name="status" value="Open" />
+                            <button
+                              type="submit"
+                              className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
+                            >
+                              Approve & open
+                            </button>
+                          </form>
+                        ) : (
+                          <p className="text-xs font-semibold text-[#9b2f12]">
+                            Buyer-proposed — set a price below in "Manage group buy" before approving.
+                          </p>
+                        )
+                      ) : null}
+
                       {["Draft", "Closed"].includes(groupBuy.status) ? (
                         <form action={updateGroupBuyAction}>
                           <input type="hidden" name="groupBuyId" value={groupBuy.id} />
@@ -413,6 +433,18 @@ export default async function GroupBuysPage() {
                             <option key={status}>{status}</option>
                           ))}
                         </select>
+
+                        <label className="grid gap-1 text-xs font-bold text-[#587063]">
+                          Unit price ({groupBuy.unit})
+                          <input
+                            name="itemUnitPrice"
+                            type="number"
+                            min="0"
+                            defaultValue={unitPrice || ""}
+                            placeholder="Set a price"
+                            className="rounded-xl border border-gray-200 px-4 py-3 font-normal"
+                          />
+                        </label>
 
                         <textarea
                           name="adminNote"
