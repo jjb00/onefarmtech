@@ -14,7 +14,12 @@ export type WhatsAppCartItem = {
   stockType: string;
 };
 
-export type WhatsAppOrderStep = "browsing" | "awaiting_quantity" | "cart_review";
+export type WhatsAppOrderStep =
+  | "browsing"
+  | "awaiting_quantity"
+  | "cart_review"
+  | "awaiting_delivery_choice"
+  | "awaiting_pickup_location";
 
 function parseCart(raw: string): WhatsAppCartItem[] {
   try {
@@ -43,6 +48,8 @@ export async function upsertOrderSession(input: {
   cart?: WhatsAppCartItem[];
   customerId?: string | null;
   pendingProductId?: string | null;
+  pendingDeliveryMethod?: string | null;
+  pendingPickupLocationId?: string | null;
 }) {
   const expiresAt = new Date(Date.now() + SESSION_TTL_MS);
   const existing = await prisma.whatsAppOrderSession.findUnique({where: {phone: input.phone}});
@@ -56,6 +63,8 @@ export async function upsertOrderSession(input: {
       cart: JSON.stringify(cart),
       customerId: input.customerId || null,
       pendingProductId: input.pendingProductId || null,
+      pendingDeliveryMethod: input.pendingDeliveryMethod || null,
+      pendingPickupLocationId: input.pendingPickupLocationId || null,
       expiresAt,
     },
     update: {
@@ -63,6 +72,8 @@ export async function upsertOrderSession(input: {
       cart: JSON.stringify(cart),
       ...(input.customerId !== undefined ? {customerId: input.customerId} : {}),
       pendingProductId: input.pendingProductId !== undefined ? input.pendingProductId : null,
+      pendingDeliveryMethod: input.pendingDeliveryMethod !== undefined ? input.pendingDeliveryMethod : null,
+      pendingPickupLocationId: input.pendingPickupLocationId !== undefined ? input.pendingPickupLocationId : null,
       expiresAt,
     },
   });

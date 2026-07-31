@@ -593,15 +593,17 @@ model WhatsAppChatbotSession {
 // above, which the July 27 text-menu chatbot used and is kept only so its
 // historical conversation records still render in the admin panel.
 model WhatsAppOrderSession {
-  id                String   @id @default(cuid())
-  phone             String   @unique
-  step              String   @default("browsing")
-  cart              String   @default("[]")
-  pendingProductId  String?
-  customerId        String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  expiresAt         DateTime
+  id                      String   @id @default(cuid())
+  phone                   String   @unique
+  step                    String   @default("browsing")
+  cart                    String   @default("[]")
+  pendingProductId        String?
+  pendingDeliveryMethod   String?
+  pendingPickupLocationId String?
+  customerId              String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  expiresAt               DateTime
 
   @@index([expiresAt])
 }

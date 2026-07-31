@@ -85,20 +85,81 @@ async function sendCartReview(to: string, cart: WhatsAppCartItem[]) {
   });
 }
 
+const DELIVERY_CHOICE_BUTTONS = [
+  {id: "delivery_courier", title: "Delivery"},
+  {id: "delivery_pickup", title: "Pickup"},
+  {id: "delivery_self", title: "I'll arrange pickup"},
+];
+
+async function sendDeliveryChoice(to: string) {
+  await sendWhatsAppButtonsMessage({
+    to,
+    body: [
+      "How would you like to receive your order?",
+      "",
+      "• Delivery — we deliver to you",
+      "• Pickup — collect from one of our locations",
+      "• I'll arrange pickup — you sort your own transport",
+    ].join("\n"),
+    buttons: DELIVERY_CHOICE_BUTTONS,
+  });
+}
+
+async function sendPickupLocationList(to: string) {
+  const locations = await prisma.pickupLocation.findMany({
+    where: {status: "Active"},
+    orderBy: [{area: "asc"}, {name: "asc"}],
+    take: 10,
+  });
+
+  if (!locations.length) {
+    await sendWhatsAppTextMessage({
+      to,
+      body: "No pickup locations are available right now. Reply \"menu\" to choose delivery instead, or ask the team directly.",
+    });
+    return;
+  }
+
+  await sendWhatsAppListMessage({
+    to,
+    header: "Pickup locations",
+    body: "Choose where you'd like to collect your order.",
+    buttonLabel: "View locations",
+    sections: [
+      {
+        title: "Available now",
+        rows: locations.map((location) => ({
+          id: `pickup_${location.id}`,
+          title: location.name,
+          description: location.fee ? `${location.area} · ${formatWhatsAppNaira(location.fee)}` : location.area,
+        })),
+      },
+    ],
+  });
+}
+
 async function nextOrderCode() {
   const count = await prisma.order.count();
   return `OFT-${String(count + 1).padStart(5, "0")}`;
 }
 
-async function checkout(input: {to: string; from: string; customerId: string | null; cart: WhatsAppCartItem[]}) {
-  const {cart} = input;
+async function checkout(input: {
+  to: string;
+  from: string;
+  customerId: string | null;
+  cart: WhatsAppCartItem[];
+  delivery: {method: string; pickupLocationId?: string | null; fee?: number; area?: string | null};
+}) {
+  const {cart, delivery} = input;
 
   if (!cart.length) {
     await sendWhatsAppTextMessage({to: input.to, body: 'Your cart is empty. Reply "menu" to start an order.'});
     return;
   }
 
+  const deliveryFee = delivery.fee || 0;
   const subtotal = cartTotal(cart);
+  const totalAmount = subtotal + deliveryFee;
   const {label} = fulfilmentEstimateForStockTypes(cart.map((item) => item.stockType));
   const customer = input.customerId ? await prisma.customer.findUnique({where: {id: input.customerId}}) : null;
 
@@ -111,13 +172,14 @@ async function checkout(input: {to: string; from: string; customerId: string | n
       buyerType: customer?.buyerType || "WhatsApp buyer",
       orderType: "WhatsApp self-service",
       paymentStatus: "Payment pending",
-      fulfilmentStatus: initialFulfilmentStatus("Delivery", "WhatsApp order received"),
-      deliveryMethod: "Delivery",
+      fulfilmentStatus: initialFulfilmentStatus(delivery.method, "WhatsApp order received"),
+      deliveryMethod: delivery.method,
+      deliveryFee,
       source: "WhatsApp",
       sourcePhone: input.from,
       subtotal,
-      totalAmount: subtotal,
-      estimatedTotal: subtotal,
+      totalAmount,
+      estimatedTotal: totalAmount,
       adminNote: `Created automatically from the WhatsApp ordering flow. Estimated fulfilment: ${label}.`,
       items: {
         create: cart.map((item) => ({
@@ -133,6 +195,18 @@ async function checkout(input: {to: string; from: string; customerId: string | n
     },
   });
 
+  await prisma.delivery.create({
+    data: {
+      orderId: order.id,
+      customerId: input.customerId,
+      deliveryPartnerId: null,
+      deliveryMethod: delivery.method,
+      deliveryFee,
+      deliveryArea: delivery.area || null,
+      status: "Pending assignment",
+    },
+  });
+
   const reference = `PAY-${order.code}-${Date.now().toString(36).toUpperCase()}`;
 
   const pendingRequest = await prisma.paymentRequest.create({
@@ -141,7 +215,7 @@ async function checkout(input: {to: string; from: string; customerId: string | n
       customerId: input.customerId,
       provider: "Manual",
       reference,
-      amount: subtotal,
+      amount: totalAmount,
       currency: "NGN",
       status: "Pending",
     },
@@ -156,7 +230,7 @@ async function checkout(input: {to: string; from: string; customerId: string | n
     entityLabel: order.code,
     actorName: "WhatsApp bot",
     actorRole: "System",
-    newValue: {code: order.code, subtotal, itemCount: cart.length, fulfilmentEstimate: label},
+    newValue: {code: order.code, subtotal, deliveryFee, totalAmount, deliveryMethod: delivery.method, itemCount: cart.length, fulfilmentEstimate: label},
   });
 
   let paymentUrl: string | null = null;
@@ -174,6 +248,10 @@ async function checkout(input: {to: string; from: string; customerId: string | n
     Sentry.captureException(error, {tags: {component: "whatsapp-checkout-payment-link"}, extra: {orderCode: order.code, detail}});
   }
 
+  const deliveryLine = deliveryFee
+    ? `${delivery.method} (${formatWhatsAppNaira(deliveryFee)}) — Total: ${formatWhatsAppNaira(totalAmount)}`
+    : `${delivery.method} — Total: ${formatWhatsAppNaira(totalAmount)}`;
+
   await sendWhatsAppTextMessage({
     to: input.to,
     body: paymentUrl
@@ -181,6 +259,7 @@ async function checkout(input: {to: string; from: string; customerId: string | n
           `Order ${order.code} received. Thank you!`,
           "",
           cartSummary(cart),
+          deliveryLine,
           "",
           `Estimated fulfilment: ${label}.`,
           "",
@@ -192,6 +271,7 @@ async function checkout(input: {to: string; from: string; customerId: string | n
           `Order ${order.code} received. Thank you!`,
           "",
           cartSummary(cart),
+          deliveryLine,
           "",
           `Estimated fulfilment: ${label}.`,
           "",
@@ -269,7 +349,50 @@ export async function handleInteractiveOrderingMessage(input: {
 
     if (interactiveReplyId === "cart_checkout") {
       const session = await getOrderSession(from);
-      await checkout({to: from, from, customerId, cart: session?.cart || []});
+      if (!session?.cart?.length) {
+        await sendWhatsAppTextMessage({to: from, body: 'Your cart is empty. Reply "menu" to start an order.'});
+        return {handled: true};
+      }
+      await upsertOrderSession({phone: from, step: "awaiting_delivery_choice", customerId});
+      await sendDeliveryChoice(from);
+      return {handled: true};
+    }
+
+    if (interactiveReplyId === "delivery_courier" || interactiveReplyId === "delivery_self") {
+      const session = await getOrderSession(from);
+      const method = interactiveReplyId === "delivery_courier" ? "OneFarmTech arranged" : "Self-arranged pickup";
+      await checkout({to: from, from, customerId, cart: session?.cart || [], delivery: {method}});
+      return {handled: true};
+    }
+
+    if (interactiveReplyId === "delivery_pickup") {
+      await upsertOrderSession({phone: from, step: "awaiting_pickup_location", customerId});
+      await sendPickupLocationList(from);
+      return {handled: true};
+    }
+
+    if (interactiveReplyId.startsWith("pickup_")) {
+      const locationId = interactiveReplyId.slice("pickup_".length);
+      const location = await prisma.pickupLocation.findUnique({where: {id: locationId}});
+
+      if (!location || location.status !== "Active") {
+        await sendWhatsAppTextMessage({to: from, body: 'That pickup location is no longer available. Reply "menu" to try again.'});
+        return {handled: true};
+      }
+
+      const session = await getOrderSession(from);
+      await checkout({
+        to: from,
+        from,
+        customerId,
+        cart: session?.cart || [],
+        delivery: {
+          method: `Pickup — ${location.name} (${location.area})`,
+          pickupLocationId: location.id,
+          fee: location.fee,
+          area: location.area,
+        },
+      });
       return {handled: true};
     }
 
