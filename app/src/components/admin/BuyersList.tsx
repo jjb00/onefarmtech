@@ -17,6 +17,12 @@ import {
   parseAdminPageSize,
 } from "@/lib/adminListParams.js";
 import {prisma} from "@/lib/prisma";
+import {convertGuestBuyerToAccountAction} from "@/actions/createAdminRecords";
+
+// A repeat WhatsApp guest who has ordered this many times without a real
+// account is a strong candidate to convert -- separate from the lower
+// order-count threshold that just keeps one-off numbers out of this list.
+const RECOMMENDED_ORDER_THRESHOLD = 3;
 
 type Params = Record<string, string | string[] | undefined>;
 
@@ -33,6 +39,7 @@ type UnifiedBuyerRow = {
   orderCount: bigint | number;
   latestActivity: Date;
   latestOrderId: string | null;
+  recommendedForAccount: boolean;
   totalCount: bigint | number;
 };
 
@@ -83,7 +90,8 @@ export default async function BuyersList({raw}: {raw: Params}) {
             c."updatedAt",
             COALESCE(MAX(o."updatedAt"), c."updatedAt")
           ) AS "latestActivity",
-          NULL::text AS "latestOrderId"
+          NULL::text AS "latestOrderId",
+          false AS "recommendedForAccount"
         FROM "Customer" c
         LEFT JOIN "Order" o ON o."customerId" = c.id
         GROUP BY c.id
@@ -112,7 +120,8 @@ export default async function BuyersList({raw}: {raw: Params}) {
           'No account access'::text AS "accessState",
           COUNT(*)::bigint AS "orderCount",
           MAX(g."updatedAt") AS "latestActivity",
-          MAX(g.id) FILTER (WHERE g."guestRank" = 1) AS "latestOrderId"
+          MAX(g.id) FILTER (WHERE g."guestRank" = 1) AS "latestOrderId",
+          COUNT(*) >= $7 AS "recommendedForAccount"
         FROM guest_orders g
         WHERE NOT EXISTS (
           SELECT 1
@@ -145,6 +154,7 @@ export default async function BuyersList({raw}: {raw: Params}) {
             OR ($4 = 'active' AND "accessState" = 'Login active')
             OR ($4 = 'not-enabled' AND "accessState" = 'Login not enabled')
             OR ($4 = 'guest' AND relationship = 'Guest buyer')
+            OR ($4 = 'recommended' AND "recommendedForAccount" = true)
           )
           -- A Customer row can exist purely because an automated WhatsApp
           -- reply was sent to a number, with no order and no real login.
@@ -169,6 +179,7 @@ export default async function BuyersList({raw}: {raw: Params}) {
     readiness,
     pageSize,
     offset,
+    RECOMMENDED_ORDER_THRESHOLD,
   );
 
   const total = safeCount(rows[0]?.totalCount);
@@ -238,12 +249,20 @@ export default async function BuyersList({raw}: {raw: Params}) {
               {value: "active", label: "Login active"},
               {value: "not-enabled", label: "Login not enabled"},
               {value: "guest", label: "Guest — no account"},
+              {value: "recommended", label: "Recommended for account"},
             ],
           },
         ]}
       />
 
       <AdminResultCount {...range} total={total} label="buyers" />
+
+      {readiness !== "recommended" && rows.some((row) => row.recommendedForAccount) ? (
+        <div className="rounded-2xl border border-[#1f7a3f]/20 bg-[#eef8f0] px-5 py-4 text-sm font-bold text-[#155c2f]">
+          Some repeat WhatsApp buyers on this page have ordered {RECOMMENDED_ORDER_THRESHOLD}+ times without an
+          account. Filter by "Recommended for account" to review and convert them.
+        </div>
+      ) : null}
 
       {rows.length ? (
         <>
@@ -290,11 +309,18 @@ export default async function BuyersList({raw}: {raw: Params}) {
                       </td>
 
                       <td className="p-3">
-                        <AdminStatusPill
-                          tone={adminToneFromStatus(buyer.relationship)}
-                        >
-                          {buyer.relationship}
-                        </AdminStatusPill>
+                        <div className="flex flex-wrap gap-1.5">
+                          <AdminStatusPill
+                            tone={adminToneFromStatus(buyer.relationship)}
+                          >
+                            {buyer.relationship}
+                          </AdminStatusPill>
+                          {buyer.recommendedForAccount ? (
+                            <AdminStatusPill tone="green">
+                              Recommend account
+                            </AdminStatusPill>
+                          ) : null}
+                        </div>
                       </td>
 
                       <td className="p-3">
@@ -306,14 +332,30 @@ export default async function BuyersList({raw}: {raw: Params}) {
                       </td>
 
                       <td className="p-3">
-                        <Link
-                          href={href}
-                          className="inline-flex min-h-11 items-center rounded-full px-4 font-black text-[#1f7a3f] transition hover:bg-[#eaf4e7]"
-                        >
-                          {buyer.recordId
-                            ? "Open buyer"
-                            : "View latest order"}
-                        </Link>
+                        <div className="flex flex-wrap gap-2">
+                          <Link
+                            href={href}
+                            className="inline-flex min-h-11 items-center rounded-full px-4 font-black text-[#1f7a3f] transition hover:bg-[#eaf4e7]"
+                          >
+                            {buyer.recordId
+                              ? "Open buyer"
+                              : "View latest order"}
+                          </Link>
+
+                          {buyer.recommendedForAccount ? (
+                            <form action={convertGuestBuyerToAccountAction}>
+                              <input type="hidden" name="name" value={buyer.name || "WhatsApp buyer"} />
+                              <input type="hidden" name="phone" value={buyer.phone} />
+                              <input type="hidden" name="buyerType" value={buyer.buyerType || "WhatsApp buyer"} />
+                              <button
+                                type="submit"
+                                className="inline-flex min-h-11 items-center rounded-full bg-[#1f7a3f] px-4 font-black text-white"
+                              >
+                                Create buyer account
+                              </button>
+                            </form>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -331,33 +373,52 @@ export default async function BuyersList({raw}: {raw: Params}) {
                   : "/admin/orders";
 
               return (
-                <Link
-                  key={buyer.identityKey}
-                  href={href}
-                  className="rounded-2xl border bg-white p-4 transition active:scale-[0.99]"
-                >
-                  <div className="flex justify-between gap-3">
-                    <div>
-                      <h2 className="font-black">
-                        {buyer.name || "Guest buyer"}
-                      </h2>
-                      <p className="text-xs">
-                        {buyer.buyerType || "Buyer"} · {buyer.phone}
-                      </p>
+                <div key={buyer.identityKey} className="rounded-2xl border bg-white p-4">
+                  <Link href={href} className="block transition active:scale-[0.99]">
+                    <div className="flex justify-between gap-3">
+                      <div>
+                        <h2 className="font-black">
+                          {buyer.name || "Guest buyer"}
+                        </h2>
+                        <p className="text-xs">
+                          {buyer.buyerType || "Buyer"} · {buyer.phone}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-col items-end gap-1.5">
+                        <AdminStatusPill
+                          tone={adminToneFromStatus(buyer.relationship)}
+                        >
+                          {buyer.relationship}
+                        </AdminStatusPill>
+                        {buyer.recommendedForAccount ? (
+                          <AdminStatusPill tone="green">
+                            Recommend account
+                          </AdminStatusPill>
+                        ) : null}
+                      </div>
                     </div>
 
-                    <AdminStatusPill
-                      tone={adminToneFromStatus(buyer.relationship)}
-                    >
-                      {buyer.relationship}
-                    </AdminStatusPill>
-                  </div>
+                    <p className="mt-3 text-sm">
+                      {safeCount(buyer.orderCount)} order
+                      {safeCount(buyer.orderCount) === 1 ? "" : "s"}
+                    </p>
+                  </Link>
 
-                  <p className="mt-3 text-sm">
-                    {safeCount(buyer.orderCount)} order
-                    {safeCount(buyer.orderCount) === 1 ? "" : "s"}
-                  </p>
-                </Link>
+                  {buyer.recommendedForAccount ? (
+                    <form action={convertGuestBuyerToAccountAction} className="mt-3">
+                      <input type="hidden" name="name" value={buyer.name || "WhatsApp buyer"} />
+                      <input type="hidden" name="phone" value={buyer.phone} />
+                      <input type="hidden" name="buyerType" value={buyer.buyerType || "WhatsApp buyer"} />
+                      <button
+                        type="submit"
+                        className="w-full rounded-full bg-[#1f7a3f] px-4 py-2.5 text-sm font-black text-white"
+                      >
+                        Create buyer account
+                      </button>
+                    </form>
+                  ) : null}
+                </div>
               );
             })}
           </section>

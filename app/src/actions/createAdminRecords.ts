@@ -27,6 +27,7 @@ import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtecti
 import {isStaffRole} from "@/lib/permissions";
 import {normalizeInternationalPhone} from "@/lib/phoneNumbers";
 import {isLoginRateLimited, loginFingerprint, randomAccessCode, recordLoginAttempt} from "@/lib/loginRateLimit.js";
+import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -124,6 +125,67 @@ export async function createCustomerAction(formData: FormData) {
   revalidatePath("/admin/buyer-accounts");
   revalidatePath("/admin/audit-log");
   redirect("/admin/customers");
+}
+
+export async function convertGuestBuyerToAccountAction(formData: FormData) {
+  await requireCapability("manage_buyer_access");
+
+  const name = readText(formData, "name");
+  const phone = readText(formData, "phone");
+  const buyerType = readText(formData, "buyerType", "WhatsApp buyer");
+
+  if (!name || !phone) {
+    throw new Error("Buyer name and phone are required.");
+  }
+
+  const candidates = phoneMatchCandidates(phone);
+  const existing = candidates.length
+    ? await prisma.customer.findFirst({where: {phone: {in: candidates}}})
+    : null;
+
+  if (existing) {
+    redirect(`/admin/customers/${existing.id}`);
+  }
+
+  const customer = await prisma.customer.create({
+    data: {
+      name,
+      phone,
+      buyerType,
+      accountStatus: "Manual WhatsApp",
+      accountLoginReady: false,
+      status: "Active",
+    },
+  });
+
+  // Their prior WhatsApp orders were guest orders with no customerId --
+  // link them now so order history, receipts and totals show up on the
+  // new account instead of staying orphaned as guest activity.
+  const relinked = candidates.length
+    ? await prisma.order.updateMany({
+        where: {
+          customerId: null,
+          OR: [
+            {sourcePhone: {in: candidates}},
+            {phone: {in: candidates}},
+          ],
+        },
+        data: {customerId: customer.id},
+      })
+    : {count: 0};
+
+  await createAuditLog({
+    action: "Converted repeat WhatsApp buyer to a buyer account",
+    entityType: "Customer",
+    entityId: customer.id,
+    entityLabel: customer.name,
+    newValue: {...customer, relinkedOrders: relinked.count},
+  });
+
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin/buyer-accounts");
+  revalidatePath("/admin/audit-log");
+  redirect(`/admin/customers/${customer.id}?converted=1`);
 }
 
 export async function createProductAction(formData: FormData) {
