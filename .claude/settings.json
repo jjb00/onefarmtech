@@ -16,7 +16,30 @@
       "Bash(vercel ls)",
       "mcp__Claude_Browser__tabs_context",
       "mcp__Claude_Preview__preview_network",
-      "mcp__Claude_Preview__preview_list"
+      "mcp__Claude_Preview__preview_list",
+      "Bash(npm run build)",
+      "Bash(npm run build *)",
+      "Bash(npm test)",
+      "Bash(npm test *)",
+      "Bash(node --test *)",
+      "Bash(npx prisma *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(node -e *)",
+      "Bash(vercel logs *)",
+      "Bash(vercel ls *)",
+      "Bash(vercel env ls *)",
+      "Bash(vercel whoami)",
+      "Bash(vercel link *)",
+      "Bash(gh api *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(git checkout *)",
+      "Bash(git merge *)",
+      "Bash(git stash *)",
+      "Bash(rm -rf .next)",
+      "Bash(mkdir -p *)"
     ]
   }
 }

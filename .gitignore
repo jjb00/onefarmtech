@@ -43,3 +43,5 @@ app/dev.db
 *.sqlite.backup
 app/prisma/*.backup
 app/src/lib/*.backup
+.vercel
+.env*
