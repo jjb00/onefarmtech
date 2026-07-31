@@ -13,6 +13,7 @@ function fakeDb() {
     const previous = lock; let release; lock = new Promise((resolve) => {release = resolve;}); await previous;
     const tx = {
       $queryRawUnsafe: async () => [],
+      $executeRawUnsafe: async () => 0,
       orderRequest: {findUnique: async () => state.request, update: async ({data}) => (state.request = {...state.request, ...data})},
       order: {findUnique: async ({where}) => state.orders.get(where.id) || null, create: async ({data}) => {state.creates += 1; const order = {id: `order-${state.creates}`, ...data}; state.orders.set(order.id, order); return order;}},
       auditLog: {create: async ({data}) => {state.audits.push(data); return data;}},

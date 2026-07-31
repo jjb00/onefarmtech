@@ -39,7 +39,7 @@ export async function convertOrderRequestIntegrity({db, requestId, actor, now = 
 
   try {
     return await db.$transaction(async (tx) => {
-      await tx.$queryRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `order-request:${requestId}`);
+      await tx.$executeRawUnsafe("SELECT pg_advisory_xact_lock(hashtextextended($1, 0))", `order-request:${requestId}`);
 
       const request = await tx.orderRequest.findUnique({where: {id: requestId}});
       if (!request) throw new OrderRequestConversionError("request-not-found", "Order request was not found.");
