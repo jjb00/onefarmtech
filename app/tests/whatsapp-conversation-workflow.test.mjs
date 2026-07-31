@@ -11,7 +11,7 @@ test("main inbox opens a conversation workspace", () => {
   assert.match(page, /Open conversation/);
   assert.match(
     page,
-    /\/admin\/buyer-messages\/\$\{message\.recordType\}\/\$\{message\.id\}/,
+    /\/admin\/buyer-messages\/\$\{row\.latestRecordType\}\/\$\{row\.latestRecordId\}/,
   );
 });
 

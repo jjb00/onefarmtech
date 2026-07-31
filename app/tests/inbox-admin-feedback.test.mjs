@@ -5,22 +5,19 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("message workspace contains only unresolved staff-attention queues", () => {
+test("message workspace contains only unresolved staff-attention queues, grouped by buyer", () => {
   const messages = read("src/app/admin/buyer-messages/page.tsx");
 
   assert.match(messages, /Messages needing a reply/);
   assert.match(messages, /Needs reply/);
   assert.doesNotMatch(messages, />\s*Unknown contacts\s*</);
-  assert.match(messages, /buyerName: "Unknown buyer"/);
+  assert.match(messages, /'Unknown buyer'::text AS "buyerName"/);
   assert.match(messages, /Mark handled/);
   assert.match(
     messages,
-    /const CLOSED_BUYER_STATUSES = \["Replied", "Closed", "Resolved", "Archived"\]/,
+    /bm\.status NOT IN \('Replied', 'Closed', 'Resolved', 'Archived'\)/,
   );
-  assert.match(
-    messages,
-    /notIn: \["Unread", \.\.\.CLOSED_BUYER_STATUSES\]/,
-  );
+  assert.match(messages, /ce\.status IN \('New', 'Open'\)/);
   assert.doesNotMatch(messages, /Buyer requests/);
   assert.doesNotMatch(messages, /Email delivery/);
   assert.doesNotMatch(messages, /Operational events/);

@@ -31,7 +31,7 @@ test("WhatsApp route shows only messages requiring staff attention", async () =>
   assert.match(page, /Messages needing a reply/);
   assert.match(page, /Needs reply/);
   assert.doesNotMatch(page, />\s*Unknown contacts\s*</);
-  assert.match(page, /buyerName: "Unknown buyer"/);
+  assert.match(page, /'Unknown buyer'::text AS "buyerName"/);
   assert.match(page, /Mark handled/);
   assert.doesNotMatch(page, /CommunicationsViewSwitcher/);
   assert.doesNotMatch(page, /BuyerWhatsAppComposeButton/);

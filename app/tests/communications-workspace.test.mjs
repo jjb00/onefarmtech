@@ -34,7 +34,7 @@ test("message queue uses server pagination and unresolved status filters", async
 test("unknown operational WhatsApp contacts remain available", async () => {
   const page = await read("src/app/admin/buyer-messages/page.tsx");
 
-  assert.match(page, /enquiryType: "WhatsApp inbound"/);
+  assert.match(page, /ce\."enquiryType" = 'WhatsApp inbound'/);
   assert.match(page, /classification: operational/);
   assert.match(page, /nonOperationalWhatsAppPhrases/);
   assert.match(page, /Open WhatsApp/);

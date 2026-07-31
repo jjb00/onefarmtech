@@ -12,47 +12,40 @@ const loading = fs.readFileSync(
   "utf8",
 );
 
-test("WhatsApp inbox uses one combined reply queue", () => {
+test("WhatsApp inbox uses one combined reply queue, grouped by buyer", () => {
   assert.doesNotMatch(page, /UnknownContactsView/);
   assert.doesNotMatch(page, />\s*Unknown contacts\s*</);
   assert.doesNotMatch(page, /view=unknown/);
-  assert.match(page, /buyerName: "Unknown buyer"/);
-  assert.match(page, /recordType: "ContactEnquiry"/);
-  assert.match(page, /recordType: "BuyerMessage"/);
+  assert.match(page, /'Unknown buyer'::text AS "buyerName"/);
+  assert.match(page, /'ContactEnquiry'::text AS "recordType"/);
+  assert.match(page, /'BuyerMessage'::text AS "recordType"/);
 });
 
-test("unread and newest WhatsApp messages are prioritised", () => {
-  assert.match(page, /if \(a\.unread !== b\.unread\) return a\.unread \? -1 : 1/);
-  assert.match(page, /b\.receivedAt\.getTime\(\) - a\.receivedAt\.getTime\(\)/);
-  assert.match(page, /status: "Unread"/);
-  assert.match(page, /status: "New"/);
-
-  const descendingQueries =
-    page.match(/orderBy: \[\{createdAt: "desc"\}, \{id: "desc"\}\]/g) || [];
-
-  assert.equal(descendingQueries.length, 4);
-  assert.doesNotMatch(page, /createdAt: "asc"/);
-  assert.doesNotMatch(page, /updatedAt: "asc"/);
+test("unread and newest conversations are prioritised, server-side", () => {
+  assert.match(page, /ORDER BY \("unreadCount" > 0\) DESC, "latestActivity" DESC/);
+  assert.match(page, /\(bm\.status = 'Unread'\) AS unread/);
+  assert.match(page, /\(ce\.status = 'New'\) AS unread/);
+  assert.match(page, /COUNT\(\*\) FILTER \(WHERE unread\)::bigint AS "unreadCount"/);
 });
 
-test("merged queue preserves search and pagination", () => {
-  assert.match(page, /const requiredRows = page \* pageSize/);
-  assert.match(page, /take: requiredRows/);
-  assert.match(page, /const start = \(page - 1\) \* pageSize/);
-  assert.match(page, /\.slice\(start, start \+ pageSize\)/);
+test("conversation queue groups messages by buyer and preserves search and pagination", () => {
+  assert.match(page, /DISTINCT ON \("normalizedPhone"\)/);
+  assert.match(page, /GROUP BY "normalizedPhone"/);
+  assert.match(page, /LIMIT \$2/);
+  assert.match(page, /OFFSET \$3/);
   assert.match(page, /adminListHref\(PATH, base/);
   assert.match(page, /searchPlaceholder="Buyer, phone or message"/);
-  assert.match(page, /customer:\s*\{\s*phone: \{contains: q\}/);
-  assert.match(page, /\{phone: \{contains: q\}\}/);
-  assert.match(page, /\{message: \{contains: q\}\}/);
+  assert.match(page, /c\.phone ILIKE CONCAT\('%', \$1, '%'\)/);
+  assert.match(page, /ce\.phone ILIKE CONCAT\('%', \$1, '%'\)/);
+  assert.match(page, /ce\.message ILIKE CONCAT\('%', \$1, '%'\)/);
 });
 
-test("message actions remain available for both record types", () => {
+test("conversation-level actions remain available for both record types", () => {
   assert.match(page, /resolveWhatsAppExceptionAction/);
   assert.match(page, /Mark handled/);
   assert.match(page, /Open WhatsApp/);
-  assert.match(page, /AdminRecordControls/);
-  assert.match(page, /returnTo=\{PATH\}/);
+  assert.match(page, /recordType" value="Conversation"/);
+  assert.match(page, /recordId" value=\{row\.phone\}/);
 });
 
 test("admin loading state is compact and accessible", () => {

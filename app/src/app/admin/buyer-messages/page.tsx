@@ -7,11 +7,6 @@ import {
   AdminPagination,
   AdminResultCount,
 } from "@/components/admin/AdminListControls";
-import {
-  AdminStatusPill,
-  adminToneFromStatus,
-} from "@/components/admin/AdminViewControls";
-import AdminRecordControls from "@/components/admin/AdminRecordControls";
 import {resolveWhatsAppExceptionAction} from "@/actions/whatsappExceptions";
 import {requireStaff} from "@/lib/auth";
 import {prisma} from "@/lib/prisma";
@@ -27,20 +22,21 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const PATH = "/admin/buyer-messages";
-const CLOSED_BUYER_STATUSES = ["Replied", "Closed", "Resolved", "Archived"];
 
 type Params = Record<string, string | string[] | undefined>;
 
-type QueueItem = {
-  id: string;
-  recordType: "BuyerMessage" | "ContactEnquiry";
+type ConversationRow = {
+  normalizedPhone: string;
+  phone: string;
   buyerName: string;
-  phone: string | null;
-  title: string | null;
-  body: string;
-  status: string;
-  unread: boolean;
-  receivedAt: Date;
+  latestRecordType: "BuyerMessage" | "ContactEnquiry";
+  latestRecordId: string;
+  latestTitle: string | null;
+  latestBody: string;
+  latestActivity: Date;
+  messageCount: bigint | number;
+  unreadCount: bigint | number;
+  totalCount: bigint | number;
 };
 
 function value(raw: string | string[] | undefined) {
@@ -55,7 +51,8 @@ function preview(raw: string, length = 150) {
 
 function formatDate(raw: Date | string | null) {
   return raw
-    ? new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
+    ? new Intl.DateTimeFormat("en-GB", {
+        timeZone: "Africa/Lagos",
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(raw))
@@ -67,21 +64,14 @@ function phoneHref(phone?: string | null) {
   return digits ? `https://wa.me/${digits}` : null;
 }
 
-function queueOrder(a: QueueItem, b: QueueItem) {
-  if (a.unread !== b.unread) return a.unread ? -1 : 1;
-
-  const dateDifference = b.receivedAt.getTime() - a.receivedAt.getTime();
-  if (dateDifference !== 0) return dateDifference;
-
-  return b.id.localeCompare(a.id);
-}
+const safeCount = (value: bigint | number | undefined) => Number(value || 0);
 
 export default async function AdminBuyerMessagesPage({
   searchParams,
 }: {
   searchParams?: Promise<Params>;
 }) {
-  const staff = await requireStaff();
+  await requireStaff();
   const raw = (await searchParams) || {};
 
   // The old separate unknown-contact queue has been retired.
@@ -92,237 +82,143 @@ export default async function AdminBuyerMessagesPage({
   return (
     <AdminPageShell
       title="Messages needing a reply"
-      description="Review unresolved WhatsApp messages from known and unknown buyers."
+      description="One row per buyer conversation, newest and unread first."
       compactHeader
     >
-      <WhatsAppReplyQueue
-        raw={raw}
-        canDelete={staff.role === "Super admin"}
-      />
+      <WhatsAppConversationQueue raw={raw} />
     </AdminPageShell>
   );
 }
 
-async function WhatsAppReplyQueue({
-  raw,
-  canDelete,
-}: {
-  raw: Params;
-  canDelete: boolean;
-}) {
+async function WhatsAppConversationQueue({raw}: {raw: Params}) {
   const q = value(raw.q);
   const page = parseAdminPage(value(raw.page));
   const pageSize = parseAdminPageSize(value(raw.pageSize));
-  const requiredRows = page * pageSize;
+  const offset = (page - 1) * pageSize;
 
-  const buyerSearch = q
-    ? {
-        OR: [
-          {title: {contains: q}},
-          {body: {contains: q}},
-          {recipient: {contains: q}},
-          {
-            customer: {
-              name: {contains: q},
-            },
-          },
-          {
-            customer: {
-              phone: {contains: q},
-            },
-          },
-        ],
-      }
-    : {};
+  // Non-operational phrases (recruitment/supplier) are excluded from this
+  // queue the same way the underlying tables filter them elsewhere --
+  // those stay email-first, not a WhatsApp staff-attention item.
+  const nonOperationalClause = nonOperationalWhatsAppPhrases
+    .map((phrase) => `ce.message NOT ILIKE '%${phrase.replace(/'/g, "''")}%'`)
+    .join(" AND ");
 
-  const operationalUnknownFilter = {
-    OR: [
-      {
-        adminNote: {
-          contains: "classification: operational",
-        },
-      },
-      {
-        AND: nonOperationalWhatsAppPhrases.map((phrase) => ({
-          message: {
-            not: {
-              contains: phrase,
-            },
-          },
-        })),
-      },
-    ],
-  };
+  const rows = await prisma.$queryRawUnsafe<ConversationRow[]>(
+    `
+      WITH known AS (
+        SELECT
+          bm.id AS "recordId",
+          'BuyerMessage'::text AS "recordType",
+          COALESCE(NULLIF(c.phone, ''), bm.recipient) AS phone,
+          c.name AS "buyerName",
+          bm.title,
+          bm.body,
+          bm."createdAt",
+          (bm.status = 'Unread') AS unread
+        FROM "BuyerMessage" bm
+        JOIN "Customer" c ON c.id = bm."customerId"
+        WHERE bm.channel = 'WhatsApp'
+          AND bm.direction = 'Inbound'
+          AND bm.status NOT IN ('Replied', 'Closed', 'Resolved', 'Archived')
+          AND (
+            $1 = ''
+            OR bm.title ILIKE CONCAT('%', $1, '%')
+            OR bm.body ILIKE CONCAT('%', $1, '%')
+            OR bm.recipient ILIKE CONCAT('%', $1, '%')
+            OR c.name ILIKE CONCAT('%', $1, '%')
+            OR c.phone ILIKE CONCAT('%', $1, '%')
+          )
+      ),
+      unknown AS (
+        SELECT
+          ce.id AS "recordId",
+          'ContactEnquiry'::text AS "recordType",
+          ce.phone AS phone,
+          'Unknown buyer'::text AS "buyerName",
+          NULL::text AS title,
+          ce.message AS body,
+          ce."createdAt",
+          (ce.status = 'New') AS unread
+        FROM "ContactEnquiry" ce
+        WHERE ce."enquiryType" = 'WhatsApp inbound'
+          AND ce.source = 'WhatsApp webhook'
+          AND ce.status IN ('New', 'Open')
+          AND (
+            ce."adminNote" ILIKE '%classification: operational%'
+            OR (${nonOperationalClause})
+          )
+          AND (
+            $1 = ''
+            OR ce.name ILIKE CONCAT('%', $1, '%')
+            OR ce.phone ILIKE CONCAT('%', $1, '%')
+            OR ce.message ILIKE CONCAT('%', $1, '%')
+          )
+      ),
+      combined AS (
+        SELECT * FROM known
+        UNION ALL
+        SELECT * FROM unknown
+      ),
+      normalized AS (
+        SELECT *,
+          CASE
+            WHEN regexp_replace(phone, '\\D', '', 'g') LIKE '234%' THEN regexp_replace(phone, '\\D', '', 'g')
+            WHEN regexp_replace(phone, '\\D', '', 'g') LIKE '0%' AND length(regexp_replace(phone, '\\D', '', 'g')) >= 10
+              THEN '234' || substring(regexp_replace(phone, '\\D', '', 'g') FROM 2)
+            ELSE regexp_replace(phone, '\\D', '', 'g')
+          END AS "normalizedPhone"
+        FROM combined
+      ),
+      latest AS (
+        SELECT DISTINCT ON ("normalizedPhone")
+          "normalizedPhone", phone, "recordType", "recordId", title, body, "createdAt" AS "latestActivity"
+        FROM normalized
+        ORDER BY "normalizedPhone", "createdAt" DESC
+      ),
+      buyer_names AS (
+        SELECT "normalizedPhone", MAX("buyerName") FILTER (WHERE "buyerName" <> 'Unknown buyer') AS "knownName"
+        FROM normalized
+        GROUP BY "normalizedPhone"
+      ),
+      counts AS (
+        SELECT "normalizedPhone", COUNT(*)::bigint AS "messageCount", COUNT(*) FILTER (WHERE unread)::bigint AS "unreadCount"
+        FROM normalized
+        GROUP BY "normalizedPhone"
+      ),
+      grouped AS (
+        SELECT
+          latest."normalizedPhone",
+          latest.phone,
+          COALESCE(buyer_names."knownName", 'Unknown buyer') AS "buyerName",
+          latest."recordType" AS "latestRecordType",
+          latest."recordId" AS "latestRecordId",
+          latest.title AS "latestTitle",
+          latest.body AS "latestBody",
+          latest."latestActivity",
+          counts."messageCount",
+          counts."unreadCount"
+        FROM latest
+        JOIN buyer_names ON buyer_names."normalizedPhone" = latest."normalizedPhone"
+        JOIN counts ON counts."normalizedPhone" = latest."normalizedPhone"
+      )
+      SELECT *, COUNT(*) OVER()::bigint AS "totalCount"
+      FROM grouped
+      ORDER BY ("unreadCount" > 0) DESC, "latestActivity" DESC, "normalizedPhone" DESC
+      LIMIT $2
+      OFFSET $3
+    `,
+    q,
+    pageSize,
+    offset,
+  );
 
-  const unknownSearch = q
-    ? {
-        OR: [
-          {name: {contains: q}},
-          {phone: {contains: q}},
-          {message: {contains: q}},
-        ],
-      }
-    : null;
-
-  const unknownBaseWhere = {
-    enquiryType: "WhatsApp inbound",
-    source: "WhatsApp webhook",
-    AND: [
-      operationalUnknownFilter,
-      ...(unknownSearch ? [unknownSearch] : []),
-    ],
-  };
-
-  const buyerBaseWhere = {
-    channel: "WhatsApp",
-    direction: "Inbound",
-    ...buyerSearch,
-  };
-
-  const [
-    unreadBuyerCount,
-    otherBuyerCount,
-    newUnknownCount,
-    openUnknownCount,
-  ] = await Promise.all([
-    prisma.buyerMessage.count({
-      where: {
-        ...buyerBaseWhere,
-        status: "Unread",
-      },
-    }),
-    prisma.buyerMessage.count({
-      where: {
-        ...buyerBaseWhere,
-        status: {
-          notIn: ["Unread", ...CLOSED_BUYER_STATUSES],
-        },
-      },
-    }),
-    prisma.contactEnquiry.count({
-      where: {
-        ...unknownBaseWhere,
-        status: "New",
-      },
-    }),
-    prisma.contactEnquiry.count({
-      where: {
-        ...unknownBaseWhere,
-        status: "Open",
-      },
-    }),
-  ]);
-
-  const total =
-    unreadBuyerCount +
-    otherBuyerCount +
-    newUnknownCount +
-    openUnknownCount;
-
+  const total = safeCount(rows[0]?.totalCount);
   const pages = Math.max(1, Math.ceil(total / pageSize));
   const base = {q, pageSize};
 
   if (page > pages) {
     redirect(adminListHref(PATH, base, {page: pages}));
   }
-
-  /*
-   * Each priority group is ordered authoritatively in the database.
-   * We fetch only enough rows from each group to construct the requested
-   * merged page, then apply the cross-table unread/newest ordering.
-   */
-  const [
-    unreadBuyerMessages,
-    otherBuyerMessages,
-    newUnknownMessages,
-    openUnknownMessages,
-  ] = await Promise.all([
-    prisma.buyerMessage.findMany({
-      where: {
-        ...buyerBaseWhere,
-        status: "Unread",
-      },
-      orderBy: [{createdAt: "desc"}, {id: "desc"}],
-      take: requiredRows,
-      include: {
-        customer: {
-          select: {
-            name: true,
-            phone: true,
-          },
-        },
-      },
-    }),
-    prisma.buyerMessage.findMany({
-      where: {
-        ...buyerBaseWhere,
-        status: {
-          notIn: ["Unread", ...CLOSED_BUYER_STATUSES],
-        },
-      },
-      orderBy: [{createdAt: "desc"}, {id: "desc"}],
-      take: requiredRows,
-      include: {
-        customer: {
-          select: {
-            name: true,
-            phone: true,
-          },
-        },
-      },
-    }),
-    prisma.contactEnquiry.findMany({
-      where: {
-        ...unknownBaseWhere,
-        status: "New",
-      },
-      orderBy: [{createdAt: "desc"}, {id: "desc"}],
-      take: requiredRows,
-    }),
-    prisma.contactEnquiry.findMany({
-      where: {
-        ...unknownBaseWhere,
-        status: "Open",
-      },
-      orderBy: [{createdAt: "desc"}, {id: "desc"}],
-      take: requiredRows,
-    }),
-  ]);
-
-  const knownItems: QueueItem[] = [
-    ...unreadBuyerMessages,
-    ...otherBuyerMessages,
-  ].map((message) => ({
-    id: message.id,
-    recordType: "BuyerMessage",
-    buyerName: message.customer.name,
-    phone: message.customer.phone || message.recipient,
-    title: message.title,
-    body: message.body,
-    status: message.status,
-    unread: message.status === "Unread",
-    receivedAt: message.createdAt,
-  }));
-
-  const unknownItems: QueueItem[] = [
-    ...newUnknownMessages,
-    ...openUnknownMessages,
-  ].map((message) => ({
-    id: message.id,
-    recordType: "ContactEnquiry",
-    buyerName: "Unknown buyer",
-    phone: message.phone,
-    title: null,
-    body: message.message,
-    status: message.status,
-    unread: message.status === "New",
-    receivedAt: message.createdAt,
-  }));
-
-  const start = (page - 1) * pageSize;
-  const messages = [...knownItems, ...unknownItems]
-    .sort(queueOrder)
-    .slice(start, start + pageSize);
 
   const range = adminResultRange(page, pageSize, total);
 
@@ -336,61 +232,65 @@ async function WhatsAppReplyQueue({
         pageSize={pageSize}
         resetHref={PATH}
         hiddenParams={{}}
-        searchLabel="Search messages"
+        searchLabel="Search conversations"
         searchPlaceholder="Buyer, phone or message"
       />
 
-      <AdminResultCount {...range} total={total} label="messages" />
+      <AdminResultCount {...range} total={total} label="conversations" />
 
-      {messages.length ? (
+      {rows.length ? (
         <section className="overflow-hidden rounded-2xl border bg-white">
-          {messages.map((message) => {
-            const href = phoneHref(message.phone);
+          {rows.map((row) => {
+            const href = phoneHref(row.phone);
+            const unread = safeCount(row.unreadCount);
+            const messageCount = safeCount(row.messageCount);
 
             return (
               <article
-                key={`${message.recordType}:${message.id}`}
+                key={row.normalizedPhone}
                 className="border-b p-4 last:border-b-0"
               >
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="font-black text-[#102015]">
-                        {message.buyerName}
+                        {row.buyerName}
                       </p>
 
-                      {message.unread ? (
+                      {unread ? (
                         <span className="rounded-full bg-[#e7f5eb] px-2.5 py-1 text-xs font-black text-[#176533]">
-                          Unread
+                          {unread} unread
                         </span>
                       ) : (
-                        <AdminStatusPill
-                          tone={adminToneFromStatus(message.status)}
-                        >
-                          {message.status}
-                        </AdminStatusPill>
+                        <span className="rounded-full bg-[#f3f8ef] px-2.5 py-1 text-xs font-black text-[#587063]">
+                          In progress
+                        </span>
                       )}
+
+                      <span className="text-xs font-bold text-[#96a89c]">
+                        {messageCount} message{messageCount === 1 ? "" : "s"}
+                      </span>
                     </div>
 
                     <p className="mt-1 text-xs text-[#587063]">
-                      {message.phone || "No phone recorded"} ·{" "}
-                      {formatDate(message.receivedAt)}
+                      {row.phone || "No phone recorded"} ·{" "}
+                      {formatDate(row.latestActivity)}
                     </p>
 
-                    {message.title ? (
+                    {row.latestTitle ? (
                       <p className="mt-3 text-sm font-bold text-[#102015]">
-                        {message.title}
+                        {row.latestTitle}
                       </p>
                     ) : null}
 
                     <p className="mt-2 text-sm leading-6 text-[#405348]">
-                      {preview(message.body)}
+                      {preview(row.latestBody)}
                     </p>
                   </div>
 
                   <div className="flex flex-wrap gap-2 lg:justify-end">
                     <Link
-                      href={`/admin/buyer-messages/${message.recordType}/${message.id}`}
+                      href={`/admin/buyer-messages/${row.latestRecordType}/${row.latestRecordId}`}
                       className="inline-flex min-h-11 items-center rounded-full bg-[#102015] px-4 text-sm font-black text-white"
                     >
                       Open conversation
@@ -408,16 +308,8 @@ async function WhatsAppReplyQueue({
                     ) : null}
 
                     <form action={resolveWhatsAppExceptionAction}>
-                      <input
-                        type="hidden"
-                        name="recordType"
-                        value={message.recordType}
-                      />
-                      <input
-                        type="hidden"
-                        name="recordId"
-                        value={message.id}
-                      />
+                      <input type="hidden" name="recordType" value="Conversation" />
+                      <input type="hidden" name="recordId" value={row.phone} />
                       <button
                         type="submit"
                         className="min-h-11 rounded-full bg-[#1f7a3f] px-4 text-sm font-black text-white"
@@ -427,21 +319,14 @@ async function WhatsAppReplyQueue({
                     </form>
                   </div>
                 </div>
-
-                <AdminRecordControls
-                  recordType={message.recordType}
-                  recordId={message.id}
-                  canDelete={canDelete}
-                  returnTo={PATH}
-                />
               </article>
             );
           })}
         </section>
       ) : (
         <AdminEmptyState
-          title="No messages need a reply."
-          description="New WhatsApp messages will appear here, including messages from unknown buyers."
+          title="No conversations need a reply."
+          description="New WhatsApp messages will appear here, grouped by buyer, including messages from unknown buyers."
           resetHref={PATH}
         />
       )}
