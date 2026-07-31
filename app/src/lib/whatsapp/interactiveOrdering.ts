@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/nextjs";
 import {prisma} from "@/lib/prisma";
 import {sendWhatsAppButtonsMessage, sendWhatsAppListMessage, sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
 import {formatWhatsAppNaira, isProductAvailableForWhatsApp} from "@/lib/whatsapp/productCatalogue";
@@ -13,6 +14,8 @@ import {fulfilmentEstimateForStockTypes} from "@/lib/commerce/fulfilmentEstimate
 import {initialFulfilmentStatus} from "@/lib/orderStatusRules.js";
 import {createAuditLog} from "@/lib/auditLog";
 import {replyWithOrderStatus} from "@/lib/whatsapp/statusReply";
+import {createPaymentCheckout} from "@/lib/payments/provider";
+import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 
 const MENU_BUTTONS = [
   {id: "menu_browse", title: "Browse & Order"},
@@ -132,7 +135,7 @@ async function checkout(input: {to: string; from: string; customerId: string | n
 
   const reference = `PAY-${order.code}-${Date.now().toString(36).toUpperCase()}`;
 
-  await prisma.paymentRequest.create({
+  const pendingRequest = await prisma.paymentRequest.create({
     data: {
       orderId: order.id,
       customerId: input.customerId,
@@ -156,17 +159,44 @@ async function checkout(input: {to: string; from: string; customerId: string | n
     newValue: {code: order.code, subtotal, itemCount: cart.length, fulfilmentEstimate: label},
   });
 
+  let paymentUrl: string | null = null;
+
+  try {
+    const result = await initialisePayment({
+      db: prisma,
+      paymentRequestId: pendingRequest.id,
+      provider: "Paystack",
+      createCheckout: createPaymentCheckout,
+    });
+    paymentUrl = result.checkout?.paymentUrl || result.paymentRequest?.paymentUrl || null;
+  } catch (error) {
+    const detail = error instanceof PaymentInitializationError ? `${error.code}: ${error.message}` : String((error as Error)?.message || error);
+    Sentry.captureException(error, {tags: {component: "whatsapp-checkout-payment-link"}, extra: {orderCode: order.code, detail}});
+  }
+
   await sendWhatsAppTextMessage({
     to: input.to,
-    body: [
-      `Order ${order.code} received. Thank you!`,
-      "",
-      cartSummary(cart),
-      "",
-      `Estimated fulfilment: ${label}.`,
-      "",
-      'The team will confirm final pricing and send a payment link shortly. Reply "menu" any time for options.',
-    ].join("\n"),
+    body: paymentUrl
+      ? [
+          `Order ${order.code} received. Thank you!`,
+          "",
+          cartSummary(cart),
+          "",
+          `Estimated fulfilment: ${label}.`,
+          "",
+          `Pay now: ${paymentUrl}`,
+          "",
+          'Reply "menu" any time for options.',
+        ].join("\n")
+      : [
+          `Order ${order.code} received. Thank you!`,
+          "",
+          cartSummary(cart),
+          "",
+          `Estimated fulfilment: ${label}.`,
+          "",
+          'The team will confirm final pricing and send a payment link shortly. Reply "menu" any time for options.',
+        ].join("\n"),
   });
 
   await clearOrderSession(input.from);
