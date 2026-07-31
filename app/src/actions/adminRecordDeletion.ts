@@ -32,7 +32,11 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   const confirmation = text(formData, "confirmation");
   const password = text(formData, "password");
   const error = validatePermanentDeletionInput({recordType, recordId, reason, confirmation, password});
-  if (error || !staff.email || !verifyStaffPassword(staff.email, password)) redirect(`/admin/buyer-messages?view=needs-reply&error=${error || "confirmation-failed"}`);
+  const safeReturnBase =
+    returnTo.startsWith("/admin/") && !returnTo.startsWith("//") && !returnTo.includes("\n") && !returnTo.includes("\r")
+      ? returnTo.split("?")[0]
+      : "/admin/buyer-messages";
+  if (error || !staff.email || !verifyStaffPassword(staff.email, password)) redirect(`${safeReturnBase}?error=${error || "confirmation-failed"}`);
 
   await prisma.$transaction(async (tx) => {
     if (recordType === "ContactEnquiry") {
@@ -89,6 +93,38 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
           phone: {in: candidates},
         },
       });
+    } else if (recordType === "Customer") {
+      const customer = await tx.customer.findUnique({
+        where: {id: recordId},
+        select: {
+          _count: {
+            select: {
+              orders: true,
+              receipts: true,
+              paymentRequests: true,
+              deliveries: true,
+            },
+          },
+        },
+      });
+
+      const hasActivity = Boolean(
+        !customer ||
+          customer._count.orders ||
+          customer._count.receipts ||
+          customer._count.paymentRequests ||
+          customer._count.deliveries,
+      );
+
+      if (hasActivity) {
+        throw new Error("CUSTOMER_DELETE_BLOCKED");
+      }
+
+      // Contacts, invites, OTP challenges, profile-update requests and
+      // buyer messages all cascade-delete with the customer row -- this
+      // only reaches here once we've confirmed there's no order/receipt/
+      // payment/delivery history to lose.
+      await tx.customer.delete({where: {id: recordId}});
     } else if (recordType === "Order") {
       const order = await tx.order.findUnique({
         where: {id: recordId},

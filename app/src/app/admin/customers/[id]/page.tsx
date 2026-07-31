@@ -2,9 +2,12 @@ import Link from "next/link";
 import {notFound} from "next/navigation";
 import AdminPageShell from "@/components/AdminPageShell";
 import StatusBadge from "@/components/admin/StatusBadge";
+import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";
 import {prisma} from "@/lib/prisma";
 import {formatNaira} from "@/lib/format";
+import {requireStaff} from "@/lib/auth";
 import {updateCustomerAccountAction} from "@/actions/createAdminRecords";
+import {permanentlyDeleteAdminMessageAction} from "@/actions/adminRecordDeletion";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,6 +32,7 @@ const accountStatuses = [
 ];
 
 export default async function CustomerDetailPage({params, searchParams}: CustomerDetailPageProps) {
+  const staff = await requireStaff();
   const {id} = await params;
   const requestedSection = String((await searchParams)?.section || "overview").toLowerCase();
   const section = detailSections.includes(requestedSection) ? requestedSection : "overview";
@@ -295,6 +299,50 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
               </p>
             ) : null}
           </div>
+
+          {staff.role === "Super admin" ? (
+            <div className="mt-6 rounded-2xl border border-[#9b2f12]/20 bg-[#fff4ef] p-4">
+              {customer.orders.length ? (
+                <p className="text-xs font-semibold text-[#9b2f12]">
+                  This buyer has order history, so the account can't be permanently deleted.
+                  Set the ordering status to Archived from the Overview tab instead.
+                </p>
+              ) : (
+                <details>
+                  <summary className="cursor-pointer text-sm font-black text-[#9b2f12]">
+                    Delete this buyer account
+                  </summary>
+                  <p className="mt-2 text-xs font-semibold text-[#587063]">
+                    Permanently removes this buyer, its contacts and access codes.
+                    Only available when the account has no order history. This cannot be undone.
+                  </p>
+                  <form action={permanentlyDeleteAdminMessageAction} className="mt-3 grid gap-2 sm:max-w-sm">
+                    <input type="hidden" name="recordType" value="Customer" />
+                    <input type="hidden" name="recordId" value={customer.id} />
+                    <input type="hidden" name="returnTo" value="/admin/customers?deleted=1" />
+                    <label className="grid gap-1 text-xs font-bold">
+                      Deletion reason
+                      <input name="reason" required minLength={10} className="rounded-lg border px-3 py-2" />
+                    </label>
+                    <label className="grid gap-1 text-xs font-bold">
+                      Type DELETE
+                      <input name="confirmation" required pattern="DELETE" autoComplete="off" className="rounded-lg border px-3 py-2" />
+                    </label>
+                    <label className="grid gap-1 text-xs font-bold">
+                      Confirm your password
+                      <input name="password" type="password" required autoComplete="current-password" className="rounded-lg border px-3 py-2" />
+                    </label>
+                    <ConfirmSubmitButton
+                      label="Delete buyer account permanently"
+                      pendingLabel="Deleting…"
+                      confirmMessage="Final confirmation: permanently delete this buyer account? This cannot be undone."
+                      className="rounded-lg bg-[#9b2f12] px-3 py-2 text-xs font-black text-white"
+                    />
+                  </form>
+                </details>
+              )}
+            </div>
+          ) : null}
         </section> : null}
 
         {section === "orders" ?
