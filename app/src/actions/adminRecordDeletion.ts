@@ -2,7 +2,7 @@
 
 import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
-import {requireCapability, requireStaffRole} from "@/lib/auth";
+import {requireStaffRole} from "@/lib/auth";
 import {createAuditLog} from "@/lib/auditLog";
 import {validatePermanentDeletionInput} from "@/lib/adminRecordDeletion.js";
 import {prisma} from "@/lib/prisma";
@@ -10,18 +10,6 @@ import {verifyStaffPassword} from "@/lib/staffAuthorization";
 import {phoneMatchCandidates} from "@/lib/whatsapp/phone";
 
 const text = (formData: FormData, key: string) => String(formData.get(key) || "").trim();
-
-export async function archiveAdminMessageAction(formData: FormData) {
-  await requireCapability("manage_communications");
-  const recordType = text(formData, "recordType");
-  const recordId = text(formData, "recordId");
-  if (!recordId || !["ContactEnquiry", "BuyerMessage"].includes(recordType)) redirect("/admin/buyer-messages?view=needs-reply&error=invalid-record");
-  if (recordType === "ContactEnquiry") await prisma.contactEnquiry.update({where: {id: recordId}, data: {status: "Archived"}});
-  else await prisma.buyerMessage.update({where: {id: recordId}, data: {status: "Archived"}});
-  await createAuditLog({action: "Archived admin communication record", entityType: recordType, entityId: recordId, metadata: {recordType}});
-  revalidatePath("/admin/buyer-messages");
-  redirect("/admin/buyer-messages?view=needs-reply&archived=1");
-}
 
 export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
   const staff = await requireStaffRole("Super admin");
