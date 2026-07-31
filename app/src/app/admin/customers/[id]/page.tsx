@@ -90,6 +90,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
     0,
   );
   const availableCredit = Math.max(customer.creditLimit - customer.outstandingBalance, 0);
+  const isUnmanagedWhatsAppContact = customer.accountStatus === "Manual WhatsApp";
 
   return (
     <AdminPageShell
@@ -109,12 +110,39 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
         <nav aria-label="Buyer detail sections" className="flex gap-2 overflow-x-auto border-b pb-3">{detailSections.map((item) => <Link key={item} href={`/admin/customers/${customer.id}?section=${item}`} aria-current={section === item ? "page" : undefined} className={`whitespace-nowrap rounded-xl px-4 py-2 text-sm font-black ${section === item ? "bg-[#102015] text-white" : "bg-white text-[#405348]"}`}>{({overview: "Overview", access: "Contacts & access", orders: "Orders", finance: "Finance", communications: "Communications", activity: "Activity"} as Record<string, string>)[item]}</Link>)}</nav>
 
         {section === "overview" ? <>
-        <section className="grid gap-4 md:grid-cols-4">
+        <section className="grid gap-4 md:grid-cols-3">
           <Metric label="Order value" value={formatNaira(orderValue)} />
           <Metric label="Payments recorded" value={formatNaira(paymentValue)} />
           <Metric label="Receipts issued" value={formatNaira(receiptValue)} />
-          <Metric label="Available credit" value={formatNaira(availableCredit)} />
         </section>
+
+        {isUnmanagedWhatsAppContact ? (
+          <section className="rounded-[2rem] border border-[#1f7a3f]/20 bg-[#eef8f0] p-6">
+            <h2 className="text-xl font-black text-[#102015]">Not yet reviewed as a buyer account</h2>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-[#405348]">
+              This record exists because a WhatsApp message was sent to this number -- it hasn't been
+              through account review, so there's no credit limit, payment terms or portal access set up
+              for it yet. Approve it as a recurring buyer to unlock those controls, or leave it as-is if
+              this is a one-off contact.
+            </p>
+            <form action={updateCustomerAccountAction} className="mt-4">
+              <input type="hidden" name="customerId" value={customer.id} />
+              <input type="hidden" name="accountStatus" value="Approved recurring buyer" />
+              <input type="hidden" name="receiptEmail" value={customer.receiptEmail || customer.email || ""} />
+              <input type="hidden" name="creditLimit" value={customer.creditLimit} />
+              <input type="hidden" name="outstandingBalance" value={customer.outstandingBalance} />
+              <input type="hidden" name="paymentTerms" value={customer.paymentTerms} />
+              <input type="hidden" name="status" value={customer.status} />
+              {customer.accountLoginReady ? <input type="hidden" name="accountLoginReady" value="on" /> : null}
+              <button
+                type="submit"
+                className="rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#155c2f]"
+              >
+                Approve as recurring buyer
+              </button>
+            </form>
+          </section>
+        ) : null}
 
         <section className="grid gap-8 xl:grid-cols-[0.95fr_1.05fr]">
           <form
@@ -153,38 +181,48 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                 />
               </label>
 
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="grid gap-2 text-sm font-semibold">
-                  Credit limit
-                  <input
-                    name="creditLimit"
-                    type="number"
-                    min="0"
-                    defaultValue={customer.creditLimit}
-                    className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  />
-                </label>
+              {!isUnmanagedWhatsAppContact ? (
+                <>
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <label className="grid gap-2 text-sm font-semibold">
+                      Credit limit
+                      <input
+                        name="creditLimit"
+                        type="number"
+                        min="0"
+                        defaultValue={customer.creditLimit}
+                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                      />
+                    </label>
 
-                <label className="grid gap-2 text-sm font-semibold">
-                  Outstanding balance
-                  <input
-                    name="outstandingBalance"
-                    type="number"
-                    min="0"
-                    defaultValue={customer.outstandingBalance}
-                    className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                  />
-                </label>
-              </div>
+                    <label className="grid gap-2 text-sm font-semibold">
+                      Outstanding balance
+                      <input
+                        name="outstandingBalance"
+                        type="number"
+                        min="0"
+                        defaultValue={customer.outstandingBalance}
+                        className="rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                      />
+                    </label>
+                  </div>
 
-              <label className="grid gap-2 text-sm font-semibold">
-                Payment terms
-                <textarea
-                  name="paymentTerms"
-                  defaultValue={customer.paymentTerms}
-                  className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
-                />
-              </label>
+                  <label className="grid gap-2 text-sm font-semibold">
+                    Payment terms
+                    <textarea
+                      name="paymentTerms"
+                      defaultValue={customer.paymentTerms}
+                      className="min-h-24 rounded-xl border border-gray-200 px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <input type="hidden" name="creditLimit" value={customer.creditLimit} />
+                  <input type="hidden" name="outstandingBalance" value={customer.outstandingBalance} />
+                  <input type="hidden" name="paymentTerms" value={customer.paymentTerms} />
+                </>
+              )}
 
               <label className="grid gap-2 text-sm font-semibold">
                 Ordering status
@@ -240,17 +278,19 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
               ]}
             />
 
-            <InfoPanel
-              title="Finance position"
-              rows={[
-                ["Credit limit", formatNaira(customer.creditLimit)],
-                ["Outstanding balance", formatNaira(customer.outstandingBalance)],
-                ["Available credit", formatNaira(availableCredit)],
-                ["Order value", formatNaira(orderValue)],
-                ["Payments recorded", formatNaira(paymentValue)],
-                ["Receipts issued", formatNaira(receiptValue)],
-              ]}
-            />
+            {!isUnmanagedWhatsAppContact ? (
+              <InfoPanel
+                title="Finance position"
+                rows={[
+                  ["Credit limit", formatNaira(customer.creditLimit)],
+                  ["Outstanding balance", formatNaira(customer.outstandingBalance)],
+                  ["Available credit", formatNaira(availableCredit)],
+                  ["Order value", formatNaira(orderValue)],
+                  ["Payments recorded", formatNaira(paymentValue)],
+                  ["Receipts issued", formatNaira(receiptValue)],
+                ]}
+              />
+            ) : null}
           </div>
         </section>
         </> : null}
