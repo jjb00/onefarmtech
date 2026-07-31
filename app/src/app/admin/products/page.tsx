@@ -254,24 +254,66 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
               </thead>
 
               <tbody>
-                {sorted.map((product) => (
+                {sorted.map((product) => {
+                  const quickEditId = `quick-edit-${product.id}`;
+
+                  return (
                   <tr key={product.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
-                    <td className="px-4 py-3 font-black text-[#102015]">{product.name}</td>
+                    <td className="px-4 py-3 font-black text-[#102015]">
+                      {product.name}
+                      <form id={quickEditId} action={updateProductDetailsAction} className="hidden">
+                        <input type="hidden" name="productId" value={product.id} />
+                        <input type="hidden" name="name" value={product.name} />
+                        <input type="hidden" name="category" value={product.category} />
+                        <input type="hidden" name="unit" value={product.unit} />
+                        <input type="hidden" name="grade" value={product.grade} />
+                        <input type="hidden" name="status" value={product.status} />
+                      </form>
+                    </td>
                     <td className="px-4 py-3">{product.category}</td>
                     <td className="px-4 py-3">{product.unit}</td>
                     <td className="px-4 py-3">{product.grade}</td>
-                    <td className="px-4 py-3 font-black text-[#102015]">{formatNaira(product.basePrice)}</td>
                     <td className="px-4 py-3">
-                      <AdminStatusPill tone={adminToneFromStatus(`${product.availability} ${product.status}`)}>
-                        {product.availability} · {product.status}
-                      </AdminStatusPill>
+                      <input
+                        form={quickEditId}
+                        name="basePrice"
+                        type="number"
+                        min="0"
+                        defaultValue={product.basePrice}
+                        className="w-28 rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-sm font-black text-[#102015]"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        form={quickEditId}
+                        name="availability"
+                        defaultValue={product.availability}
+                        className="rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-xs font-bold text-[#102015]"
+                      >
+                        {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
+                      </select>
+                      <div className="mt-1">
+                        <AdminStatusPill tone={adminToneFromStatus(product.status)}>
+                          {product.status}
+                        </AdminStatusPill>
+                      </div>
                     </td>
                     <td className="px-4 py-3">{product.orderItems.length}</td>
                     <td className="px-4 py-3">
-                      <ProductEditForm product={product} />
+                      <div className="grid gap-2">
+                        <button
+                          type="submit"
+                          form={quickEditId}
+                          className="rounded-full bg-[#1f7a3f] px-3 py-1.5 text-xs font-black text-white"
+                        >
+                          Save price
+                        </button>
+                        <ProductEditForm product={product} />
+                      </div>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
 
                 {!sorted.length ? (
                   <tr>
@@ -286,7 +328,10 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
         </section>
 
         <section className="grid gap-3 md:hidden">
-          {sorted.map((product) => (
+          {sorted.map((product) => {
+            const quickEditId = `quick-edit-mobile-${product.id}`;
+
+            return (
             <article key={product.id} className="rounded-2xl border border-[#102015]/10 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -294,19 +339,56 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
                   <p className="mt-1 text-sm text-[#405348]">
                     {product.category} · {product.grade} · {product.unit}
                   </p>
-                  <p className="mt-2 text-lg font-black text-[#102015]">
-                    {formatNaira(product.basePrice)}
-                  </p>
                 </div>
-                <AdminStatusPill tone={adminToneFromStatus(`${product.availability} ${product.status}`)}>
-                  {product.availability}
+                <AdminStatusPill tone={adminToneFromStatus(product.status)}>
+                  {product.status}
                 </AdminStatusPill>
               </div>
+
+              <form id={quickEditId} action={updateProductDetailsAction} className="mt-3 grid grid-cols-2 gap-2">
+                <input type="hidden" name="productId" value={product.id} />
+                <input type="hidden" name="name" value={product.name} />
+                <input type="hidden" name="category" value={product.category} />
+                <input type="hidden" name="unit" value={product.unit} />
+                <input type="hidden" name="grade" value={product.grade} />
+                <input type="hidden" name="status" value={product.status} />
+
+                <label className="grid gap-1 text-xs font-bold text-[#587063]">
+                  Price
+                  <input
+                    name="basePrice"
+                    type="number"
+                    min="0"
+                    defaultValue={product.basePrice}
+                    className="rounded-lg border border-[#102015]/15 bg-white px-2 py-2 text-sm font-black text-[#102015]"
+                  />
+                </label>
+
+                <label className="grid gap-1 text-xs font-bold text-[#587063]">
+                  Availability
+                  <select
+                    name="availability"
+                    defaultValue={product.availability}
+                    className="rounded-lg border border-[#102015]/15 bg-white px-2 py-2 text-xs font-bold text-[#102015]"
+                  >
+                    {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
+                  </select>
+                </label>
+
+                <button
+                  type="submit"
+                  className="col-span-2 rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
+                >
+                  Save price
+                </button>
+              </form>
+
               <div className="mt-3">
                 <ProductEditForm product={product} />
               </div>
             </article>
-          ))}
+            );
+          })}
 
           {!sorted.length ? (
             <p className="rounded-2xl bg-white p-5 text-center text-sm font-semibold text-[#587063]">
