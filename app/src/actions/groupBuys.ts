@@ -256,21 +256,30 @@ export async function updateGroupBuyAction(formData: FormData) {
   await requireCapability("manage_group_buys");
 
   const groupBuyId = readText(formData, "groupBuyId");
-  const status = readText(formData, "status", "Closed");
-  const fulfilmentStatus = readText(formData, "fulfilmentStatus", "Planning");
-  const adminNote = readText(formData, "adminNote");
+  const status = readText(formData, "status") || undefined;
+
+  // Quick-action buttons (Open/Close/Cancel) only submit groupBuyId and
+  // status -- omitted fields must stay untouched rather than reset to a
+  // default, or a one-click status change would silently wipe the
+  // fulfilment stage and internal note the full "Manage group buy" form set.
+  const fulfilmentStatusRaw = formData.get("fulfilmentStatus");
+  const adminNoteRaw = formData.get("adminNote");
 
   if (!groupBuyId) {
     throw new Error("Group-buy ID is required.");
   }
 
-  await prisma.groupBuy.update({
-    where: {id: groupBuyId},
-    data: {
-      fulfilmentStatus,
-      adminNote: adminNote || null,
-    },
-  });
+  const data: {fulfilmentStatus?: string; adminNote?: string | null} = {};
+  if (typeof fulfilmentStatusRaw === "string" && fulfilmentStatusRaw.trim()) {
+    data.fulfilmentStatus = fulfilmentStatusRaw.trim();
+  }
+  if (typeof adminNoteRaw === "string") {
+    data.adminNote = adminNoteRaw.trim() || null;
+  }
+
+  if (Object.keys(data).length) {
+    await prisma.groupBuy.update({where: {id: groupBuyId}, data});
+  }
 
   await syncGroupBuyState(groupBuyId, status);
   refreshGroupBuyPaths();

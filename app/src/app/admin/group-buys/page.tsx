@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AdminPageShell from "@/components/AdminPageShell";
 import StatusBadge from "@/components/admin/StatusBadge";
+import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";
 import {getDbGroupBuys, getDbProducts} from "@/data/dbAdmin";
 import {
   createGroupBuyAction,
@@ -306,6 +307,53 @@ export default async function GroupBuysPage() {
                         <StatusBadge status={groupBuy.paymentStatus} />
                         <StatusBadge status={groupBuy.fulfilmentStatus} />
                       </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {["Draft", "Closed"].includes(groupBuy.status) ? (
+                        <form action={updateGroupBuyAction}>
+                          <input type="hidden" name="groupBuyId" value={groupBuy.id} />
+                          <input type="hidden" name="status" value="Open" />
+                          <button
+                            type="submit"
+                            className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
+                          >
+                            Open group buy
+                          </button>
+                        </form>
+                      ) : null}
+
+                      {["Open", "Minimum met", "Fully reserved"].includes(groupBuy.status) ? (
+                        <form action={updateGroupBuyAction}>
+                          <input type="hidden" name="groupBuyId" value={groupBuy.id} />
+                          <input type="hidden" name="status" value="Closed" />
+                          <button
+                            type="submit"
+                            className="rounded-full bg-[#102015] px-4 py-2 text-xs font-black text-white"
+                          >
+                            Close group buy
+                          </button>
+                        </form>
+                      ) : null}
+
+                      {!["Cancelled", "Completed"].includes(groupBuy.status) ? (
+                        <form action={updateGroupBuyAction}>
+                          <input type="hidden" name="groupBuyId" value={groupBuy.id} />
+                          <input type="hidden" name="status" value="Cancelled" />
+                          <ConfirmSubmitButton
+                            label="Cancel group buy"
+                            pendingLabel="Cancelling…"
+                            confirmMessage="Cancel this group buy? Buyers with reservations will need to be notified separately."
+                            className="rounded-full border border-[#9b2f12]/25 px-4 py-2 text-xs font-black text-[#9b2f12]"
+                          />
+                        </form>
+                      ) : null}
+
+                      {["Minimum met", "Fully reserved"].includes(groupBuy.status) ? (
+                        <p className="text-xs font-semibold text-[#587063]">
+                          Minimum is already met, so closing moves this straight to Processing.
+                        </p>
+                      ) : null}
                     </div>
 
                     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
