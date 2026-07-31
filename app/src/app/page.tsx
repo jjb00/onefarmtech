@@ -10,38 +10,50 @@ import {publicPageMetadata} from "@/lib/publicSeo";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const noGroupBuyActivity = {
+const noGroupBuyActivityEverRun = {
   status: "Not open yet",
   progress: 0,
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
+  hasRunBefore: false,
+};
+
+const closedForTheWeek = {
+  status: "Closed for the week",
+  progress: 0,
+  activeGroupBuyCount: 0,
+  buyerPlaces: 0,
+  hasRunBefore: true,
 };
 
 async function getHomepageActivity() {
   try {
-    const activeGroupBuys = await prisma.groupBuy.findMany({
-      where: {
-        status: {
-          in: ["Open", "Minimum met", "Fully reserved"],
+    const [activeGroupBuys, totalGroupBuyCount] = await Promise.all([
+      prisma.groupBuy.findMany({
+        where: {
+          status: {
+            in: ["Open", "Minimum met", "Fully reserved"],
+          },
         },
-      },
-      select: {
-        targetQuantity: true,
-        reservations: {
-          where: {
-            paymentStatus: {
-              in: ["Paid", "Fully paid", "Approved"],
+        select: {
+          targetQuantity: true,
+          reservations: {
+            where: {
+              paymentStatus: {
+                in: ["Paid", "Fully paid", "Approved"],
+              },
+            },
+            select: {
+              quantity: true,
             },
           },
-          select: {
-            quantity: true,
-          },
         },
-      },
-    });
+      }),
+      prisma.groupBuy.count(),
+    ]);
 
     if (!activeGroupBuys.length) {
-      return noGroupBuyActivity;
+      return totalGroupBuyCount > 0 ? closedForTheWeek : noGroupBuyActivityEverRun;
     }
 
     const targetQuantity = activeGroupBuys.reduce(
@@ -74,13 +86,17 @@ async function getHomepageActivity() {
           : 0,
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
+      hasRunBefore: true,
     };
   } catch (error) {
     console.error("Homepage activity unavailable", {
       route: "/",
       error: error instanceof Error ? error.message : "unknown",
     });
-    return noGroupBuyActivity;
+    // A failed query (e.g. a transient DB connection issue) must not be
+    // reported as "never run" -- that's a specific, checkable claim this
+    // catch block has no way to know is true.
+    return closedForTheWeek;
   }
 }
 
@@ -204,12 +220,16 @@ better prices, quality and reliability.
                       <h2 className="mt-2 text-3xl font-black">
                         {activity.activeGroupBuyCount
                           ? "Buyer groups are active"
-                          : "Start the first group buy"}
+                          : activity.hasRunBefore
+                            ? "This week's window has closed"
+                            : "Start the first group buy"}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-white/60">
                         {activity.activeGroupBuyCount
                           ? "Live activity based on confirmed paid reservations."
-                          : "No group buys are running yet. Message us to open one for your street, office or business."}
+                          : activity.hasRunBefore
+                            ? "Group buying runs weekly, Monday through Friday. Propose one now to be first in line when the next window opens."
+                            : "No group buys are running yet. Message us to open one for your street, office or business."}
                       </p>
                     </div>
                     <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
@@ -249,8 +269,9 @@ better prices, quality and reliability.
                   ) : (
                     <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
                       <p className="text-sm leading-6 text-white/70">
-                        Group buying works best when a few buyers combine an
-                        order. Be the one who starts it.
+                        {activity.hasRunBefore
+                          ? "The current window closes on Fridays and reopens Mondays."
+                          : "Group buying works best when a few buyers combine an order. Be the one who starts it."}
                       </p>
                       <Link
                         href="/group-buy-request"
