@@ -3004,10 +3004,7 @@ export async function updateAdminOrderControlAction(formData: FormData) {
   await requireStaff();
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
-  const {requireStaff} = await import("@/lib/auth");
   const {prisma} = await import("@/lib/prisma");
-
-  await requireStaff();
 
   const orderId = String(formData.get("orderId") || "");
   const paymentStatus = String(formData.get("paymentStatus") || "").trim();
