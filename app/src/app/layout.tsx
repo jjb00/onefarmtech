@@ -7,6 +7,7 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/publicSeo";
+import { whatsappNumber } from "@/lib/whatsapp";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -67,6 +68,18 @@ export default function RootLayout({
               name: SITE_NAME,
               url: SITE_URL,
               logo: `${SITE_URL}/icon.png`,
+              areaServed: {"@type": "Country", name: "Nigeria"},
+              ...(whatsappNumber
+                ? {
+                    contactPoint: {
+                      "@type": "ContactPoint",
+                      telephone: `+${whatsappNumber}`,
+                      contactType: "customer service",
+                      areaServed: "NG",
+                      availableLanguage: ["English"],
+                    },
+                  }
+                : {}),
             },
             {
               "@context": "https://schema.org",

@@ -2,8 +2,9 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
 import CareerApplicationModal from "@/components/CareerApplicationModal";
+import StructuredData from "@/components/StructuredData";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
-import {publicPageMetadata} from "@/lib/publicSeo";
+import {publicPageMetadata, SITE_URL} from "@/lib/publicSeo";
 
 type Role = {
   title: string;
@@ -13,7 +14,12 @@ type Role = {
   qualification: string;
   summary: string;
   details: string;
+  datePosted?: string;
 };
+
+// Roles without an explicit datePosted (the original batch) were added
+// on this date -- see git history for src/app/careers/page.tsx.
+const ORIGINAL_ROLES_DATE_POSTED = "2026-07-09";
 
 const roles: Role[] = [
   {
@@ -145,6 +151,7 @@ const roles: Role[] = [
     summary: "Win and grow buyer relationships for restaurants, retailers and households across Jos, Benue and Kano.",
     details:
       "You will identify and approach prospective buyers in your region, explain how WhatsApp ordering works, follow up on interest and turn it into repeat orders. This role is for someone with a strong local network and the confidence to open new buyer relationships from scratch.",
+    datePosted: "2026-07-31",
   },
   {
     title: "Regional Supplier Relations Associate — Jos, Benue & Kano",
@@ -155,6 +162,7 @@ const roles: Role[] = [
     summary: "Build and maintain supplier relationships with farms and aggregators across Jos, Benue and Kano.",
     details:
       "You will identify dependable growers and aggregators in your region, agree pricing and supply terms, confirm availability, and maintain the trust and communication routines that keep produce flowing reliably. Strong local knowledge of farming communities matters more than formal qualifications here.",
+    datePosted: "2026-07-31",
   },
   {
     title: "Regional Admin & Operations Officer — Jos, Benue & Kano",
@@ -165,8 +173,58 @@ const roles: Role[] = [
     summary: "Keep regional orders, supplier records and buyer follow-up organised across Jos, Benue and Kano.",
     details:
       "You will support the regional sales and supplier teams with accurate records, order tracking, buyer follow-up and basic reporting back to the central operations team. This role suits someone organised, reliable and comfortable coordinating between multiple people in the field.",
+    datePosted: "2026-07-31",
   },
 ];
+
+const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
+  "Full-time": "FULL_TIME",
+  "Part-time": "PART_TIME",
+  Contract: "CONTRACTOR",
+  NYSC: "INTERN",
+  Internship: "INTERN",
+};
+
+function jobPostingsFor(list: Role[]) {
+  return list.map((role) => {
+    const nonRemoteLocations = role.locations.filter((item) => item !== "Remote" && item !== "Campus-based");
+    const isRemote = role.locations.includes("Remote");
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "JobPosting",
+      title: role.title,
+      description: `${role.summary} ${role.details}`,
+      datePosted: role.datePosted || ORIGINAL_ROLES_DATE_POSTED,
+      employmentType: Array.from(
+        new Set(role.stages.map((stage) => EMPLOYMENT_TYPE_MAP[stage]).filter(Boolean)),
+      ),
+      hiringOrganization: {
+        "@type": "Organization",
+        name: "OneFarmTech",
+        sameAs: SITE_URL,
+      },
+      ...(isRemote
+        ? {
+            jobLocationType: "TELECOMMUTE",
+            applicantLocationRequirements: {"@type": "Country", name: "Nigeria"},
+          }
+        : {}),
+      ...(nonRemoteLocations.length
+        ? {
+            jobLocation: nonRemoteLocations.map((location) => ({
+              "@type": "Place",
+              address: {
+                "@type": "PostalAddress",
+                addressLocality: location,
+                addressCountry: "NG",
+              },
+            })),
+          }
+        : {}),
+    };
+  });
+}
 
 const departments = ["All", ...Array.from(new Set(roles.map((role) => role.department)))];
 const stages = ["All", ...Array.from(new Set(roles.flatMap((role) => role.stages)))];
@@ -215,6 +273,7 @@ export default async function CareersPage({
 
   return (
     <main className="oft-product-shell min-h-screen bg-[#fbfff8] text-[#102015]">
+      <StructuredData data={jobPostingsFor(roles)} />
       <section className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" aria-label="Go to OneFarmTech homepage">
