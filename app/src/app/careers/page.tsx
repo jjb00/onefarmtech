@@ -136,6 +136,36 @@ const roles: Role[] = [
     details:
       "You will help introduce OneFarmTech to local buyer communities, support simple field activations, gather buyer feedback and connect interested groups to the ordering process. This role suits people who are trusted locally and can communicate clearly.",
   },
+  {
+    title: "Regional Sales Associate — Jos, Benue & Kano",
+    department: "Sales & Buyer Growth",
+    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
+    locations: ["Jos", "Plateau", "Benue", "Kano"],
+    qualification: "OND, HND, degree or strong sales, customer service or field marketing experience in the region.",
+    summary: "Win and grow buyer relationships for restaurants, retailers and households across Jos, Benue and Kano.",
+    details:
+      "You will identify and approach prospective buyers in your region, explain how WhatsApp ordering works, follow up on interest and turn it into repeat orders. This role is for someone with a strong local network and the confidence to open new buyer relationships from scratch.",
+  },
+  {
+    title: "Regional Supplier Relations Associate — Jos, Benue & Kano",
+    department: "Supply & Procurement",
+    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
+    locations: ["Jos", "Plateau", "Benue", "Kano"],
+    qualification: "OND, HND, degree or practical experience working with farms, cooperatives or aggregators in the region.",
+    summary: "Build and maintain supplier relationships with farms and aggregators across Jos, Benue and Kano.",
+    details:
+      "You will identify dependable growers and aggregators in your region, agree pricing and supply terms, confirm availability, and maintain the trust and communication routines that keep produce flowing reliably. Strong local knowledge of farming communities matters more than formal qualifications here.",
+  },
+  {
+    title: "Regional Admin & Operations Officer — Jos, Benue & Kano",
+    department: "Finance & Admin",
+    stages: ["Full-time", "Part-time", "NYSC"],
+    locations: ["Jos", "Plateau", "Benue", "Kano"],
+    qualification: "OND, HND, degree or practical admin, records or operations support experience.",
+    summary: "Keep regional orders, supplier records and buyer follow-up organised across Jos, Benue and Kano.",
+    details:
+      "You will support the regional sales and supplier teams with accurate records, order tracking, buyer follow-up and basic reporting back to the central operations team. This role suits someone organised, reliable and comfortable coordinating between multiple people in the field.",
+  },
 ];
 
 const departments = ["All", ...Array.from(new Set(roles.map((role) => role.department)))];
