@@ -146,6 +146,29 @@ export async function createPickupLocationAction(formData: FormData) {
   redirect("/admin/pickup-locations");
 }
 
+export async function updatePickupLocationAction(formData: FormData) {
+  await requireCapability("manage_fulfilment");
+  const id = readText(formData, "id");
+  const name = readText(formData, "name");
+  const area = readText(formData, "area");
+  const address = readText(formData, "address");
+  const fee = readNumber(formData, "fee");
+  const days = readText(formData, "days", "To be confirmed");
+  const status = readText(formData, "status", "Active");
+
+  if (!id || !name || !area || !address) {
+    throw new Error("Pickup location, name, area, and address are required.");
+  }
+
+  await prisma.pickupLocation.update({
+    where: {id},
+    data: {name, area, address, fee, days, status},
+  });
+
+  revalidatePath("/admin/pickup-locations");
+  redirect("/admin/pickup-locations");
+}
+
 
 export async function issueReceiptAction(formData: FormData) {
   const staff = await requireCapability("manage_payments");

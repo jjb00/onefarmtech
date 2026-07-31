@@ -1,6 +1,6 @@
 import AdminPageShell from "@/components/AdminPageShell";
 import { getDbPickupLocations } from "@/data/dbAdmin";
-import { createPickupLocationAction } from "@/actions/orderOperations";
+import { createPickupLocationAction, updatePickupLocationAction } from "@/actions/orderOperations";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -112,12 +112,13 @@ export default async function PickupLocationsPage() {
                 <th className="px-5 py-4 font-semibold">Fee</th>
                 <th className="px-5 py-4 font-semibold">Days</th>
                 <th className="px-5 py-4 font-semibold">Status</th>
+                <th className="px-5 py-4 font-semibold">Edit</th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-[#102015]/10">
               {pickupLocations.map((location) => (
-                <tr key={location.id} className="text-[#405348]">
+                <tr key={location.id} className="text-[#405348] align-top">
                   <td className="px-5 py-4 font-semibold text-[#102015]">
                     {location.name}
                   </td>
@@ -130,6 +131,9 @@ export default async function PickupLocationsPage() {
                       {location.status}
                     </span>
                   </td>
+                  <td className="px-5 py-4">
+                    <PickupLocationEditForm location={location} />
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -137,5 +141,65 @@ export default async function PickupLocationsPage() {
         </div>
       </div>
     </AdminPageShell>
+  );
+}
+
+function PickupLocationEditForm({location}: {location: {id: string; name: string; area: string; address: string; fee: number; days: string; status: string}}) {
+  return (
+    <details className="min-w-64 rounded-xl border border-[#102015]/10 bg-[#fbfff8] p-3">
+      <summary className="cursor-pointer text-xs font-black text-[#1f7a3f]">Edit</summary>
+
+      <form action={updatePickupLocationAction} className="mt-3 grid gap-2">
+        <input type="hidden" name="id" value={location.id} />
+
+        <input
+          name="name"
+          required
+          defaultValue={location.name}
+          className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+        />
+        <input
+          name="area"
+          required
+          defaultValue={location.area}
+          className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+        />
+        <input
+          name="address"
+          required
+          defaultValue={location.address}
+          className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+          placeholder="Full pickup address"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            name="fee"
+            type="number"
+            min="0"
+            defaultValue={location.fee}
+            className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+          />
+          <select
+            name="status"
+            defaultValue={location.status}
+            className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+          >
+            <option>Active</option>
+            <option>Limited</option>
+            <option>Paused</option>
+          </select>
+        </div>
+        <input
+          name="days"
+          defaultValue={location.days}
+          className="rounded-lg border border-[#102015]/15 bg-white px-3 py-2 text-sm text-[#102015]"
+          placeholder="e.g. Saturdays, Wednesdays"
+        />
+
+        <button type="submit" className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white">
+          Save
+        </button>
+      </form>
+    </details>
   );
 }
