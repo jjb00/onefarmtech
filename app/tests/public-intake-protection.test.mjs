@@ -147,12 +147,11 @@ test("minimal protection has no rate limiting or admin spam workflow", () => {
   assert.doesNotMatch(actions, /manageIntakeSpamAction/);
 });
 
-test("homepage survives transient database activity failures", () => {
+test("homepage survives transient database activity failures without fabricating numbers", () => {
   const home = fs.readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
   assert.match(home, /try \{/);
   assert.match(home, /Homepage activity unavailable/);
-  assert.match(home, /const launchGroupBuyActivity/);
-  assert.match(home, /progress:\s*68/);
-  assert.match(home, /activeGroupBuyCount:\s*4/);
-  assert.match(home, /buyerPlaces:\s*32/);
+  assert.match(home, /const noGroupBuyActivity/);
+  assert.match(home, /activeGroupBuyCount:\s*0/);
+  assert.match(home, /buyerPlaces:\s*0/);
 });

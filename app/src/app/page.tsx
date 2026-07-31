@@ -10,48 +10,38 @@ import {publicPageMetadata} from "@/lib/publicSeo";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const launchGroupBuyActivity = {
-  status: "Open",
-  progress: 68,
-  activeGroupBuyCount: 4,
-  buyerPlaces: 32,
-  launchMode: true,
+const noGroupBuyActivity = {
+  status: "Not open yet",
+  progress: 0,
+  activeGroupBuyCount: 0,
+  buyerPlaces: 0,
 };
 
 async function getHomepageActivity() {
   try {
-    const [activeGroupBuys, realPaidReservationCount] = await Promise.all([
-      prisma.groupBuy.findMany({
-        where: {
-          status: {
-            in: ["Open", "Minimum met", "Fully reserved"],
-          },
+    const activeGroupBuys = await prisma.groupBuy.findMany({
+      where: {
+        status: {
+          in: ["Open", "Minimum met", "Fully reserved"],
         },
-        select: {
-          targetQuantity: true,
-          reservations: {
-            where: {
-              paymentStatus: {
-                in: ["Paid", "Fully paid", "Approved"],
-              },
-            },
-            select: {
-              quantity: true,
+      },
+      select: {
+        targetQuantity: true,
+        reservations: {
+          where: {
+            paymentStatus: {
+              in: ["Paid", "Fully paid", "Approved"],
             },
           },
-        },
-      }),
-      prisma.groupBuyReservation.count({
-        where: {
-          paymentStatus: {
-            in: ["Paid", "Fully paid", "Approved"],
+          select: {
+            quantity: true,
           },
         },
-      }),
-    ]);
+      },
+    });
 
-    if (realPaidReservationCount === 0) {
-      return launchGroupBuyActivity;
+    if (!activeGroupBuys.length) {
+      return noGroupBuyActivity;
     }
 
     const targetQuantity = activeGroupBuys.reduce(
@@ -74,7 +64,7 @@ async function getHomepageActivity() {
     );
 
     return {
-      status: activeGroupBuys.length ? "Open" : "Closed",
+      status: "Open",
       progress:
         targetQuantity > 0
           ? Math.min(
@@ -84,14 +74,13 @@ async function getHomepageActivity() {
           : 0,
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
-      launchMode: false,
     };
   } catch (error) {
     console.error("Homepage activity unavailable", {
       route: "/",
       error: error instanceof Error ? error.message : "unknown",
     });
-    return launchGroupBuyActivity;
+    return noGroupBuyActivity;
   }
 }
 
@@ -210,21 +199,17 @@ better prices, quality and reliability.
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-black uppercase tracking-[0.22em] text-[#F2B84B]">
-                        {activity.launchMode ? "Launch activity" : "Group buying"}
+                        Group buying
                       </p>
                       <h2 className="mt-2 text-3xl font-black">
-                        {activity.launchMode
-                          ? "Group buying is forming now"
-                          : activity.activeGroupBuyCount
-                            ? "Buyer groups are active"
-                            : "Next group-buy window opening soon"}
+                        {activity.activeGroupBuyCount
+                          ? "Buyer groups are active"
+                          : "Start the first group buy"}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-white/60">
-                        {activity.launchMode
-                          ? "Early buyer places are being formed for the first buying windows."
-                          : activity.activeGroupBuyCount
-                            ? "Live activity based on confirmed paid reservations."
-                            : "Join the interest list for the next buying window."}
+                        {activity.activeGroupBuyCount
+                          ? "Live activity based on confirmed paid reservations."
+                          : "No group buys are running yet. Message us to open one for your street, office or business."}
                       </p>
                     </div>
                     <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
@@ -232,34 +217,44 @@ better prices, quality and reliability.
                     </span>
                   </div>
 
-                  <div className="mt-7">
-                    <div className="flex items-center justify-between text-sm font-bold text-white/70">
-                      <span>{activity.launchMode ? "Launch capacity reserved" : "Paid capacity reserved"}</span>
-                      <span>{activity.progress}%</span>
-                    </div>
-                    <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
-                      <div
-                        className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
-                        style={{width: `${activity.progress}%`}}
-                      />
-                    </div>
-                    <p className="mt-3 text-sm font-semibold text-white/65">
-                      {activity.launchMode
-                        ? "Founding buyer groups are being organised. Next window closes Friday."
-                        : "Figures update from confirmed paid group-buy reservations."}
-                    </p>
-                  </div>
+                  {activity.activeGroupBuyCount ? (
+                    <>
+                      <div className="mt-7">
+                        <div className="flex items-center justify-between text-sm font-bold text-white/70">
+                          <span>Paid capacity reserved</span>
+                          <span>{activity.progress}%</span>
+                        </div>
+                        <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
+                          <div
+                            className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
+                            style={{width: `${activity.progress}%`}}
+                          />
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-white/65">
+                          Figures update from confirmed paid group-buy reservations.
+                        </p>
+                      </div>
 
-                  <div className="mt-6 grid grid-cols-2 gap-3">
-                    <LiveMetric
-                      label="buyer places"
-                      value={String(activity.buyerPlaces)}
-                    />
-                    <LiveMetric
-                      label={activity.launchMode ? "groups forming" : "active groups"}
-                      value={String(activity.activeGroupBuyCount)}
-                    />
-                  </div>
+                      <div className="mt-6 grid grid-cols-2 gap-3">
+                        <LiveMetric
+                          label="buyer places"
+                          value={String(activity.buyerPlaces)}
+                        />
+                        <LiveMetric
+                          label="active groups"
+                          value={String(activity.activeGroupBuyCount)}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
+                      <p className="text-sm leading-6 text-white/70">
+                        Group buying works best when a few buyers combine an order.
+                        Be the one who starts it — message the team on WhatsApp with
+                        who you'd like to buy with and what you need.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 

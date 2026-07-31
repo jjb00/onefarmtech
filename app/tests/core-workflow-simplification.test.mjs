@@ -38,14 +38,20 @@ test("WhatsApp route shows only messages requiring staff attention", async () =>
   assert.doesNotMatch(page, /All operational conversations/);
 });
 
-test("homepage uses temporary launch activity without exposing group-buy details", async () => {
+test("homepage shows real group-buy activity, never fabricated numbers, without exposing details", async () => {
   const homepage = await source("src/app/page.tsx");
 
-  assert.match(homepage, /progress:\s*68/);
-  assert.match(homepage, /activeGroupBuyCount:\s*4/);
-  assert.match(homepage, /buyerPlaces:\s*32/);
-  assert.match(homepage, /Launch activity/);
-  assert.match(homepage, /Next window closes Friday/);
+  // The card used to fall back to hardcoded fake numbers (68% progress, 4
+  // groups, 32 places, "closes Friday") whenever there was no real paid
+  // activity yet -- misleading a first-time visitor into thinking buyers
+  // were already active. It must show honest real-or-empty state instead.
+  assert.doesNotMatch(homepage, /progress:\s*68/);
+  assert.doesNotMatch(homepage, /activeGroupBuyCount:\s*4/);
+  assert.doesNotMatch(homepage, /buyerPlaces:\s*32/);
+  assert.doesNotMatch(homepage, /Next window closes Friday/);
+  assert.doesNotMatch(homepage, /launchMode/);
+
+  assert.match(homepage, /Start the first group buy/);
   assert.match(homepage, /Join group buying/);
   assert.doesNotMatch(homepage, /activity\.activeGroupBuy\?\.title/);
   assert.doesNotMatch(homepage, /activity\.item/);
