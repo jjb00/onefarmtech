@@ -6,7 +6,7 @@ import PublicMobileMenu from "@/components/PublicMobileMenu";
 export const metadata = {
   title: "Impact | OneFarmTech",
   description:
-    "How OneFarmTech aims to improve produce access, market coordination and responsible food supply.",
+    "How OneFarmTech improves produce access, market coordination and responsible food supply.",
 };
 
 export default function ImpactPage() {
@@ -29,9 +29,9 @@ export default function ImpactPage() {
           Better coordination for fresh food supply.
         </h1>
         <p className="mt-6 max-w-3xl text-lg leading-8 text-[#405348]">
-          OneFarmTech is building practical infrastructure that helps buyers
-          request produce, confirm payments and coordinate fulfilment with
-          clearer records and fewer avoidable delays.
+          OneFarmTech gives buyers a straightforward way to request produce,
+          confirm payments and coordinate fulfilment — with clearer records
+          and fewer avoidable delays.
         </p>
 
         <div className="mt-12 grid gap-5 md:grid-cols-2">
@@ -50,7 +50,7 @@ export default function ImpactPage() {
             ],
             [
               "Responsible growth",
-              "Building measurable impact carefully without publishing unsupported claims or invented figures.",
+              "Growing carefully, with real numbers we can stand behind rather than inflated claims.",
             ],
           ].map(([title, body]) => (
             <article key={title} className="rounded-[2rem] border bg-white p-7 shadow-sm">
@@ -61,13 +61,12 @@ export default function ImpactPage() {
         </div>
 
         <section className="mt-12 rounded-[2rem] bg-[#102015] p-8 text-white">
-          <h2 className="text-3xl font-black">How impact will be measured</h2>
+          <h2 className="text-3xl font-black">How we measure impact</h2>
           <p className="mt-4 max-w-3xl leading-8 text-white/75">
-            Once operations are live, OneFarmTech intends to report verified
-            measures such as fulfilled order value, repeat buyer activity,
-            supplier participation and delivery performance. Until data is
-            verified, these remain measurement priorities rather than public
-            impact claims.
+            We track what matters to buyers and suppliers directly: fulfilled
+            order value, repeat buyer activity, supplier participation and
+            delivery performance. As that track record builds, we report it
+            honestly — real figures from real orders, not projections.
           </p>
         </section>
       </section>
