@@ -25,7 +25,7 @@ const text = (raw: string | string[] | undefined) =>
 
 const date = (value: Date | null) =>
   value
-    ? new Intl.DateTimeFormat("en-GB", {dateStyle: "medium"}).format(value)
+    ? new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", dateStyle: "medium"}).format(value)
     : "Not recorded";
 
 export default async function BuyerAccessList({raw}: {raw: Params}) {

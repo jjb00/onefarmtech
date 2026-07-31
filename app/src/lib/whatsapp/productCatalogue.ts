@@ -16,13 +16,16 @@ export function formatWhatsAppNaira(amount: number | null | undefined) {
   }).format(amount || 0);
 }
 
-export function isProductAvailableForWhatsApp(product: {availability: string; status?: string | null}) {
+export function isProductAvailableForWhatsApp(product: {availability: string; status?: string | null; basePrice?: number | null}) {
   const availability = String(product.availability || "").toLowerCase();
   const status = String(product.status || "Active").toLowerCase();
 
   return (
     status === "active" &&
-    ["available", "in stock", "active", "limited", "seasonal"].includes(availability)
+    ["available", "in stock", "active", "limited", "seasonal"].includes(availability) &&
+    // A price of 0 means the catalogue entry hasn't been priced yet, not
+    // that the item is free -- don't show it to buyers until it is.
+    Number(product.basePrice || 0) > 0
   );
 }
 

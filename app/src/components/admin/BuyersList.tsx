@@ -40,7 +40,7 @@ const text = (raw: string | string[] | undefined) =>
   String(Array.isArray(raw) ? raw[0] : raw || "").trim();
 
 const date = (value: Date) =>
-  new Intl.DateTimeFormat("en-GB", {dateStyle: "medium"}).format(value);
+  new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", dateStyle: "medium"}).format(value);
 
 const safeCount = (value: bigint | number | undefined) =>
   Number(value || 0);

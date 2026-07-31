@@ -56,7 +56,7 @@ function formatNaira(amount: number | null | undefined) {
 function formatDate(input: Date | string | null | undefined) {
   if (!input) return "Not set";
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(input));

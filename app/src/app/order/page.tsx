@@ -6,7 +6,7 @@ import PublicFooter from "@/components/PublicFooter";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {publicPageMetadata} from "@/lib/publicSeo";
 
-const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"));
+const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hi OneFarmTech, I'd like to place an order."));
 
 export const metadata = publicPageMetadata("/order");
 

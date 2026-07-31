@@ -55,7 +55,7 @@ function preview(raw: string, length = 150) {
 
 function formatDate(raw: Date | string | null) {
   return raw
-    ? new Intl.DateTimeFormat("en-GB", {
+    ? new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
         dateStyle: "medium",
         timeStyle: "short",
       }).format(new Date(raw))

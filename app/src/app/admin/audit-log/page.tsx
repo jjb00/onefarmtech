@@ -33,7 +33,7 @@ export default async function AuditLogPage() {
               {logs.map((log) => (
                 <tr key={log.id} className="border-t border-[#102015]/10">
                   <td className="px-4 py-3 text-[#405348]">
-                    {log.createdAt.toLocaleString()}
+                    {log.createdAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})}
                   </td>
 
                   <td className="px-4 py-3 font-bold text-[#102015]">

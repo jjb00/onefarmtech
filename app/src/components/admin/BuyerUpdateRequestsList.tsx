@@ -8,7 +8,7 @@ import {prisma} from "@/lib/prisma";
 type Params = Record<string, string | string[] | undefined>;
 const statuses = ["New", "Reviewing", "Approved", "Changes applied", "Rejected"];
 const text = (raw: string | string[] | undefined) => String(Array.isArray(raw) ? raw[0] : raw || "").trim();
-const date = (value: Date) => new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeStyle: "short"}).format(value);
+const date = (value: Date) => new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short"}).format(value);
 const summary = (request: {companyInfo: string | null; buyingProfile: string | null; financeInfo: string | null; contactInfo: string | null; documentsNote: string | null; message: string | null}) => [["Company", request.companyInfo], ["Buying", request.buyingProfile], ["Finance", request.financeInfo], ["Contact", request.contactInfo], ["Documents", request.documentsNote], ["Message", request.message]].filter(([, value]) => value).map(([label]) => label).join(", ") || "No change summary";
 export default async function BuyerUpdateRequestsList({raw, pathname = "/admin/buyer-profile-requests", hiddenParams = {}}: {raw: Params; pathname?: string; hiddenParams?: Record<string, string>}) {
   const q = text(raw.q), status = text(raw.status), queue = text(raw.queue) || "active", type = text(raw.type), pageSize = parseAdminPageSize(text(raw.pageSize)), page = parseAdminPage(text(raw.page));

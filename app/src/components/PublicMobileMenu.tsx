@@ -1,7 +1,7 @@
 import Link from "next/link";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 
-const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"));
+const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hi OneFarmTech, I'd like to place an order."));
 
 const sections = [
   {

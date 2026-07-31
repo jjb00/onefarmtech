@@ -22,7 +22,7 @@ function formatNaira(amount: number) {
 function formatDate(date: Date | null) {
   if (!date) return "No close date";
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     day: "2-digit",
     month: "short",
     year: "numeric",

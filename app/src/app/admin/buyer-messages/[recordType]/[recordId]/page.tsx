@@ -19,7 +19,7 @@ type RecordType = "BuyerMessage" | "ContactEnquiry";
 function formatDate(value: Date | string | null | undefined) {
   if (!value) return "Not recorded";
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     dateStyle: "medium",
     timeStyle: "short",
   }).format(new Date(value));

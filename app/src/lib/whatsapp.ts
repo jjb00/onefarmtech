@@ -1,7 +1,7 @@
 export const whatsappNumber = (process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "").replace(/\D/g, "");
 
 export const defaultWhatsAppOrderMessage = encodeURIComponent(
-  "Hi OneFarmTech, I want to order farm produce.\n\nBuyer type:\nProduce needed:\nQuantity:\nDelivery area:\nPreferred delivery/pickup date:"
+  "Hi OneFarmTech, I'd like to place an order."
 );
 
 export function buildWhatsAppLink(message = defaultWhatsAppOrderMessage) {

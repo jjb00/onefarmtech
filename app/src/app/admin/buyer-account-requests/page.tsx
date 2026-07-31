@@ -19,7 +19,7 @@ const CUSTOMER_NOTE_PREFIX = "Converted to customer record: ";
 const reviewStatuses = ["Reviewing", "Rejected", "Closed"];
 
 function value(input: string | string[] | undefined) { return String(Array.isArray(input) ? input[0] : input || "").trim(); }
-function formatDate(input: Date) { return new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeStyle: "short"}).format(input); }
+function formatDate(input: Date) { return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short"}).format(input); }
 function preview(input: string | null, length = 110) { const text = String(input || "").trim(); return text.length > length ? `${text.slice(0, length - 3).trimEnd()}…` : text; }
 function customerIdFromRequest(request: {status: string; adminNote: string | null}) { if (request.status !== CONVERTED || !request.adminNote?.startsWith(CUSTOMER_NOTE_PREFIX)) return ""; return request.adminNote.slice(CUSTOMER_NOTE_PREFIX.length).trim(); }
 

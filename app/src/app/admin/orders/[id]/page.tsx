@@ -39,7 +39,7 @@ function formatNaira(amount: number | null | undefined) {
 
 function formatDate(value: Date | string | null | undefined) {
   if (!value) return "Not set";
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     day: "2-digit",
     month: "short",
     year: "numeric",

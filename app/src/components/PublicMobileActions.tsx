@@ -5,7 +5,7 @@ type PublicMobileActionsProps = {
   showWhatsApp?: boolean;
 };
 
-const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"));
+const whatsappOrderHref = buildWhatsAppLink(encodeURIComponent("Hi OneFarmTech, I'd like to place an order."));
 
 export default function PublicMobileActions({
   showWhatsApp = true,

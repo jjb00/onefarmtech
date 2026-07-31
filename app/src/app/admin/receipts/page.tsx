@@ -195,7 +195,7 @@ export default async function ReceiptsPage({searchParams}: ReceiptsPageProps) {
                     </td>
                     <td className="px-4 py-3 text-[#102015]">{receipt.order.code}</td>
                     <td className="px-4 py-3 font-black text-[#102015]">{money(receipt.amount)}</td>
-                    <td className="px-4 py-3 text-[#405348]">{receipt.issuedAt.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-[#405348]">{receipt.issuedAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})}</td>
                     <td className="px-4 py-3">
                       <AdminStatusPill tone={adminToneFromStatus(receipt.status)}>
                         {receipt.status}

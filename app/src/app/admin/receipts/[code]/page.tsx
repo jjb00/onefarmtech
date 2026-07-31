@@ -50,7 +50,7 @@ export default async function ReceiptDetailPage({params}: ReceiptDetailPageProps
             </p>
             <h1 className="mt-2 text-3xl font-black">{receipt.code}</h1>
             <p className="mt-1 text-sm text-[#1E2420]/60">
-              Issued {receipt.issuedAt.toLocaleString()}
+              Issued {receipt.issuedAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})}
             </p>
           </div>
         </div>

@@ -152,7 +152,7 @@ export default async function BuyerAccountPage({
                   <div>
                     <p className="font-black">{receipt.code}</p>
                     <p className="mt-1 text-sm text-[#405348]">
-                      {receipt.status} · {receipt.issuedAt.toLocaleDateString()}
+                      {receipt.status} · {receipt.issuedAt.toLocaleDateString("en-GB", {timeZone: "Africa/Lagos"})}
                     </p>
                   </div>
                   <p className="font-black">{formatNaira(receipt.amount)}</p>

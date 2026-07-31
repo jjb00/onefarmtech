@@ -82,7 +82,7 @@ function requestSource(source: string) {
 }
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     dateStyle: "medium",
     timeStyle: "short",
   }).format(value);
@@ -406,7 +406,7 @@ export default async function OrdersPage({
                       </td>
 
                       <td className="p-4">
-                        {order.updatedAt.toLocaleDateString("en-GB")}
+                        {order.updatedAt.toLocaleDateString("en-GB", {timeZone: "Africa/Lagos"})}
                       </td>
 
                       <td className="p-4">

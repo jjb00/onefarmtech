@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 function formatDate(value?: Date | string | null) {
   if (!value) return "Not recorded";
 
-  return new Intl.DateTimeFormat("en-GB", {
+  return new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", 
     day: "2-digit",
     month: "short",
     year: "numeric",

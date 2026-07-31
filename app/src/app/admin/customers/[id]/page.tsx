@@ -326,7 +326,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                     <p className="text-sm font-black text-[#1f7a3f]">{order.code}</p>
                     <h3 className="mt-1 text-xl font-black">{formatNaira(order.estimatedTotal)}</h3>
                     <p className="mt-1 text-sm text-[#405348]">
-                      {order.deliveryMethod} · {order.createdAt.toLocaleString()}
+                      {order.deliveryMethod} · {order.createdAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})}
                     </p>
                   </div>
                   <div className="grid gap-2 md:justify-items-end">
@@ -379,7 +379,7 @@ export default async function CustomerDetailPage({params, searchParams}: Custome
                     <td className="py-3 pr-4">{formatNaira(receipt.amount)}</td>
                     <td className="py-3 pr-4">{receipt.buyerEmail || "No email"}</td>
                     <td className="py-3 pr-4 text-[#405348]">
-                      {receipt.issuedAt.toLocaleString()}
+                      {receipt.issuedAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})}
                     </td>
                   </tr>
                 ))}

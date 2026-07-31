@@ -62,7 +62,7 @@ export default async function AuditLogDetailPage({params}: AuditLogDetailPagePro
             ["Name", log.actorName],
             ["Email", log.actorEmail || "Not set"],
             ["Role", log.actorRole],
-            ["Time", log.createdAt.toLocaleString()],
+            ["Time", log.createdAt.toLocaleString("en-GB", {timeZone: "Africa/Lagos"})],
           ]}
         />
 

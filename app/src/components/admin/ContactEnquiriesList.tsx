@@ -8,7 +8,7 @@ import {prisma} from "@/lib/prisma";
 type Params = Record<string, string | string[] | undefined>;
 const managementStatuses = ["Reviewing", "Followed up", "Closed", "Rejected"];
 const text = (raw: string | string[] | undefined) => String(Array.isArray(raw) ? raw[0] : raw || "").trim();
-const formatDate = (value: Date) => new Intl.DateTimeFormat("en-GB", {dateStyle: "medium", timeStyle: "short"}).format(value);
+const formatDate = (value: Date) => new Intl.DateTimeFormat("en-GB", {timeZone: "Africa/Lagos", dateStyle: "medium", timeStyle: "short"}).format(value);
 const preview = (value: string) => value.length > 140 ? `${value.slice(0, 137).trimEnd()}…` : value;
 
 export default async function ContactEnquiriesList({raw, pathname, hiddenParams = {}, showOverallTotal = false}: {raw: Params; pathname: string; hiddenParams?: Record<string, string>; showOverallTotal?: boolean}) {

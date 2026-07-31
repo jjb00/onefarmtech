@@ -172,7 +172,7 @@ better prices, quality and reliability.
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">
                 <a
-                  href={buildWhatsAppLink(encodeURIComponent("Hello OneFarmTech, I want to place a fresh food order. Buyer type: ___ Location: ___ Items: ___"))}
+                  href={buildWhatsAppLink(encodeURIComponent("Hi OneFarmTech, I'd like to place an order."))}
                   className="oft-button-pop rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white shadow-[0_16px_40px_rgba(31,122,63,0.22)] hover:bg-[#155c2f]"
                 >
                   Order on WhatsApp
