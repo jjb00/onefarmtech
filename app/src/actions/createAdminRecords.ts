@@ -22,6 +22,7 @@ import {
   validateOrderStatusTransition,
 } from "@/lib/orderStatusRules.js";
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
+import {makePaymentReference} from "@/lib/commerce/whatsappOrders";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {isStaffRole} from "@/lib/permissions";
 import {normalizeInternationalPhone} from "@/lib/phoneNumbers";

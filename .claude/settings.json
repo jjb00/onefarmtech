@@ -39,7 +39,26 @@
       "Bash(git merge *)",
       "Bash(git stash *)",
       "Bash(rm -rf .next)",
-      "Bash(mkdir -p *)"
+      "Bash(mkdir -p *)",
+      "Bash(npx tsx *)",
+      "Bash(find *)",
+      "Bash(grep *)",
+      "Bash(rg *)",
+      "Bash(diff *)",
+      "Bash(rm -f *)",
+      "Bash(vercel env *)",
+      "Bash(vercel deploy *)",
+      "Bash(vercel inspect *)",
+      "Bash(git log *)",
+      "Bash(git diff *)",
+      "Bash(git status *)",
+      "Bash(git show *)",
+      "Bash(git branch *)",
+      "Bash(git fetch *)",
+      "Bash(git pull *)",
+      "Bash(git rev-parse *)",
+      "Bash(git merge-base *)",
+      "Bash(gh pr *)"
     ]
   }
 }
