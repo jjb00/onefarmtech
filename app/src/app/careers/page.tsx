@@ -1,6 +1,7 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
+import PublicImageCollage from "@/components/PublicImageCollage";
 import CareerApplicationModal from "@/components/CareerApplicationModal";
 import StructuredData from "@/components/StructuredData";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
@@ -274,34 +275,54 @@ export default async function CareersPage({
   return (
     <main className="oft-product-shell min-h-screen bg-[#fbfff8] text-[#102015]">
       <StructuredData data={jobPostingsFor(roles)} />
-      <section className="mx-auto max-w-7xl px-6 py-8 lg:px-10">
-        <header className="flex items-center justify-between gap-4">
-          <Link href="/" aria-label="Go to OneFarmTech homepage">
-            <BrandMark />
-          </Link>
-          <Link
-            href="/contact"
-            className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white shadow-sm"
-          >
-            Contact
-          </Link>
-        </header>
+      <section className="relative overflow-hidden bg-[radial-gradient(circle_at_14%_16%,rgba(31,122,63,0.14),transparent_32%),radial-gradient(circle_at_88%_10%,rgba(242,184,75,0.18),transparent_30%),linear-gradient(180deg,#fbfff8_0%,#f5faef_58%,#fbfff8_100%)]">
+        <PublicImageCollage
+          images={[
+            {
+              src: "/backgrounds/buyers.png",
+              alt: "",
+              className: "right-[-190px] top-[-30px] h-72 w-72 opacity-[0.22] md:h-[26rem] md:w-[26rem]",
+            },
+            {
+              src: "/backgrounds/trolley.png",
+              alt: "",
+              className: "left-[-190px] bottom-[-120px] hidden h-[24rem] w-[24rem] opacity-[0.22] lg:block",
+            },
+          ]}
+        />
+        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-[#1f7a3f] via-[#F2B84B] to-[#1f7a3f]" />
 
-        <section className="py-12">
-          <div className="max-w-4xl">
-            <p className="inline-flex rounded-full border border-[#1f7a3f]/15 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
-              Careers
-            </p>
-            <h1 className="mt-6 text-5xl font-black tracking-tight md:text-7xl">
-              Work with us to improve fresh food supply.
-            </h1>
-            <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
-              Explore practical roles across supply, sales, fulfilment, finance,
-              technology, content and community.
-            </p>
-          </div>
-        </section>
+        <div className="relative mx-auto max-w-7xl px-6 py-8 lg:px-10">
+          <header className="flex items-center justify-between gap-4">
+            <Link href="/" aria-label="Go to OneFarmTech homepage">
+              <BrandMark />
+            </Link>
+            <Link
+              href="/contact"
+              className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white shadow-sm"
+            >
+              Contact
+            </Link>
+          </header>
 
+          <section className="py-12">
+            <div className="max-w-4xl">
+              <p className="inline-flex rounded-full border border-[#1f7a3f]/15 bg-white px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f]">
+                Careers
+              </p>
+              <h1 className="mt-6 text-5xl font-black tracking-tight md:text-7xl">
+                Work with us to improve fresh food supply.
+              </h1>
+              <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
+                Explore practical roles across supply, sales, fulfilment, finance,
+                technology, content and community.
+              </p>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 pb-16 lg:px-10">
         <form
           action="/careers"
           className="rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur"
