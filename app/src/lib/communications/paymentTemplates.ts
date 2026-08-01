@@ -88,7 +88,7 @@ export function buildPaymentReceivedMessage(input: {
     "",
     "We will continue processing your order and update you on fulfilment.",
     "Thank you.",
-  ].join("\\n");
+  ].join("\n");
 }
 
 export function buildReceiptIssuedMessage(input: {
@@ -108,5 +108,5 @@ export function buildReceiptIssuedMessage(input: {
     `Amount: ${formatNaira(input.amount)}`,
     "",
     "Thank you for ordering with OneFarmTech.",
-  ].join("\\n");
+  ].join("\n");
 }

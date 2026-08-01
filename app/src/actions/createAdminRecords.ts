@@ -1755,13 +1755,13 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
   if (matched.customer?.id) {
     const itemSummary = selectedLines
       .map((line) => `- ${line.product.name}: ${line.quantity} ${line.product.unit} x ${formatNaira(line.unitPrice)} = ${formatNaira(line.lineTotal)}`)
-      .join("\\n");
+      .join("\n");
 
     await prisma.buyerMessage.create({
       data: {
         customerId: matched.customer.id,
         title: `WhatsApp order ${order.code} received`,
-        body: `Your WhatsApp order has been recorded.\\n\\n${itemSummary}\\n\\nSubtotal: ${formatNaira(subtotal)}\\nDelivery: ${formatNaira(deliveryFee)}\\nService fee: ${formatNaira(serviceFee)}\\nDiscount: ${formatNaira(discountAmount)}\\nTotal: ${formatNaira(totalAmount)}\\n\\nPayment reference: ${paymentReference}`,
+        body: `Your WhatsApp order has been recorded.\n\n${itemSummary}\n\nSubtotal: ${formatNaira(subtotal)}\nDelivery: ${formatNaira(deliveryFee)}\nService fee: ${formatNaira(serviceFee)}\nDiscount: ${formatNaira(discountAmount)}\nTotal: ${formatNaira(totalAmount)}\n\nPayment reference: ${paymentReference}`,
         channel: "WhatsApp",
         direction: "Outbound",
         status: "Prepared",
@@ -2139,7 +2139,7 @@ export async function createPaymentRequestFromOrderAction(formData: FormData) {
       data: {
         customerId: order.customerId,
         title: `Payment request for ${order.code}`,
-        body: `A payment request has been created for order ${order.code}.\\n\\nReference: ${reference}\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(amount)}`,
+        body: `A payment request has been created for order ${order.code}.\n\nReference: ${reference}\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(amount)}`,
         channel: "Portal",
         direction: "Outbound",
         status: "Unread",
@@ -2201,7 +2201,7 @@ export async function generatePaymentLinkAction(formData: FormData) {
         data: {
           customerId: paymentRequest.customerId,
           title: `Payment link for ${paymentRequest.order.code}`,
-          body: `A payment link has been generated for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount)}\\nPayment link: ${checkout.paymentUrl}`,
+          body: `A payment link has been generated for order ${paymentRequest.order.code}.\n\nReference: ${paymentRequest.reference}\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount)}\nPayment link: ${checkout.paymentUrl}`,
           channel: "Portal",
           direction: "Outbound",
           status: "Unread",
@@ -2329,7 +2329,7 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
       data: {
         customerId: order.customerId,
         title: `Delivery assigned for ${order.code}`,
-        body: `Delivery has been assigned for order ${order.code}.\\n\\nDelivery partner: ${partner.name}\\nPhone: ${partner.phone || "Not set"}\\nArea: ${delivery.deliveryArea || "Not set"}\\nTracking: ${delivery.trackingReference || "Not set"}`,
+        body: `Delivery has been assigned for order ${order.code}.\n\nDelivery partner: ${partner.name}\nPhone: ${partner.phone || "Not set"}\nArea: ${delivery.deliveryArea || "Not set"}\nTracking: ${delivery.trackingReference || "Not set"}`,
         channel: "Portal",
         direction: "Outbound",
         status: "Unread",
@@ -2867,7 +2867,7 @@ export async function updatePaymentRequestStatusAction(formData: FormData) {
         data: {
           customerId: paymentRequest.customerId,
           title: `Payment received for ${paymentRequest.order.code}`,
-          body: `Payment has been recorded for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount)}\\nStatus: Paid`,
+          body: `Payment has been recorded for order ${paymentRequest.order.code}.\n\nReference: ${paymentRequest.reference}\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(paymentRequest.amount)}\nStatus: Paid`,
           channel: "Portal",
           direction: "Outbound",
           status: "Unread",
@@ -2974,7 +2974,7 @@ export async function issueReceiptFromPaymentRequestAction(formData: FormData) {
         data: {
           customerId: paymentRequest.customerId,
           title: `Receipt issued for ${paymentRequest.order.code}`,
-          body: `Receipt ${receipt.code} has been issued for order ${paymentRequest.order.code}.\\n\\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(receipt.amount)}`,
+          body: `Receipt ${receipt.code} has been issued for order ${paymentRequest.order.code}.\n\nAmount: ${new Intl.NumberFormat("en-NG", {style: "currency", currency: "NGN", maximumFractionDigits: 0}).format(receipt.amount)}`,
           channel: "Portal",
           direction: "Outbound",
           status: "Unread",
@@ -3147,7 +3147,7 @@ export async function linkOrderToCustomerAction(formData: FormData) {
         `Linked to buyer account ${customer.name} from admin order detail.`,
       ]
         .filter(Boolean)
-        .join("\\n"),
+        .join("\n"),
     },
   });
 

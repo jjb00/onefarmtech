@@ -158,7 +158,7 @@ function detectLocation(text: string, lines: string[]) {
   const explicit = lineValue(lines, ["location", "address", "deliver to", "delivery address", "area"]);
   if (explicit) return explicit;
 
-  const match = text.match(/\\b(?:to|at|in|around)\\s+([A-Za-z][A-Za-z\\s,.'-]{2,60})/i);
+  const match = text.match(/\b(?:to|at|in|around)\s+([A-Za-z][A-Za-z\s,.'-]{2,60})/i);
   return match?.[1]?.trim() || null;
 }
 
@@ -197,12 +197,12 @@ function extractItemsText(text: string, lines: string[]) {
   const usefulLines = lines.filter((line) => {
     const lower = line.toLowerCase();
     return (
-      /\\d/.test(line) ||
+      /\d/.test(line) ||
       orderKeywords.some((keyword) => lower.includes(keyword))
     );
   });
 
-  return usefulLines.length ? usefulLines.join("\\n") : text.trim();
+  return usefulLines.length ? usefulLines.join("\n") : text.trim();
 }
 
 function detectIntent(input: {
@@ -272,7 +272,7 @@ export function parseWhatsAppOrderMessage(input: {
   const body = String(input.body || "").trim();
   const lower = body.toLowerCase();
   const lines = body
-    .split(/\\r?\\n/)
+    .split(/\r?\n/)
     .map((line) => line.trim())
     .filter(Boolean);
 
@@ -284,7 +284,7 @@ export function parseWhatsAppOrderMessage(input: {
   const matchedComplaint = matchKeywords(lower, complaintKeywords);
   const matchedSupport = matchKeywords(lower, supportKeywords);
 
-  const hasQuantity = /\\b\\d+\\s?(kg|kilo|bag|bags|crate|crates|basket|baskets|tubers?|pcs|pieces?|unit|units)?\\b/i.test(body);
+  const hasQuantity = /\b\d+\s?(kg|kilo|bag|bags|crate|crates|basket|baskets|tubers?|pcs|pieces?|unit|units)?\b/i.test(body);
 
   const {intent, matchedIntentKeywords} = detectIntent({
     lower,

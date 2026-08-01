@@ -17,6 +17,8 @@ import {replyWithOrderStatus} from "@/lib/whatsapp/statusReply";
 import {createPaymentCheckout} from "@/lib/payments/provider";
 import {initialisePayment, PaymentInitializationError} from "@/lib/payments/paymentInitialization.js";
 
+const RESET_KEYWORDS = /^(hi|hello|hey|menu|start|restart|good morning|good afternoon|good evening)\b/i;
+
 const MENU_BUTTONS = [
   {id: "menu_browse", title: "Browse & Order"},
   {id: "menu_track", title: "Track my order"},
@@ -35,9 +37,11 @@ async function sendProductList(to: string) {
   const products = await prisma.product.findMany({
     where: {status: "Active"},
     orderBy: [{category: "asc"}, {name: "asc"}],
-    take: 10,
   });
-  const available = products.filter(isProductAvailableForWhatsApp);
+  // Filter for priced/available items before capping the list -- limiting
+  // the DB query itself (take: 10) cut off the catalogue alphabetically
+  // before most priced products were ever reached.
+  const available = products.filter(isProductAvailableForWhatsApp).slice(0, 10);
 
   if (!available.length) {
     await sendWhatsAppTextMessage({
@@ -403,6 +407,16 @@ export async function handleInteractiveOrderingMessage(input: {
     }
 
     return {handled: false};
+  }
+
+  // Buyers are repeatedly told to reply "menu" to escape a stuck or
+  // unwanted step (empty cart, unavailable item, cancelled order). A
+  // greeting or reset word must win over whatever step an old session is
+  // parked on, or that promise is a dead end and the bot looks broken.
+  if (RESET_KEYWORDS.test(String(input.body || "").trim())) {
+    await clearOrderSession(from);
+    await sendMainMenu(from);
+    return {handled: true};
   }
 
   const session = await getOrderSession(from);

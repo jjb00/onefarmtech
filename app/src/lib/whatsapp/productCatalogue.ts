@@ -36,7 +36,7 @@ export function buildWhatsAppProductListMessage(products: WhatsAppCatalogueProdu
       "",
       "Our available produce list is being updated.",
       "Please reply with what you need and the team will confirm availability shortly.",
-    ].join("\\n");
+    ].join("\n");
   }
 
   const grouped = products.reduce<Record<string, WhatsAppCatalogueProduct[]>>((groups, product) => {
@@ -76,5 +76,5 @@ export function buildWhatsAppProductListMessage(products: WhatsAppCatalogueProdu
     "Prices and availability are confirmed before payment and delivery.",
   );
 
-  return lines.join("\\n");
+  return lines.join("\n");
 }

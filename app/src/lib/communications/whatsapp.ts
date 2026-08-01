@@ -36,5 +36,5 @@ export function buildBuyerWhatsAppMessage({
     `Topic: ${topic}`,
     "",
     "OneFarmTech",
-  ].join("\\n");
+  ].join("\n");
 }

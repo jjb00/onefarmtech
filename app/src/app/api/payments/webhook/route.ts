@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
         data: {
           customerId: paymentRequest.customerId,
           title: `Payment received for ${paymentRequest.order.code}`,
-          body: `Paystack confirmed payment for order ${paymentRequest.order.code}.\\n\\nReference: ${paymentRequest.reference}\\nAmount: ${formatNaira(paymentRequest.amount)}\\nStatus: Paid`,
+          body: `Paystack confirmed payment for order ${paymentRequest.order.code}.\n\nReference: ${paymentRequest.reference}\nAmount: ${formatNaira(paymentRequest.amount)}\nStatus: Paid`,
           channel: "Portal",
           direction: "Outbound",
           status: "Unread",

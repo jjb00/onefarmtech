@@ -46,7 +46,7 @@ function itemLines(items: OrderTemplateInput["items"]) {
           item.unitPrice
         )} = ${formatNairaForMessage(item.lineTotal)}`
     )
-    .join("\\n");
+    .join("\n");
 }
 
 export function buildOrderSummaryMessage(order: OrderTemplateInput) {
@@ -66,7 +66,7 @@ export function buildOrderSummaryMessage(order: OrderTemplateInput) {
     "",
     `Payment status: ${order.paymentStatus}`,
     `Fulfilment status: ${order.fulfilmentStatus}`,
-  ].join("\\n");
+  ].join("\n");
 }
 
 export function buildPaymentRequestMessage(order: OrderTemplateInput) {
@@ -95,7 +95,7 @@ export function buildPaymentRequestMessage(order: OrderTemplateInput) {
 
   lines.push("", "Please use the payment reference so the payment can be matched to your order.");
 
-  return lines.join("\\n");
+  return lines.join("\n");
 }
 
 export function buildDeliveryAssignedMessage(order: OrderTemplateInput) {
@@ -110,7 +110,7 @@ export function buildDeliveryAssignedMessage(order: OrderTemplateInput) {
     `Tracking/reference: ${order.trackingReference || "To be confirmed"}`,
     "",
     `Current status: ${order.fulfilmentStatus}`,
-  ].join("\\n");
+  ].join("\n");
 }
 
 export function buildOutForDeliveryMessage(order: OrderTemplateInput) {
@@ -124,7 +124,7 @@ export function buildOutForDeliveryMessage(order: OrderTemplateInput) {
     `Tracking/reference: ${order.trackingReference || "To be confirmed"}`,
     "",
     "Please keep your phone available for the delivery contact.",
-  ].join("\\n");
+  ].join("\n");
 }
 
 export function buildDeliveredMessage(order: OrderTemplateInput) {
@@ -135,5 +135,5 @@ export function buildDeliveredMessage(order: OrderTemplateInput) {
     order.receiptCode ? `Receipt: ${order.receiptCode}` : "Receipt: to be issued or already available in your account.",
     "",
     "Thank you for ordering with OneFarmTech.",
-  ].join("\\n");
+  ].join("\n");
 }

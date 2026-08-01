@@ -14,5 +14,5 @@ export function buildWhatsAppStorefrontMenuMessage() {
     "",
     "You can also type naturally.",
     "Example: “I want 2 baskets of tomatoes delivered tomorrow.”",
-  ].join("\\n");
+  ].join("\n");
 }
