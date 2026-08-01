@@ -308,7 +308,7 @@ export default async function OrdersPage({
                   <div className="flex justify-between gap-3">
                     <div>
                       <Link
-                        href={`/admin/orders/${order.id}`}
+                        href={`/admin/orders/${order.id}`} prefetch={false}
                         className="font-black text-[#1f7a3f]"
                       >
                         {order.code}
@@ -340,7 +340,7 @@ export default async function OrdersPage({
                   </div>
 
                   <Link
-                    href={`/admin/orders/${order.id}`}
+                    href={`/admin/orders/${order.id}`} prefetch={false}
                     className="mt-4 inline-flex min-h-11 items-center rounded-full bg-[#1f7a3f] px-4 text-sm font-black text-white"
                   >
                     {nextAction(order)}
@@ -369,7 +369,7 @@ export default async function OrdersPage({
                     <tr key={order.id} className="border-t align-middle">
                       <td className="p-4">
                         <Link
-                          href={`/admin/orders/${order.id}`}
+                          href={`/admin/orders/${order.id}`} prefetch={false}
                           className="font-black text-[#1f7a3f]"
                         >
                           {order.code}
@@ -411,7 +411,7 @@ export default async function OrdersPage({
 
                       <td className="p-4">
                         <Link
-                          href={`/admin/orders/${order.id}`}
+                          href={`/admin/orders/${order.id}`} prefetch={false}
                           className="inline-flex min-h-11 items-center rounded-full px-3 font-black text-[#1f7a3f]"
                         >
                           {nextAction(order)}

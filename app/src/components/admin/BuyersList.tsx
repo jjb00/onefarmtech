@@ -334,7 +334,7 @@ export default async function BuyersList({raw}: {raw: Params}) {
                       <td className="p-3">
                         <div className="flex flex-wrap gap-2">
                           <Link
-                            href={href}
+                            href={href} prefetch={false}
                             className="inline-flex min-h-11 items-center rounded-full px-4 font-black text-[#1f7a3f] transition hover:bg-[#eaf4e7]"
                           >
                             {buyer.recordId
@@ -374,7 +374,7 @@ export default async function BuyersList({raw}: {raw: Params}) {
 
               return (
                 <div key={buyer.identityKey} className="rounded-2xl border bg-white p-4">
-                  <Link href={href} className="block transition active:scale-[0.99]">
+                  <Link href={href} prefetch={false} className="block transition active:scale-[0.99]">
                     <div className="flex justify-between gap-3">
                       <div>
                         <h2 className="font-black">
