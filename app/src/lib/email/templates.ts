@@ -19,9 +19,6 @@ export const emailTemplates = {
   careerAcknowledgement: (name: string, role: string) => content("We received your OneFarmTech application", [
     `Hello ${name},`, `Your application for ${role} has been received. Our team will review it and contact you if your experience matches the opportunity.`, "OneFarmTech",
   ]),
-  careerAdmin: (name: string, role: string, location: string, url: string) => content(`New career application: ${role}`, [
-    `Applicant: ${name}`, `Role: ${role}`, `Location: ${location}`, `Review: ${url}/admin/career-applications`,
-  ]),
   supplierAcknowledgement: (name: string) => content("We received your OneFarmTech supplier enquiry", [
     `Hello ${name},`, "Your supplier or partner enquiry has been received. Our team will review your supply details and follow up.", "OneFarmTech",
   ]),

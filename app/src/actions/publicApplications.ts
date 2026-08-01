@@ -1,7 +1,6 @@
 "use server";
 
 import crypto from "node:crypto";
-import {revalidatePath} from "next/cache";
 import {redirect} from "next/navigation";
 import {
   getOperationalEmailRecipients,
@@ -10,9 +9,6 @@ import {
 } from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {protectPublicIntake} from "@/lib/publicIntakeProtection";
-import {requireAnyCapability} from "@/lib/auth";
-import {createAuditLog} from "@/lib/auditLog";
-import {prisma} from "@/lib/prisma";
 
 const MAX_CV_BYTES = 5 * 1024 * 1024;
 const ALLOWED_CV_TYPES = new Set([
@@ -61,7 +57,7 @@ async function sendToGroup(input: {
   group: "careers" | "contact" | "supplier";
   deduplicationPrefix: string;
   template: string;
-  content: ReturnType<typeof emailTemplates.careerAdmin>;
+  content: ReturnType<typeof emailTemplates.careerAdminEmail>;
   attachments?: EmailAttachment[];
 }) {
   const recipients = getOperationalEmailRecipients(input.group);
@@ -212,54 +208,3 @@ export async function createSupplierEnquiryAction(formData: FormData) {
   return submitSupplierEnquiryAction(formData);
 }
 
-export async function updateCareerApplicationAction(formData: FormData) {
-  await requireAnyCapability("manage_staff", "manage_support");
-
-  const id = text(formData, "id");
-  const status = text(formData, "status");
-  const adminNote = text(formData, "adminNote");
-
-  const allowed = [
-    "New",
-    "Reviewing",
-    "Shortlisted",
-    "Interview",
-    "Rejected",
-    "Hired",
-    "Archived",
-  ];
-
-  if (!id || !allowed.includes(status)) {
-    redirect("/admin/career-applications?error=validation");
-  }
-
-  const previous = await prisma.careerApplication.findUnique({
-    where: {id},
-  });
-
-  if (!previous) {
-    redirect("/admin/career-applications?error=not-found");
-  }
-
-  const updated = await prisma.careerApplication.update({
-    where: {id},
-    data: {
-      status,
-      adminNote: adminNote || null,
-    },
-  });
-
-  await createAuditLog({
-    action: "Updated career application",
-    entityType: "CareerApplication",
-    entityId: id,
-    entityLabel: updated.email,
-    previousValue: previous,
-    newValue: updated,
-  });
-
-  revalidatePath("/admin/career-applications");
-  revalidatePath(`/admin/career-applications/${id}`);
-
-  redirect(`/admin/career-applications/${id}?success=updated`);
-}
