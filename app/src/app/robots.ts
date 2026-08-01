@@ -14,7 +14,6 @@ export default function robots(): MetadataRoute.Robots {
         "/buyer-account/",
         "/buyer-login",
         "/callbacks/",
-        "/dashboard",
         "/delivery-partner",
         "/delivery-partner/",
         "/login",

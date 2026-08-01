@@ -1,7 +1,7 @@
 import ConfirmSubmitButton from "@/components/admin/ConfirmSubmitButton";
 import {permanentlyDeleteAdminMessageAction} from "@/actions/adminRecordDeletion";
 
-export default function AdminRecordControls({recordType, recordId, canDelete, returnTo}: {recordType: "ContactEnquiry" | "BuyerMessage" | "OrderRequest" | "BuyerAccountRequest" | "Order"; recordId: string; canDelete: boolean; returnTo?: string}) {
+export default function AdminRecordControls({recordType, recordId, canDelete, returnTo}: {recordType: "ContactEnquiry" | "BuyerMessage" | "OrderRequest" | "BuyerAccountRequest" | "Order" | "PaymentRequest"; recordId: string; canDelete: boolean; returnTo?: string}) {
   return <div className="mt-3 grid gap-2">
     {canDelete ? <details className="rounded-xl border border-[#9b2f12]/20 bg-[#fff4ef] p-3"><summary className="cursor-pointer text-xs font-black text-[#9b2f12]">Delete permanently</summary>
       <form action={permanentlyDeleteAdminMessageAction} className="mt-3 grid gap-2">

@@ -1,6 +1,10 @@
 import {prisma} from "@/lib/prisma";
 import {parseWhatsAppOrderMessage} from "./orderParser";
 
+export function mentionsGroupBuy(body: string) {
+  return /group[\s-]?buy/i.test(body);
+}
+
 export async function createDraftOrderRequestFromInboundWhatsApp(input: {
   body: string;
   from: string;
@@ -50,7 +54,7 @@ export async function createDraftOrderRequestFromInboundWhatsApp(input: {
       deliveryPreference: parsed.deliveryPreference || "Delivery",
       items: parsed.itemsText,
       timing: parsed.timing || null,
-      groupBuyInterest: false,
+      groupBuyInterest: mentionsGroupBuy(input.body),
       message: parsed.notes || input.body,
       status: "Draft from WhatsApp",
       source: "WhatsApp inbound draft",

@@ -21,6 +21,7 @@ import {
   AdminStatusPill,
   adminToneFromStatus,
 } from "@/components/admin/AdminViewControls";
+import AdminRecordControls from "@/components/admin/AdminRecordControls";
 import AdminShell from "@/components/admin/AdminShell";
 import {requireStaff} from "@/lib/auth";
 import {adminListHref, adminResultRange, parseAdminPage, parseAdminPageSize} from "@/lib/adminListParams.js";
@@ -75,6 +76,10 @@ function feedbackMessage(params: Params | undefined) {
     return "Payment status updated.";
   }
 
+  if (value(params?.deleted)) {
+    return "Payment request deleted.";
+  }
+
   return "";
 }
 
@@ -88,6 +93,7 @@ function errorMessage(params: Params | undefined) {
   if (error.includes("not-found")) return "The payment record was not found.";
   if (error.includes("verification")) return "Payment verification could not be completed.";
   if (error === "not-paid") return "A receipt can only be issued after payment is confirmed.";
+  if (error === "PAYMENT_REQUEST_DELETE_BLOCKED") return "Paid payment requests can't be deleted -- they're the record behind a receipt.";
 
   return "The payment action could not be completed.";
 }
@@ -97,7 +103,7 @@ export default async function PaymentsPage({
 }: {
   searchParams?: Promise<Params>;
 }) {
-  await requireStaff();
+  const staff = await requireStaff();
 
   const params = await searchParams;
   const requestedView = value(params?.view) || "needs-action";
@@ -646,6 +652,15 @@ export default async function PaymentsPage({
                       ))}
                     </div>
                   </details>
+
+                  {request.status !== "Paid" ? (
+                    <AdminRecordControls
+                      recordType="PaymentRequest"
+                      recordId={request.id}
+                      canDelete={staff.role === "Super admin"}
+                      returnTo={PATH}
+                    />
+                  ) : null}
                 </article>
               );
             })}

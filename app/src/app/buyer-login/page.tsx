@@ -2,8 +2,10 @@ import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
 import BuyerLoginModal from "@/components/BuyerLoginModal";
 import PublicFooter from "@/components/PublicFooter";
+import {PRIVATE_NOINDEX_METADATA} from "@/lib/publicSeo";
 
 export const dynamic = "force-dynamic";
+export const metadata = PRIVATE_NOINDEX_METADATA;
 
 const messages: Record<string, string> = {
   missing: "Enter your email or phone and access code.",

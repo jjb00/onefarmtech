@@ -26,7 +26,8 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
       : "/admin/buyer-messages";
   if (error || !staff.email || !verifyStaffPassword(staff.email, password)) redirect(`${safeReturnBase}?error=${error || "confirmation-failed"}`);
 
-  await prisma.$transaction(async (tx) => {
+  try {
+    await prisma.$transaction(async (tx) => {
     if (recordType === "ContactEnquiry") {
       await tx.contactEnquiry.delete({where: {id: recordId}});
     } else if (recordType === "BuyerMessage") {
@@ -155,6 +156,20 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
 
       await tx.orderItem.deleteMany({where: {orderId: recordId}});
       await tx.order.delete({where: {id: recordId}});
+    } else if (recordType === "PaymentRequest") {
+      const paymentRequest = await tx.paymentRequest.findUnique({
+        where: {id: recordId},
+        select: {status: true, paidAt: true},
+      });
+
+      // A paid request is reconciled revenue -- deleting it would erase the
+      // financial trail behind a receipt. Only pending/failed/cancelled
+      // links (duplicates, expired links, abandoned attempts) can go.
+      if (!paymentRequest || paymentRequest.status === "Paid" || paymentRequest.paidAt) {
+        throw new Error("PAYMENT_REQUEST_DELETE_BLOCKED");
+      }
+
+      await tx.paymentRequest.delete({where: {id: recordId}});
     } else {
       throw new Error("INVALID_DELETE_TYPE");
     }
@@ -169,13 +184,19 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
       entityLabel: "Deleted admin record",
       metadata: JSON.stringify({actorId: staff.id, deletionReason: reason, deletedAt: new Date().toISOString()}),
     }});
-  });
+    });
+  } catch (err) {
+    const code = err instanceof Error ? err.message : "DELETE_FAILED";
+    redirect(`${safeReturnBase}?error=${code}`);
+  }
+
   revalidatePath("/admin/buyer-messages");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/order-requests");
   revalidatePath("/admin/orders");
   revalidatePath("/admin/customers");
   revalidatePath("/admin/buyer-account-requests");
+  revalidatePath("/admin/payments");
   revalidatePath("/admin/audit-log");
 
   if (
@@ -193,6 +214,10 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
 
   if (recordType === "Order") {
     redirect("/admin/orders?deleted=1");
+  }
+
+  if (recordType === "PaymentRequest") {
+    redirect("/admin/payments?deleted=1");
   }
 
   if (recordType === "BuyerAccountRequest") {

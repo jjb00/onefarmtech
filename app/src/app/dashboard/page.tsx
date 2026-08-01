@@ -1,6 +1,9 @@
 import Link from "next/link";
 import {BrandMark} from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
+import {publicPageMetadata} from "@/lib/publicSeo";
+
+export const metadata = publicPageMetadata("/dashboard");
 
 const requestSteps = [
   {

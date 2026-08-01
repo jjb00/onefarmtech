@@ -167,12 +167,11 @@ export default async function HomePage() {
               </div>
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
-                Fresh food supply for buyers who need{" "}
-better prices, quality and reliability.
+                Order fresh produce on WhatsApp — confirmed pricing, no guesswork.
               </h1>
 
               <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
-                Dependable supply, transparent pricing and reliable fulfilment for businesses and consumers
+                Send what you need on WhatsApp. We confirm availability and price before you pay, then you can track the order through to delivery or pickup.
               </p>
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">

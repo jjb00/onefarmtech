@@ -21,6 +21,7 @@ const routeSettings: Record<
   "/data-protection": {changeFrequency: "yearly", priority: 0.2},
   "/terms": {changeFrequency: "yearly", priority: 0.2},
   "/impact": {changeFrequency: "monthly", priority: 0.5},
+  "/dashboard": {changeFrequency: "monthly", priority: 0.6},
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {

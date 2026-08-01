@@ -127,24 +127,18 @@ export default async function ContactPage({
             </h1>
 
             <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#405348]">
-              For buyer support, partnerships, media, ecosystem enquiries, and
-              organisations interested in adding value around recurring fresh food
-              supply.
+              For buyer support, partnerships, media enquiries, or organisations
+              working in payments, logistics, food security or SME finance.
             </p>
 
             <div className="oft-fade-up-delay-3 oft-public-card mt-8 rounded-[2rem] p-6">
               <h2 className="text-2xl font-black">Partner with OneFarmTech</h2>
               <p className="mt-3 leading-8 text-[#405348]">
-                OneFarmTech works with organisations that can help improve how
-                fresh food buyers order, pay, receive, finance, and manage
-                recurring produce supply.
-              </p>
-              <p className="mt-3 leading-8 text-[#405348]">
-                Our core users include households, food vendors, restaurants,
-                retailers, offices, and community buying groups. Our partner
-                network is different: it is made up of organisations that add
-                value around those users and strengthen the wider food supply
-                ecosystem.
+                Our buyers are households, food vendors, restaurants, retailers,
+                offices and community buying groups ordering fresh produce over
+                WhatsApp. If your organisation touches payments, delivery,
+                buyer finance, risk or market access, there's likely a way to
+                plug into that flow — tell us where you fit.
               </p>
             </div>
           </div>
@@ -250,31 +244,6 @@ export default async function ContactPage({
           ))}
         </section>
 
-        <section className="mt-10 grid gap-5 lg:grid-cols-2">
-          <div className="oft-public-card rounded-[2rem] p-6">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Our partners
-            </p>
-            <h2 className="mt-3 text-2xl font-black">Partner network</h2>
-            <p className="mt-3 leading-7 text-[#405348]">
-              We are building a practical partner network around payments,
-              logistics, buyer finance, risk, market access, and ecosystem
-              support. Partner logos and programme details will be added as
-              collaborations are confirmed.
-            </p>
-          </div>
-
-          <div className="oft-public-card rounded-[2rem] p-6">
-            <p className="text-sm font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
-              Featured in
-            </p>
-            <h2 className="mt-3 text-2xl font-black">Media and ecosystem features</h2>
-            <p className="mt-3 leading-7 text-[#405348]">
-              Media, ecosystem, and programme features will be added here as
-              OneFarmTech launches publicly.
-            </p>
-          </div>
-        </section>
       </div>
       <PublicFooter />
     </main>

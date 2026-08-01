@@ -1,9 +1,11 @@
 import Link from "next/link";
 import DeliveryPartnerMobileMenu from "@/components/DeliveryPartnerMobileMenu";
 import {deliveryPartnerLoginAction} from "@/actions/createAdminRecords";
+import {PRIVATE_NOINDEX_METADATA} from "@/lib/publicSeo";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+export const metadata = PRIVATE_NOINDEX_METADATA;
 
 export default async function DeliveryPartnerLoginPage({
   searchParams,

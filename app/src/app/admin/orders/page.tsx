@@ -505,6 +505,7 @@ async function NewRequestsView({
       message: true,
       source: true,
       status: true,
+      groupBuyInterest: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -601,11 +602,16 @@ async function NewRequestsView({
                     </p>
                   </div>
 
-                  <AdminStatusPill
-                    tone={adminToneFromStatus(request.status)}
-                  >
-                    {request.status}
-                  </AdminStatusPill>
+                  <div className="flex flex-wrap items-center justify-end gap-2">
+                    {request.groupBuyInterest ? (
+                      <AdminStatusPill tone="amber">Group buy interest</AdminStatusPill>
+                    ) : null}
+                    <AdminStatusPill
+                      tone={adminToneFromStatus(request.status)}
+                    >
+                      {request.status}
+                    </AdminStatusPill>
+                  </div>
                 </div>
 
                 <div className="mt-4 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4 text-sm md:grid-cols-2">

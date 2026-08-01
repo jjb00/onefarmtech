@@ -19,6 +19,7 @@ export const INDEXABLE_PUBLIC_ROUTES = [
   "/data-protection",
   "/terms",
   "/impact",
+  "/dashboard",
 ] as const;
 
 export const PUBLIC_ROUTE_METADATA = {
@@ -86,6 +87,11 @@ export const PUBLIC_ROUTE_METADATA = {
     title: "Impact",
     description:
       "How OneFarmTech's managed fresh produce sourcing supports farmers, suppliers and buyers across the food supply chain.",
+  },
+  "/dashboard": {
+    title: "Order Fresh Produce or Start a Group Buy",
+    description:
+      "Order fresh produce, request bulk or recurring supply, start a group buy, or sign in to an approved buyer account with OneFarmTech.",
   },
 } as const satisfies Record<
   (typeof INDEXABLE_PUBLIC_ROUTES)[number],
