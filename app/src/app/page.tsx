@@ -232,7 +232,7 @@ better prices, quality and reliability.
                             : "No group buys are running yet. Message us to open one for your street, office or business."}
                       </p>
                     </div>
-                    <span className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
+                    <span className="shrink-0 whitespace-nowrap rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
                       {activity.status}
                     </span>
                   </div>

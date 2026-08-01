@@ -96,11 +96,6 @@ export default function ImpactPage() {
               scattered phone calls and memory instead of a shared record. OneFarmTech
               exists to close that gap.
             </p>
-            <p className="mt-4 max-w-2xl text-sm font-semibold leading-7 text-[#587063]">
-              This page is written for NGOs, development finance institutions and
-              impact partners evaluating whether OneFarmTech's model is worth
-              supporting — as much as it is for the buyers and suppliers who use it.
-            </p>
           </section>
         </div>
       </section>
