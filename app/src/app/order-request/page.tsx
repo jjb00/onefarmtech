@@ -18,7 +18,11 @@ export default async function OrderRequestPage({
 }) {
   const params = await searchParams;
   const submitted = params?.submitted === "1";
-  const intakeError = params?.intakeError;
+  const intakeError = params?.intakeError === "validation"
+    ? "Buyer name, phone, and items are required."
+    : params?.intakeError
+      ? publicIntakeErrorMessage(params.intakeError)
+      : null;
 
   return (
     <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#101712]">
@@ -107,7 +111,7 @@ export default async function OrderRequestPage({
                 Add what you want to buy, how much you need, and where it should go.
               </p>
             )}
-            {intakeError ? <p role="alert" className="mt-3 rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">{publicIntakeErrorMessage(intakeError)}</p> : null}
+            {intakeError ? <p role="alert" className="mt-3 rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">{intakeError}</p> : null}
 
             <div className="mt-6 grid gap-4">
               <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>

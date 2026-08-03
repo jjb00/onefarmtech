@@ -854,21 +854,26 @@ export async function createContactEnquiryAction(formData: FormData) {
   const enquiryType = readText(formData, "enquiryType", "General enquiry");
   const message = readText(formData, "message");
 
-  await protectPublicIntake({
-    formType: "contact",
-    action: "contact_enquiry",
-    token: readText(formData, "cf-turnstile-response"),
-    honeypot: readText(formData, "website"),
-    values: [name, organisation, email, phone, enquiryType, message],
-  });
+  try {
+    await protectPublicIntake({
+      formType: "contact",
+      action: "contact_enquiry",
+      token: readText(formData, "cf-turnstile-response"),
+      honeypot: readText(formData, "website"),
+      values: [name, organisation, email, phone, enquiryType, message],
+    });
+  } catch (err) {
+    const code = err instanceof PublicIntakeError ? err.code : "bot-check";
+    redirect(`/contact?intakeError=${encodeURIComponent(code)}`);
+  }
 
   if (!name || (!email && !phone) || !message) {
-    throw new Error("Please provide your name, message and an email or phone number.");
+    redirect("/contact?intakeError=validation");
   }
 
   if (enquiryType === "Buyer account request") {
     if (!phone) {
-      throw new Error("A phone number is required for a buyer account request.");
+      redirect("/contact?intakeError=validation");
     }
 
     const request = await prisma.buyerAccountRequest.create({
@@ -989,7 +994,20 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   const message = readText(formData, "message");
 
   if (!contactName || !phone) {
-    throw new Error("Contact name and phone are required.");
+    redirect("/buyer-account-request?error=validation");
+  }
+
+  try {
+    await protectPublicIntake({
+      formType: "buyer-account-request",
+      action: "buyer_account_request",
+      token: readText(formData, "cf-turnstile-response"),
+      honeypot: readText(formData, "website"),
+      values: [contactName, organisationName, buyerType, phone, email, location, usualProduceNeeds, orderFrequency, estimatedSpend, message],
+    });
+  } catch (err) {
+    const code = err instanceof PublicIntakeError ? err.code : "bot-check";
+    redirect(`/buyer-account-request?error=${encodeURIComponent(code)}`);
   }
 
   const request = await prisma.buyerAccountRequest.create({
@@ -1045,7 +1063,7 @@ export async function createOrderRequestAction(formData: FormData) {
   const message = readText(formData, "message");
 
   if (!buyerName || !phone || !items) {
-    throw new Error("Buyer name, phone, and items are required.");
+    redirect("/order-request?intakeError=validation");
   }
 
   try {

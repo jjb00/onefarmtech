@@ -8,7 +8,13 @@ import {
   type EmailAttachment,
 } from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
-import {protectPublicIntake} from "@/lib/publicIntakeProtection";
+import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
+
+class CvError extends Error {
+  constructor(public code: "missing-cv" | "cv-too-large" | "cv-invalid-type") {
+    super(code);
+  }
+}
 
 const MAX_CV_BYTES = 5 * 1024 * 1024;
 const ALLOWED_CV_TYPES = new Set([
@@ -33,15 +39,15 @@ async function readCv(formData: FormData): Promise<EmailAttachment> {
   const value = formData.get("cv");
 
   if (!(value instanceof File) || value.size === 0) {
-    throw new Error("Please attach your CV.");
+    throw new CvError("missing-cv");
   }
 
   if (value.size > MAX_CV_BYTES) {
-    throw new Error("Your CV must be 5MB or smaller.");
+    throw new CvError("cv-too-large");
   }
 
   if (!ALLOWED_CV_TYPES.has(value.type)) {
-    throw new Error("Upload your CV as a PDF, DOC or DOCX file.");
+    throw new CvError("cv-invalid-type");
   }
 
   const buffer = Buffer.from(await value.arrayBuffer());
@@ -87,20 +93,33 @@ export async function submitCareerApplicationAction(formData: FormData) {
   const role = text(formData, "role");
   const experience = text(formData, "experience");
   const consent = formData.get("consent") === "on";
+  const reopen = `/careers?apply=1&role=${encodeURIComponent(role)}`;
 
-  await protectPublicIntake({
-    formType: "career",
-    action: "career_application",
-    token: text(formData, "cf-turnstile-response"),
-    honeypot: text(formData, "website"),
-    values: [name, email, phone, location, role, experience],
-  });
-
-  if (!name || !email || !phone || !location || !role || !experience || !consent) {
-    throw new Error("Complete all required application fields.");
+  try {
+    await protectPublicIntake({
+      formType: "career",
+      action: "career_application",
+      token: text(formData, "cf-turnstile-response"),
+      honeypot: text(formData, "website"),
+      values: [name, email, phone, location, role, experience],
+    });
+  } catch (err) {
+    const code = err instanceof PublicIntakeError ? err.code : "bot-check";
+    redirect(`${reopen}&error=${encodeURIComponent(code)}`);
   }
 
-  const cv = await readCv(formData);
+  if (!name || !email || !phone || !location || !role || !experience || !consent) {
+    redirect(`${reopen}&error=validation`);
+  }
+
+  let cv: EmailAttachment;
+  try {
+    cv = await readCv(formData);
+  } catch (err) {
+    const code = err instanceof CvError ? err.code : "missing-cv";
+    redirect(`${reopen}&error=${encodeURIComponent(code)}`);
+  }
+
   const submissionId = crypto.randomUUID();
 
   const applicantResult = await sendTransactionalEmail({
@@ -111,7 +130,7 @@ export async function submitCareerApplicationAction(formData: FormData) {
   });
 
   if (!applicantResult.ok) {
-    throw new Error("We could not confirm your application. Please try again.");
+    redirect(`${reopen}&error=email-failed`);
   }
 
   await sendToGroup({
@@ -145,25 +164,30 @@ export async function submitSupplierEnquiryAction(formData: FormData) {
   const relationship =
     text(formData, "relationshipType") || text(formData, "relationship");
 
-  await protectPublicIntake({
-    formType: "supplier",
-    action: "supplier_enquiry",
-    token: text(formData, "cf-turnstile-response"),
-    honeypot: text(formData, "website"),
-    values: [
-      business,
-      name,
-      phone,
-      email,
-      location,
-      products,
-      capacity,
-      relationship,
-    ],
-  });
+  try {
+    await protectPublicIntake({
+      formType: "supplier",
+      action: "supplier_enquiry",
+      token: text(formData, "cf-turnstile-response"),
+      honeypot: text(formData, "website"),
+      values: [
+        business,
+        name,
+        phone,
+        email,
+        location,
+        products,
+        capacity,
+        relationship,
+      ],
+    });
+  } catch (err) {
+    const code = err instanceof PublicIntakeError ? err.code : "bot-check";
+    redirect(`/supplier-partners?error=${encodeURIComponent(code)}`);
+  }
 
   if (!business || !name || !phone || !location || !products) {
-    throw new Error("Complete the required supplier enquiry fields.");
+    redirect("/supplier-partners?error=validation");
   }
 
   const submissionId = crypto.randomUUID();

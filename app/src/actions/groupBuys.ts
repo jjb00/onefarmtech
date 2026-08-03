@@ -151,7 +151,7 @@ export async function createGroupBuyProposalAction(formData: FormData) {
   const message = readText(formData, "message");
 
   if (!buyerName || !phone || !productName || targetQuantity <= 0) {
-    throw new Error("Your name, phone, item, and target quantity are required.");
+    redirect("/group-buy-request?intakeError=validation");
   }
 
   try {

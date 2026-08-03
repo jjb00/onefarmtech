@@ -6,7 +6,9 @@ import BuyerLoginModal from "@/components/BuyerLoginModal";
 import {createBuyerAccountRequestAction} from "@/actions/createAdminRecords";
 import {buyerAccountTypeOptions, estimatedSpendOptions, orderFrequencyOptions} from "@/lib/formOptions";
 import PublicFooter from "@/components/PublicFooter";
+import TurnstileWidget from "@/components/TurnstileWidget";
 import {buyerPhoneCountryOptions} from "@/lib/phoneNumbers";
+import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
 import {publicPageMetadata} from "@/lib/publicSeo";
 
 const buyerLoginMessages: Record<string, string> = {
@@ -24,12 +26,17 @@ export const metadata = publicPageMetadata("/buyer-account-request");
 export default async function BuyerAccountRequestPage({
   searchParams,
 }: {
-  searchParams?: Promise<{submitted?: string; buyerLogin?: string}>;
+  searchParams?: Promise<{submitted?: string; buyerLogin?: string; error?: string}>;
 }) {
   const params = await searchParams;
   const submitted = params?.submitted === "1";
   const buyerLoginMessage = params?.buyerLogin
     ? buyerLoginMessages[params.buyerLogin]
+    : null;
+  const intakeError = params?.error
+    ? params.error === "validation"
+      ? "Contact name and phone are required."
+      : publicIntakeErrorMessage(params.error)
     : null;
 
   return (
@@ -147,6 +154,7 @@ export default async function BuyerAccountRequestPage({
                 {buyerLoginMessage}
               </div>
             ) : null}
+            {intakeError ? <p role="alert" className="mt-3 rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">{intakeError}</p> : null}
 
             {submitted ? (
               <p className="mt-3 rounded-2xl bg-[#3E7A4C]/10 p-4 text-sm font-bold leading-7 text-[#1f7a3f]">
@@ -159,6 +167,7 @@ Your account request has been received. We’ll review your details and get back
             )}
 
             <div className="mt-6 grid gap-4">
+              <label className="absolute left-[-10000px] top-auto h-px w-px overflow-hidden" aria-hidden="true">Website<input name="website" tabIndex={-1} autoComplete="off" /></label>
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
                 Contact name
                 <input
@@ -332,12 +341,7 @@ Your account request has been received. We’ll review your details and get back
                 />
               </label>
 
-              <button
-                type="submit"
-                className="oft-primary-button rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
-              >
-                Submit account request
-              </button>
+              <TurnstileWidget key={intakeError || "ready"} action="buyer_account_request" idleLabel="Submit account request" pendingLabel="Submitting…" />
             </div>
           </form>
         </section>

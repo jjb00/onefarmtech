@@ -258,10 +258,15 @@ export default async function CareersPage({
   const selectedRole = String(params?.role || "").trim();
   const showApplication = params?.apply === "1" && Boolean(selectedRole);
   const submitted = params?.submitted === "1";
+  const careerErrorMessages: Record<string, string> = {
+    validation: "Complete every required field and confirm your consent.",
+    "missing-cv": "Please attach your CV.",
+    "cv-too-large": "Your CV must be 5MB or smaller.",
+    "cv-invalid-type": "Upload your CV as a PDF, DOC or DOCX file.",
+    "email-failed": "We could not confirm your application. Please try again.",
+  };
   const errorMessage = params?.error
-    ? params.error === "validation"
-      ? "Complete every required field and confirm your consent."
-      : publicIntakeErrorMessage(params.error)
+    ? careerErrorMessages[params.error] || publicIntakeErrorMessage(params.error)
     : null;
 
   const filtered = roles.filter((role) => {
