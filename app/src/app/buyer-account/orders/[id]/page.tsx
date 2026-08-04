@@ -301,7 +301,17 @@ export default async function BuyerOrderDetailPage({
                 order.receipts.map((receipt) => (
                   <div key={receipt.id} className="flex items-center justify-between gap-3 text-sm">
                     <span className="font-bold text-[#102015]">{receipt.code}</span>
-                    <BuyerMessageStatusPill status={receipt.status} />
+                    <div className="flex items-center gap-2">
+                      <BuyerMessageStatusPill status={receipt.status} />
+                      <a
+                        href={`/api/receipts/${receipt.id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white hover:bg-[#155c2f]"
+                      >
+                        PDF
+                      </a>
+                    </div>
                   </div>
                 ))
               )}

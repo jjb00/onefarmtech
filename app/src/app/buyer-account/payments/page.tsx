@@ -350,6 +350,14 @@ export default async function BuyerPaymentsPage() {
                       <BuyerMessageStatusPill status={receipt.status} />
                     </div>
                   </div>
+                  <a
+                    href={`/api/receipts/${receipt.id}/pdf`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-3 inline-flex rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white hover:bg-[#155c2f]"
+                  >
+                    Download receipt (PDF)
+                  </a>
                 </div>
               ))
             )}

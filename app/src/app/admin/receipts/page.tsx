@@ -178,6 +178,7 @@ export default async function ReceiptsPage({searchParams}: ReceiptsPageProps) {
                   <th className="px-4 py-3">Amount</th>
                   <th className="px-4 py-3">Issued</th>
                   <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Download</th>
                 </tr>
               </thead>
 
@@ -201,12 +202,22 @@ export default async function ReceiptsPage({searchParams}: ReceiptsPageProps) {
                         {receipt.status}
                       </AdminStatusPill>
                     </td>
+                    <td className="px-4 py-3">
+                      <a
+                        href={`/api/receipts/${receipt.id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-full border border-[#1f7a3f]/20 px-3 py-1.5 text-xs font-black text-[#1f7a3f] hover:bg-[#f3f8ef]"
+                      >
+                        PDF
+                      </a>
+                    </td>
                   </tr>
                 ))}
 
                 {!sorted.length ? (
                   <tr>
-                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={6}>
+                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={7}>
                       No receipts match this view.
                     </td>
                   </tr>
