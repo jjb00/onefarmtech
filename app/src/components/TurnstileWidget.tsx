@@ -32,6 +32,13 @@ export default function TurnstileWidget({action, idleLabel, pendingLabel}: {acti
       sitekey: siteKey,
       action,
       theme: "light",
+      // Turnstile creates its own hidden cf-turnstile-response input inside
+      // the container by default. We already render our own, bound to
+      // React state via the callback below -- two inputs sharing that name
+      // means form submission reads whichever one the browser happens to
+      // serialize first, and the extra DOM node Turnstile inserts into a
+      // React-managed subtree fights with React's own reconciliation of it.
+      "response-field": false,
       callback: (nextToken: string) => setToken(nextToken),
       "expired-callback": () => setToken(""),
       "timeout-callback": () => setToken(""),
