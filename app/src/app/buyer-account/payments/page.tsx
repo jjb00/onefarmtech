@@ -246,7 +246,7 @@ export default async function BuyerPaymentsPage() {
                   </p>
                 </div>
 
-                {request.paymentUrl ? (
+                {request.paymentUrl && request.status !== "Paid" ? (
                   <a
                     href={request.paymentUrl}
                     className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"

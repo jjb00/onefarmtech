@@ -234,7 +234,7 @@ export default async function BuyerOrderDetailPage({
                 </p>
                 <p>Amount: {formatNaira(latestPaymentRequest.amount)}</p>
                 <p>Provider: {latestPaymentRequest.provider}</p>
-                {latestPaymentRequest.paymentUrl ? (
+                {latestPaymentRequest.paymentUrl && latestPaymentRequest.status !== "Paid" ? (
                   <a
                     href={latestPaymentRequest.paymentUrl}
                     className="inline-flex rounded-full bg-[#1f7a3f] px-5 py-3 text-sm font-black text-white hover:bg-[#155c2f]"
