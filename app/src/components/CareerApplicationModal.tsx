@@ -185,6 +185,20 @@ export default function CareerApplicationModal({
               </label>
             </div>
 
+            <label className="grid gap-2 text-sm font-semibold">
+              CV
+              <input
+                name="cv"
+                type="file"
+                required
+                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                className="min-h-12 rounded-xl border bg-white px-4 py-3 font-normal file:mr-4 file:rounded-full file:border-0 file:bg-[#eaf4e7] file:px-4 file:py-2 file:font-bold file:text-[#1f7a3f]"
+              />
+              <span className="text-xs font-normal text-[#587063]">
+                PDF, DOC or DOCX. Maximum 5MB.
+              </span>
+            </label>
+
             <TurnstileWidget
               action="career_application"
               idleLabel="Submit application"
@@ -200,20 +214,6 @@ export default function CareerApplicationModal({
             Return to careers
           </button>
         )}
-
-        <label className="grid gap-2 text-sm font-semibold">
-          CV
-          <input
-            name="cv"
-            type="file"
-            required
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            className="min-h-12 rounded-xl border bg-white px-4 py-3 font-normal file:mr-4 file:rounded-full file:border-0 file:bg-[#eaf4e7] file:px-4 file:py-2 file:font-bold file:text-[#1f7a3f]"
-          />
-          <span className="text-xs font-normal text-[#587063]">
-            PDF, DOC or DOCX. Maximum 5MB.
-          </span>
-        </label>
       </div>
     </div>
   );
