@@ -75,20 +75,20 @@ body {
   animation: oftSoftPulse 5.5s ease-in-out infinite;
 }
 
-@keyframes oftCursorBlink {
-  0%, 45% {
-    opacity: 1;
-  }
-  50%, 95% {
+@keyframes oftBadgeFade {
+  from {
     opacity: 0;
+    transform: translateY(3px);
   }
-  100% {
+  to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.oft-hero-badge-cursor {
-  animation: oftCursorBlink 1s step-end infinite;
+.oft-hero-badge-fade {
+  display: inline-block;
+  animation: oftBadgeFade 500ms ease-out both;
 }
 
 @keyframes oftOrbDrift {
@@ -227,7 +227,7 @@ body {
   .oft-fade-up-delay-2,
   .oft-fade-up-delay-3,
   .oft-fade-up-delay-4,
-  .oft-hero-badge-cursor,
+  .oft-hero-badge-fade,
   .oft-soft-pulse,
   .oft-orb-drift,
   .oft-orb-drift-delay,
