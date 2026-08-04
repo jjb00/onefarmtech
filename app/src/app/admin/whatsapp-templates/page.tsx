@@ -97,7 +97,7 @@ export default async function WhatsAppTemplatesPage({
           <form action={submitWhatsAppTemplateAction} className="mt-4 grid gap-4">
             <input type="hidden" name="name" value={preset.name} />
             <input type="hidden" name="category" value={preset.category} />
-            <input type="hidden" name="language" value="en" />
+            <input type="hidden" name="language" value="en_US" />
 
             <label className="grid gap-2 text-sm font-black text-[#102015]">
               Body text ({"{{1}}"}, {"{{2}}"}... are filled in per message)

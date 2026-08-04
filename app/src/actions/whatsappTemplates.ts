@@ -16,7 +16,7 @@ export async function submitWhatsAppTemplateAction(formData: FormData) {
 
   const name = readText(formData, "name").toLowerCase().replace(/[^a-z0-9_]/g, "_");
   const category = readText(formData, "category") || "UTILITY";
-  const language = readText(formData, "language") || "en";
+  const language = readText(formData, "language") || "en_US";
   const bodyText = readText(formData, "bodyText");
   const bodyExamples = readText(formData, "bodyExamples")
     .split("\n")

@@ -85,10 +85,12 @@ export async function createWhatsAppTemplate(input: {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    throw new WhatsAppProviderError(payload?.error?.message || `Failed to create WhatsApp template (HTTP ${response.status}).`, {
+    const details = payload?.error?.error_data?.details;
+    const message = payload?.error?.message || `Failed to create WhatsApp template (HTTP ${response.status}).`;
+    throw new WhatsAppProviderError(details ? `${message} -- ${details}` : message, {
       httpStatus: response.status,
       code: Number(payload?.error?.code) || undefined,
-      providerDetails: payload?.error?.error_data?.details || undefined,
+      providerDetails: details || undefined,
     });
   }
 
