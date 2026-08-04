@@ -211,10 +211,10 @@ test("public forms use their intended storage and notification paths", () => {
   assert.match(actions, /buyerAccountRequest\.create/);
   assert.match(actions, /orderRequest\.create/);
   assert.match(actions, /groupBuyInterest/);
+  assert.match(actions, /contactEnquiry\.create/);
 
-  assert.doesNotMatch(actions, /contactEnquiry\.create/);
-  assert.doesNotMatch(publicApplications, /careerApplication\.create/);
-  assert.doesNotMatch(publicApplications, /contactEnquiry\.create/);
+  assert.match(publicApplications, /careerApplication\.create/);
+  assert.match(publicApplications, /contactEnquiry\.create/);
 
   assert.match(publicApplications, /sendTransactionalEmail/);
   assert.match(publicApplications, /attachments: \[cv\]/);

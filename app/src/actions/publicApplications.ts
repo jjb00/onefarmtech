@@ -9,6 +9,9 @@ import {
 } from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
+import {prisma} from "@/lib/prisma";
+import {requireCapability} from "@/lib/auth";
+import * as Sentry from "@sentry/nextjs";
 
 class CvError extends Error {
   constructor(public code: "missing-cv" | "cv-too-large" | "cv-invalid-type") {
@@ -122,31 +125,48 @@ export async function submitCareerApplicationAction(formData: FormData) {
 
   const submissionId = crypto.randomUUID();
 
-  const applicantResult = await sendTransactionalEmail({
-    deduplicationKey: `career-ack:${submissionId}:${email}`,
-    template: "career-acknowledgement",
-    to: email,
-    content: emailTemplates.careerAcknowledgement(name, role),
+  // Persisting is what actually protects an inbound application -- the
+  // acknowledgement and internal-notification emails below are best-effort
+  // on top of it, not the source of truth. An email provider hiccup used to
+  // mean the whole application vanished with no record anywhere; now the
+  // applicant's details are safe in the database regardless of what happens
+  // to either email.
+  await prisma.careerApplication.create({
+    data: {name, email, phone, location, role, experience, consent},
   });
 
-  if (!applicantResult.ok) {
-    redirect(`${reopen}&error=email-failed`);
+  try {
+    const applicantResult = await sendTransactionalEmail({
+      deduplicationKey: `career-ack:${submissionId}:${email}`,
+      template: "career-acknowledgement",
+      to: email,
+      content: emailTemplates.careerAcknowledgement(name, role),
+    });
+    if (!applicantResult.ok) {
+      Sentry.captureMessage("career-application-acknowledgement-email-failed", {extra: {email, role}});
+    }
+  } catch (error) {
+    Sentry.captureException(error, {tags: {component: "career-application-acknowledgement-email"}, extra: {email, role}});
   }
 
-  await sendToGroup({
-    group: "careers",
-    deduplicationPrefix: `career-admin:${submissionId}`,
-    template: "career-admin",
-    content: emailTemplates.careerAdminEmail({
-      name,
-      email,
-      phone,
-      location,
-      role,
-      experience,
-    }),
-    attachments: [cv],
-  });
+  try {
+    await sendToGroup({
+      group: "careers",
+      deduplicationPrefix: `career-admin:${submissionId}`,
+      template: "career-admin",
+      content: emailTemplates.careerAdminEmail({
+        name,
+        email,
+        phone,
+        location,
+        role,
+        experience,
+      }),
+      attachments: [cv],
+    });
+  } catch (error) {
+    Sentry.captureException(error, {tags: {component: "career-application-admin-notification"}, extra: {email, role}});
+  }
 
   redirect("/careers?applied=1");
 }
@@ -192,30 +212,57 @@ export async function submitSupplierEnquiryAction(formData: FormData) {
 
   const submissionId = crypto.randomUUID();
 
+  // Same as the career application fix: persist first, treat both emails as
+  // best-effort. There was no database record for a supplier enquiry at
+  // all before this -- an email hiccup meant the enquiry was just gone.
+  await prisma.contactEnquiry.create({
+    data: {
+      name,
+      organisation: business,
+      email: email || null,
+      phone,
+      enquiryType: "Supplier partnership",
+      message: [
+        `Products: ${products}`,
+        capacity ? `Capacity: ${capacity}` : null,
+        relationship ? `Preferred relationship: ${relationship}` : null,
+      ].filter(Boolean).join("\n"),
+      source: "Supplier partners page",
+    },
+  });
+
   if (email) {
-    await sendTransactionalEmail({
-      deduplicationKey: `supplier-ack:${submissionId}:${email}`,
-      template: "supplier-acknowledgement",
-      to: email,
-      content: emailTemplates.supplierAcknowledgement(name),
-    });
+    try {
+      await sendTransactionalEmail({
+        deduplicationKey: `supplier-ack:${submissionId}:${email}`,
+        template: "supplier-acknowledgement",
+        to: email,
+        content: emailTemplates.supplierAcknowledgement(name),
+      });
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "supplier-enquiry-acknowledgement-email"}, extra: {email}});
+    }
   }
 
-  await sendToGroup({
-    group: "supplier",
-    deduplicationPrefix: `supplier-admin:${submissionId}`,
-    template: "supplier-admin",
-    content: emailTemplates.supplierAdminEmail({
-      business,
-      name,
-      phone,
-      email,
-      location,
-      products,
-      capacity,
-      relationship,
-    }),
-  });
+  try {
+    await sendToGroup({
+      group: "supplier",
+      deduplicationPrefix: `supplier-admin:${submissionId}`,
+      template: "supplier-admin",
+      content: emailTemplates.supplierAdminEmail({
+        business,
+        name,
+        phone,
+        email,
+        location,
+        products,
+        capacity,
+        relationship,
+      }),
+    });
+  } catch (error) {
+    Sentry.captureException(error, {tags: {component: "supplier-enquiry-admin-notification"}, extra: {business, email}});
+  }
 
   redirect("/supplier-partners?submitted=1");
 }
@@ -230,5 +277,25 @@ export async function createCareerApplicationAction(formData: FormData) {
 
 export async function createSupplierEnquiryAction(formData: FormData) {
   return submitSupplierEnquiryAction(formData);
+}
+
+export async function updateCareerApplicationStatusAction(formData: FormData) {
+  await requireCapability("manage_communications");
+  const {revalidatePath} = await import("next/cache");
+
+  const id = text(formData, "id");
+  const status = text(formData, "status");
+  const adminNote = text(formData, "adminNote");
+
+  if (!id || !status) {
+    throw new Error("Application ID and status are required.");
+  }
+
+  await prisma.careerApplication.update({
+    where: {id},
+    data: {status, adminNote: adminNote || null},
+  });
+
+  revalidatePath("/admin/career-applications");
 }
 

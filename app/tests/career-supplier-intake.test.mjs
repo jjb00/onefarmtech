@@ -5,7 +5,7 @@ import test from "node:test";
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("career role is preserved into the protected email-first application", () => {
+test("career role is preserved into the protected, database-backed application", () => {
   const careers = read("src/app/careers/page.tsx");
   const modal = read("src/components/CareerApplicationModal.tsx");
   const action = read("src/actions/publicApplications.ts");
@@ -18,7 +18,7 @@ test("career role is preserved into the protected email-first application", () =
   assert.match(action, /action: "career_application"/);
   assert.match(action, /attachments: \[cv\]/);
   assert.match(action, /careerAdminEmail/);
-  assert.doesNotMatch(action, /careerApplication\.create/);
+  assert.match(action, /careerApplication\.create/);
 });
 
 test("legacy career application links redirect into the modal", () => {
@@ -31,7 +31,7 @@ test("legacy career application links redirect into the modal", () => {
   );
 });
 
-test("supplier enquiries are protected and delivered by email", () => {
+test("supplier enquiries are protected, persisted and delivered by email", () => {
   const action = read("src/actions/publicApplications.ts");
   const page = read("src/app/supplier-partners/page.tsx");
 
@@ -39,7 +39,7 @@ test("supplier enquiries are protected and delivered by email", () => {
   assert.match(action, /action: "supplier_enquiry"/);
   assert.match(action, /group: "supplier"/);
   assert.match(action, /supplierAdminEmail/);
-  assert.doesNotMatch(action, /contactEnquiry\.create/);
+  assert.match(action, /contactEnquiry\.create/);
 });
 
 test("career email contains full details and CV without persistent CV storage", () => {

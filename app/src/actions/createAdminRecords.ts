@@ -13,6 +13,7 @@ import {createAuditLog} from "@/lib/auditLog";
 import {requireAnyCapability, requireCapability, requireStaff} from "@/lib/auth";
 import {getEmailBaseUrl, getOperationalEmailRecipients, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
+import * as Sentry from "@sentry/nextjs";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
 import {OrderRequestConversionError, convertOrderRequestIntegrity} from "@/lib/orderRequestConversion.js";
 import {
@@ -938,38 +939,62 @@ export async function createContactEnquiryAction(formData: FormData) {
 
   const submissionId = crypto.randomUUID();
 
+  // Persist first, same fix as the careers and supplier forms: this used to
+  // be pure email with no database record, so an email-provider hiccup
+  // meant the enquiry was just gone with nothing to follow up on.
+  await prisma.contactEnquiry.create({
+    data: {
+      name,
+      organisation: organisation || null,
+      email: email || null,
+      phone: phone || null,
+      enquiryType: enquiryType || "General enquiry",
+      message,
+      source: "Contact page",
+    },
+  });
+
   if (email) {
-    await sendTransactionalEmail({
-      deduplicationKey: `contact-ack:${submissionId}:${email}`,
-      template: "contact-acknowledgement",
-      to: email,
-      content: emailTemplates.contactAcknowledgement(name),
-    });
+    try {
+      await sendTransactionalEmail({
+        deduplicationKey: `contact-ack:${submissionId}:${email}`,
+        template: "contact-acknowledgement",
+        to: email,
+        content: emailTemplates.contactAcknowledgement(name),
+      });
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "contact-enquiry-acknowledgement-email"}, extra: {email}});
+    }
   }
 
-  const recipients = getOperationalEmailRecipients("contact");
-  if (!recipients.length) {
-    throw new Error("No contact enquiry email recipient is configured.");
-  }
+  try {
+    const recipients = getOperationalEmailRecipients("contact");
+    if (!recipients.length) {
+      throw new Error("No contact enquiry email recipient is configured.");
+    }
 
-  await Promise.all(
-    recipients.map((recipient) =>
-      sendTransactionalEmail({
-        deduplicationKey: `contact-admin:${submissionId}:${recipient}`,
-        template: "contact-admin",
-        to: recipient,
-        content: emailTemplates.contactAdminEmail({
-          name,
-          organisation,
-          email,
-          phone,
-          enquiryType,
-          message,
+    await Promise.all(
+      recipients.map((recipient) =>
+        sendTransactionalEmail({
+          deduplicationKey: `contact-admin:${submissionId}:${recipient}`,
+          template: "contact-admin",
+          to: recipient,
+          content: emailTemplates.contactAdminEmail({
+            name,
+            organisation,
+            email,
+            phone,
+            enquiryType,
+            message,
+          }),
         }),
-      }),
-    ),
-  );
+      ),
+    );
+  } catch (error) {
+    Sentry.captureException(error, {tags: {component: "contact-enquiry-admin-notification"}, extra: {email, enquiryType}});
+  }
 
+  revalidatePath("/admin/contact-enquiries");
   redirect("/contact?submitted=1");
 }
 

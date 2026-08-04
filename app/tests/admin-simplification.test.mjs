@@ -117,11 +117,11 @@ test("primary admin shell remains responsive and accessible", () => {
   assert.match(header, /<h1/);
 });
 
-test("future careers and supplier submissions remain email-first", () => {
+test("careers and supplier submissions are database-backed with best-effort email", () => {
   const actions = read("src/actions/publicApplications.ts");
 
-  assert.doesNotMatch(actions, /careerApplication\.create/);
-  assert.doesNotMatch(actions, /contactEnquiry\.create/);
+  assert.match(actions, /careerApplication\.create/);
+  assert.match(actions, /contactEnquiry\.create/);
   assert.match(
     actions,
     /EMAIL_CAREERS_RECIPIENTS|getOperationalEmailRecipients/
