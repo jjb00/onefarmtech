@@ -226,7 +226,7 @@ export default async function ContactPage({
                 />
               </label>
 
-              <TurnstileWidget key={intakeError || "ready"} action="contact" idleLabel="Submit enquiry" pendingLabel="Sending…" />
+              <TurnstileWidget key={intakeError || "ready"} action="contact_enquiry" idleLabel="Submit enquiry" pendingLabel="Sending…" />
 
               <p className="text-xs leading-6 text-[#587063]">
                 Enquiries are reviewed manually. For urgent buyer support, use the
