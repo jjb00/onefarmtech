@@ -18,6 +18,7 @@ export default async function BuyerProfilePage({
   const unreadMessageCount = await prisma.buyerMessage.count({
     where: {
       customerId: customer.id,
+      relatedType: {not: "WhatsAppInbound"},
       OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
     },
   });

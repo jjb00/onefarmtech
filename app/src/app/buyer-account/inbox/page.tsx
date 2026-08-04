@@ -40,6 +40,11 @@ export default async function BuyerInboxPage() {
     prisma.buyerMessage.findMany({
       where: {
         customerId: buyer.customerId,
+        // "WhatsAppInbound" is the raw, unfiltered log of every message the
+        // buyer sends the ordering bot -- menu picks, item names, "1" for a
+        // quantity, and so on. It's a full account of the conversation for
+        // staff, not something a buyer needs echoed back as an inbox item.
+        relatedType: {not: "WhatsAppInbound"},
         ...(buyer.canViewReceipts ? {} : {
           OR: [
             {relatedType: null},
@@ -53,6 +58,7 @@ export default async function BuyerInboxPage() {
     prisma.buyerMessage.count({
       where: {
         customerId: buyer.customerId,
+        relatedType: {not: "WhatsAppInbound"},
         OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
       },
     }),

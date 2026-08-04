@@ -77,6 +77,7 @@ export default async function BuyerOrderDetailPage({
     prisma.buyerMessage.count({
       where: {
         customerId: buyer.customerId,
+        relatedType: {not: "WhatsAppInbound"},
         OR: [{readAt: null}, {status: {in: ["Unread", "Prepared", "Sent"]}}],
       },
     }),
