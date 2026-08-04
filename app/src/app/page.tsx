@@ -162,8 +162,8 @@ export default async function HomePage() {
 
           <div className="grid gap-10 py-14 lg:grid-cols-[1fr_0.92fr] lg:items-center lg:py-20">
             <section>
-              <div className="oft-fade-up inline-flex items-center gap-2 rounded-full border border-[#1f7a3f]/15 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f] shadow-sm backdrop-blur">
-                <span className="h-2 w-2 rounded-full bg-[#F2B84B]" />
+              <div className="oft-fade-up inline-flex items-center gap-3 rounded-full border border-[#1f7a3f]/20 bg-white px-6 py-3 text-base font-black uppercase tracking-[0.14em] text-[#1f7a3f] shadow-md backdrop-blur">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#F2B84B]" />
                 <HeroRotatingBadge />
               </div>
 
