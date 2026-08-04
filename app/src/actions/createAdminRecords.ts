@@ -3085,7 +3085,7 @@ export async function updateAdminOrderControlAction(formData: FormData) {
     redirect("/admin/orders?error=missing-order");
   }
 
-  const existingOrder = await prisma.order.findUnique({where: {id: orderId}, select: {deliveryMethod: true, paymentStatus: true, fulfilmentStatus: true}});
+  const existingOrder = await prisma.order.findUnique({where: {id: orderId}, select: {code: true, phone: true, sourcePhone: true, customerId: true, deliveryMethod: true, paymentStatus: true, fulfilmentStatus: true}});
   if (!existingOrder) redirect("/admin/orders?error=order-not-found");
   if (paymentStatus && paymentStatus !== existingOrder.paymentStatus) await requireCapability("manage_payments");
   if (fulfilmentStatus && fulfilmentStatus !== existingOrder.fulfilmentStatus) await requireCapability("manage_fulfilment");
@@ -3103,12 +3103,55 @@ export async function updateAdminOrderControlAction(formData: FormData) {
     },
   });
 
+  // A fulfilment status change is exactly the kind of update a buyer who
+  // ordered over WhatsApp expects to hear about there -- not something
+  // they only find out about if they happen to log into the web portal.
+  const fulfilmentChanged = Boolean(fulfilmentStatus) && fulfilmentStatus !== existingOrder.fulfilmentStatus;
+  const recipientPhone = existingOrder.sourcePhone || existingOrder.phone;
+
+  if (fulfilmentChanged && recipientPhone) {
+    try {
+      const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+      const result = await sendWhatsAppTextMessage({
+        to: recipientPhone,
+        body: `Update on order ${existingOrder.code}: ${fulfilmentStatus}.\n\nReply "menu" any time for options.`,
+      });
+
+      // Guest/walk-in orders have no linked Customer, and BuyerMessage
+      // requires one -- the WhatsApp send above already reached the buyer
+      // either way, this just skips the portal-inbox log for those orders.
+      if (existingOrder.customerId) {
+        await prisma.buyerMessage.create({
+          data: {
+            customerId: existingOrder.customerId,
+            title: `Fulfilment update: ${fulfilmentStatus}`,
+            body: `Order ${existingOrder.code} fulfilment status changed to "${fulfilmentStatus}".`,
+            channel: "WhatsApp",
+            direction: "Outbound",
+            status: result.messageId ? "Sent" : "Failed",
+            recipient: recipientPhone,
+            source: "Admin order detail",
+            relatedType: "Order",
+            relatedId: orderId,
+            sentAt: result.messageId ? new Date() : undefined,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("fulfilment-status-whatsapp-notify-failed", {
+        orderId,
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
   revalidatePath("/admin/orders");
   revalidatePath(`/admin/orders/${orderId}`);
   revalidatePath("/admin/payments");
   revalidatePath("/admin/deliveries");
   revalidatePath("/buyer-account/orders");
   revalidatePath(`/buyer-account/orders/${orderId}`);
+  revalidatePath("/buyer-account/inbox");
 
   redirect(`/admin/orders/${orderId}?updated=1`);
 }
