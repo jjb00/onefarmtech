@@ -85,34 +85,6 @@ export default async function BuyerAccountPage({
         </div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {buyer.canPlaceOrders ? <ActionCard
-          title="Place buyer order"
-          body="Send a fresh produce request linked to this account."
-          href="/buyer-account/order"
-          label="New order"
-          primary
-        /> : null}
-        {buyer.canViewReceipts ? <ActionCard
-          title="Payments and receipts"
-          body="Open payment requests, confirmed payments and receipt records."
-          href="/buyer-account/payments"
-          label="View payments"
-        /> : null}
-        <ActionCard
-          title="Inbox"
-          body="Read order, payment, receipt and account messages from OneFarmTech."
-          href="/buyer-account/inbox"
-          label={unreadMessageCount > 0 ? `${unreadMessageCount} unread` : "Open inbox"}
-        />
-        <ActionCard
-          title="Profile"
-          body="View company details, authorised contacts and request account changes."
-          href="/buyer-account/profile"
-          label="Open profile"
-        />
-      </section>
-
       <section className="grid gap-6 xl:grid-cols-2">
         <Panel title="Recent orders" href="/buyer-account/orders">
           <div className="grid gap-3">
@@ -189,43 +161,6 @@ function Metric({label, value}: {label: string; value: string}) {
       </p>
       <p className="mt-2 text-lg font-black text-[#102015]">{value}</p>
     </div>
-  );
-}
-
-function ActionCard({
-  title,
-  body,
-  href,
-  label,
-  primary = false,
-}: {
-  title: string;
-  body: string;
-  href: string;
-  label: string;
-  primary?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`rounded-[2rem] p-5 shadow-sm transition ${
-        primary
-          ? "bg-[#1f7a3f] text-white hover:bg-[#155c2f]"
-          : "bg-white text-[#102015] hover:bg-[#f3f8ef]"
-      }`}
-    >
-      <h3 className="text-xl font-black">{title}</h3>
-      <p className={`mt-2 text-sm leading-7 ${primary ? "text-white/80" : "text-[#405348]"}`}>
-        {body}
-      </p>
-      <span
-        className={`mt-4 inline-flex rounded-full px-5 py-3 text-sm font-black ${
-          primary ? "bg-white text-[#102015]" : "bg-[#1f7a3f] text-white"
-        }`}
-      >
-        {label}
-      </span>
-    </Link>
   );
 }
 
