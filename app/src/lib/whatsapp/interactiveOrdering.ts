@@ -327,9 +327,28 @@ export async function handleInteractiveOrderingMessage(input: {
     }
 
     if (interactiveReplyId === "menu_support") {
+      // "Talk to support" used to be a dead end -- a canned "someone will
+      // reach out" reply with no routing, even though a real-time order/
+      // payment answer was already one function call away. Try that first;
+      // only fall back to a human handoff for buyers with nothing to check.
+      const statusResult = await replyWithOrderStatus({to: from, customerId});
+      if (!statusResult.sent) {
+        await sendWhatsAppButtonsMessage({
+          to: from,
+          body: "How can we help?",
+          buttons: [
+            {id: "support_issue", title: "Report an issue"},
+            {id: "support_other", title: "Something else"},
+          ],
+        });
+      }
+      return {handled: true};
+    }
+
+    if (interactiveReplyId === "support_issue" || interactiveReplyId === "support_other") {
       await sendWhatsAppTextMessage({
         to: from,
-        body: "A team member will be with you shortly. You can describe your question now and we'll pick it up.",
+        body: "Got it -- describe what's going on and a team member will follow up here shortly.",
       });
       return {handled: true};
     }
