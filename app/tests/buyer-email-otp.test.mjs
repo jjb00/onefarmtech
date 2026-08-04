@@ -161,15 +161,14 @@ test("OTP email is delivered but redacted in stored delivery content", () => {
   assert.match(templates, /buyerLoginOtpStored/);
 });
 
-test("OTP UI has two accessible pending-safe steps, resend cooldown and legacy fallback", () => {
+test("OTP UI has two accessible pending-safe steps and a resend cooldown", () => {
   const modal = read("src/components/BuyerLoginModal.tsx");
   const resend = read("src/components/BuyerOtpResendButton.tsx");
   assert.match(modal, /action=\{requestBuyerOtpAction\}/);
   assert.match(modal, /action=\{verifyBuyerOtpAction\}/);
   assert.match(modal, /name="otp"/);
   assert.match(modal, /Email me a login code/);
-  assert.match(modal, /Have an access code from OneFarmTech\?/);
-  assert.match(modal, /action=\{buyerLoginAction\}/);
+  assert.doesNotMatch(modal, /action=\{buyerLoginAction\}/);
   assert.match(resend, /cooldownSeconds = 60/);
   assert.match(resend, /disabled=\{disabled\}/);
   assert.match(resend, /aria-disabled=\{disabled\}/);

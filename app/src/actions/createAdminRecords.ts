@@ -872,7 +872,7 @@ export async function createContactEnquiryAction(formData: FormData) {
   }
 
   if (enquiryType === "Buyer account request") {
-    if (!phone) {
+    if (!phone || !email) {
       redirect("/contact?intakeError=validation");
     }
 
@@ -1018,7 +1018,7 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   const interestedInCredit = readBoolean(formData, "interestedInCredit");
   const message = readText(formData, "message");
 
-  if (!contactName || !phone) {
+  if (!contactName || !phone || !email) {
     redirect("/buyer-account-request?error=validation");
   }
 
@@ -1449,26 +1449,15 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
         }
 
         if (result.request.preferredContact === "WhatsApp" && result.customer.phone) {
-          const invite = await prisma.buyerAccountInvite.create({
-            data: {
-              customerId: result.customer.id,
-              inviteCode: makeInviteCode(result.customer.name),
-              phone: result.customer.phone,
-              email: result.customer.email || null,
-              role: "Buyer user",
-              status: "Ready to send",
-              createdBy: staff.name,
-            },
-          });
-
-          // A failed attempt here (most commonly: no approved WhatsApp
-          // template configured yet) leaves the invite in "Ready to send"
-          // -- visible and retryable from the Buyer access page, not lost.
-          await deliverBuyerAccountInvite({
-            inviteId: invite.id,
-            channel: "whatsapp",
-            actorName: staff.name,
-            actorRole: staff.role,
+          // Login is email-OTP only now -- no access code to hand out, so
+          // this is just a heads-up telling them where to go. Best-effort:
+          // a plain-text send only reaches a phone with a recent chat
+          // session, same constraint as any other non-template WhatsApp
+          // message from this number.
+          const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+          await sendWhatsAppTextMessage({
+            to: result.customer.phone,
+            body: `Hi ${result.customer.name}, your OneFarmTech buyer account is approved. Sign in with your email at ${getEmailBaseUrl()}/buyer-login -- we'll email you a one-time code.`,
           });
         }
       } catch (notifyError) {

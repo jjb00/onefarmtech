@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import {useEffect, useRef, useState} from "react";
-import {buyerLoginAction} from "@/actions/auth";
 import {
   requestBuyerOtpAction,
   resendBuyerOtpAction,
@@ -172,20 +171,6 @@ export default function BuyerLoginModal({
                 />
               </form>
             )}
-
-            <details className="mt-5 rounded-2xl border border-[#101712]/10 bg-[#fbfff8] p-4">
-              <summary className="cursor-pointer text-sm font-black text-[#405348]">
-                Have an access code from OneFarmTech?
-              </summary>
-              <p className="mt-2 text-xs leading-6 text-[#587063]">
-                New buyer accounts get an access code by WhatsApp or email when approved. Use it here for your first sign-in. Already signed in before? Use the email code above instead.
-              </p>
-              <form action={buyerLoginAction} className="mt-4 grid gap-3">
-                <input name="buyerIdentifier" required autoComplete="username" placeholder="Email or phone" className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm" />
-                <input name="buyerAccessCode" type="password" required autoComplete="current-password" placeholder="Access code" className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm" />
-                <PendingSubmitButton label="Sign in with access code" pendingLabel="Signing in…" className="rounded-full border border-[#1f7a3f]/20 bg-white px-5 py-3 text-sm font-black text-[#1f7a3f] disabled:opacity-60" />
-              </form>
-            </details>
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4">
               <p className="text-xs font-black uppercase tracking-[0.18em] text-[#C95F3D]">

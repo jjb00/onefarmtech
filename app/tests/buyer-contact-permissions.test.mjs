@@ -3,7 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 const read = (path) => fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
 
-test("buyer login offers email OTP with legacy fallback and sessions bind authoritative BuyerContact permissions", () => {
+test("buyer login is email-OTP only and sessions bind authoritative BuyerContact permissions", () => {
   const page = read("src/app/buyer-login/page.tsx");
   const modal = read("src/components/BuyerLoginModal.tsx");
   const auth = read("src/actions/auth.ts");
@@ -11,9 +11,8 @@ test("buyer login offers email OTP with legacy fallback and sessions bind author
 
   assert.match(page, /BuyerLoginModal/);
   assert.match(page, /defaultOpen/);
-  assert.match(modal, /action=\{buyerLoginAction\}/);
   assert.match(modal, /action=\{requestBuyerOtpAction\}/);
-  assert.match(modal, /Have an access code from OneFarmTech\?/);
+  assert.doesNotMatch(modal, /action=\{buyerLoginAction\}/);
   assert.match(modal, /Request buyer account setup/);
   assert.match(auth, /contact: matchingContact/);
   assert.match(auth, /createBuyerSession/);

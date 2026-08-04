@@ -241,6 +241,7 @@ Your account request has been received. We’ll review your details and get back
                   <input
                     name="email"
                     type="email"
+                    required
                     className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 font-normal outline-none focus:border-[#1f7a3f]"
                     placeholder="name@example.com"
                   />
