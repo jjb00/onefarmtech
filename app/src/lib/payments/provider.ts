@@ -62,9 +62,13 @@ export async function createPaymentCheckout(
 ): Promise<PaymentCheckoutResult> {
   const provider = String(input.provider || "Manual").trim();
 
+  // Where the buyer's browser lands after paying on the provider's hosted
+  // page -- not where payment status gets confirmed (the webhook does
+  // that). This must be a page a buyer can actually reach; /admin/payments
+  // is staff-only and would just bounce every paying buyer to a login wall.
   const callbackPath =
     input.callbackPath ||
-    `/admin/payments?reference=${encodeURIComponent(input.reference)}`;
+    `/api/payments/return?reference=${encodeURIComponent(input.reference)}`;
 
   if (provider === "Paystack") {
     const checkout = await createPaystackCheckout({
