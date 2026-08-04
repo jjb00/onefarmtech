@@ -8,7 +8,7 @@ import {emailTemplates} from "@/lib/email/templates";
 import {validateFlutterwaveVerification} from "@/lib/payments/verificationRules";
 import {settleVerifiedFlutterwavePayment} from "@/lib/payments/flutterwaveSettlement.js";
 import {validateFlutterwaveWebhookPayment, verifyFlutterwaveWebhookSignature} from "@/lib/payments/flutterwaveWebhookRules.js";
-import {sendPaymentConfirmationWhatsApp} from "@/lib/whatsapp/statusReply";
+import {sendPaymentConfirmationWhatsApp, notifyAdminOfPaymentConfirmation} from "@/lib/whatsapp/statusReply";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
@@ -111,6 +111,12 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       Sentry.captureException(error, {tags: {component: "flutterwave-payment-confirmation-whatsapp"}, extra: {internalReference: paymentRequest.reference}});
       await createPaymentReconciliationIncident({provider: "Flutterwave", internalReference: paymentRequest.reference, providerReference: transactionId || txRef, reason: "Payment was verified and marked paid, but the WhatsApp confirmation failed to send.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+    }
+
+    try {
+      await notifyAdminOfPaymentConfirmation(paymentRequest.order, paymentRequest.amount);
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "flutterwave-admin-payment-alert"}, extra: {internalReference: paymentRequest.reference}});
     }
 
     if (paymentRequest.customerId) {

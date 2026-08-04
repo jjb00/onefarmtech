@@ -105,3 +105,29 @@ export async function sendPaymentConfirmationWhatsApp(order: {
 
   await sendWhatsAppTextMessage({to: order.phone, body});
 }
+
+/**
+ * Op alert to whoever is watching ADMIN_ALERT_WHATSAPP_NUMBER (unconfigured
+ * by default -- silently skipped until set). Sent as plain text, same as the
+ * buyer confirmation above, which means Meta only delivers it if that number
+ * has messaged the business WhatsApp number within the last 24 hours; there
+ * is no approved template backing this yet. Callers should treat a failure
+ * here as non-fatal -- it must never block settling the payment itself.
+ */
+export async function notifyAdminOfPaymentConfirmation(order: {
+  code: string;
+  buyerName: string;
+  phone: string;
+}, amount: number) {
+  const adminNumber = process.env.ADMIN_ALERT_WHATSAPP_NUMBER?.trim();
+  if (!adminNumber) return;
+
+  const body = [
+    `Payment confirmed ✅`,
+    `Order ${order.code} -- ${order.buyerName}`,
+    `Amount: ${formatWhatsAppNaira(amount)}`,
+    `Buyer: ${order.phone}`,
+  ].join("\n");
+
+  await sendWhatsAppTextMessage({to: adminNumber, body});
+}

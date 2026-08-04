@@ -8,7 +8,7 @@ import {emailTemplates} from "@/lib/email/templates";
 import {validatePaystackVerification} from "@/lib/payments/verificationRules";
 import {settleVerifiedPaystackPayment} from "@/lib/payments/paystackSettlement.js";
 import {validatePaystackWebhookPayment, verifyPaystackWebhookSignature} from "@/lib/payments/paystackWebhookRules.js";
-import {sendPaymentConfirmationWhatsApp} from "@/lib/whatsapp/statusReply";
+import {sendPaymentConfirmationWhatsApp, notifyAdminOfPaymentConfirmation} from "@/lib/whatsapp/statusReply";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
@@ -111,6 +111,12 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       Sentry.captureException(error, {tags: {component: "paystack-payment-confirmation-whatsapp"}, extra: {internalReference: paymentRequest.reference}});
       await createPaymentReconciliationIncident({provider: "Paystack", internalReference: paymentRequest.reference, providerReference: gatewayReference, reason: "Payment was verified and marked paid, but the WhatsApp confirmation failed to send.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+    }
+
+    try {
+      await notifyAdminOfPaymentConfirmation(paymentRequest.order, paymentRequest.amount);
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "paystack-admin-payment-alert"}, extra: {internalReference: paymentRequest.reference}});
     }
 
     if (paymentRequest.customerId) {
