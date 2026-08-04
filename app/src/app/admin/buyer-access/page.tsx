@@ -150,6 +150,13 @@ export default async function BuyerAccessPage({
       actionLabel="Open Buyers workspace"
     >
       <div className="grid gap-6">
+      <div className="rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-4 text-sm text-[#405348]">
+        WhatsApp delivery of access codes needs an approved Meta message template (WhatsApp only allows this outside an active chat window with an approved template). Manage or submit templates on the{" "}
+        <a href="/admin/whatsapp-templates" className="font-black text-[#1f7a3f] underline underline-offset-4">
+          WhatsApp templates
+        </a>{" "}
+        page.
+      </div>
       {deliveryMessage ? (
         <div
           role="status"
