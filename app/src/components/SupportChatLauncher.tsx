@@ -71,12 +71,17 @@ export default function SupportChatLauncher({
 
       {open ? (
         <div
-          className="fixed bottom-4 left-4 right-4 z-50 sm:left-auto sm:right-6 sm:w-[26rem]"
-          role="dialog"
-          aria-modal="false"
-          aria-label="OneFarmTech support chat"
+          className="fixed inset-0 z-50 bg-[#101712]/40"
+          onClick={() => setOpen(false)}
         >
-          <div className="max-h-[82vh] overflow-y-auto rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-2xl sm:p-6">
+          <div
+            className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-[26rem]"
+            role="dialog"
+            aria-modal="true"
+            aria-label="OneFarmTech support chat"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="max-h-[82vh] overflow-y-auto rounded-[2rem] border border-[#102015]/10 bg-white p-5 text-[#102015] shadow-2xl sm:p-6">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
@@ -134,6 +139,7 @@ export default function SupportChatLauncher({
               WhatsApp chatbot integration can be connected here without changing
               the buyer account page again.
             </div>
+          </div>
           </div>
         </div>
       ) : null}
