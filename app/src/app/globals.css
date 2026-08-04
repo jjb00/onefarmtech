@@ -75,6 +75,22 @@ body {
   animation: oftSoftPulse 5.5s ease-in-out infinite;
 }
 
+@keyframes oftBadgeCrossfade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.oft-hero-badge-rotate {
+  display: inline-block;
+  animation: oftBadgeCrossfade 420ms ease both;
+}
+
 @keyframes oftOrbDrift {
   0%, 100% {
     transform: translate3d(0, 0, 0) scale(1);
@@ -211,6 +227,7 @@ body {
   .oft-fade-up-delay-2,
   .oft-fade-up-delay-3,
   .oft-fade-up-delay-4,
+  .oft-hero-badge-rotate,
   .oft-soft-pulse,
   .oft-orb-drift,
   .oft-orb-drift-delay,

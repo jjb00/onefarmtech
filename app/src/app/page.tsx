@@ -3,6 +3,7 @@ import BrandMark from "@/components/BrandMark";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
+import HeroRotatingBadge from "@/components/HeroRotatingBadge";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
 import {publicPageMetadata} from "@/lib/publicSeo";
@@ -163,15 +164,16 @@ export default async function HomePage() {
             <section>
               <div className="oft-fade-up inline-flex items-center gap-2 rounded-full border border-[#1f7a3f]/15 bg-white/80 px-4 py-2 text-xs font-black uppercase tracking-[0.18em] text-[#1f7a3f] shadow-sm backdrop-blur">
                 <span className="h-2 w-2 rounded-full bg-[#F2B84B]" />
-                Fresh produce ordering, made simpler
+                <HeroRotatingBadge />
               </div>
 
               <h1 className="oft-fade-up-delay-1 mt-6 max-w-4xl text-5xl font-black tracking-tight text-[#101712] md:text-7xl">
-                Order fresh produce on WhatsApp — confirmed pricing, no guesswork.
+                Fresh food supply for buyers who need{" "}
+better prices, quality and reliability.
               </h1>
 
               <p className="oft-fade-up-delay-2 mt-6 max-w-2xl text-lg leading-8 text-[#1E2420]/75">
-                Send what you need on WhatsApp. We confirm availability and price before you pay, then you can track the order through to delivery or pickup.
+                Dependable supply, transparent pricing and reliable fulfilment for businesses and consumers
               </p>
 
               <div className="oft-fade-up-delay-3 mt-8 hidden flex-wrap items-center gap-3 md:flex">
