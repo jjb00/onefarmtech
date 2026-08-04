@@ -40,27 +40,16 @@ function BuyerNavLinks({unreadMessageCount = 0, canViewReceipts}: {unreadMessage
   );
 }
 
-function BuyerAccountActions({canPlaceOrders}: {canPlaceOrders: boolean}) {
+function SignOutButton() {
   return (
-    <div className="grid gap-2">
-      {canPlaceOrders ? (
-        <Link
-          href="/buyer-account/order"
-          className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
-        >
-          Place order
-        </Link>
-      ) : null}
-
-      <form action={buyerLogoutAction}>
-        <button
-          type="submit"
-          className="w-full rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] shadow-sm hover:bg-[#f3f8ef]"
-        >
-          Sign out
-        </button>
-      </form>
-    </div>
+    <form action={buyerLogoutAction}>
+      <button
+        type="submit"
+        className="w-full rounded-full border border-[#102015]/15 bg-white px-5 py-3 text-sm font-black text-[#102015] shadow-sm hover:bg-[#f3f8ef]"
+      >
+        Sign out
+      </button>
+    </form>
   );
 }
 
@@ -108,8 +97,16 @@ export default function BuyerPortalFrame({
                   Buyer menu
                 </p>
                 <BuyerNavLinks unreadMessageCount={unreadMessageCount} canViewReceipts={canViewReceipts} />
-                <div className="mt-3 border-t border-[#102015]/10 pt-3">
-                  <BuyerAccountActions canPlaceOrders={canPlaceOrders} />
+                <div className="mt-3 grid gap-2 border-t border-[#102015]/10 pt-3">
+                  {canPlaceOrders ? (
+                    <Link
+                      href="/buyer-account/order"
+                      className="rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+                    >
+                      Place order
+                    </Link>
+                  ) : null}
+                  <SignOutButton />
                 </div>
               </div>
             </details>
@@ -127,18 +124,22 @@ export default function BuyerPortalFrame({
             <h1 className="mt-2 text-2xl font-black">{customerName}</h1>
             <p className="mt-2 text-sm leading-7 text-[#405348]">{buyerType}</p>
 
+            {canPlaceOrders ? (
+              <Link
+                href="/buyer-account/order"
+                className="mt-5 block rounded-full bg-[#1f7a3f] px-5 py-3 text-center text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+              >
+                Place order
+              </Link>
+            ) : null}
+
             <div className="mt-5">
               <BuyerNavLinks unreadMessageCount={unreadMessageCount} canViewReceipts={canViewReceipts} />
             </div>
 
-            <details className="mt-5 rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-3">
-              <summary className="cursor-pointer text-sm font-black text-[#102015]">
-                Account actions
-              </summary>
-              <div className="mt-3">
-                <BuyerAccountActions canPlaceOrders={canPlaceOrders} />
-              </div>
-            </details>
+            <div className="mt-5 border-t border-[#102015]/10 pt-3">
+              <SignOutButton />
+            </div>
           </div>
         </aside>
 
