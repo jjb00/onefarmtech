@@ -85,11 +85,24 @@ export async function createWhatsAppTemplate(input: {
   const payload = await response.json().catch(() => null);
 
   if (!response.ok) {
-    const details = payload?.error?.error_data?.details;
-    const message = payload?.error?.message || `Failed to create WhatsApp template (HTTP ${response.status}).`;
-    throw new WhatsAppProviderError(details ? `${message} -- ${details}` : message, {
+    const error = payload?.error;
+    const details = error?.error_data?.details;
+    const message = error?.message || `Failed to create WhatsApp template (HTTP ${response.status}).`;
+    // A bare "Invalid parameter" with no error_data.details is unusual --
+    // Meta's template API is normally specific about which field is wrong.
+    // Surface everything we got back (code, subcode, type, trace id) so a
+    // failure can actually be diagnosed instead of guessed at again.
+    const diagnostics = [
+      details ? `details: ${details}` : null,
+      error?.code != null ? `code: ${error.code}` : null,
+      error?.error_subcode != null ? `subcode: ${error.error_subcode}` : null,
+      error?.type ? `type: ${error.type}` : null,
+      error?.fbtrace_id ? `trace: ${error.fbtrace_id}` : null,
+    ].filter(Boolean).join(" | ");
+    throw new WhatsAppProviderError(diagnostics ? `${message} (${diagnostics})` : message, {
       httpStatus: response.status,
-      code: Number(payload?.error?.code) || undefined,
+      code: Number(error?.code) || undefined,
+      subcode: Number(error?.error_subcode) || undefined,
       providerDetails: details || undefined,
     });
   }
