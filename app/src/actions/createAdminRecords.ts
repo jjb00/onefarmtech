@@ -1126,7 +1126,7 @@ export async function createBuyerPortalOrderAction(formData: FormData) {
   const message = readText(formData, "message");
 
   if (!items) {
-    throw new Error("Items and quantities are required.");
+    redirect("/buyer-account/order?error=validation");
   }
 
   const order = await prisma.order.create({
@@ -1213,7 +1213,7 @@ export async function createBuyerProfileUpdateRequestAction(formData: FormData) 
   const message = readText(formData, "message");
 
   if (!companyInfo && !buyingProfile && !financeInfo && !contactInfo && !documentsNote && !message) {
-    throw new Error("Please describe the update you want us to review.");
+    redirect("/buyer-account/profile?error=validation");
   }
 
   const request = await prisma.buyerProfileUpdateRequest.create({

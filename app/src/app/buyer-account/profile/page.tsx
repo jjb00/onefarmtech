@@ -7,8 +7,14 @@ import {prisma} from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function BuyerProfilePage() {
+export default async function BuyerProfilePage({
+  searchParams,
+}: {
+  searchParams?: Promise<{error?: string}>;
+}) {
   const {buyer, customer} = await requireBuyer();
+  const params = await searchParams;
+  const errorMessage = params?.error === "validation" ? "Add at least one detail before submitting your update request." : null;
   const unreadMessageCount = await prisma.buyerMessage.count({
     where: {
       customerId: customer.id,
@@ -92,7 +98,7 @@ export default async function BuyerProfilePage() {
       </section>
 
       <section className="rounded-[2rem] border border-[#102015]/10 bg-white/95 p-6 shadow-sm backdrop-blur">
-        <details>
+        <details open={Boolean(errorMessage)}>
           <summary className="cursor-pointer list-none">
             <div className="max-w-3xl">
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#C95F3D]">
@@ -104,6 +110,8 @@ export default async function BuyerProfilePage() {
               </p>
             </div>
           </summary>
+
+          {errorMessage ? <p role="alert" className="mt-4 rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">{errorMessage}</p> : null}
 
           <form action={createBuyerProfileUpdateRequestAction} className="mt-6 grid gap-4">
           <label className="grid gap-2 text-sm font-bold text-[#102015]">

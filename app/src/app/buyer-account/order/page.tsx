@@ -8,8 +8,14 @@ import {formatNaira} from "@/lib/format";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export default async function BuyerPortalOrderPage() {
+export default async function BuyerPortalOrderPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{error?: string}>;
+}) {
   const {buyer, customer} = await requireBuyerCapability("canPlaceOrders");
+  const params = await searchParams;
+  const errorMessage = params?.error === "validation" ? "Add the items and quantities you need before submitting." : null;
 
   return (
     <main className="min-h-screen bg-[#f7f5ec] px-4 py-6 text-[#102015] sm:px-6 lg:px-8">
@@ -55,6 +61,7 @@ export default async function BuyerPortalOrderPage() {
               Add the produce, quantities and timing you need. Admin will convert
               this into confirmed pricing and fulfilment details.
             </p>
+            {errorMessage ? <p role="alert" className="mt-3 rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">{errorMessage}</p> : null}
 
             <div className="mt-6 grid gap-4">
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
