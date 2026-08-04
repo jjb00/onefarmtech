@@ -168,7 +168,7 @@ test("OTP UI has two accessible pending-safe steps, resend cooldown and legacy f
   assert.match(modal, /action=\{verifyBuyerOtpAction\}/);
   assert.match(modal, /name="otp"/);
   assert.match(modal, /Email me a login code/);
-  assert.match(modal, /Legacy access-code login/);
+  assert.match(modal, /Sign in with an access code instead/);
   assert.match(modal, /action=\{buyerLoginAction\}/);
   assert.match(resend, /cooldownSeconds = 60/);
   assert.match(resend, /disabled=\{disabled\}/);

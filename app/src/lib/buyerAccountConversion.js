@@ -80,8 +80,13 @@ export async function convertBuyerAccountRequestIntegrity({db, requestId, actor,
         phone: request.phone,
         email: request.email || null,
         location: request.location || null,
-        accountStatus: "Pending login approval",
-        accountLoginReady: false,
+        // Converting the request *is* the approval decision -- there is no
+        // separate review step after this one, so there is nothing left to
+        // gate login behind. Requiring a second manual "allow portal login"
+        // toggle on the customer record was pure friction with no matching
+        // safety benefit.
+        accountStatus: "Approved recurring buyer",
+        accountLoginReady: true,
         creditLimit: 0,
         outstandingBalance: 0,
         paymentTerms: request.interestedInCredit ? "Payment terms interest noted - partner review required" : "Pay on order / manual terms",

@@ -613,34 +613,34 @@ export async function createBuyerAccountInviteAction(formData: FormData) {
 }
 
 
-export async function sendBuyerAccountInviteAction(formData: FormData) {
-  const staff = await requireCapability("manage_buyer_access");
-  const inviteId = readText(formData, "inviteId");
-  const channel = readText(formData, "channel").toLowerCase();
+type BuyerInviteDeliveryResult =
+  | {ok: true; code: string}
+  | {ok: false; code: string; detail?: string};
 
-  if (!inviteId || !["email", "whatsapp"].includes(channel)) {
-    redirect("/admin/buyer-access?delivery=invalid");
-  }
-
+/**
+ * Attempts to deliver a buyer access invite over one channel and reports
+ * what happened instead of redirecting, so both the admin "send" button
+ * and automatic post-approval delivery can share this without the caller
+ * losing control of navigation.
+ */
+async function deliverBuyerAccountInvite(input: {
+  inviteId: string;
+  channel: "email" | "whatsapp";
+  actorName: string;
+  actorRole: string;
+}): Promise<BuyerInviteDeliveryResult> {
   const invite = await prisma.buyerAccountInvite.findUnique({
-    where: {id: inviteId},
+    where: {id: input.inviteId},
     include: {customer: true},
   });
 
-  if (!invite) {
-    redirect("/admin/buyer-access?delivery=not-found");
-  }
-
-  if (invite.status.toLowerCase().includes("cancel")) {
-    redirect("/admin/buyer-access?delivery=cancelled");
-  }
+  if (!invite) return {ok: false, code: "not-found"};
+  if (invite.status.toLowerCase().includes("cancel")) return {ok: false, code: "cancelled"};
 
   const loginUrl = `${getEmailBaseUrl()}/buyer-login`;
 
-  if (channel === "email") {
-    if (!invite.email) {
-      redirect("/admin/buyer-access?delivery=missing-email");
-    }
+  if (input.channel === "email") {
+    if (!invite.email) return {ok: false, code: "missing-email"};
 
     const result = await sendTransactionalEmail({
       deduplicationKey: `buyer-invite:${invite.id}`,
@@ -656,11 +656,7 @@ export async function sendBuyerAccountInviteAction(formData: FormData) {
     });
 
     if (!result.ok) {
-      redirect(
-        `/admin/buyer-access?delivery=email-failed&detail=${encodeURIComponent(
-          result.error || result.status,
-        ).slice(0, 220)}`,
-      );
+      return {ok: false, code: "email-failed", detail: result.error || result.status};
     }
 
     const updated = await prisma.buyerAccountInvite.update({
@@ -678,18 +674,13 @@ export async function sendBuyerAccountInviteAction(formData: FormData) {
       entityLabel: `${invite.customer.name} · ${invite.email}`,
       previousValue: invite,
       newValue: updated,
-      actorRole: staff.role,
+      actorRole: input.actorRole,
     });
 
-    revalidatePath("/admin/buyer-access");
-    revalidatePath("/admin/buyer-messages");
-    revalidatePath("/admin/audit-log");
-    redirect(`/admin/buyer-access?delivery=email-${result.status.toLowerCase()}`);
+    return {ok: true, code: `email-${result.status.toLowerCase()}`};
   }
 
-  if (!invite.phone) {
-    redirect("/admin/buyer-access?delivery=missing-phone");
-  }
+  if (!invite.phone) return {ok: false, code: "missing-phone"};
 
   const {
     normaliseWhatsAppPhone,
@@ -702,16 +693,8 @@ export async function sendBuyerAccountInviteAction(formData: FormData) {
   try {
     normalizedRecipient = normaliseWhatsAppPhone(invite.phone);
   } catch (error) {
-    const detail =
-      error instanceof Error
-        ? error.message
-        : "WhatsApp recipient phone is invalid.";
-
-    redirect(
-      `/admin/buyer-access?delivery=whatsapp-recipient&detail=${encodeURIComponent(
-        detail,
-      ).slice(0, 220)}`,
-    );
+    const detail = error instanceof Error ? error.message : "WhatsApp recipient phone is invalid.";
+    return {ok: false, code: "whatsapp-recipient", detail};
   }
 
   const messageLog = await prisma.buyerMessage.create({
@@ -772,13 +755,13 @@ export async function sendBuyerAccountInviteAction(formData: FormData) {
       entityLabel: `${invite.customer.name} · ${normalizedRecipient}`,
       previousValue: invite,
       newValue: updated,
-      actorRole: staff.role,
+      actorRole: input.actorRole,
     });
+
+    return {ok: true, code: "whatsapp-accepted"};
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "WhatsApp send failed.";
-    const details =
-      error instanceof WhatsAppProviderError ? error.details : {};
+    const message = error instanceof Error ? error.message : "WhatsApp send failed.";
+    const details = error instanceof WhatsAppProviderError ? error.details : {};
 
     await prisma.buyerMessage.update({
       where: {id: messageLog.id},
@@ -793,21 +776,37 @@ export async function sendBuyerAccountInviteAction(formData: FormData) {
       },
     });
 
-    revalidatePath("/admin/buyer-access");
-    revalidatePath("/admin/buyer-messages");
-
-    redirect(
-      `/admin/buyer-access?delivery=whatsapp-failed&detail=${encodeURIComponent(
-        message,
-      ).slice(0, 220)}`,
-    );
+    return {ok: false, code: "whatsapp-failed", detail: message};
   }
+}
+
+export async function sendBuyerAccountInviteAction(formData: FormData) {
+  const staff = await requireCapability("manage_buyer_access");
+  const inviteId = readText(formData, "inviteId");
+  const channel = readText(formData, "channel").toLowerCase();
+
+  if (!inviteId || !["email", "whatsapp"].includes(channel)) {
+    redirect("/admin/buyer-access?delivery=invalid");
+  }
+
+  const result = await deliverBuyerAccountInvite({
+    inviteId,
+    channel: channel as "email" | "whatsapp",
+    actorName: staff.name,
+    actorRole: staff.role,
+  });
 
   revalidatePath("/admin/buyer-access");
   revalidatePath("/admin/buyer-messages");
-  revalidatePath("/buyer-account/inbox");
   revalidatePath("/admin/audit-log");
-  redirect("/admin/buyer-access?delivery=whatsapp-accepted");
+
+  if (!result.ok) {
+    redirect(
+      `/admin/buyer-access?delivery=${result.code}${result.detail ? `&detail=${encodeURIComponent(result.detail).slice(0, 220)}` : ""}`,
+    );
+  }
+
+  redirect(`/admin/buyer-access?delivery=${result.code}`);
 }
 
 
@@ -989,6 +988,7 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
   const estimatedSpend = readText(formData, "estimatedSpend");
   const businessRegNumber = readText(formData, "businessRegNumber");
   const preferredPaymentMethod = readText(formData, "preferredPaymentMethod");
+  const preferredContact = readText(formData, "preferredContact", "Email") === "WhatsApp" ? "WhatsApp" : "Email";
   const needsReceipts = readBoolean(formData, "needsReceipts");
   const interestedInCredit = readBoolean(formData, "interestedInCredit");
   const message = readText(formData, "message");
@@ -1023,6 +1023,7 @@ export async function createBuyerAccountRequestAction(formData: FormData) {
       estimatedSpend: estimatedSpend || null,
       businessRegNumber: businessRegNumber || null,
       preferredPaymentMethod: preferredPaymentMethod || null,
+      preferredContact,
       needsReceipts,
       interestedInCredit,
       message: message || null,
@@ -1402,6 +1403,56 @@ export async function convertBuyerAccountRequestToCustomerAction(formData: FormD
   try {
     const result = await convertBuyerAccountRequestIntegrity({db: prisma, requestId, actor: staff});
     customerId = result.customer.id;
+
+    // Conversion is the approval decision. The buyer should not have to be
+    // told separately by a human that they can now sign in -- send their
+    // access on whichever channel they asked for, right away. The customer
+    // record and buyer contact already exist at this point regardless of
+    // what happens below, so nothing here is allowed to turn into a false
+    // "conversion failed" report -- it's all best-effort.
+    if (result.created) {
+      try {
+        if (result.customer.email) {
+          await sendTransactionalEmail({
+            deduplicationKey: `buyer-account-approved:${result.customer.id}`,
+            template: "buyer-account-approved",
+            to: result.customer.email,
+            content: emailTemplates.buyerAccountApproved(result.customer.name, getEmailBaseUrl()),
+            relatedType: "Customer",
+            relatedId: result.customer.id,
+          });
+        }
+
+        if (result.request.preferredContact === "WhatsApp" && result.customer.phone) {
+          const invite = await prisma.buyerAccountInvite.create({
+            data: {
+              customerId: result.customer.id,
+              inviteCode: makeInviteCode(result.customer.name),
+              phone: result.customer.phone,
+              email: result.customer.email || null,
+              role: "Buyer user",
+              status: "Ready to send",
+              createdBy: staff.name,
+            },
+          });
+
+          // A failed attempt here (most commonly: no approved WhatsApp
+          // template configured yet) leaves the invite in "Ready to send"
+          // -- visible and retryable from the Buyer access page, not lost.
+          await deliverBuyerAccountInvite({
+            inviteId: invite.id,
+            channel: "whatsapp",
+            actorName: staff.name,
+            actorRole: staff.role,
+          });
+        }
+      } catch (notifyError) {
+        console.error("buyer-account-approval-notification-failed", {
+          customerId: result.customer.id,
+          message: notifyError instanceof Error ? notifyError.message : String(notifyError),
+        });
+      }
+    }
   } catch (error) {
     const code = error instanceof BuyerAccountConversionError ? error.code : "conversion-failed";
     redirect(`/admin/buyer-account-requests?conversionError=${encodeURIComponent(code)}`);

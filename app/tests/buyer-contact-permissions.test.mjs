@@ -13,7 +13,7 @@ test("buyer login offers email OTP with legacy fallback and sessions bind author
   assert.match(page, /defaultOpen/);
   assert.match(modal, /action=\{buyerLoginAction\}/);
   assert.match(modal, /action=\{requestBuyerOtpAction\}/);
-  assert.match(modal, /Legacy access-code login/);
+  assert.match(modal, /Sign in with an access code instead/);
   assert.match(modal, /Request buyer account setup/);
   assert.match(auth, /contact: matchingContact/);
   assert.match(auth, /createBuyerSession/);

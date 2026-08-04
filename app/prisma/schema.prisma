@@ -385,6 +385,7 @@ model BuyerAccountRequest {
   estimatedSpend         String?
   businessRegNumber      String?
   preferredPaymentMethod String?
+  preferredContact       String   @default("Email")
   needsReceipts          Boolean  @default(true)
   interestedInCredit     Boolean  @default(false)
   message                String?

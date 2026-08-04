@@ -94,6 +94,13 @@ export const emailTemplates = {
   buyerInvite: (name: string, code: string, url: string) => content("Your OneFarmTech buyer access code", [
     `Hello ${name},`, `Access code: ${code}`, `Sign in: ${url}/buyer-login`, "Keep this code private. It is linked to your approved buyer account.",
   ]),
+  buyerAccountApproved: (name: string, url: string) => content("Your OneFarmTech buyer account is approved", [
+    `Hello ${name},`,
+    "Your OneFarmTech buyer account has been approved. You can now sign in any time to place orders, view receipts and track payments.",
+    `Sign in: ${url}/buyer-login`,
+    "Enter the email this account is registered with and we'll send you a one-time sign-in code -- no password to remember.",
+    "OneFarmTech",
+  ]),
   buyerLoginOtp: (name: string, otp: string) => content("Your OneFarmTech sign-in code", [
     `Hello ${name},`, `Your sign-in code is: ${otp}`, "This code expires in 10 minutes and can only be used once.", "If you did not request this code, you can ignore this email.", "OneFarmTech",
   ]),

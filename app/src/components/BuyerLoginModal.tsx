@@ -175,10 +175,10 @@ export default function BuyerLoginModal({
 
             <details className="mt-5 rounded-2xl border border-[#101712]/10 bg-[#fbfff8] p-4">
               <summary className="cursor-pointer text-sm font-black text-[#405348]">
-                Legacy access-code login
+                Sign in with an access code instead
               </summary>
               <p className="mt-2 text-xs leading-6 text-[#587063]">
-                Use this only if OneFarmTech previously issued you a permanent access code.
+                If OneFarmTech sent you an access code directly (for example by WhatsApp), enter it here. Most buyers should use the email code above instead.
               </p>
               <form action={buyerLoginAction} className="mt-4 grid gap-3">
                 <input name="buyerIdentifier" required autoComplete="username" placeholder="Email or phone" className="rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm" />

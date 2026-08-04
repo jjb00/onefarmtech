@@ -247,6 +247,23 @@ Your account request has been received. We’ll review your details and get back
                 </label>
               </div>
 
+              <div className="rounded-[1.5rem] bg-[#f3f8ef] p-4">
+                <p className="text-sm font-bold text-[#102015]">How should we reach you?</p>
+                <p className="mt-1 text-xs leading-6 text-[#587063]">
+                  We'll use this to send your login access once your account is approved, and for order updates.
+                </p>
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="flex items-center gap-3 rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm font-bold text-[#102015]">
+                    <input name="preferredContact" type="radio" value="Email" defaultChecked className="h-4 w-4" />
+                    Email
+                  </label>
+                  <label className="flex items-center gap-3 rounded-xl border border-[#101712]/10 bg-white px-4 py-3 text-sm font-bold text-[#102015]">
+                    <input name="preferredContact" type="radio" value="WhatsApp" className="h-4 w-4" />
+                    WhatsApp
+                  </label>
+                </div>
+              </div>
+
               <label className="grid gap-2 text-sm font-bold text-[#102015]">
                 Usual produce needs
                 <textarea

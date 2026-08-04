@@ -145,7 +145,7 @@ export default async function BuyerAccessPage({
   return (
     <AdminPageShell
       title="Buyer access"
-      description="Approve the buyer, keep an active authorised contact with a correct email, and assign portal permissions. Email OTP is the recommended login."
+      description="Approving a buyer account request automatically creates their authorised contact and sends login access on their preferred channel. Use this page to add extra contacts, or to retry delivery if an automatic send failed."
       actionHref="/admin/customers?view=access"
       actionLabel="Open Buyers workspace"
     >
