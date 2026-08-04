@@ -214,7 +214,7 @@ export default async function AdminOrderDetailPage({
 
   const pickupOrder = isPickupMethod(order.deliveryMethod);
   const fulfilmentFinal = pickupOrder
-    ? ["Collected", "Cancelled"].includes(order.fulfilmentStatus)
+    ? ["Picked up", "Cancelled"].includes(order.fulfilmentStatus)
     : ["Delivered", "Cancelled"].includes(order.fulfilmentStatus);
 
   const fulfilmentSequence = fulfilmentStatusesFor(
@@ -235,7 +235,7 @@ export default async function AdminOrderDetailPage({
   const orderStage = paymentIsPaid
     ? fulfilmentFinal
       ? pickupOrder
-        ? "Collected"
+        ? "Picked up"
         : "Delivered"
       : order.fulfilmentStatus
     : latestPaymentRequest

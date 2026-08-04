@@ -1,5 +1,8 @@
-export const PICKUP_FULFILMENT_STATUSES = ["Pending pickup", "Confirmed", "Preparing", "Ready for pickup", "Collected", "Cancelled"];
-export const DELIVERY_FULFILMENT_STATUSES = ["New order", "Confirmed", "Preparing", "Delivery pending assignment", "Delivery assigned", "Picked up by delivery partner", "Out for delivery", "Delivered", "Delivery issue", "Cancelled"];
+// Two admin-facing steps after payment is confirmed, for both delivery
+// methods -- fewer steps means fewer buyer-facing WhatsApp notifications,
+// each of which fires once per fulfilment status change.
+export const PICKUP_FULFILMENT_STATUSES = ["Pending pickup", "Confirmed", "Ready for pickup", "Picked up", "Cancelled"];
+export const DELIVERY_FULFILMENT_STATUSES = ["New order", "Confirmed", "Out for delivery", "Delivered", "Delivery issue", "Cancelled"];
 export const PAYMENT_STATUSES = ["Pending confirmation", "Payment pending", "Unpaid", "Part-paid", "Paid", "Payment failed", "Payment cancelled", "Refunded"];
 
 const PAYMENT_TRANSITIONS = {
@@ -44,7 +47,7 @@ export function fulfilmentStatusesFor(deliveryMethod, currentStatus = "") {
 export function validateFulfilmentStatus(deliveryMethod, status) {
   if (!status) return null;
   if (isPickupMethod(deliveryMethod) && status === "Delivered") return "pickup-cannot-be-delivered";
-  if (!isPickupMethod(deliveryMethod) && ["Ready for pickup", "Collected", "Pending pickup"].includes(status)) return "delivery-cannot-use-pickup-status";
+  if (!isPickupMethod(deliveryMethod) && ["Ready for pickup", "Picked up", "Pending pickup"].includes(status)) return "delivery-cannot-use-pickup-status";
   return null;
 }
 
@@ -61,8 +64,8 @@ export function validateFulfilmentTransition(deliveryMethod, currentStatus, next
   const statuses = isPickupMethod(deliveryMethod) ? PICKUP_FULFILMENT_STATUSES : DELIVERY_FULFILMENT_STATUSES;
   const currentIndex = statuses.indexOf(currentStatus), nextIndex = statuses.indexOf(nextStatus);
   if (nextIndex < 0) return "invalid-fulfilment-transition";
-  if (currentStatus === "Cancelled" || currentStatus === "Collected" || currentStatus === "Delivered") return "fulfilment-status-final";
-  if (currentStatus === "Delivery issue") return ["Delivery pending assignment", "Delivery assigned", "Picked up by delivery partner", "Out for delivery", "Delivered", "Cancelled"].includes(nextStatus) ? null : "fulfilment-status-regression";
+  if (currentStatus === "Cancelled" || currentStatus === "Picked up" || currentStatus === "Delivered") return "fulfilment-status-final";
+  if (currentStatus === "Delivery issue") return ["Out for delivery", "Delivered", "Cancelled"].includes(nextStatus) ? null : "fulfilment-status-regression";
   if (currentIndex >= 0 && nextIndex < currentIndex && nextStatus !== "Cancelled") return "fulfilment-status-regression";
   return null;
 }

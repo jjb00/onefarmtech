@@ -41,14 +41,14 @@ function viewWhere(view: string) {
     return {
       paymentStatus: {in: ["Paid", "Approved"]},
       fulfilmentStatus: {
-        notIn: ["Delivered", "Collected", "Completed", "Cancelled"],
+        notIn: ["Delivered", "Picked up", "Completed", "Cancelled"],
       },
     };
   }
 
   if (view === "completed") {
     return {
-      fulfilmentStatus: {in: ["Delivered", "Collected", "Completed"]},
+      fulfilmentStatus: {in: ["Delivered", "Picked up", "Completed"]},
     };
   }
 
@@ -61,7 +61,6 @@ function viewWhere(view: string) {
             "New order",
             "Pending",
             "Confirmed",
-            "Preparing",
             "Ready for pickup",
           ],
         },
@@ -203,7 +202,7 @@ export default async function OrdersPage({
 
   const nextAction = (order: (typeof orders)[number]) => {
     if (
-      ["Delivered", "Collected", "Completed", "Cancelled"].includes(
+      ["Delivered", "Picked up", "Completed", "Cancelled"].includes(
         order.fulfilmentStatus,
       )
     ) {
@@ -230,18 +229,14 @@ export default async function OrdersPage({
     const pickup = order.deliveryMethod.toLowerCase().includes("pickup");
 
     if (pickup) {
-      if (order.fulfilmentStatus === "Preparing") {
-        return "Mark ready for collection";
-      }
-
       if (order.fulfilmentStatus === "Ready for pickup") {
-        return "Mark collected";
+        return "Mark picked up";
       }
 
-      return "Update pickup";
+      return "Mark ready for pickup";
     }
 
-    if (order.fulfilmentStatus === "Preparing") {
+    if (order.fulfilmentStatus === "Confirmed") {
       return "Assign delivery";
     }
 

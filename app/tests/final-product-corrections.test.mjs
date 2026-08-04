@@ -9,7 +9,7 @@ test("order detail imports pickup helper and completed orders open safely", () =
   const orders = read("src/app/admin/orders/page.tsx");
 
   assert.match(detail, /fulfilmentStatusesFor,\s*isPickupMethod/);
-  assert.match(orders, /\["Delivered", "Collected", "Completed", "Cancelled"\]/);
+  assert.match(orders, /\["Delivered", "Picked up", "Completed", "Cancelled"\]/);
   assert.match(orders, /return "Open order"/);
 });
 

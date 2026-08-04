@@ -42,7 +42,7 @@ export default async function AdminDashboardPage({
       where: {
         paymentStatus: {in: ["Paid", "Approved"]},
         fulfilmentStatus: {
-          notIn: ["Delivered", "Collected", "Completed", "Cancelled"],
+          notIn: ["Delivered", "Picked up", "Completed", "Cancelled"],
         },
       },
     }),

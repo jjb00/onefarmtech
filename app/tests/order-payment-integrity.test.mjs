@@ -151,8 +151,8 @@ test("pickup and payment workflows remain independent and operationally valid", 
   assert.equal(initialFulfilmentStatus("Pickup"), "Pending pickup");
   assert.equal(validateFulfilmentStatus("Pickup", "Delivered"), "pickup-cannot-be-delivered");
   assert.equal(validateFulfilmentStatus("Pickup", "Ready for pickup"), null);
-  assert.equal(validateFulfilmentStatus("Pickup", "Collected"), null);
-  assert.deepEqual(fulfilmentStatusesFor("Pickup"), ["Pending pickup", "Confirmed", "Preparing", "Ready for pickup", "Collected", "Cancelled"]);
+  assert.equal(validateFulfilmentStatus("Pickup", "Picked up"), null);
+  assert.deepEqual(fulfilmentStatusesFor("Pickup"), ["Pending pickup", "Confirmed", "Ready for pickup", "Picked up", "Cancelled"]);
   const order = {paymentStatus: "Unpaid", fulfilmentStatus: initialFulfilmentStatus("Pickup")};
   order.fulfilmentStatus = "Ready for pickup";
   assert.equal(order.paymentStatus, "Unpaid");

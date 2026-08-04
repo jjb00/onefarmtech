@@ -132,9 +132,7 @@ export default async function DeliveryPartnerJobsPage() {
                     defaultValue={delivery.status}
                     className="rounded-2xl border border-[#102015]/15 bg-white px-4 py-3 text-[#102015]"
                   >
-                    <option>Accepted</option>
-                    <option>Picked up</option>
-                    <option>In transit</option>
+                    <option>Out for delivery</option>
                     <option>Delivered</option>
                     <option>Failed / issue</option>
                   </select>

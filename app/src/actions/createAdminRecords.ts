@@ -1979,6 +1979,7 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
       orderId: true,
       customerId: true,
       customer: {select: {name: true, email: true}},
+      order: {select: {code: true, phone: true, sourcePhone: true, fulfilmentStatus: true}},
     },
   });
 
@@ -1995,41 +1996,63 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
     },
   });
 
+  // Just two buyer-facing outcomes once a driver is on the job: delivered,
+  // or an issue. Everything in between is "Out for delivery" already.
   const fulfilmentStatus =
     status === "Delivered"
       ? "Delivered"
-      : status === "In transit"
-        ? "Out for delivery"
-        : status === "Picked up"
-          ? "Picked up by delivery partner"
-          : status === "Failed / issue"
-            ? "Delivery issue"
-            : "Delivery assigned";
+      : status === "Failed / issue"
+        ? "Delivery issue"
+        : "Out for delivery";
+  const fulfilmentChanged = fulfilmentStatus !== delivery.order.fulfilmentStatus;
 
   await prisma.order.update({
     where: {id: delivery.orderId},
     data: {fulfilmentStatus},
   });
 
-  if (delivery.customerId) {
-    await prisma.buyerMessage.create({
-      data: {
-        customerId: delivery.customerId,
-        title: `Delivery update: ${status}`,
-        body: proofOfDeliveryNote
-          ? `Your delivery status is now ${status}. Note: ${proofOfDeliveryNote}`
-          : `Your delivery status is now ${status}.`,
-        channel: "Portal",
-        direction: "Outbound",
-        status: "Unread",
-        source: "Delivery partner update",
-        relatedType: "Delivery",
-        relatedId: delivery.id,
-      },
-    });
+  if (fulfilmentChanged) {
+    const recipientPhone = delivery.order.sourcePhone || delivery.order.phone;
+    let whatsappSent = false;
 
-    if (delivery.customer?.email) {
-      await sendTransactionalEmail({deduplicationKey: `delivery-status:${delivery.id}:${status}`, template: "delivery-status", to: delivery.customer.email, content: emailTemplates.deliveryStatus(delivery.customer.name, status, getEmailBaseUrl()), relatedType: "Delivery", relatedId: delivery.id});
+    if (recipientPhone) {
+      try {
+        const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+        await sendWhatsAppTextMessage({
+          to: recipientPhone,
+          body: `Update on order ${delivery.order.code}: ${fulfilmentStatus}.${proofOfDeliveryNote ? `\n\nNote: ${proofOfDeliveryNote}` : ""}\n\nReply "menu" any time for order status or support.`,
+        });
+        whatsappSent = true;
+      } catch (error) {
+        console.error("delivery-status-whatsapp-notify-failed", {
+          deliveryId: delivery.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (delivery.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: delivery.customerId,
+          title: `Delivery update: ${fulfilmentStatus}`,
+          body: proofOfDeliveryNote
+            ? `Your delivery status is now ${fulfilmentStatus}. Note: ${proofOfDeliveryNote}`
+            : `Your delivery status is now ${fulfilmentStatus}.`,
+          channel: whatsappSent ? "WhatsApp" : "Portal",
+          direction: "Outbound",
+          status: whatsappSent ? "Sent" : "Unread",
+          recipient: recipientPhone || undefined,
+          source: "Delivery partner update",
+          relatedType: "Delivery",
+          relatedId: delivery.id,
+          sentAt: whatsappSent ? new Date() : undefined,
+        },
+      });
+
+      if (delivery.customer?.email) {
+        await sendTransactionalEmail({deduplicationKey: `delivery-status:${delivery.id}:${fulfilmentStatus}`, template: "delivery-status", to: delivery.customer.email, content: emailTemplates.deliveryStatus(delivery.customer.name, fulfilmentStatus, getEmailBaseUrl()), relatedType: "Delivery", relatedId: delivery.id});
+      }
     }
   }
 
@@ -2095,8 +2118,13 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
     select: {
       id: true,
       orderId: true,
+      customerId: true,
       order: {
         select: {
+          code: true,
+          phone: true,
+          sourcePhone: true,
+          fulfilmentStatus: true,
           totalAmount: true,
           subtotal: true,
           serviceFee: true,
@@ -2106,7 +2134,11 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
     },
   });
 
-  const fulfilmentStatus = partner ? "Delivery assigned" : "Delivery pending assignment";
+  // Assigning a driver is the one admin step for delivery orders -- it goes
+  // straight to "Out for delivery" rather than sitting in an intermediate
+  // "assigned but not yet moving" state.
+  const fulfilmentStatus = partner ? "Out for delivery" : delivery.order.fulfilmentStatus;
+  const fulfilmentChanged = fulfilmentStatus !== delivery.order.fulfilmentStatus;
   const totalAmount = Math.max(
     0,
     (delivery.order.subtotal || 0) + deliveryFee + (delivery.order.serviceFee || 0) - (delivery.order.discountAmount || 0)
@@ -2121,6 +2153,45 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
       estimatedTotal: totalAmount,
     },
   });
+
+  if (fulfilmentChanged && partner) {
+    const recipientPhone = delivery.order.sourcePhone || delivery.order.phone;
+    let whatsappSent = false;
+
+    if (recipientPhone) {
+      try {
+        const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+        await sendWhatsAppTextMessage({
+          to: recipientPhone,
+          body: `Update on order ${delivery.order.code}: ${fulfilmentStatus}.\n\nDelivery partner: ${partner.name}${partner.phone ? ` (${partner.phone})` : ""}\n\nReply "menu" any time for order status or support.`,
+        });
+        whatsappSent = true;
+      } catch (error) {
+        console.error("delivery-assignment-whatsapp-notify-failed", {
+          deliveryId: delivery.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (delivery.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: delivery.customerId,
+          title: `Delivery update: ${fulfilmentStatus}`,
+          body: `Order ${delivery.order.code} is now ${fulfilmentStatus}.\nDelivery partner: ${partner.name}${partner.phone ? ` (${partner.phone})` : ""}`,
+          channel: whatsappSent ? "WhatsApp" : "Portal",
+          direction: "Outbound",
+          status: whatsappSent ? "Sent" : "Unread",
+          recipient: recipientPhone || undefined,
+          source: "Delivery assigned",
+          relatedType: "Delivery",
+          relatedId: delivery.id,
+          sentAt: whatsappSent ? new Date() : undefined,
+        },
+      });
+    }
+  }
 
   revalidatePath("/admin/deliveries");
   revalidatePath(`/admin/orders/${delivery.orderId}`);
@@ -2383,31 +2454,59 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
     },
   });
 
+  // Assigning a driver is the one admin step for delivery orders -- it goes
+  // straight to "Out for delivery" rather than sitting in an intermediate
+  // "assigned but not yet moving" state.
+  const fulfilmentStatus = partner ? "Out for delivery" : order.fulfilmentStatus;
+  const fulfilmentChanged = fulfilmentStatus !== order.fulfilmentStatus;
+
   await prisma.order.update({
     where: {id: order.id},
     data: {
       deliveryMethod,
       deliveryFee,
       deliveryNote: deliveryAddress || order.deliveryNote || null,
-      fulfilmentStatus: partner ? "Delivery assigned" : order.fulfilmentStatus,
+      fulfilmentStatus,
     },
   });
 
-  if (order.customerId && partner) {
-    await prisma.buyerMessage.create({
-      data: {
-        customerId: order.customerId,
-        title: `Delivery assigned for ${order.code}`,
-        body: `Delivery has been assigned for order ${order.code}.\n\nDelivery partner: ${partner.name}\nPhone: ${partner.phone || "Not set"}\nArea: ${delivery.deliveryArea || "Not set"}\nTracking: ${delivery.trackingReference || "Not set"}`,
-        channel: "Portal",
-        direction: "Outbound",
-        status: "Unread",
-        recipient: order.phone,
-        source: "Delivery assigned",
-        relatedType: "Delivery",
-        relatedId: delivery.id,
-      },
-    });
+  if (fulfilmentChanged && partner) {
+    const recipientPhone = order.sourcePhone || order.phone;
+    let whatsappSent = false;
+
+    if (recipientPhone) {
+      try {
+        const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
+        await sendWhatsAppTextMessage({
+          to: recipientPhone,
+          body: `Update on order ${order.code}: ${fulfilmentStatus}.\n\nDelivery partner: ${partner.name}${partner.phone ? ` (${partner.phone})` : ""}\n\nReply "menu" any time for order status or support.`,
+        });
+        whatsappSent = true;
+      } catch (error) {
+        console.error("delivery-assignment-whatsapp-notify-failed", {
+          orderId: order.id,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
+
+    if (order.customerId) {
+      await prisma.buyerMessage.create({
+        data: {
+          customerId: order.customerId,
+          title: `Delivery update: ${fulfilmentStatus}`,
+          body: `Order ${order.code} is now ${fulfilmentStatus}.\n\nDelivery partner: ${partner.name}\nPhone: ${partner.phone || "Not set"}\nArea: ${delivery.deliveryArea || "Not set"}\nTracking: ${delivery.trackingReference || "Not set"}`,
+          channel: whatsappSent ? "WhatsApp" : "Portal",
+          direction: "Outbound",
+          status: whatsappSent ? "Sent" : "Unread",
+          recipient: recipientPhone || order.phone,
+          source: "Delivery assigned",
+          relatedType: "Delivery",
+          relatedId: delivery.id,
+          sentAt: whatsappSent ? new Date() : undefined,
+        },
+      });
+    }
   }
 
   revalidatePath("/admin/deliveries");

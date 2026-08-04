@@ -137,7 +137,7 @@ export async function permanentlyDeleteAdminMessageAction(formData: FormData) {
       );
       const protectedFulfilment = [
         "Delivered",
-        "Collected",
+        "Picked up",
         "Completed",
       ].includes(order?.fulfilmentStatus || "");
 

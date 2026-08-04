@@ -28,14 +28,10 @@ test("payment confirmation advances early delivery fulfilment", () => {
 test("payment confirmation never resets fulfilment already in progress", () => {
   for (const status of [
     "Confirmed",
-    "Preparing",
-    "Delivery pending assignment",
-    "Delivery assigned",
-    "Picked up by delivery partner",
     "Out for delivery",
     "Delivered",
     "Ready for pickup",
-    "Collected",
+    "Picked up",
     "Delivery issue",
     "Cancelled",
   ]) {
@@ -76,11 +72,10 @@ test("delivery assignment and partner updates remain authoritative", () => {
 
   assert.match(
     actions,
-    /partner \? "Delivery assigned" : "Delivery pending assignment"/,
+    /partner \? "Out for delivery" : delivery\.order\.fulfilmentStatus/,
   );
-  assert.match(actions, /status === "In transit"[\s\S]*"Out for delivery"/);
-  assert.match(actions, /status === "Delivered"[\s\S]*"Delivered"/);
-  assert.match(actions, /status === "Picked up"[\s\S]*"Picked up by delivery partner"/);
+  assert.match(actions, /status === "Delivered"\s*\n\s*\? "Delivered"/);
+  assert.match(actions, /status === "Failed \/ issue"\s*\n\s*\? "Delivery issue"/);
 });
 
 test("order detail uses canonical Payments workspace", () => {
