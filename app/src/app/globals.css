@@ -75,20 +75,30 @@ body {
   animation: oftSoftPulse 5.5s ease-in-out infinite;
 }
 
-@keyframes oftBadgeFade {
-  from {
+@keyframes oftBadgeFlip {
+  0% {
     opacity: 0;
-    transform: translateY(3px);
+    transform: rotateX(-100deg);
   }
-  to {
+  60% {
     opacity: 1;
-    transform: translateY(0);
+    transform: rotateX(12deg);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(0deg);
   }
 }
 
-.oft-hero-badge-fade {
+.oft-hero-badge-flip-stage {
+  perspective: 500px;
+}
+
+.oft-hero-badge-flip {
   display: inline-block;
-  animation: oftBadgeFade 500ms ease-out both;
+  transform-origin: 50% 100%;
+  backface-visibility: hidden;
+  animation: oftBadgeFlip 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes oftOrbDrift {
@@ -227,7 +237,7 @@ body {
   .oft-fade-up-delay-2,
   .oft-fade-up-delay-3,
   .oft-fade-up-delay-4,
-  .oft-hero-badge-fade,
+  .oft-hero-badge-flip,
   .oft-soft-pulse,
   .oft-orb-drift,
   .oft-orb-drift-delay,

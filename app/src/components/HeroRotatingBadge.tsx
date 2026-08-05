@@ -27,10 +27,10 @@ export default function HeroRotatingBadge() {
   }, []);
 
   return (
-    <span className="inline-flex min-w-[7.5ch] justify-center">
+    <span className="oft-hero-badge-flip-stage inline-flex min-w-[7.5ch] justify-center">
       <span
         key={index}
-        className={reducedMotion ? undefined : "oft-hero-badge-fade"}
+        className={reducedMotion ? undefined : "oft-hero-badge-flip"}
       >
         {WORDS[index]}
       </span>
