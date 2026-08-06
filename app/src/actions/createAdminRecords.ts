@@ -11,7 +11,7 @@ import {prisma} from "@/lib/prisma";
 import {baselineProducts} from "@/lib/productCatalogue";
 import {createAuditLog} from "@/lib/auditLog";
 import {requireAnyCapability, requireCapability, requireStaff} from "@/lib/auth";
-import {getEmailBaseUrl, getOperationalEmailRecipients, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
+import {getEmailBaseUrl, getOperationalEmailRecipients, operationalGroupForEnquiryType, sendAdminTransactionalEmail, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import * as Sentry from "@sentry/nextjs";
 import {BuyerAccountConversionError, convertBuyerAccountRequestIntegrity} from "@/lib/buyerAccountConversion.js";
@@ -968,7 +968,7 @@ export async function createContactEnquiryAction(formData: FormData) {
   }
 
   try {
-    const recipients = getOperationalEmailRecipients("contact");
+    const recipients = getOperationalEmailRecipients(operationalGroupForEnquiryType(enquiryType));
     if (!recipients.length) {
       throw new Error("No contact enquiry email recipient is configured.");
     }

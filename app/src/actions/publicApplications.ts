@@ -6,6 +6,7 @@ import {
   getOperationalEmailRecipients,
   sendTransactionalEmail,
   type EmailAttachment,
+  type OperationalEmailGroup,
 } from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
@@ -63,7 +64,7 @@ async function readCv(formData: FormData): Promise<EmailAttachment> {
 }
 
 async function sendToGroup(input: {
-  group: "careers" | "contact" | "supplier";
+  group: OperationalEmailGroup;
   deduplicationPrefix: string;
   template: string;
   content: ReturnType<typeof emailTemplates.careerAdminEmail>;

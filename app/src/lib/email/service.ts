@@ -50,21 +50,36 @@ function parseRecipients(value: string | undefined) {
     .filter(Boolean);
 }
 
-export function getAdminEmailRecipients() {
-  return parseRecipients(process.env.EMAIL_ADMIN_RECIPIENTS);
+export type OperationalEmailGroup = "careers" | "contact" | "supplier" | "support";
+
+const OPERATIONAL_GROUPS: Record<OperationalEmailGroup, {environmentKey: string; inbox: string}> = {
+  careers: {environmentKey: "EMAIL_CAREERS_RECIPIENTS", inbox: "careers@onefarmtech.com"},
+  supplier: {environmentKey: "EMAIL_SUPPLIER_RECIPIENTS", inbox: "partnerships@onefarmtech.com"},
+  support: {environmentKey: "EMAIL_SUPPORT_RECIPIENTS", inbox: "support@onefarmtech.com"},
+  contact: {environmentKey: "EMAIL_CONTACT_RECIPIENTS", inbox: "hello@onefarmtech.com"},
+};
+
+// Grace is copied on every operational inbox so nothing depends on a single
+// role mailbox being watched.
+function getAlwaysCopyRecipients() {
+  const configured = parseRecipients(process.env.EMAIL_ALWAYS_COPY);
+  return configured.length ? configured : ["gracechatong@gmail.com"];
 }
 
-export function getOperationalEmailRecipients(
-  group: "careers" | "contact" | "supplier",
-) {
-  const environmentKey = {
-    careers: "EMAIL_CAREERS_RECIPIENTS",
-    contact: "EMAIL_CONTACT_RECIPIENTS",
-    supplier: "EMAIL_SUPPLIER_RECIPIENTS",
-  }[group];
-
+export function getOperationalEmailRecipients(group: OperationalEmailGroup) {
+  const {environmentKey, inbox} = OPERATIONAL_GROUPS[group];
   const configured = parseRecipients(process.env[environmentKey]);
-  return configured.length ? configured : getAdminEmailRecipients();
+  const primary = configured.length ? configured : [inbox];
+  return [...new Set([...primary, ...getAlwaysCopyRecipients()])];
+}
+
+const SUPPORT_ENQUIRY_TYPES = ["order support", "payment / receipt", "buyer account request"];
+
+export function operationalGroupForEnquiryType(enquiryType: string | null | undefined): OperationalEmailGroup {
+  const key = String(enquiryType || "").trim().toLowerCase();
+  if (key.includes("supplier") || key.includes("partner")) return "supplier";
+  if (SUPPORT_ENQUIRY_TYPES.includes(key)) return "support";
+  return "contact";
 }
 
 function safeError(error: unknown) {
@@ -162,6 +177,7 @@ export async function retryEmailDelivery(deliveryId: string) {
   });
 }
 
-export async function sendAdminTransactionalEmail(input: Omit<SendTransactionalEmailInput, "to" | "deduplicationKey"> & {deduplicationKeyPrefix: string}) {
-  return Promise.all(getAdminEmailRecipients().map((recipient) => sendTransactionalEmail({...input, to: recipient, deduplicationKey: `${input.deduplicationKeyPrefix}:${recipient.toLowerCase()}`})));
+export async function sendAdminTransactionalEmail(input: Omit<SendTransactionalEmailInput, "to" | "deduplicationKey"> & {deduplicationKeyPrefix: string; group?: OperationalEmailGroup}) {
+  const recipients = getOperationalEmailRecipients(input.group || "contact");
+  return Promise.all(recipients.map((recipient) => sendTransactionalEmail({...input, to: recipient, deduplicationKey: `${input.deduplicationKeyPrefix}:${recipient.toLowerCase()}`})));
 }
