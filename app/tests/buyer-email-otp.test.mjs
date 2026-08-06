@@ -11,6 +11,8 @@ import {
   generateBuyerOtp,
   hashBuyerOtp,
   isBuyerLoginEligible,
+  isValidBuyerPhone,
+  normalizeBuyerPhone,
   recordFailedBuyerOtpAttempt,
 } from "../src/lib/buyerOtp.ts";
 import {normalizeInternationalPhone} from "../src/lib/phoneNumbers.ts";
@@ -26,6 +28,21 @@ test("approved active buyers require an active matching BuyerContact", () => {
   assert.equal(isBuyerLoginEligible({...customer, accountLoginReady: false}, contact), false);
   assert.equal(isBuyerLoginEligible(customer, {...contact, status: "Paused"}), false);
   assert.equal(isBuyerLoginEligible(customer, contact, "other@example.com"), false);
+});
+
+test("WhatsApp OTP eligibility matches on phone, not email, and normalizes formats", () => {
+  const customer = {status: "Active", accountLoginReady: true};
+  const contact = {status: "Active", phone: "+2348012345678"};
+  assert.equal(isBuyerLoginEligible(customer, contact, "08012345678", "whatsapp"), true);
+  assert.equal(isBuyerLoginEligible(customer, contact, "+234 801 234 5678", "whatsapp"), true);
+  assert.equal(isBuyerLoginEligible(customer, contact, "+2348099999999", "whatsapp"), false);
+  assert.equal(isBuyerLoginEligible(customer, contact, "buyer@example.com", "email"), false);
+
+  assert.equal(normalizeBuyerPhone("08012345678"), "+2348012345678");
+  assert.equal(normalizeBuyerPhone("+234 801 234 5678"), "+2348012345678");
+  assert.equal(normalizeBuyerPhone(""), "");
+  assert.equal(isValidBuyerPhone("08012345678"), true);
+  assert.equal(isValidBuyerPhone("abc"), false);
 });
 
 test("OTP generation is six digits and persistence uses only a keyed hash", () => {
@@ -168,6 +185,8 @@ test("OTP UI has two accessible pending-safe steps and a resend cooldown", () =>
   assert.match(modal, /action=\{verifyBuyerOtpAction\}/);
   assert.match(modal, /name="otp"/);
   assert.match(modal, /Email me a login code/);
+  assert.match(modal, /WhatsApp me a login code/);
+  assert.match(modal, /name="channel"/);
   assert.doesNotMatch(modal, /action=\{buyerLoginAction\}/);
   assert.match(resend, /cooldownSeconds = 60/);
   assert.match(resend, /disabled=\{disabled\}/);
@@ -181,9 +200,9 @@ test("buyer sessions preserve authoritative permissions and support OTP and lega
     assert.match(current, new RegExp(permission));
   }
   assert.match(current, /contact\.updatedAt\.toISOString\(\) === contactRevision/);
-  assert.match(current, /authMode === "email-otp"/);
+  assert.match(current, /authMode !== "invite-code"/);
   assert.match(current, /customerId: isAuthenticated \? customerId : null/);
-  assert.match(session, /"invite-code" \| "email-otp"/);
+  assert.match(session, /"invite-code" \| "email-otp" \| "whatsapp-otp"/);
   assert.match(session, /BUYER_OTP_CHALLENGE_COOKIE/);
 });
 

@@ -17,13 +17,17 @@ import {
   hashOtpRequestIdentifier,
   isBuyerLoginEligible,
   isValidBuyerEmail,
+  isValidBuyerPhone,
   normalizeBuyerEmail,
+  normalizeBuyerPhone,
   recordFailedBuyerOtpAttempt,
   safeOtpRequestMetadata,
+  type BuyerOtpChannel,
 } from "@/lib/buyerOtp";
 import {createBuyerSession} from "@/lib/buyerSession";
 import {sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
+import {sendWhatsAppOtpTemplate} from "@/lib/whatsapp/provider";
 
 function readText(formData: FormData, key: string) {
   const value = formData.get(key);
@@ -64,26 +68,36 @@ async function requestContext(secret: string) {
   };
 }
 
-async function issueBuyerOtp(emailInput: string) {
-  const email = normalizeBuyerEmail(emailInput);
+async function issueBuyerOtp(recipientInput: string, channel: BuyerOtpChannel) {
+  const recipient = channel === "whatsapp" ? normalizeBuyerPhone(recipientInput) : normalizeBuyerEmail(recipientInput);
+  if (!recipient) return;
+
   const secret = process.env.SESSION_SECRET || "";
   if (!secret) throw new Error("SESSION_SECRET is required for buyer OTP authentication.");
   const context = await requestContext(secret);
 
-  const matchingContacts = await prisma.buyerContact.findMany({
-    where: {email: {equals: email, mode: "insensitive"}},
-    orderBy: {updatedAt: "desc"},
-    include: {customer: true},
-    take: 10,
-  });
+  const matchingContacts = channel === "whatsapp"
+    ? await prisma.buyerContact.findMany({
+        where: {phone: recipient},
+        orderBy: {updatedAt: "desc"},
+        include: {customer: true},
+        take: 10,
+      })
+    : await prisma.buyerContact.findMany({
+        where: {email: {equals: recipient, mode: "insensitive"}},
+        orderBy: {updatedAt: "desc"},
+        include: {customer: true},
+        take: 10,
+      });
   const contact = matchingContacts.find((candidate) =>
-    isBuyerLoginEligible(candidate.customer, candidate, email),
+    isBuyerLoginEligible(candidate.customer, candidate, recipient, channel),
   );
-  const eligible = isBuyerLoginEligible(contact?.customer, contact, email);
+  const eligible = isBuyerLoginEligible(contact?.customer, contact, recipient, channel);
   const challengeId = crypto.randomUUID();
   const otp = generateBuyerOtp();
   const now = new Date();
   const since = new Date(now.getTime() - 15 * 60 * 1000);
+  const recipientFilter = channel === "whatsapp" ? {recipientPhone: recipient} : {recipientEmail: recipient};
   let issueResult:
     | {created: true}
     | {created: false};
@@ -92,7 +106,7 @@ async function issueBuyerOtp(emailInput: string) {
     issueResult = await prisma.$transaction(async (tx) => {
       const [recipientChallenges, ipChallenges] = await Promise.all([
         tx.buyerOtpChallenge.findMany({
-          where: {recipientEmail: email, createdAt: {gte: since}},
+          where: {...recipientFilter, createdAt: {gte: since}},
           orderBy: {createdAt: "desc"},
           select: {createdAt: true},
         }),
@@ -113,7 +127,7 @@ async function issueBuyerOtp(emailInput: string) {
 
       await tx.buyerOtpChallenge.updateMany({
         where: {
-          recipientEmail: email,
+          ...recipientFilter,
           consumedAt: null,
           invalidatedAt: null,
         },
@@ -122,7 +136,9 @@ async function issueBuyerOtp(emailInput: string) {
       await tx.buyerOtpChallenge.create({
         data: {
           id: challengeId,
-          recipientEmail: email,
+          channel,
+          recipientEmail: channel === "email" ? recipient : null,
+          recipientPhone: channel === "whatsapp" ? recipient : null,
           customerId: eligible ? contact!.customerId : null,
           buyerContactId: eligible ? contact!.id : null,
           otpHash: hashBuyerOtp(challengeId, otp, secret),
@@ -135,7 +151,7 @@ async function issueBuyerOtp(emailInput: string) {
     }, {isolationLevel: "Serializable"});
   } catch (error) {
     // A serializable conflict means a concurrent request won. Suppress this
-    // request rather than issuing another email or exposing account state.
+    // request rather than issuing another message or exposing account state.
     if ((error as {code?: string})?.code === "P2034") return;
     throw error;
   }
@@ -148,12 +164,24 @@ async function issueBuyerOtp(emailInput: string) {
 
   if (!eligible) return;
 
+  if (channel === "whatsapp") {
+    try {
+      await sendWhatsAppOtpTemplate({to: recipient, code: otp});
+    } catch {
+      await prisma.buyerOtpChallenge.update({
+        where: {id: challengeId},
+        data: {invalidatedAt: new Date()},
+      });
+    }
+    return;
+  }
+
   let result;
   try {
     result = await sendTransactionalEmail({
       deduplicationKey: `buyer-login-otp:${challengeId}`,
       template: "buyer-login-otp",
-      to: email,
+      to: recipient,
       content: emailTemplates.buyerLoginOtp(contact!.name, otp),
       storedContent: emailTemplates.buyerLoginOtpStored(),
       relatedType: "BuyerOtpChallenge",
@@ -176,9 +204,11 @@ async function issueBuyerOtp(emailInput: string) {
 }
 
 export async function requestBuyerOtpAction(formData: FormData) {
-  const email = normalizeBuyerEmail(readText(formData, "email"));
-  if (isValidBuyerEmail(email)) await issueBuyerOtp(email);
-  redirect("/buyer-login?step=verify&sent=1");
+  const channel: BuyerOtpChannel = readText(formData, "channel") === "whatsapp" ? "whatsapp" : "email";
+  const recipient = readText(formData, "recipient");
+  const valid = channel === "whatsapp" ? isValidBuyerPhone(recipient) : isValidBuyerEmail(recipient);
+  if (valid) await issueBuyerOtp(recipient, channel);
+  redirect(`/buyer-login?step=verify&sent=1&channel=${channel}`);
 }
 
 export async function resendBuyerOtpAction() {
@@ -186,9 +216,13 @@ export async function resendBuyerOtpAction() {
   if (challengeId) {
     const challenge = await prisma.buyerOtpChallenge.findUnique({
       where: {id: challengeId},
-      select: {recipientEmail: true},
+      select: {recipientEmail: true, recipientPhone: true, channel: true},
     });
-    if (challenge) await issueBuyerOtp(challenge.recipientEmail);
+    if (challenge) {
+      const channel: BuyerOtpChannel = challenge.channel === "whatsapp" ? "whatsapp" : "email";
+      const recipient = channel === "whatsapp" ? challenge.recipientPhone : challenge.recipientEmail;
+      if (recipient) await issueBuyerOtp(recipient, channel);
+    }
   }
   redirect("/buyer-login?step=verify&sent=1");
 }
@@ -220,13 +254,18 @@ export async function verifyBuyerOtpAction(formData: FormData) {
     redirect("/buyer-login?step=verify&error=otp-invalid");
   }
 
+  const challengeChannel: BuyerOtpChannel = challenge.channel === "whatsapp" ? "whatsapp" : "email";
+  const challengeRecipient = challengeChannel === "whatsapp" ? challenge.recipientPhone : challenge.recipientEmail;
+
   if (
     !challenge.customer ||
     !challenge.buyerContact ||
+    !challengeRecipient ||
     !isBuyerLoginEligible(
       challenge.customer,
       challenge.buyerContact,
-      challenge.recipientEmail,
+      challengeRecipient,
+      challengeChannel,
     )
   ) {
     await prisma.buyerOtpChallenge.update({
@@ -244,7 +283,7 @@ export async function verifyBuyerOtpAction(formData: FormData) {
   await createBuyerSession({
     customerId: challenge.customer.id,
     contact: challenge.buyerContact,
-    authMode: "email-otp",
+    authMode: challengeChannel === "whatsapp" ? "whatsapp-otp" : "email-otp",
   });
   cookieStore.set(BUYER_OTP_CHALLENGE_COOKIE, "", {
     httpOnly: true,

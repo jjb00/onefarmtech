@@ -280,7 +280,9 @@ model BuyerAccountInvite {
 
 model BuyerOtpChallenge {
   id              String        @id
-  recipientEmail  String
+  channel         String        @default("email")
+  recipientEmail  String?
+  recipientPhone  String?
   customerId      String?
   customer        Customer?     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   buyerContactId  String?
@@ -295,6 +297,7 @@ model BuyerOtpChallenge {
   createdAt       DateTime      @default(now())
 
   @@index([recipientEmail, createdAt])
+  @@index([recipientPhone, createdAt])
   @@index([requestIpHash, createdAt])
   @@index([buyerContactId, createdAt])
   @@index([expiresAt])

@@ -17,6 +17,7 @@ type BuyerLoginModalProps = {
   allowClose?: boolean;
   otpStep?: boolean;
   otpSent?: boolean;
+  otpSentChannel?: "email" | "whatsapp" | null;
 };
 
 export default function BuyerLoginModal({
@@ -26,8 +27,10 @@ export default function BuyerLoginModal({
   allowClose = true,
   otpStep = false,
   otpSent = false,
+  otpSentChannel = null,
 }: BuyerLoginModalProps) {
   const [open, setOpen] = useState(defaultOpen);
+  const [channel, setChannel] = useState<"email" | "whatsapp">("email");
   const identifierRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function BuyerLoginModal({
                 </h1>
                 <p className="mt-2 text-sm leading-7 text-[#405348]">
                   Approved buyer contacts can receive a secure one-time code by
-                  email. The code expires after 10 minutes.
+                  WhatsApp or email. The code expires after 10 minutes.
                 </p>
               </div>
 
@@ -116,7 +119,9 @@ export default function BuyerLoginModal({
 
             {otpSent ? (
               <div role="status" className="mt-4 rounded-2xl bg-[#eef8f0] p-4 text-sm font-bold text-[#155c2f]">
-                If that email is approved for buyer access, a login code has been sent.
+                {otpSentChannel === "whatsapp"
+                  ? "If that WhatsApp number is approved for buyer access, a login code has been sent."
+                  : "If that email is approved for buyer access, a login code has been sent."}
               </div>
             ) : null}
 
@@ -151,25 +156,65 @@ export default function BuyerLoginModal({
                 </Link>
               </div>
             ) : (
-              <form action={requestBuyerOtpAction} className="mt-6 grid gap-4">
-                <label className="grid gap-2 text-sm font-black text-[#102015]">
-                  Approved email address
-                  <input
-                    ref={identifierRef}
-                    name="email"
-                    type="email"
-                    required
-                    autoComplete="email"
-                    placeholder="buyer@example.com"
-                    className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+              <>
+                <div className="mt-6 grid grid-cols-2 gap-2 rounded-2xl bg-[#f7f5ec] p-1">
+                  <button
+                    type="button"
+                    onClick={() => setChannel("whatsapp")}
+                    className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                      channel === "whatsapp" ? "bg-white text-[#102015] shadow-sm" : "text-[#587063]"
+                    }`}
+                  >
+                    WhatsApp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChannel("email")}
+                    className={`rounded-xl px-4 py-2 text-sm font-black transition ${
+                      channel === "email" ? "bg-white text-[#102015] shadow-sm" : "text-[#587063]"
+                    }`}
+                  >
+                    Email
+                  </button>
+                </div>
+
+                <form action={requestBuyerOtpAction} className="mt-4 grid gap-4">
+                  <input type="hidden" name="channel" value={channel} />
+                  {channel === "whatsapp" ? (
+                    <label className="grid gap-2 text-sm font-black text-[#102015]">
+                      Approved WhatsApp number
+                      <input
+                        ref={identifierRef}
+                        name="recipient"
+                        type="tel"
+                        inputMode="tel"
+                        required
+                        autoComplete="tel"
+                        placeholder="+234 800 000 0000"
+                        className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+                      />
+                    </label>
+                  ) : (
+                    <label className="grid gap-2 text-sm font-black text-[#102015]">
+                      Approved email address
+                      <input
+                        ref={identifierRef}
+                        name="recipient"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        placeholder="buyer@example.com"
+                        className="rounded-2xl border border-[#101712]/10 bg-[#fbfff8] px-4 py-3 text-sm font-semibold outline-none transition focus:border-[#1f7a3f] focus:ring-2 focus:ring-[#1f7a3f]/15"
+                      />
+                    </label>
+                  )}
+                  <PendingSubmitButton
+                    label={channel === "whatsapp" ? "WhatsApp me a login code" : "Email me a login code"}
+                    pendingLabel="Sending code…"
+                    className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
                   />
-                </label>
-                <PendingSubmitButton
-                  label="Email me a login code"
-                  pendingLabel="Sending code…"
-                  className="rounded-full bg-[#1f7a3f] px-6 py-3 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-60"
-                />
-              </form>
+                </form>
+              </>
             )}
 
             <div className="mt-5 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4">

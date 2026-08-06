@@ -27,7 +27,7 @@ const messages: Record<string, string> = {
 export default async function BuyerLoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{error?: string; step?: string; sent?: string}>;
+  searchParams?: Promise<{error?: string; step?: string; sent?: string; channel?: string}>;
 }) {
   const params = await searchParams;
   const errorMessage = params?.error
@@ -51,6 +51,7 @@ export default async function BuyerLoginPage({
           errorMessage={errorMessage}
           otpStep={params?.step === "verify"}
           otpSent={params?.sent === "1"}
+          otpSentChannel={params?.channel === "whatsapp" ? "whatsapp" : "email"}
           showTrigger={false}
           allowClose={false}
         />

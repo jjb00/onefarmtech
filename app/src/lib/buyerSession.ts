@@ -15,13 +15,15 @@ import {BUYER_OTP_CHALLENGE_COOKIE} from "@/lib/buyerOtp";
 export async function createBuyerSession(input: {
   customerId: string;
   contact: {id: string; name: string; role: string; updatedAt: Date};
-  authMode: "invite-code" | "email-otp";
+  authMode: "invite-code" | "email-otp" | "whatsapp-otp";
   inviteId?: string | null;
 }) {
   const revision = input.contact.updatedAt.toISOString();
   const inviteId = input.authMode === "invite-code" ? input.inviteId || "" : "";
-  const subject = input.authMode === "email-otp"
-    ? `${input.customerId}:email-otp:${input.contact.id}:${revision}`
+  // Both OTP modes skip the invite-id lookup entirely -- only the legacy
+  // invite-code path needs one, so anything else shares its subject shape.
+  const subject = input.authMode !== "invite-code"
+    ? `${input.customerId}:${input.authMode}:${input.contact.id}:${revision}`
     : `${input.customerId}:${inviteId}:${input.contact.id}:${revision}`;
   const cookieStore = await cookies();
   const maxAgeSeconds = 60 * 60 * 24 * 30;

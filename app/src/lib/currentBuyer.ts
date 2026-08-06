@@ -23,7 +23,7 @@ export type CurrentBuyerActor = {
   canPlaceOrders: boolean;
   canViewReceipts: boolean;
   canViewCredit: boolean;
-  authMode: "invite-code" | "email-otp";
+  authMode: "invite-code" | "email-otp" | "whatsapp-otp";
 };
 
 export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
@@ -33,8 +33,9 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
   const inviteId = cookieStore.get(BUYER_INVITE_ID_COOKIE)?.value || null;
   const contactId = cookieStore.get(BUYER_CONTACT_ID_COOKIE)?.value || null;
   const contactRevision = cookieStore.get(BUYER_CONTACT_REVISION_COOKIE)?.value || null;
-  const authMode = cookieStore.get(BUYER_AUTH_MODE_COOKIE)?.value === "email-otp"
-    ? "email-otp"
+  const rawAuthMode = cookieStore.get(BUYER_AUTH_MODE_COOKIE)?.value;
+  const authMode = rawAuthMode === "email-otp" || rawAuthMode === "whatsapp-otp"
+    ? rawAuthMode
     : "invite-code";
   const [customer, contact, invite] = await Promise.all([
     customerId ? prisma.customer.findUnique({where: {id: customerId}}) : null,
@@ -43,15 +44,15 @@ export async function getCurrentBuyerActor(): Promise<CurrentBuyerActor> {
       ? prisma.buyerAccountInvite.findUnique({where: {id: inviteId}})
       : null,
   ]);
-  const subject = authMode === "email-otp"
-    ? `${customerId}:email-otp:${contactId}:${contactRevision}`
+  const subject = authMode !== "invite-code"
+    ? `${customerId}:${authMode}:${contactId}:${contactRevision}`
     : `${customerId}:${inviteId}:${contactId}:${contactRevision}`;
   const isAuthenticated = Boolean(
     customerId && contactId && contactRevision && contact &&
     isBuyerLoginEligible(customer, contact) &&
     contact.customerId === customerId && contact.status === "Active" &&
     contact.updatedAt.toISOString() === contactRevision &&
-    (authMode === "email-otp" || Boolean(
+    (authMode !== "invite-code" || Boolean(
       invite &&
       invite.customerId === customerId &&
       !invite.status.toLowerCase().includes("cancel")

@@ -7,6 +7,8 @@ export const BUYER_OTP_MAX_REQUESTS_PER_WINDOW = 3;
 export const BUYER_OTP_MAX_ATTEMPTS = 5;
 export const BUYER_OTP_CHALLENGE_COOKIE = "oft_buyer_otp_challenge";
 
+export type BuyerOtpChannel = "email" | "whatsapp";
+
 export function normalizeBuyerEmail(value: string | null | undefined) {
   return String(value || "").trim().toLowerCase();
 }
@@ -15,16 +17,53 @@ export function isValidBuyerEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeBuyerEmail(value));
 }
 
+// Deliberately inlined rather than imported from ./phoneNumbers -- this
+// file is also loaded directly by the test runner outside Next.js's
+// bundler, which can't resolve the "@/" alias the rest of the app uses.
+// Mirrors normalizeInternationalPhone's output (+<countrycode><digits>) so
+// a login attempt matches however the number was saved on BuyerContact.
+export function normalizeBuyerPhone(value: string | null | undefined) {
+  const input = String(value || "").trim();
+  if (!input || !/^[+\d\s().-]+$/.test(input)) return "";
+
+  let digits = input.replace(/\D/g, "");
+  if (!digits) return "";
+
+  if (input.startsWith("+")) {
+    return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : "";
+  }
+  if (digits.startsWith("00")) {
+    digits = digits.slice(2);
+    return digits.length >= 8 && digits.length <= 15 ? `+${digits}` : "";
+  }
+
+  const countryCode = "234";
+  if (digits.startsWith(countryCode) && digits.length >= 8 && digits.length <= 15) {
+    return `+${digits}`;
+  }
+  if (digits.startsWith("0")) digits = digits.slice(1);
+  const normalized = `${countryCode}${digits}`;
+  return normalized.length >= 8 && normalized.length <= 15 ? `+${normalized}` : "";
+}
+
+export function isValidBuyerPhone(value: string) {
+  return Boolean(normalizeBuyerPhone(value));
+}
+
 export function isBuyerLoginEligible(
   customer: {status: string; accountLoginReady: boolean} | null | undefined,
-  contact: {status: string; email?: string | null} | null | undefined,
-  email?: string,
+  contact: {status: string; email?: string | null; phone?: string | null} | null | undefined,
+  recipient?: string,
+  channel: BuyerOtpChannel = "email",
 ) {
   if (!customer || !contact) return false;
   if (customer.status !== "Active" || !customer.accountLoginReady) return false;
   if (contact.status !== "Active") return false;
-  if (email && normalizeBuyerEmail(contact.email) !== normalizeBuyerEmail(email)) return false;
-  return true;
+  if (!recipient) return true;
+  if (channel === "whatsapp") {
+    return normalizeBuyerPhone(contact.phone) === normalizeBuyerPhone(recipient);
+  }
+  return normalizeBuyerEmail(contact.email) === normalizeBuyerEmail(recipient);
 }
 
 export function generateBuyerOtp() {

@@ -370,3 +370,61 @@ export async function sendWhatsAppBuyerInviteTemplate(input: {
     raw: payload,
   };
 }
+
+// AUTHENTICATION templates carry no free body text and Meta requires the
+// code to appear twice at send time: once as the body {{1}} substitution,
+// once as the copy-code button's own parameter (sub_type "url", index 0).
+// Both must be the same value or the button copies the wrong thing.
+export async function sendWhatsAppOtpTemplate(input: {to: string; code: string}) {
+  const templateName = process.env.WHATSAPP_LOGIN_CODE_TEMPLATE_NAME?.trim();
+  if (!templateName) {
+    throw new WhatsAppProviderError(
+      "An approved WhatsApp login-code template is required. Configure WHATSAPP_LOGIN_CODE_TEMPLATE_NAME before retrying.",
+      {templateRequired: true},
+    );
+  }
+
+  const {accessToken, phoneNumberId, apiVersion} = getMetaConfig();
+  const to = normaliseWhatsAppPhone(input.to);
+
+  const response = await fetch(`https://graph.facebook.com/${apiVersion}/${phoneNumberId}/messages`, {
+    method: "POST",
+    headers: {Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json"},
+    body: JSON.stringify({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      type: "template",
+      template: {
+        name: templateName,
+        language: {code: process.env.WHATSAPP_LOGIN_CODE_TEMPLATE_LANGUAGE || "en_US"},
+        components: [
+          {type: "body", parameters: [{type: "text", text: input.code}]},
+          {type: "button", sub_type: "url", index: 0, parameters: [{type: "text", text: input.code}]},
+        ],
+      },
+    }),
+  });
+
+  const payload = await response.json().catch(() => null);
+
+  if (!response.ok) {
+    throw new WhatsAppProviderError(payload?.error?.message || `WhatsApp send failed with HTTP ${response.status}.`, {
+      httpStatus: response.status,
+      code: Number(payload?.error?.code) || undefined,
+      subcode: Number(payload?.error?.error_subcode) || undefined,
+      providerDetails: payload?.error?.error_data?.details || undefined,
+      templateRequired: Number(payload?.error?.code) === 131047,
+    });
+  }
+
+  return {
+    provider: "Meta WhatsApp Cloud API" as const,
+    status: "Sent" as const,
+    httpStatus: response.status,
+    normalizedTo: to,
+    messageType: "template" as const,
+    messageId: payload?.messages?.[0]?.id,
+    raw: payload,
+  };
+}
