@@ -63,6 +63,18 @@ export async function createWhatsAppTemplate(input: {
     throw new Error(`Template body has ${placeholderCount} placeholder(s) but ${input.bodyExamples.length} example value(s) were given.`);
   }
 
+  // Meta rejects these two shapes with a bare "Invalid parameter" and no
+  // usable detail (subcodes 2388299 and 2388293), so catch them here where
+  // we can say what is actually wrong.
+  const trimmedBody = input.bodyText.trim();
+  if (/^\{\{\d+\}\}/.test(trimmedBody) || /\{\{\d+\}\}$/.test(trimmedBody)) {
+    throw new Error("Meta rejects template bodies that start or end with a {{variable}}. Add wording before and after every placeholder.");
+  }
+  const staticCharacters = trimmedBody.replace(/\{\{\d+\}\}/g, "").replace(/\s+/g, " ").trim().length;
+  if (placeholderCount > 0 && staticCharacters < placeholderCount * 20) {
+    throw new Error(`Meta rejects templates that are mostly variables. This body has ${placeholderCount} placeholder(s) but only ${staticCharacters} characters of fixed wording — add more wording or use fewer placeholders.`);
+  }
+
   const components = [
     {
       type: "BODY",

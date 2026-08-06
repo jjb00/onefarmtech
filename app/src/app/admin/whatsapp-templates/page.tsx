@@ -13,7 +13,7 @@ const PRESETS = [
     envVar: "WHATSAPP_BUYER_INVITE_TEMPLATE_NAME",
     usedFor: "Sent when a buyer account request is approved, so the buyer can log in for the first time. Fails silently today because no template is configured.",
     category: "UTILITY",
-    bodyText: "Hello {{1}}, your OneFarmTech buyer account is approved. Your access code is {{2}}. Sign in at {{3}}",
+    bodyText: "Hello {{1}}, your OneFarmTech buyer account has been approved. Your access code is {{2}}. Sign in at {{3}} to place your first order. Keep this code private and do not share it with anyone.",
     bodyExamples: "Amaka\nOFT-7F2K9\nhttps://onefarmtech.com/buyer-login",
   },
   {
@@ -21,7 +21,7 @@ const PRESETS = [
     envVar: "WHATSAPP_PAYMENT_TEMPLATE_NAME",
     usedFor: "Manual payment-link resend to a buyer outside an active chat window. A template name is already configured for this -- check its status below before resubmitting.",
     category: "UTILITY",
-    bodyText: "Hello {{1}}, order {{2}} has a pending payment of {{3}}. Reference: {{4}}. Pay here: {{5}}",
+    bodyText: "Hello {{1}}, your OneFarmTech order {{2}} is confirmed and is now awaiting payment of {{3}}. Please quote payment reference {{4}} and complete your payment at this secure link: {{5}} — we will begin preparing your produce as soon as the payment is received.",
     bodyExamples: "Amaka\nOFT-00042\nNGN 45,000\nPAY-8821\nhttps://onefarmtech.com/pay/PAY-8821",
   },
 ];

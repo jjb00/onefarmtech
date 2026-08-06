@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BrandMark from "@/components/BrandMark";
+import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicFooter from "@/components/PublicFooter";
 import {PRIVATE_NOINDEX_METADATA} from "@/lib/publicSeo";
 
@@ -22,8 +23,26 @@ const partnerOptions = [
 
 export default function PartnerLoginPage() {
   return (
-    <main className="oft-product-shell min-h-screen bg-[#fbfff8] text-[#102015]">
-      <section className="mx-auto max-w-5xl px-6 py-8 lg:px-10">
+    <main className="oft-public-surface relative min-h-screen overflow-hidden text-[#102015]">
+      <PublicImageCollage
+        images={[
+          {
+            src: "/backgrounds/delivery.png",
+            alt: "Logistics and fulfilment partner",
+            className: "right-[-140px] top-16 h-80 w-80 opacity-[0.34] md:h-[30rem] md:w-[30rem]",
+          },
+          {
+            src: "/backgrounds/produce.png",
+            alt: "Fresh produce supply",
+            className: "left-[-150px] bottom-[-120px] h-80 w-80 opacity-[0.3] md:h-[28rem] md:w-[28rem]",
+          },
+        ]}
+      />
+      <div className="oft-public-topline absolute inset-x-0 top-0 h-2" />
+      <div className="oft-orb-drift pointer-events-none absolute right-[-140px] top-20 h-[28rem] w-[28rem] rounded-full bg-[#1f7a3f]/14 blur-3xl" />
+      <div className="oft-orb-drift-delay pointer-events-none absolute left-[-160px] bottom-[-180px] h-[30rem] w-[30rem] rounded-full bg-[#F2B84B]/30 blur-3xl" />
+
+      <section className="relative mx-auto max-w-5xl px-6 py-8 lg:px-10">
         <header className="flex items-center justify-between gap-4">
           <Link href="/" aria-label="Go to OneFarmTech homepage">
             <BrandMark />
