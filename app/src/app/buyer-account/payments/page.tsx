@@ -138,12 +138,20 @@ export default async function BuyerPaymentsPage() {
             </p>
           </div>
 
-          <Link
-            href="/buyer-account/orders"
-            className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
-          >
-            View orders
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <a
+              href="#receipts"
+              className="rounded-full bg-[#1f7a3f] px-4 py-2 text-sm font-black text-white shadow-sm hover:bg-[#155c2f]"
+            >
+              Jump to receipts
+            </a>
+            <Link
+              href="/buyer-account/orders"
+              className="rounded-full border border-[#102015]/15 bg-white px-4 py-2 text-sm font-black text-[#102015] hover:bg-[#f3f8ef]"
+            >
+              View orders
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -226,25 +234,19 @@ export default async function BuyerPaymentsPage() {
                   </p>
                 </div>
 
-                <div className="mt-4 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4 text-sm text-[#405348] md:grid-cols-2">
-                  <p>
-                    <span className="font-black text-[#102015]">Reference:</span>{" "}
-                    {request.reference}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Status:</span>{" "}
-                    {request.status}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Bank:</span>{" "}
-                    {request.bankName || "Awaiting payment details"}
-                  </p>
-                  <p>
-                    <span className="font-black text-[#102015]">Account:</span>{" "}
-                    {request.accountNumber || "Awaiting payment details"}{" "}
-                    {request.accountName ? `· ${request.accountName}` : ""}
-                  </p>
-                </div>
+                {request.status !== "Paid" ? (
+                  <div className="mt-4 grid gap-3 rounded-2xl bg-[#f7f5ec] p-4 text-sm text-[#405348] md:grid-cols-2">
+                    <p>
+                      <span className="font-black text-[#102015]">Bank:</span>{" "}
+                      {request.bankName || "Awaiting payment details"}
+                    </p>
+                    <p>
+                      <span className="font-black text-[#102015]">Account:</span>{" "}
+                      {request.accountNumber || "Awaiting payment details"}{" "}
+                      {request.accountName ? `· ${request.accountName}` : ""}
+                    </p>
+                  </div>
+                ) : null}
 
                 {request.paymentUrl && request.status !== "Paid" ? (
                   <a
@@ -309,7 +311,7 @@ export default async function BuyerPaymentsPage() {
           </div>
         </div>
 
-        <div className="rounded-[2rem] bg-white p-6 shadow-sm">
+        <div id="receipts" className="scroll-mt-6 rounded-[2rem] bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <p className="text-xs font-black uppercase tracking-[0.22em] text-[#1f7a3f]">
