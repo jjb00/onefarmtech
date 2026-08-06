@@ -25,8 +25,11 @@ test("WhatsApp buyer access delivery uses an approved configurable template", ()
   assert.match(provider, /WHATSAPP_BUYER_INVITE_TEMPLATE_NAME/);
   assert.match(provider, /WHATSAPP_BUYER_INVITE_TEMPLATE_LANGUAGE/);
   assert.match(provider, /type: "template"/);
-  assert.match(provider, /input\.accessCode/);
   assert.match(provider, /input\.loginUrl/);
+  // Meta classifies any code-bearing template as AUTHENTICATION and rejects
+  // it under UTILITY (INCORRECT_CATEGORY), so this approval notice must not
+  // carry the access code. The code is delivered by email instead.
+  assert.doesNotMatch(provider, /input\.accessCode/);
 });
 
 test("buyer access delivery records outcomes without exposing the access code in message logs", () => {
@@ -38,7 +41,7 @@ test("buyer access delivery records outcomes without exposing the access code in
   assert.match(actions, /status: "Failed"/);
   assert.match(
     actions,
-    /body: `A buyer access code was sent securely to \$\{normalizedRecipient\}\.`/,
+    /body: `An account-approval notice was sent to \$\{normalizedRecipient\}\./,
   );
   assert.doesNotMatch(
     actions,

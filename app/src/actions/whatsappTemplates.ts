@@ -23,7 +23,9 @@ export async function submitWhatsAppTemplateAction(formData: FormData) {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (!name || !bodyText) {
+  // Authentication templates carry no body text -- Meta supplies the wording
+  // and only accepts option flags -- so only require it for the others.
+  if (!name || (category !== "AUTHENTICATION" && !bodyText)) {
     redirect("/admin/whatsapp-templates?error=missing-fields");
   }
 

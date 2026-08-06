@@ -49,49 +49,16 @@ export async function listWhatsAppTemplates(): Promise<WhatsAppTemplateSummary[]
   }));
 }
 
-export async function createWhatsAppTemplate(input: {
-  name: string;
-  category: "UTILITY" | "MARKETING" | "AUTHENTICATION";
-  language: string;
-  bodyText: string;
-  bodyExamples: string[];
+async function submitTemplate(input: {
+  accessToken: string;
+  businessAccountId: string;
+  apiVersion: string;
+  body: Record<string, unknown>;
 }) {
-  const {accessToken, businessAccountId, apiVersion} = getTemplateManagementConfig();
-
-  const placeholderCount = (input.bodyText.match(/\{\{\d+\}\}/g) || []).length;
-  if (placeholderCount !== input.bodyExamples.length) {
-    throw new Error(`Template body has ${placeholderCount} placeholder(s) but ${input.bodyExamples.length} example value(s) were given.`);
-  }
-
-  // Meta rejects these two shapes with a bare "Invalid parameter" and no
-  // usable detail (subcodes 2388299 and 2388293), so catch them here where
-  // we can say what is actually wrong.
-  const trimmedBody = input.bodyText.trim();
-  if (/^\{\{\d+\}\}/.test(trimmedBody) || /\{\{\d+\}\}$/.test(trimmedBody)) {
-    throw new Error("Meta rejects template bodies that start or end with a {{variable}}. Add wording before and after every placeholder.");
-  }
-  const staticCharacters = trimmedBody.replace(/\{\{\d+\}\}/g, "").replace(/\s+/g, " ").trim().length;
-  if (placeholderCount > 0 && staticCharacters < placeholderCount * 20) {
-    throw new Error(`Meta rejects templates that are mostly variables. This body has ${placeholderCount} placeholder(s) but only ${staticCharacters} characters of fixed wording — add more wording or use fewer placeholders.`);
-  }
-
-  const components = [
-    {
-      type: "BODY",
-      text: input.bodyText,
-      ...(input.bodyExamples.length ? {example: {body_text: [input.bodyExamples]}} : {}),
-    },
-  ];
-
-  const response = await fetch(`https://graph.facebook.com/${apiVersion}/${businessAccountId}/message_templates`, {
+  const response = await fetch(`https://graph.facebook.com/${input.apiVersion}/${input.businessAccountId}/message_templates`, {
     method: "POST",
-    headers: {Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json"},
-    body: JSON.stringify({
-      name: input.name,
-      category: input.category,
-      language: input.language,
-      components,
-    }),
+    headers: {Authorization: `Bearer ${input.accessToken}`, "Content-Type": "application/json"},
+    body: JSON.stringify(input.body),
   });
 
   const payload = await response.json().catch(() => null);
@@ -120,4 +87,82 @@ export async function createWhatsAppTemplate(input: {
   }
 
   return {id: payload.id as string, status: (payload.status as string) || "PENDING"};
+}
+
+export async function createWhatsAppTemplate(input: {
+  name: string;
+  category: "UTILITY" | "MARKETING" | "AUTHENTICATION";
+  language: string;
+  bodyText: string;
+  bodyExamples: string[];
+  codeExpirationMinutes?: number;
+}) {
+  const {accessToken, businessAccountId, apiVersion} = getTemplateManagementConfig();
+
+  // AUTHENTICATION templates are a fixed shape: Meta writes the copy itself
+  // and only accepts option flags, so there is no body text to validate or
+  // send. The rendered message becomes "<CODE> is your verification code."
+  // plus the security line, an expiry footer and a copy-code button.
+  if (input.category === "AUTHENTICATION") {
+    return submitTemplate({
+      accessToken,
+      businessAccountId,
+      apiVersion,
+      body: {
+        name: input.name,
+        category: "AUTHENTICATION",
+        language: input.language,
+        components: [
+          {type: "BODY", add_security_recommendation: true},
+          {type: "FOOTER", code_expiration_minutes: input.codeExpirationMinutes || 10},
+          {type: "BUTTONS", buttons: [{type: "OTP", otp_type: "COPY_CODE", text: "Copy code"}]},
+        ],
+      },
+    });
+  }
+
+  const placeholderCount = (input.bodyText.match(/\{\{\d+\}\}/g) || []).length;
+  if (placeholderCount !== input.bodyExamples.length) {
+    throw new Error(`Template body has ${placeholderCount} placeholder(s) but ${input.bodyExamples.length} example value(s) were given.`);
+  }
+
+  // Meta rejects these two shapes with a bare "Invalid parameter" and no
+  // usable detail (subcodes 2388299 and 2388293), so catch them here where
+  // we can say what is actually wrong.
+  const trimmedBody = input.bodyText.trim();
+  if (/^\{\{\d+\}\}/.test(trimmedBody) || /\{\{\d+\}\}$/.test(trimmedBody)) {
+    throw new Error("Meta rejects template bodies that start or end with a {{variable}}. Add wording before and after every placeholder.");
+  }
+  const staticCharacters = trimmedBody.replace(/\{\{\d+\}\}/g, "").replace(/\s+/g, " ").trim().length;
+  if (placeholderCount > 0 && staticCharacters < placeholderCount * 20) {
+    throw new Error(`Meta rejects templates that are mostly variables. This body has ${placeholderCount} placeholder(s) but only ${staticCharacters} characters of fixed wording — add more wording or use fewer placeholders.`);
+  }
+
+  // Meta's classifier reads any code-delivery wording as authentication
+  // content and rejects the template as INCORRECT_CATEGORY -- but only after
+  // review, hours later. Authentication content cannot be reworded into
+  // UTILITY, so flag it now rather than waiting for the rejection.
+  if (/\b(access|verification|security|one[- ]time|otp|login|sign[- ]?in|confirmation)\s+code\b/i.test(trimmedBody) || /\bcode\s+is\s*\{\{\d+\}\}/i.test(trimmedBody)) {
+    throw new Error("Meta classifies any template that delivers a code as AUTHENTICATION and will reject this as INCORRECT_CATEGORY. Submit it under the Authentication category instead, which uses Meta's own fixed wording, or remove the code from this message.");
+  }
+
+  const components = [
+    {
+      type: "BODY",
+      text: input.bodyText,
+      ...(input.bodyExamples.length ? {example: {body_text: [input.bodyExamples]}} : {}),
+    },
+  ];
+
+  return submitTemplate({
+    accessToken,
+    businessAccountId,
+    apiVersion,
+    body: {
+      name: input.name,
+      category: input.category,
+      language: input.language,
+      components,
+    },
+  });
 }

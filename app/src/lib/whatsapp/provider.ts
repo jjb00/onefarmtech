@@ -290,10 +290,12 @@ export async function sendWhatsAppPaymentTemplate(input: {to: string; buyerName:
   return {provider: "Meta WhatsApp Cloud API" as const, status: "Sent" as const, httpStatus: response.status, normalizedTo: to, messageType: "template" as const, messageId: payload?.messages?.[0]?.id, raw: payload};
 }
 
+// Deliberately carries no access code. Meta classifies any code-bearing
+// template as AUTHENTICATION and rejects it under UTILITY, so this is the
+// approval notice only -- the code itself goes by email.
 export async function sendWhatsAppBuyerInviteTemplate(input: {
   to: string;
   buyerName: string;
-  accessCode: string;
   loginUrl: string;
 }) {
   const templateName =
@@ -333,7 +335,6 @@ export async function sendWhatsAppBuyerInviteTemplate(input: {
               type: "body",
               parameters: [
                 input.buyerName,
-                input.accessCode,
                 input.loginUrl,
               ].map((text) => ({type: "text", text})),
             },

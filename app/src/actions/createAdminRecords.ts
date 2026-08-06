@@ -701,8 +701,8 @@ async function deliverBuyerAccountInvite(input: {
   const messageLog = await prisma.buyerMessage.create({
     data: {
       customerId: invite.customerId,
-      title: "Buyer access code sent by WhatsApp",
-      body: `A buyer access code was sent securely to ${normalizedRecipient}.`,
+      title: "Buyer account approval sent by WhatsApp",
+      body: `An account-approval notice was sent to ${normalizedRecipient}. The sign-in code itself goes by email.`,
       channel: "WhatsApp",
       direction: "Outbound",
       status: "Pending",
@@ -722,7 +722,6 @@ async function deliverBuyerAccountInvite(input: {
     const result = await sendWhatsAppBuyerInviteTemplate({
       to: invite.phone,
       buyerName: invite.customer.name,
-      accessCode: invite.inviteCode,
       loginUrl,
     });
 

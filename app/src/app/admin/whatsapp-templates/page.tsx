@@ -9,12 +9,20 @@ export const runtime = "nodejs";
 
 const PRESETS = [
   {
-    name: "onefarmtech_buyer_invite",
+    name: "onefarmtech_buyer_approved",
     envVar: "WHATSAPP_BUYER_INVITE_TEMPLATE_NAME",
-    usedFor: "Sent when a buyer account request is approved, so the buyer can log in for the first time. Fails silently today because no template is configured.",
+    usedFor: "Sent when a buyer account request is approved. Carries no code -- an earlier version did, and Meta rejected it as INCORRECT_CATEGORY because code delivery must be an Authentication template.",
     category: "UTILITY",
-    bodyText: "Hello {{1}}, your OneFarmTech buyer account has been approved. Your access code is {{2}}. Sign in at {{3}} to place your first order. Keep this code private and do not share it with anyone.",
-    bodyExamples: "Amaka\nOFT-7F2K9\nhttps://onefarmtech.com/buyer-login",
+    bodyText: "Hello {{1}}, your OneFarmTech buyer account has been approved. Sign in at {{2}} to browse today's produce and place your first order. Reply to this message if you need any help getting started.",
+    bodyExamples: "Amaka\nhttps://onefarmtech.com/buyer-login",
+  },
+  {
+    name: "onefarmtech_login_code",
+    envVar: "WHATSAPP_LOGIN_CODE_TEMPLATE_NAME",
+    usedFor: "Delivers a sign-in code over WhatsApp. Meta writes the wording for Authentication templates, so there is nothing to edit -- it sends as \"<code> is your verification code\" with a copy button and a 10-minute expiry footer.",
+    category: "AUTHENTICATION",
+    bodyText: "",
+    bodyExamples: "",
   },
   {
     name: "onefarmtech_payment_confirmed",
@@ -99,25 +107,39 @@ export default async function WhatsAppTemplatesPage({
             <input type="hidden" name="category" value={preset.category} />
             <input type="hidden" name="language" value="en_US" />
 
-            <label className="grid gap-2 text-sm font-black text-[#102015]">
-              Body text ({"{{1}}"}, {"{{2}}"}... are filled in per message)
-              <textarea
-                name="bodyText"
-                defaultValue={preset.bodyText}
-                rows={3}
-                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#1f7a3f]"
-              />
-            </label>
+            {preset.category === "AUTHENTICATION" ? (
+              <div className="rounded-2xl bg-[#f7f5ec] p-4 text-sm leading-6 text-[#405348]">
+                <p className="font-black text-[#102015]">Meta controls the wording for Authentication templates.</p>
+                <p className="mt-2">There is nothing to fill in. On approval this sends as:</p>
+                <p className="mt-2 rounded-xl bg-white p-3 font-semibold text-[#102015]">
+                  &ldquo;123456 is your verification code. For your security, do not share this code.&rdquo;
+                  <br />
+                  <span className="text-xs text-[#587063]">This code expires in 10 minutes. · [ Copy code ]</span>
+                </p>
+              </div>
+            ) : (
+              <>
+                <label className="grid gap-2 text-sm font-black text-[#102015]">
+                  Body text ({"{{1}}"}, {"{{2}}"}... are filled in per message)
+                  <textarea
+                    name="bodyText"
+                    defaultValue={preset.bodyText}
+                    rows={3}
+                    className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#1f7a3f]"
+                  />
+                </label>
 
-            <label className="grid gap-2 text-sm font-black text-[#102015]">
-              Example value for each placeholder, one per line (required by Meta for review)
-              <textarea
-                name="bodyExamples"
-                defaultValue={preset.bodyExamples}
-                rows={preset.bodyExamples.split("\n").length}
-                className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#1f7a3f]"
-              />
-            </label>
+                <label className="grid gap-2 text-sm font-black text-[#102015]">
+                  Example value for each placeholder, one per line (required by Meta for review)
+                  <textarea
+                    name="bodyExamples"
+                    defaultValue={preset.bodyExamples}
+                    rows={Math.max(preset.bodyExamples.split("\n").length, 2)}
+                    className="rounded-xl border border-[#102015]/10 bg-white px-4 py-3 text-sm font-normal outline-none focus:border-[#1f7a3f]"
+                  />
+                </label>
+              </>
+            )}
 
             <PendingSubmitButton
               label="Submit to Meta for review"
