@@ -241,7 +241,7 @@ better prices, quality and reliability.
                         {activity.activeGroupBuyCount
                           ? "Live activity based on confirmed paid reservations."
                           : activity.hasRunBefore
-                            ? "Group buying opens Sunday night and closes Thursday night, with delivery Friday and Saturday. Propose one now to be first in line."
+                            ? "Weekly group buys run Sunday night to Thursday night, with delivery Friday and Saturday."
                             : "No group buys are running yet. Message us to open one for your street, office or business."}
                       </p>
                     </div>
@@ -263,9 +263,6 @@ better prices, quality and reliability.
                             style={{width: `${activity.progress}%`}}
                           />
                         </div>
-                        <p className="mt-3 text-sm font-semibold text-white/65">
-                          Figures update from confirmed paid group-buy reservations.
-                        </p>
                         {activity.closingDate ? (
                           <GroupBuyCountdown targetIso={activity.closingDate} label="Closes in" />
                         ) : null}
@@ -284,14 +281,13 @@ better prices, quality and reliability.
                     </>
                   ) : (
                     <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
-                      <p className="text-sm leading-6 text-white/70">
-                        {activity.hasRunBefore
-                          ? "The window closes Thursday nights and reopens Sunday nights, with delivery Friday and Saturday."
-                          : "Group buying works best when a few buyers combine an order. Be the one who starts it."}
-                      </p>
                       {activity.hasRunBefore ? (
                         <GroupBuyCountdown targetIso={nextGroupBuyOpenTime().toISOString()} label="Opens in" />
-                      ) : null}
+                      ) : (
+                        <p className="text-sm leading-6 text-white/70">
+                          Group buying works best when a few buyers combine an order. Be the one who starts it.
+                        </p>
+                      )}
                       <Link
                         href="/group-buy-request"
                         className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#F2B84B] hover:underline"
