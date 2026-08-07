@@ -281,13 +281,16 @@ better prices, quality and reliability.
                     </>
                   ) : (
                     <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
-                      {activity.hasRunBefore ? (
-                        <GroupBuyCountdown targetIso={nextGroupBuyOpenTime().toISOString()} label="Opens in" />
-                      ) : (
-                        <p className="text-sm leading-6 text-white/70">
+                      {/* The weekly open/close schedule runs on its own regardless of
+                          whether a group buy has ever existed yet, so the countdown
+                          to the next window is accurate and worth showing either way
+                          -- it shouldn't disappear just because the database is empty. */}
+                      <GroupBuyCountdown targetIso={nextGroupBuyOpenTime().toISOString()} label="Opens in" />
+                      {!activity.hasRunBefore ? (
+                        <p className="mt-3 text-sm leading-6 text-white/70">
                           Group buying works best when a few buyers combine an order. Be the one who starts it.
                         </p>
-                      )}
+                      ) : null}
                       <Link
                         href="/group-buy-request"
                         className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#F2B84B] hover:underline"

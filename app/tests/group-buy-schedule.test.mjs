@@ -56,3 +56,20 @@ test("the homepage renders a live countdown in both the open and closed states",
   assert.match(homepage, /GroupBuyCountdown targetIso=\{activity\.closingDate\}/);
   assert.match(homepage, /GroupBuyCountdown targetIso=\{nextGroupBuyOpenTime\(\)\.toISOString\(\)\}/);
 });
+
+test("the 'opens in' countdown is not gated behind whether a group buy has ever existed -- the schedule runs regardless of database history", () => {
+  // Regression test: deleting all GroupBuy rows (e.g. clearing test data)
+  // once made the countdown vanish entirely, because it was nested inside
+  // an `activity.hasRunBefore ? countdown : encouragement-text` ternary.
+  // The weekly cron doesn't care whether a group buy has ever been
+  // created, so the countdown shouldn't either.
+  const homepage = read("src/app/page.tsx");
+  const inactiveBranch = homepage.slice(homepage.indexOf('mt-7 rounded-2xl border border-white/10 bg-white/5 p-5"'));
+  const countdownIndex = inactiveBranch.indexOf("GroupBuyCountdown");
+  const hasRunBeforeIndex = inactiveBranch.indexOf("!activity.hasRunBefore");
+  assert.ok(countdownIndex > -1, "countdown is present in the inactive-state branch");
+  assert.ok(
+    hasRunBeforeIndex === -1 || countdownIndex < hasRunBeforeIndex,
+    "GroupBuyCountdown must render unconditionally, before any hasRunBefore check -- not nested inside it",
+  );
+});
