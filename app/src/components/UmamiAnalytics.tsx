@@ -7,23 +7,29 @@ import { useEffect, useState } from "react";
 const PUBLIC_PATHS = new Set([
   "/",
   "/buyer-account-request",
+  "/buyer-login",
   "/careers",
   "/careers/apply",
   "/contact",
   "/data-protection",
   "/delivery-partner",
   "/faq",
+  "/group-buy-request",
+  "/impact",
   "/order",
   "/order-request",
+  "/partner-login",
   "/privacy",
   "/supplier-partners",
   "/terms",
 ]);
 
+type UmamiTrackProps = {website: string; url: string; [key: string]: unknown};
+
 declare global {
   interface Window {
     umami?: {
-      track: (payload: { website: string; url: string }) => void;
+      track: (arg: UmamiTrackProps | ((props: UmamiTrackProps) => UmamiTrackProps)) => void;
     };
   }
 }
@@ -37,7 +43,15 @@ export default function UmamiAnalytics() {
 
   useEffect(() => {
     if (isLoaded && isPublicPage) {
-      window.umami?.track({ website: WEBSITE_ID, url: pathname });
+      // Umami's track() only merges in its own default context (hostname,
+      // referrer, screen, language, etc.) when called with a function that
+      // receives and extends that context -- passing a plain object instead
+      // replaces the context entirely with just what's given here, which
+      // silently drops every field the collector needs to record a valid
+      // pageview. That was the actual bug: the script loaded fine and
+      // window.umami existed, but every "tracked" view was really an
+      // incomplete payload that never landed in the dashboard.
+      window.umami?.track((props) => ({ ...props, website: WEBSITE_ID, url: pathname }));
     }
   }, [isLoaded, isPublicPage, pathname]);
 
