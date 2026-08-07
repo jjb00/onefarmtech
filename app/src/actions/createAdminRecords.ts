@@ -1835,17 +1835,24 @@ export async function createWhatsAppAssistedOrderAction(formData: FormData) {
     },
   });
 
-  await prisma.delivery.create({
-    data: {
-      orderId: order.id,
-      customerId: matched.customer?.id || null,
-      deliveryMethod,
-      deliveryFee,
-      deliveryAddress: deliveryAddress || null,
-      deliveryArea: deliveryArea || null,
-      status: "Pending assignment",
-    },
-  });
+  // Same fix as the WhatsApp bot's auto-checkout: pickup orders get no
+  // Delivery record at all, since nothing ever assigns a driver or advances
+  // its status for a pickup, and a stray "Pending assignment" row was
+  // leaking into buyers' WhatsApp order-status replies after they'd
+  // already collected the order.
+  if (!isPickupMethod(deliveryMethod)) {
+    await prisma.delivery.create({
+      data: {
+        orderId: order.id,
+        customerId: matched.customer?.id || null,
+        deliveryMethod,
+        deliveryFee,
+        deliveryAddress: deliveryAddress || null,
+        deliveryArea: deliveryArea || null,
+        status: "Pending assignment",
+      },
+    });
+  }
 
   if (matched.customer?.id) {
     const itemSummary = selectedLines

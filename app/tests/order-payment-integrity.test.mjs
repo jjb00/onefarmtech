@@ -90,6 +90,17 @@ test("each retry creates a fresh unique reference and supersedes old abandoned l
   assert.equal(db.state.orderCreates, 0);
 });
 
+test("payment initialisation does not override the checkout callback path -- createPaymentCheckout's own safe default (the WhatsApp return page) must apply, not the old hardcoded /admin/payments", async () => {
+  const db = paymentDb();
+  let receivedInput;
+  const createCheckout = async (input) => {
+    receivedInput = input;
+    return {provider: "Paystack", paymentUrl: `https://checkout.paystack.com/${input.reference}`, gatewayReference: input.reference, httpStatus: 200};
+  };
+  await initialisePayment({db, paymentRequestId: "old", provider: "Paystack", referenceFactory: () => "PAY-REAL", createCheckout});
+  assert.equal(receivedInput.callbackPath, undefined);
+});
+
 test("Paystack and Flutterwave retries create provider-specific attempts without creating Orders", async () => {
   for (const provider of ["Paystack", "Flutterwave"]) {
     const db = paymentDb();

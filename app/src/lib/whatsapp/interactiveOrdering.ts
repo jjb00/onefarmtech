@@ -11,7 +11,7 @@ import {
   type WhatsAppCartItem,
 } from "@/lib/whatsapp/orderSession";
 import {fulfilmentEstimateForStockTypes} from "@/lib/commerce/fulfilmentEstimate";
-import {initialFulfilmentStatus} from "@/lib/orderStatusRules.js";
+import {initialFulfilmentStatus, isPickupMethod} from "@/lib/orderStatusRules.js";
 import {createAuditLog} from "@/lib/auditLog";
 import {replyWithOrderStatus} from "@/lib/whatsapp/statusReply";
 import {createPaymentCheckout} from "@/lib/payments/provider";
@@ -199,17 +199,24 @@ async function checkout(input: {
     },
   });
 
-  await prisma.delivery.create({
-    data: {
-      orderId: order.id,
-      customerId: input.customerId,
-      deliveryPartnerId: null,
-      deliveryMethod: delivery.method,
-      deliveryFee,
-      deliveryArea: delivery.area || null,
-      status: "Pending assignment",
-    },
-  });
+  // Pickup orders have no driver to assign and nothing ever advances a
+  // Delivery record's status for them -- creating one unconditionally left
+  // a "Pending assignment" delivery permanently attached to every pickup
+  // order, which then leaked into the WhatsApp order-status reply even
+  // after the buyer had actually picked up.
+  if (!isPickupMethod(delivery.method)) {
+    await prisma.delivery.create({
+      data: {
+        orderId: order.id,
+        customerId: input.customerId,
+        deliveryPartnerId: null,
+        deliveryMethod: delivery.method,
+        deliveryFee,
+        deliveryArea: delivery.area || null,
+        status: "Pending assignment",
+      },
+    });
+  }
 
   const reference = `PAY-${order.code}-${Date.now().toString(36).toUpperCase()}`;
 

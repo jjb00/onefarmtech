@@ -1,6 +1,7 @@
 import {prisma} from "@/lib/prisma";
 import {sendWhatsAppAdminAlertTemplate, sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
 import {formatWhatsAppNaira} from "@/lib/whatsapp/productCatalogue";
+import {isPickupMethod} from "@/lib/orderStatusRules.js";
 
 async function findLatestOrderForCustomer(customerId: string) {
   return prisma.order.findFirst({
@@ -38,7 +39,11 @@ function statusMessageForOrder(order: NonNullable<Awaited<ReturnType<typeof find
     `Fulfilment: ${order.fulfilmentStatus}`,
   ];
 
-  if (order.delivery) {
+  // Guarded on delivery method, not just the record's presence -- older
+  // pickup orders can still carry a stray Delivery row from before this was
+  // fixed at the source (interactiveOrdering.ts), and "Delivery: Pending
+  // assignment" on an order the buyer already picked up is just wrong.
+  if (order.delivery && !isPickupMethod(order.deliveryMethod)) {
     lines.push(`Delivery: ${order.delivery.status}`);
     if (order.delivery.trackingReference) {
       lines.push(`Tracking: ${order.delivery.trackingReference}`);
