@@ -151,7 +151,7 @@ test("homepage survives transient database activity failures without fabricating
   const home = fs.readFileSync(new URL("../src/app/page.tsx", import.meta.url), "utf8");
   assert.match(home, /try \{/);
   assert.match(home, /Homepage activity unavailable/);
-  assert.match(home, /const noGroupBuyActivity/);
+  assert.match(home, /const notOpenRightNow/);
   assert.match(home, /activeGroupBuyCount:\s*0/);
   assert.match(home, /buyerPlaces:\s*0/);
 });

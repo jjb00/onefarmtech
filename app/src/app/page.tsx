@@ -13,53 +13,45 @@ import {nextGroupBuyOpenTime} from "@/lib/groupBuySchedule";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const noGroupBuyActivityEverRun = {
-  status: "Not open yet",
+// One consistent "not open right now" state regardless of whether a group
+// buy has ever existed before -- the weekly schedule runs on its own either
+// way, so there's no real difference for a visitor between the two cases.
+// The copy used to differ between them, and the "never happened yet"
+// wording read like an unlaunched feature rather than a live weekly cycle.
+const notOpenRightNow = {
+  status: "Opens weekly",
   progress: 0,
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
-  hasRunBefore: false,
-  closingDate: null as string | null,
-};
-
-const closedForTheWeek = {
-  status: "Closed for the week",
-  progress: 0,
-  activeGroupBuyCount: 0,
-  buyerPlaces: 0,
-  hasRunBefore: true,
   closingDate: null as string | null,
 };
 
 async function getHomepageActivity() {
   try {
-    const [activeGroupBuys, totalGroupBuyCount] = await Promise.all([
-      prisma.groupBuy.findMany({
-        where: {
-          status: {
-            in: ["Open", "Minimum met", "Fully reserved"],
-          },
+    const activeGroupBuys = await prisma.groupBuy.findMany({
+      where: {
+        status: {
+          in: ["Open", "Minimum met", "Fully reserved"],
         },
-        select: {
-          targetQuantity: true,
-          closingDate: true,
-          reservations: {
-            where: {
-              paymentStatus: {
-                in: ["Paid", "Fully paid", "Approved"],
-              },
-            },
-            select: {
-              quantity: true,
+      },
+      select: {
+        targetQuantity: true,
+        closingDate: true,
+        reservations: {
+          where: {
+            paymentStatus: {
+              in: ["Paid", "Fully paid", "Approved"],
             },
           },
+          select: {
+            quantity: true,
+          },
         },
-      }),
-      prisma.groupBuy.count(),
-    ]);
+      },
+    });
 
     if (!activeGroupBuys.length) {
-      return totalGroupBuyCount > 0 ? closedForTheWeek : noGroupBuyActivityEverRun;
+      return notOpenRightNow;
     }
 
     const targetQuantity = activeGroupBuys.reduce(
@@ -98,7 +90,6 @@ async function getHomepageActivity() {
           : 0,
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
-      hasRunBefore: true,
       closingDate: earliestClosingDate ? earliestClosingDate.toISOString() : null,
     };
   } catch (error) {
@@ -106,10 +97,7 @@ async function getHomepageActivity() {
       route: "/",
       error: error instanceof Error ? error.message : "unknown",
     });
-    // A failed query (e.g. a transient DB connection issue) must not be
-    // reported as "never run" -- that's a specific, checkable claim this
-    // catch block has no way to know is true.
-    return closedForTheWeek;
+    return notOpenRightNow;
   }
 }
 
@@ -233,16 +221,12 @@ better prices, quality and reliability.
                       <h2 className="mt-2 text-3xl font-black">
                         {activity.activeGroupBuyCount
                           ? "Buyer groups are active"
-                          : activity.hasRunBefore
-                            ? "This week's window has closed"
-                            : "Start the first group buy"}
+                          : "This week's window opens soon"}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-white/60">
                         {activity.activeGroupBuyCount
                           ? "Live activity based on confirmed paid reservations."
-                          : activity.hasRunBefore
-                            ? "Weekly group buys run Sunday night to Thursday night, with delivery Friday and Saturday."
-                            : "No group buys are running yet. Message us to open one for your street, office or business."}
+                          : "Group buying runs every week, Sunday night to Thursday night, with delivery Friday and Saturday. Propose one now to be first in the next window."}
                       </p>
                     </div>
                     <span className="shrink-0 whitespace-nowrap rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
@@ -286,11 +270,9 @@ better prices, quality and reliability.
                           to the next window is accurate and worth showing either way
                           -- it shouldn't disappear just because the database is empty. */}
                       <GroupBuyCountdown targetIso={nextGroupBuyOpenTime().toISOString()} label="Opens in" />
-                      {!activity.hasRunBefore ? (
-                        <p className="mt-3 text-sm leading-6 text-white/70">
-                          Group buying works best when a few buyers combine an order. Be the one who starts it.
-                        </p>
-                      ) : null}
+                      <p className="mt-3 text-sm leading-6 text-white/70">
+                        Group buying works best when a few buyers combine an order — families, neighbours, offices, churches. Be the one who starts it.
+                      </p>
                       <Link
                         href="/group-buy-request"
                         className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#F2B84B] hover:underline"

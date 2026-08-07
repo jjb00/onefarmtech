@@ -51,7 +51,13 @@ test("homepage shows real group-buy activity, never fabricated numbers, without 
   assert.doesNotMatch(homepage, /Next window closes Friday/);
   assert.doesNotMatch(homepage, /launchMode/);
 
-  assert.match(homepage, /Start the first group buy/);
+  // "Start the first group buy" / "No group buys are running yet" read like
+  // the feature itself was unlaunched rather than a live weekly cycle --
+  // replaced with copy that's accurate regardless of database history,
+  // since the weekly schedule runs on its own either way.
+  assert.match(homepage, /This week's window opens soon/);
+  assert.doesNotMatch(homepage, /Start the first group buy/);
+  assert.doesNotMatch(homepage, /No group buys are running yet/);
   assert.match(homepage, /Join group buying/);
   assert.doesNotMatch(homepage, /activity\.activeGroupBuy\?\.title/);
   assert.doesNotMatch(homepage, /activity\.item/);
