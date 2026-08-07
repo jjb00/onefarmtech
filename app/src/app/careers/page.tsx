@@ -200,10 +200,16 @@ function jobPostingsFor(list: Role[]) {
       employmentType: Array.from(
         new Set(role.stages.map((stage) => EMPLOYMENT_TYPE_MAP[stage]).filter(Boolean)),
       ),
+      identifier: {
+        "@type": "PropertyValue",
+        name: "OneFarmTech",
+        value: role.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
+      },
       hiringOrganization: {
         "@type": "Organization",
         name: "OneFarmTech",
         sameAs: SITE_URL,
+        logo: `${SITE_URL}/icon.png`,
       },
       ...(isRemote
         ? {
