@@ -239,90 +239,90 @@ export default async function ProductsPage({searchParams}: ProductsPageProps) {
 
         <section className="hidden overflow-hidden rounded-2xl border border-[#102015]/10 bg-white shadow-sm md:block">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[1120px] border-collapse text-left text-sm">
+            <table className="w-full border-collapse text-left text-sm">
               <thead className="bg-[#f3f8ef] text-xs uppercase tracking-[0.14em] text-[#405348]">
-                <tr>
-                  <th className="px-4 py-3">Product</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Unit</th>
-                  <th className="px-4 py-3">Grade</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">Availability</th>
-                  <th className="px-4 py-3">Orders</th>
-                  <th className="px-4 py-3">Edit</th>
-                </tr>
-              </thead>
+              <tr>
+                <th className="px-3 py-3">Product</th>
+                <th className="px-3 py-3">Category</th>
+                <th className="px-3 py-3">Unit</th>
+                <th className="px-3 py-3">Grade</th>
+                <th className="px-3 py-3">Price</th>
+                <th className="px-3 py-3">Availability</th>
+                <th className="px-3 py-3">Orders</th>
+                <th className="px-3 py-3">Edit</th>
+              </tr>
+            </thead>
 
-              <tbody>
-                {sorted.map((product) => {
-                  const quickEditId = `quick-edit-${product.id}`;
+            <tbody>
+              {sorted.map((product) => {
+                const quickEditId = `quick-edit-${product.id}`;
 
-                  return (
-                  <tr key={product.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
-                    <td className="px-4 py-3 font-black text-[#102015]">
-                      {product.name}
-                      <form id={quickEditId} action={updateProductDetailsAction} className="hidden">
-                        <input type="hidden" name="productId" value={product.id} />
-                        <input type="hidden" name="name" value={product.name} />
-                        <input type="hidden" name="category" value={product.category} />
-                        <input type="hidden" name="unit" value={product.unit} />
-                        <input type="hidden" name="grade" value={product.grade} />
-                        <input type="hidden" name="status" value={product.status} />
-                      </form>
-                    </td>
-                    <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">{product.unit}</td>
-                    <td className="px-4 py-3">{product.grade}</td>
-                    <td className="px-4 py-3">
-                      <input
+                return (
+                <tr key={product.id} className="border-t border-[#102015]/10 align-top text-[#405348]">
+                  <td className="px-3 py-3 font-black text-[#102015] break-words">
+                    {product.name}
+                    <form id={quickEditId} action={updateProductDetailsAction} className="hidden">
+                      <input type="hidden" name="productId" value={product.id} />
+                      <input type="hidden" name="name" value={product.name} />
+                      <input type="hidden" name="category" value={product.category} />
+                      <input type="hidden" name="unit" value={product.unit} />
+                      <input type="hidden" name="grade" value={product.grade} />
+                      <input type="hidden" name="status" value={product.status} />
+                    </form>
+                  </td>
+                  <td className="px-3 py-3 break-words">{product.category}</td>
+                  <td className="px-3 py-3 break-words">{product.unit}</td>
+                  <td className="px-3 py-3 break-words">{product.grade}</td>
+                  <td className="px-3 py-3">
+                    <input
+                      form={quickEditId}
+                      name="basePrice"
+                      type="number"
+                      min="0"
+                      defaultValue={product.basePrice}
+                      className="w-full rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-sm font-black text-[#102015]"
+                    />
+                  </td>
+                  <td className="px-3 py-3">
+                    <select
+                      form={quickEditId}
+                      name="availability"
+                      defaultValue={product.availability}
+                      className="w-full rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-xs font-bold text-[#102015]"
+                    >
+                      {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
+                    </select>
+                    <div className="mt-1">
+                      <AdminStatusPill tone={adminToneFromStatus(product.status)}>
+                        {product.status}
+                      </AdminStatusPill>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">{product.orderItems.length}</td>
+                  <td className="px-3 py-3">
+                    <div className="grid gap-2">
+                      <button
+                        type="submit"
                         form={quickEditId}
-                        name="basePrice"
-                        type="number"
-                        min="0"
-                        defaultValue={product.basePrice}
-                        className="w-28 rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-sm font-black text-[#102015]"
-                      />
-                    </td>
-                    <td className="px-4 py-3">
-                      <select
-                        form={quickEditId}
-                        name="availability"
-                        defaultValue={product.availability}
-                        className="rounded-lg border border-[#102015]/15 bg-white px-2 py-1.5 text-xs font-bold text-[#102015]"
+                        className="rounded-full bg-[#1f7a3f] px-3 py-1.5 text-xs font-black text-white"
                       >
-                        {productAvailabilityOptions.map((item) => <option key={item}>{item}</option>)}
-                      </select>
-                      <div className="mt-1">
-                        <AdminStatusPill tone={adminToneFromStatus(product.status)}>
-                          {product.status}
-                        </AdminStatusPill>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">{product.orderItems.length}</td>
-                    <td className="px-4 py-3">
-                      <div className="grid gap-2">
-                        <button
-                          type="submit"
-                          form={quickEditId}
-                          className="rounded-full bg-[#1f7a3f] px-3 py-1.5 text-xs font-black text-white"
-                        >
-                          Save price
-                        </button>
-                        <ProductEditForm product={product} />
-                      </div>
-                    </td>
-                  </tr>
-                  );
-                })}
+                        Save price
+                      </button>
+                      <ProductEditForm product={product} />
+                    </div>
+                  </td>
+                </tr>
+                );
+              })}
 
-                {!sorted.length ? (
-                  <tr>
-                    <td className="px-4 py-8 text-center text-[#587063]" colSpan={8}>
-                      No products match this view.
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
+              {!sorted.length ? (
+                <tr>
+                  <td className="px-4 py-8 text-center text-[#587063]" colSpan={8}>
+                    No products match this view.
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
             </table>
           </div>
         </section>
