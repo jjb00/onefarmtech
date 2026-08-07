@@ -32,6 +32,14 @@ const PRESETS = [
     bodyText: "Hello {{1}}, your OneFarmTech order {{2}} is confirmed and is now awaiting payment of {{3}}. Please quote payment reference {{4}} and complete your payment at this secure link: {{5}} — we will begin preparing your produce as soon as the payment is received.",
     bodyExamples: "Amaka\nOFT-00042\nNGN 45,000\nPAY-8821\nhttps://onefarmtech.com/pay/PAY-8821",
   },
+  {
+    name: "onefarmtech_admin_payment_alert",
+    envVar: "WHATSAPP_ADMIN_ALERT_TEMPLATE_NAME",
+    usedFor: "Internal ops alert to ADMIN_ALERT_WHATSAPP_NUMBER when a buyer's payment is confirmed. Currently sends as plain text, which Meta only delivers if that number messaged the business number within the last 24 hours -- this template removes that limit.",
+    category: "UTILITY",
+    bodyText: "Payment confirmed for order {{1}} from {{2}}. Amount received: {{3}}. Buyer contact: {{4}}. Reply here to follow up on this order.",
+    bodyExamples: "OFT-00042\nAmaka\nNGN 45,000\n+2348012345678",
+  },
 ];
 
 export default async function WhatsAppTemplatesPage({

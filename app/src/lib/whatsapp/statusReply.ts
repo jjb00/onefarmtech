@@ -1,5 +1,5 @@
 import {prisma} from "@/lib/prisma";
-import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
+import {sendWhatsAppAdminAlertTemplate, sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
 import {formatWhatsAppNaira} from "@/lib/whatsapp/productCatalogue";
 
 async function findLatestOrderForCustomer(customerId: string) {
@@ -108,11 +108,13 @@ export async function sendPaymentConfirmationWhatsApp(order: {
 
 /**
  * Op alert to whoever is watching ADMIN_ALERT_WHATSAPP_NUMBER (unconfigured
- * by default -- silently skipped until set). Sent as plain text, same as the
- * buyer confirmation above, which means Meta only delivers it if that number
- * has messaged the business WhatsApp number within the last 24 hours; there
- * is no approved template backing this yet. Callers should treat a failure
- * here as non-fatal -- it must never block settling the payment itself.
+ * by default -- silently skipped until set). Prefers the approved
+ * onefarmtech_admin_payment_alert template, which isn't limited to Meta's
+ * 24-hour customer-service window; falls back to plain text if that
+ * template isn't configured yet, same as the buyer confirmation above,
+ * which Meta will only deliver if the admin number has messaged the
+ * business number recently. Callers should treat a failure here as
+ * non-fatal -- it must never block settling the payment itself.
  */
 export async function notifyAdminOfPaymentConfirmation(order: {
   code: string;
@@ -121,6 +123,17 @@ export async function notifyAdminOfPaymentConfirmation(order: {
 }, amount: number) {
   const adminNumber = process.env.ADMIN_ALERT_WHATSAPP_NUMBER?.trim();
   if (!adminNumber) return;
+
+  if (process.env.WHATSAPP_ADMIN_ALERT_TEMPLATE_NAME?.trim()) {
+    await sendWhatsAppAdminAlertTemplate({
+      to: adminNumber,
+      orderCode: order.code,
+      buyerName: order.buyerName,
+      amount: formatWhatsAppNaira(amount),
+      buyerPhone: order.phone,
+    });
+    return;
+  }
 
   const body = [
     `Payment confirmed ✅`,
