@@ -611,3 +611,19 @@ model WhatsAppOrderSession {
 
   @@index([expiresAt])
 }
+
+// Minimal phone-keyed state for the driver-facing WhatsApp flow -- tracks
+// only whether the driver's next free-text message should be read as a
+// delivery/issue note for a specific job, everything else is stateless
+// (job list and status buttons carry their own delivery id).
+model WhatsAppDriverSession {
+  id         String   @id @default(cuid())
+  phone      String   @unique
+  step       String   @default("MENU")
+  deliveryId String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  expiresAt  DateTime
+
+  @@index([expiresAt])
+}

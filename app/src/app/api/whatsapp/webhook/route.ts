@@ -710,6 +710,32 @@ export async function POST(request: NextRequest) {
       const profileName = contact?.profile?.name || null;
       const messageId = message?.id || null;
 
+      // Delivery partners get an entirely separate flow -- checked first
+      // and skips buyer processing for this message, so a driver's job
+      // updates never land in buyer complaint/enquiry logs.
+      const driver = await prisma.deliveryPartner.findFirst({
+        where: {phone: from, status: "Active"},
+        select: {id: true, name: true},
+      });
+
+      if (driver) {
+        try {
+          const {handleDriverWhatsAppMessage} = await import("@/lib/whatsapp/driverFlow");
+          await handleDriverWhatsAppMessage({
+            from,
+            driverId: driver.id,
+            driverName: driver.name,
+            body,
+            message,
+            triggerMenu: true,
+          });
+        } catch (error) {
+          console.error("WhatsApp driver flow failed", error);
+        }
+        logged += 1;
+        continue;
+      }
+
       const parsedIntent = parseWhatsAppOrderMessage({
         from,
         profileName,

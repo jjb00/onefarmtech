@@ -1600,7 +1600,20 @@ export async function createDeliveryPartnerAction(formData: FormData) {
 
   const name = String(formData.get("name") || "").trim();
   const contactName = String(formData.get("contactName") || "").trim();
-  const phone = String(formData.get("phone") || "").trim();
+  const phoneInput = String(formData.get("phone") || "").trim();
+  // Normalized the same way BuyerContact.phone is, so the WhatsApp webhook's
+  // normalized "from" reliably matches this driver on inbound messages.
+  // Falls back to the raw value on a format it can't parse rather than
+  // blocking partner creation over it.
+  const phone = phoneInput
+    ? (() => {
+        try {
+          return normalizeInternationalPhone(phoneInput, "234");
+        } catch {
+          return phoneInput;
+        }
+      })()
+    : "";
   const email = String(formData.get("email") || "").trim();
   const serviceArea = String(formData.get("serviceArea") || "").trim();
   const notes = String(formData.get("notes") || "").trim();
@@ -1965,8 +1978,8 @@ export async function deliveryPartnerLogoutAction() {
 export async function updateDeliveryJobStatusAction(formData: FormData) {
   const {revalidatePath} = await import("next/cache");
   const {redirect} = await import("next/navigation");
-  const {prisma} = await import("@/lib/prisma");
   const {getCurrentDeliveryPartner} = await import("@/lib/currentDeliveryPartner");
+  const {applyDeliveryStatusUpdate, DeliveryStatusError} = await import("@/lib/deliveryStatus");
 
   const partner = await getCurrentDeliveryPartner();
 
@@ -1975,113 +1988,32 @@ export async function updateDeliveryJobStatusAction(formData: FormData) {
   }
 
   const deliveryId = String(formData.get("deliveryId") || "");
-  const status = String(formData.get("status") || "Accepted");
+  const status = String(formData.get("status") || "Out for delivery");
   const proofOfDeliveryNote = String(formData.get("proofOfDeliveryNote") || "").trim();
 
   if (!deliveryId) {
     redirect("/delivery-partner/jobs");
   }
 
-  const delivery = await prisma.delivery.findFirst({
-    where: {
-      id: deliveryId,
-      deliveryPartnerId: partner.id,
-    },
-    select: {
-      id: true,
-      orderId: true,
-      customerId: true,
-      customer: {select: {name: true, email: true}},
-      order: {select: {code: true, phone: true, sourcePhone: true, fulfilmentStatus: true}},
-    },
-  });
-
-  if (!delivery) {
-    redirect("/delivery-partner/jobs?error=not-found");
-  }
-
-  const updatedDelivery = await prisma.delivery.update({
-    where: {id: delivery.id},
-    data: {
-      status,
-      proofOfDeliveryNote: proofOfDeliveryNote || undefined,
-      deliveredAt: status === "Delivered" ? new Date() : undefined,
-    },
-  });
-
-  // Just two buyer-facing outcomes once a driver is on the job: delivered,
-  // or an issue. Everything in between is "Out for delivery" already.
-  const fulfilmentStatus =
-    status === "Delivered"
-      ? "Delivered"
-      : status === "Failed / issue"
-        ? "Delivery issue"
-        : "Out for delivery";
-  const fulfilmentChanged = fulfilmentStatus !== delivery.order.fulfilmentStatus;
-
-  await prisma.order.update({
-    where: {id: delivery.orderId},
-    data: {fulfilmentStatus},
-  });
-
-  if (fulfilmentChanged) {
-    const recipientPhone = delivery.order.sourcePhone || delivery.order.phone;
-    let whatsappSent = false;
-
-    if (recipientPhone) {
-      try {
-        const {sendWhatsAppTextMessage} = await import("@/lib/whatsapp/provider");
-        await sendWhatsAppTextMessage({
-          to: recipientPhone,
-          body: `Update on order ${delivery.order.code}: ${fulfilmentStatus}.${proofOfDeliveryNote ? `\n\nNote: ${proofOfDeliveryNote}` : ""}\n\nReply "menu" any time for order status or support.`,
-        });
-        whatsappSent = true;
-      } catch (error) {
-        console.error("delivery-status-whatsapp-notify-failed", {
-          deliveryId: delivery.id,
-          message: error instanceof Error ? error.message : String(error),
-        });
-      }
+  let result;
+  try {
+    result = await applyDeliveryStatusUpdate({
+      deliveryId,
+      partnerId: partner.id,
+      status: status as "Out for delivery" | "Delivered" | "Failed / issue",
+      proofOfDeliveryNote,
+      actorName: partner.name,
+    });
+  } catch (error) {
+    if (error instanceof DeliveryStatusError) {
+      redirect("/delivery-partner/jobs?error=not-found");
     }
-
-    if (delivery.customerId) {
-      await prisma.buyerMessage.create({
-        data: {
-          customerId: delivery.customerId,
-          title: `Delivery update: ${fulfilmentStatus}`,
-          body: proofOfDeliveryNote
-            ? `Your delivery status is now ${fulfilmentStatus}. Note: ${proofOfDeliveryNote}`
-            : `Your delivery status is now ${fulfilmentStatus}.`,
-          channel: whatsappSent ? "WhatsApp" : "Portal",
-          direction: "Outbound",
-          status: whatsappSent ? "Sent" : "Unread",
-          recipient: recipientPhone || undefined,
-          source: "Delivery partner update",
-          relatedType: "Delivery",
-          relatedId: delivery.id,
-          sentAt: whatsappSent ? new Date() : undefined,
-        },
-      });
-
-      if (delivery.customer?.email) {
-        await sendTransactionalEmail({deduplicationKey: `delivery-status:${delivery.id}:${fulfilmentStatus}`, template: "delivery-status", to: delivery.customer.email, content: emailTemplates.deliveryStatus(delivery.customer.name, fulfilmentStatus, getEmailBaseUrl()), relatedType: "Delivery", relatedId: delivery.id});
-      }
-    }
+    throw error;
   }
-
-  await createAuditLog({
-    action: "Updated delivery status",
-    entityType: "Delivery",
-    entityId: delivery.id,
-    entityLabel: status,
-    newValue: updatedDelivery,
-    actorName: partner.name,
-    actorRole: "Delivery partner",
-  });
 
   revalidatePath("/delivery-partner/jobs");
   revalidatePath("/admin/deliveries");
-  revalidatePath(`/admin/orders/${delivery.orderId}`);
+  revalidatePath(`/admin/orders/${result.delivery.orderId}`);
   redirect("/delivery-partner/jobs?updated=1");
 }
 
@@ -2137,6 +2069,7 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
           code: true,
           phone: true,
           sourcePhone: true,
+          buyerName: true,
           fulfilmentStatus: true,
           totalAmount: true,
           subtotal: true,
@@ -2202,6 +2135,31 @@ export async function assignDeliveryPartnerAction(formData: FormData) {
           relatedId: delivery.id,
           sentAt: whatsappSent ? new Date() : undefined,
         },
+      });
+    }
+  }
+
+  // Notify the driver on every assignment, not just a fulfilment-status
+  // change -- reassigning an order that's already "Out for delivery" to a
+  // different driver needs to reach them too, and previously reached no
+  // one until they happened to check the web portal.
+  if (partner?.phone) {
+    try {
+      const {notifyDriverOfNewJob} = await import("@/lib/whatsapp/driverFlow");
+      await notifyDriverOfNewJob({
+        to: partner.phone,
+        deliveryId: delivery.id,
+        orderCode: delivery.order.code,
+        buyerName: delivery.order.buyerName,
+        buyerPhone: delivery.order.sourcePhone || delivery.order.phone,
+        deliveryArea: deliveryArea || null,
+        deliveryAddress: deliveryAddress || null,
+        deliveryFee,
+      });
+    } catch (error) {
+      console.error("driver-job-notify-failed", {
+        deliveryId: delivery.id,
+        message: error instanceof Error ? error.message : String(error),
       });
     }
   }
@@ -2518,6 +2476,30 @@ export async function createOrAssignDeliveryFromOrderAction(formData: FormData) 
           relatedId: delivery.id,
           sentAt: whatsappSent ? new Date() : undefined,
         },
+      });
+    }
+  }
+
+  // Same as assignDeliveryPartnerAction: notify on every assignment, not
+  // only a fulfilment-status change, so a reassignment reaches the new
+  // driver too.
+  if (partner?.phone) {
+    try {
+      const {notifyDriverOfNewJob} = await import("@/lib/whatsapp/driverFlow");
+      await notifyDriverOfNewJob({
+        to: partner.phone,
+        deliveryId: delivery.id,
+        orderCode: order.code,
+        buyerName: order.buyerName,
+        buyerPhone: order.sourcePhone || order.phone,
+        deliveryArea: delivery.deliveryArea,
+        deliveryAddress: delivery.deliveryAddress,
+        deliveryFee,
+      });
+    } catch (error) {
+      console.error("driver-job-notify-failed", {
+        deliveryId: delivery.id,
+        message: error instanceof Error ? error.message : String(error),
       });
     }
   }

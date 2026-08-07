@@ -192,10 +192,11 @@ test("payment webhooks retain signature checks, reconciliation creation and idem
 
 test("delivery workflow retains partner scope, status propagation, buyer notification and audit evidence", () => {
   const actions = fs.readFileSync(new URL("../src/actions/createAdminRecords.ts", import.meta.url), "utf8");
-  assert.match(actions, /deliveryPartnerId: partner\.id/);
+  const deliveryStatus = fs.readFileSync(new URL("../src/lib/deliveryStatus.ts", import.meta.url), "utf8");
+  assert.match(deliveryStatus, /deliveryPartnerId: input\.partnerId/);
   assert.match(actions, /fulfilmentStatus/);
   assert.match(actions, /Delivery update:/);
-  assert.match(actions, /Updated delivery status/);
+  assert.match(deliveryStatus, /Updated delivery status/);
 });
 
 test("public forms use their intended storage and notification paths", () => {

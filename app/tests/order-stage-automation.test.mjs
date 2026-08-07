@@ -69,13 +69,17 @@ test("delivery assignment and partner updates remain authoritative", () => {
     new URL("../src/actions/createAdminRecords.ts", import.meta.url),
     "utf8",
   );
+  const deliveryStatus = fs.readFileSync(
+    new URL("../src/lib/deliveryStatus.ts", import.meta.url),
+    "utf8",
+  );
 
   assert.match(
     actions,
     /partner \? "Out for delivery" : delivery\.order\.fulfilmentStatus/,
   );
-  assert.match(actions, /status === "Delivered"\s*\n\s*\? "Delivered"/);
-  assert.match(actions, /status === "Failed \/ issue"\s*\n\s*\? "Delivery issue"/);
+  assert.match(deliveryStatus, /input\.status === "Delivered"\s*\n\s*\? "Delivered"/);
+  assert.match(deliveryStatus, /input\.status === "Failed \/ issue"\s*\n\s*\? "Delivery issue"/);
 });
 
 test("order detail uses canonical Payments workspace", () => {
