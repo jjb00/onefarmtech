@@ -5,6 +5,7 @@ import {revalidatePath} from "next/cache";
 import {prisma} from "@/lib/prisma";
 import {requireCapability} from "@/lib/auth";
 import {createAuditLog} from "@/lib/auditLog";
+import {nextGroupBuyCloseTime} from "@/lib/groupBuySchedule";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {
   deriveGroupBuyState,
@@ -109,12 +110,16 @@ export async function createGroupBuyAction(formData: FormData) {
       code,
       title,
       description: description || null,
-      status: "Closed",
+      // Starts as Draft, not Closed -- Closed means "this window ran and
+      // finished", which isn't true for something that's never opened.
+      // The weekly cron picks up Draft group buys and opens them on the
+      // standard Sunday-night schedule.
+      status: "Draft",
       minQuantity,
       targetQuantity,
       reservedQuantity: 0,
       unit,
-      closingDate,
+      closingDate: closingDate || nextGroupBuyCloseTime(),
       pickupWindow: pickupWindow || null,
       paymentStatus: "Not collecting",
       fulfilmentStatus: "Planning",

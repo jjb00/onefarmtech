@@ -6,9 +6,11 @@ import {deriveGroupBuyState} from "@/lib/groupBuyState.js";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Group buying runs Monday to Friday -- this closes every group buy still
-// open at the end of the week so a new one isn't silently rolled over.
-// Scheduled for Friday 15:00 UTC (16:00 WAT / Africa-Lagos) in vercel.json.
+// Group buying runs Sunday night to Thursday night -- this closes every
+// group buy still open at the end of the window so sourcing can start
+// Friday ahead of Friday/Saturday delivery. Scheduled for Thursday 21:00
+// UTC (22:00 WAT / Africa-Lagos) in vercel.json -- see
+// open-weekly-group-buys for the matching Sunday-night open job.
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

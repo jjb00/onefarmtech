@@ -4,9 +4,11 @@ import PublicImageCollage from "@/components/PublicImageCollage";
 import PublicMobileMenu from "@/components/PublicMobileMenu";
 import PublicFooter from "@/components/PublicFooter";
 import HeroRotatingBadge from "@/components/HeroRotatingBadge";
+import GroupBuyCountdown from "@/components/GroupBuyCountdown";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
 import {publicPageMetadata} from "@/lib/publicSeo";
+import {nextGroupBuyOpenTime} from "@/lib/groupBuySchedule";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -17,6 +19,7 @@ const noGroupBuyActivityEverRun = {
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
   hasRunBefore: false,
+  closingDate: null as string | null,
 };
 
 const closedForTheWeek = {
@@ -25,6 +28,7 @@ const closedForTheWeek = {
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
   hasRunBefore: true,
+  closingDate: null as string | null,
 };
 
 async function getHomepageActivity() {
@@ -38,6 +42,7 @@ async function getHomepageActivity() {
         },
         select: {
           targetQuantity: true,
+          closingDate: true,
           reservations: {
             where: {
               paymentStatus: {
@@ -75,6 +80,12 @@ async function getHomepageActivity() {
       (sum, groupBuy) => sum + groupBuy.reservations.length,
       0,
     );
+    const closingDates = activeGroupBuys
+      .map((groupBuy) => groupBuy.closingDate)
+      .filter((date): date is Date => Boolean(date));
+    const earliestClosingDate = closingDates.length
+      ? new Date(Math.min(...closingDates.map((date) => date.getTime())))
+      : null;
 
     return {
       status: "Open",
@@ -88,6 +99,7 @@ async function getHomepageActivity() {
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
       hasRunBefore: true,
+      closingDate: earliestClosingDate ? earliestClosingDate.toISOString() : null,
     };
   } catch (error) {
     console.error("Homepage activity unavailable", {
@@ -229,7 +241,7 @@ better prices, quality and reliability.
                         {activity.activeGroupBuyCount
                           ? "Live activity based on confirmed paid reservations."
                           : activity.hasRunBefore
-                            ? "Group buying runs weekly, Monday through Friday. Propose one now to be first in line when the next window opens."
+                            ? "Group buying opens Sunday night and closes Thursday night, with delivery Friday and Saturday. Propose one now to be first in line."
                             : "No group buys are running yet. Message us to open one for your street, office or business."}
                       </p>
                     </div>
@@ -254,6 +266,9 @@ better prices, quality and reliability.
                         <p className="mt-3 text-sm font-semibold text-white/65">
                           Figures update from confirmed paid group-buy reservations.
                         </p>
+                        {activity.closingDate ? (
+                          <GroupBuyCountdown targetIso={activity.closingDate} label="Closes in" />
+                        ) : null}
                       </div>
 
                       <div className="mt-6 grid grid-cols-2 gap-3">
@@ -271,9 +286,12 @@ better prices, quality and reliability.
                     <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">
                       <p className="text-sm leading-6 text-white/70">
                         {activity.hasRunBefore
-                          ? "The current window closes on Fridays and reopens Mondays."
+                          ? "The window closes Thursday nights and reopens Sunday nights, with delivery Friday and Saturday."
                           : "Group buying works best when a few buyers combine an order. Be the one who starts it."}
                       </p>
+                      {activity.hasRunBefore ? (
+                        <GroupBuyCountdown targetIso={nextGroupBuyOpenTime().toISOString()} label="Opens in" />
+                      ) : null}
                       <Link
                         href="/group-buy-request"
                         className="mt-3 inline-flex items-center gap-1 text-sm font-black text-[#F2B84B] hover:underline"
