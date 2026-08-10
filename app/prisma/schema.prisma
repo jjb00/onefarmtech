@@ -133,8 +133,22 @@ model GroupBuy {
   adminNote        String?
   items            GroupBuyItem[]
   reservations     GroupBuyReservation[]
+  // Ordered by minQuantity ascending -- the "active tier" for the group buy
+  // is the highest-minQuantity tier whose minQuantity has been reached by
+  // the current paid+reserved quantity. Empty means single fixed pricing
+  // (the price on GroupBuyItem), no tier mechanic.
+  priceTiers       GroupBuyPriceTier[]
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
+}
+
+model GroupBuyPriceTier {
+  id          String   @id @default(cuid())
+  groupBuyId  String
+  groupBuy    GroupBuy @relation(fields: [groupBuyId], references: [id], onDelete: Cascade)
+  minQuantity Int
+  unitPrice   Int
+  createdAt   DateTime @default(now())
 }
 
 model GroupBuyItem {

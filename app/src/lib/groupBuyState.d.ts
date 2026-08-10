@@ -31,3 +31,22 @@ export function paidGroupBuyQuantity(
 export function deriveGroupBuyState(
   input: GroupBuyStateInput,
 ): DerivedGroupBuyState;
+
+export const MAX_CONCURRENT_GROUP_BUYS: number;
+export const LIVE_GROUP_BUY_STATUSES: string[];
+
+export type GroupBuyPriceTierInput = {
+  minQuantity: number;
+  unitPrice: number;
+};
+
+export function resolveGroupBuyTierPrice(
+  tiers: GroupBuyPriceTierInput[],
+  quantity: number,
+): number | null;
+
+export function tierRefundDue(
+  chargedUnitPrice: number,
+  finalUnitPrice: number,
+  quantity: number,
+): number;

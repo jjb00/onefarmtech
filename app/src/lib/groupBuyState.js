@@ -1,5 +1,39 @@
 const PAID_STATUSES = new Set(["paid", "fully paid", "approved"]);
 
+// Buyer-proposed, staff-approved group buys can run many at once -- capped
+// so weekly approval/sourcing load stays manageable for a small team rather
+// than growing unbounded with demand.
+export const MAX_CONCURRENT_GROUP_BUYS = 5;
+
+export const LIVE_GROUP_BUY_STATUSES = ["Open", "Minimum met", "Fully reserved"];
+
+// Tiers unlock as the group's paid+reserved quantity crosses each
+// threshold -- "buy in bulk, buy cheaper" applies to the whole group, not
+// just whoever joined first. Returns null if no tiers are configured (flat
+// pricing via the GroupBuyItem's own unitPrice applies instead).
+export function resolveGroupBuyTierPrice(tiers = [], quantity = 0) {
+  if (!tiers.length) return null;
+
+  const sorted = [...tiers].sort((a, b) => a.minQuantity - b.minQuantity);
+  let activePrice = sorted[0].unitPrice;
+
+  for (const tier of sorted) {
+    if (quantity >= tier.minQuantity) {
+      activePrice = tier.unitPrice;
+    }
+  }
+
+  return activePrice;
+}
+
+// A buyer is charged the tier active when they joined; if the group later
+// unlocks a cheaper tier by close, this is the per-reservation refund owed
+// so everyone actually settles at the best tier reached, honestly.
+export function tierRefundDue(chargedUnitPrice, finalUnitPrice, quantity) {
+  const perUnitRefund = Math.max(0, Number(chargedUnitPrice || 0) - Number(finalUnitPrice || 0));
+  return perUnitRefund * Number(quantity || 0);
+}
+
 export function isPaidGroupBuyReservationStatus(status) {
   return PAID_STATUSES.has(String(status || "").trim().toLowerCase());
 }

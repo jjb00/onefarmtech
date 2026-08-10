@@ -11,6 +11,8 @@ import {
   deriveGroupBuyState,
   isPaidGroupBuyReservationStatus,
   paidGroupBuyQuantity,
+  LIVE_GROUP_BUY_STATUSES,
+  MAX_CONCURRENT_GROUP_BUYS,
 } from "@/lib/groupBuyState.js";
 
 function readText(formData: FormData, key: string, fallback = "") {
@@ -361,6 +363,29 @@ export async function updateGroupBuyAction(formData: FormData) {
     throw new Error("Group-buy ID is required.");
   }
 
+  // Cap concurrent live group buys so buyer-proposed demand can't outpace
+  // what a small team can actually source and approve in a week. Only
+  // blocks newly opening one -- a group buy already live moving between
+  // live sub-states (Open -> Minimum met, etc.) isn't newly consuming a slot.
+  if (status && LIVE_GROUP_BUY_STATUSES.includes(status)) {
+    const current = await prisma.groupBuy.findUnique({
+      where: {id: groupBuyId},
+      select: {status: true},
+    });
+
+    if (current && !LIVE_GROUP_BUY_STATUSES.includes(current.status)) {
+      const liveCount = await prisma.groupBuy.count({
+        where: {status: {in: LIVE_GROUP_BUY_STATUSES}},
+      });
+
+      if (liveCount >= MAX_CONCURRENT_GROUP_BUYS) {
+        throw new Error(
+          `Cannot open another group buy -- ${MAX_CONCURRENT_GROUP_BUYS} are already live. Close one first.`,
+        );
+      }
+    }
+  }
+
   const data: {fulfilmentStatus?: string; adminNote?: string | null} = {};
   if (typeof fulfilmentStatusRaw === "string" && fulfilmentStatusRaw.trim()) {
     data.fulfilmentStatus = fulfilmentStatusRaw.trim();
@@ -391,6 +416,50 @@ export async function updateGroupBuyAction(formData: FormData) {
   }
 
   await syncGroupBuyState(groupBuyId, status);
+  refreshGroupBuyPaths();
+  redirect("/admin/group-buys");
+}
+
+export async function addGroupBuyPriceTierAction(formData: FormData) {
+  await requireCapability("manage_group_buys");
+
+  const groupBuyId = readText(formData, "groupBuyId");
+  const minQuantity = readNumber(formData, "minQuantity");
+  const unitPrice = readNumber(formData, "unitPrice");
+
+  if (!groupBuyId || unitPrice <= 0) {
+    throw new Error("Group buy and a positive unit price are required.");
+  }
+
+  await prisma.groupBuyPriceTier.create({
+    data: {groupBuyId, minQuantity, unitPrice},
+  });
+
+  await createAuditLog({
+    action: "Added a group-buy price tier",
+    entityType: "GroupBuy",
+    entityId: groupBuyId,
+    entityLabel: groupBuyId,
+    actorName: "Staff",
+    actorRole: "Admin",
+    newValue: {minQuantity, unitPrice},
+  });
+
+  refreshGroupBuyPaths();
+  redirect("/admin/group-buys");
+}
+
+export async function deleteGroupBuyPriceTierAction(formData: FormData) {
+  await requireCapability("manage_group_buys");
+
+  const tierId = readText(formData, "tierId");
+
+  if (!tierId) {
+    throw new Error("Tier ID is required.");
+  }
+
+  await prisma.groupBuyPriceTier.delete({where: {id: tierId}});
+
   refreshGroupBuyPaths();
   redirect("/admin/group-buys");
 }

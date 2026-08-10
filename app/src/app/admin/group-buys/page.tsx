@@ -8,9 +8,11 @@ import {
   createGroupBuyReservationAction,
   updateGroupBuyAction,
   updateGroupBuyReservationAction,
+  addGroupBuyPriceTierAction,
+  deleteGroupBuyPriceTierAction,
 } from "@/actions/groupBuys";
 import {buyerTypes} from "@/constants/orderOptions";
-import {isPaidGroupBuyReservationStatus} from "@/lib/groupBuyState.js";
+import {isPaidGroupBuyReservationStatus, resolveGroupBuyTierPrice} from "@/lib/groupBuyState.js";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -267,7 +269,8 @@ export default async function GroupBuysPage() {
           {groupBuys.length ? (
             groupBuys.map((groupBuy) => {
               const firstItem = groupBuy.items[0];
-              const unitPrice = firstItem?.unitPrice || 0;
+              const tierPrice = resolveGroupBuyTierPrice(groupBuy.priceTiers, groupBuy.reservedQuantity);
+              const unitPrice = tierPrice ?? firstItem?.unitPrice ?? 0;
               const progress =
                 groupBuy.targetQuantity > 0
                   ? Math.min(
@@ -435,15 +438,18 @@ export default async function GroupBuysPage() {
                         </select>
 
                         <label className="grid gap-1 text-xs font-bold text-[#587063]">
-                          Unit price ({groupBuy.unit})
+                          Base unit price ({groupBuy.unit})
                           <input
                             name="itemUnitPrice"
                             type="number"
                             min="0"
-                            defaultValue={unitPrice || ""}
+                            defaultValue={firstItem?.unitPrice || ""}
                             placeholder="Set a price"
                             className="rounded-xl border border-gray-200 px-4 py-3 font-normal"
                           />
+                          <span className="font-normal normal-case text-[#587063]">
+                            Used when no price tiers are set below.
+                          </span>
                         </label>
 
                         <textarea
@@ -466,6 +472,74 @@ export default async function GroupBuysPage() {
                           Confirmed payments update the group-buy progress.
                         </p>
                       </form>
+
+                      <div className="grid content-start gap-3 border-t border-[#102015]/10 pt-4 xl:col-span-3 xl:border-t-0 xl:pt-0">
+                        <h3 className="font-black">
+                          Price tiers
+                          {tierPrice != null ? (
+                            <span className="ml-2 font-normal text-[#587063]">
+                              Active now: {formatNaira(tierPrice)} at {groupBuy.reservedQuantity} {groupBuy.unit}
+                            </span>
+                          ) : null}
+                        </h3>
+                        <p className="text-xs leading-5 text-[#587063]">
+                          Everyone in this group buy settles at the best tier reached by close, not just whoever joined first.
+                        </p>
+
+                        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {groupBuy.priceTiers.map((tier) => (
+                            <form
+                              key={tier.id}
+                              action={deleteGroupBuyPriceTierAction}
+                              className="flex items-center justify-between gap-2 rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                            >
+                              <span>
+                                {tier.minQuantity}+ {groupBuy.unit} → {formatNaira(tier.unitPrice)}
+                              </span>
+                              <input type="hidden" name="tierId" value={tier.id} />
+                              <button
+                                type="submit"
+                                className="text-xs font-black text-[#9b2f12]"
+                              >
+                                Remove
+                              </button>
+                            </form>
+                          ))}
+                        </div>
+
+                        <form
+                          action={addGroupBuyPriceTierAction}
+                          className="flex flex-wrap items-end gap-2"
+                        >
+                          <input type="hidden" name="groupBuyId" value={groupBuy.id} />
+                          <label className="grid gap-1 text-xs font-bold text-[#587063]">
+                            At quantity ({groupBuy.unit})
+                            <input
+                              name="minQuantity"
+                              type="number"
+                              min="0"
+                              required
+                              className="rounded-xl border border-gray-200 px-3 py-2 font-normal"
+                            />
+                          </label>
+                          <label className="grid gap-1 text-xs font-bold text-[#587063]">
+                            Price becomes
+                            <input
+                              name="unitPrice"
+                              type="number"
+                              min="0"
+                              required
+                              className="rounded-xl border border-gray-200 px-3 py-2 font-normal"
+                            />
+                          </label>
+                          <button
+                            type="submit"
+                            className="rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
+                          >
+                            Add tier
+                          </button>
+                        </form>
+                      </div>
 
                       <form
                         action={createGroupBuyReservationAction}

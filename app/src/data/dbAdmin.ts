@@ -77,6 +77,9 @@ export async function getDbGroupBuys() {
     include: {
       items: true,
       reservations: true,
+      priceTiers: {
+        orderBy: {minQuantity: "asc"},
+      },
     },
   });
 }
