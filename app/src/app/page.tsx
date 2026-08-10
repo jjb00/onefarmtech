@@ -24,6 +24,7 @@ const notOpenRightNow = {
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
   closingDate: null as string | null,
+  featuredItem: null as {name: string; unitPrice: number; unit: string} | null,
 };
 
 async function getHomepageActivity() {
@@ -46,6 +47,10 @@ async function getHomepageActivity() {
           select: {
             quantity: true,
           },
+        },
+        items: {
+          select: {name: true, unitPrice: true, unit: true},
+          take: 1,
         },
       },
     });
@@ -78,6 +83,7 @@ async function getHomepageActivity() {
     const earliestClosingDate = closingDates.length
       ? new Date(Math.min(...closingDates.map((date) => date.getTime())))
       : null;
+    const firstItem = activeGroupBuys[0]?.items[0] ?? null;
 
     return {
       status: "Open",
@@ -91,6 +97,7 @@ async function getHomepageActivity() {
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
       closingDate: earliestClosingDate ? earliestClosingDate.toISOString() : null,
+      featuredItem: firstItem,
     };
   } catch (error) {
     console.error("Homepage activity unavailable", {
@@ -237,31 +244,57 @@ better prices, quality and reliability.
                   {activity.activeGroupBuyCount ? (
                     <>
                       <div className="mt-7">
-                        <div className="flex items-center justify-between text-sm font-bold text-white/70">
-                          <span>Paid capacity reserved</span>
-                          <span>{activity.progress}%</span>
-                        </div>
-                        <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
-                          <div
-                            className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
-                            style={{width: `${activity.progress}%`}}
-                          />
-                        </div>
                         {activity.closingDate ? (
                           <GroupBuyCountdown targetIso={activity.closingDate} label="Closes in" />
                         ) : null}
                       </div>
 
-                      <div className="mt-6 grid grid-cols-2 gap-3">
-                        <LiveMetric
-                          label="buyer places"
-                          value={String(activity.buyerPlaces)}
-                        />
-                        <LiveMetric
-                          label="active groups"
-                          value={String(activity.activeGroupBuyCount)}
-                        />
-                      </div>
+                      {activity.buyerPlaces > 0 ? (
+                        // Real paid activity exists -- this is genuine social
+                        // proof worth showing, not a fabricated number.
+                        <>
+                          <div className="mt-6">
+                            <div className="flex items-center justify-between text-sm font-bold text-white/70">
+                              <span>Paid capacity reserved</span>
+                              <span>{activity.progress}%</span>
+                            </div>
+                            <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
+                                style={{width: `${activity.progress}%`}}
+                              />
+                            </div>
+                          </div>
+                          <div className="mt-6 grid grid-cols-2 gap-3">
+                            <LiveMetric
+                              label="buyer places"
+                              value={String(activity.buyerPlaces)}
+                            />
+                            <LiveMetric
+                              label="active groups"
+                              value={String(activity.activeGroupBuyCount)}
+                            />
+                          </div>
+                        </>
+                      ) : activity.featuredItem ? (
+                        // No paid reservations yet -- a live "0%" bar and
+                        // "0 buyer places" read as failure, not FOMO. Lead
+                        // with the real product and the closing deadline
+                        // instead; the urgency is genuine (this week's price
+                        // really does close Thursday) without inventing a
+                        // social-proof number that isn't there yet.
+                        <div className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
+                          <p className="text-xs font-black uppercase tracking-[0.18em] text-white/50">
+                            This week&rsquo;s group buy
+                          </p>
+                          <p className="mt-2 text-xl font-black text-[#F2B84B]">
+                            {activity.featuredItem.name} · ₦{activity.featuredItem.unitPrice.toLocaleString()}/{activity.featuredItem.unit}
+                          </p>
+                          <p className="mt-2 text-sm leading-6 text-white/70">
+                            Be the first to join this week&rsquo;s group and lock this price before it closes.
+                          </p>
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <div className="mt-7 rounded-2xl border border-white/10 bg-white/5 p-5">

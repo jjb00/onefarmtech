@@ -40,6 +40,17 @@ test("the weekly open cron only publishes prepared (Draft) group buys and leaves
   assert.match(proposalAction, /status: "Proposed"/);
 });
 
+test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there's no paid activity yet", () => {
+  // A visible "0%" progress bar and "0 buyer places" reads as failure to a
+  // first-time visitor, not FOMO. When there's no real paid reservation
+  // yet, the card should lead with the actual featured product and the
+  // closing deadline instead of a fabricated-looking empty stat.
+  const homepage = read("src/app/page.tsx");
+  assert.match(homepage, /activity\.buyerPlaces > 0/);
+  assert.match(homepage, /featuredItem/);
+  assert.match(homepage, /This week&rsquo;s group buy/);
+});
+
 test("closing a group buy automatically drafts its replacement for the following week, so staff never have to recreate it", () => {
   // Regression: the open cron only ever promotes an existing Draft. If
   // nothing gets recreated after a close, the very next week silently has
