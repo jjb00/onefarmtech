@@ -40,6 +40,18 @@ test("the weekly open cron only publishes prepared (Draft) group buys and leaves
   assert.match(proposalAction, /status: "Proposed"/);
 });
 
+test("closing a group buy automatically drafts its replacement for the following week, so staff never have to recreate it", () => {
+  // Regression: the open cron only ever promotes an existing Draft. If
+  // nothing gets recreated after a close, the very next week silently has
+  // nothing to open -- the countdown reads "not open yet" even though the
+  // schedule fired correctly, because there was nothing to open.
+  const closeCron = read("src/app/api/cron/close-weekly-group-buys/route.ts");
+  assert.match(closeCron, /status: "Draft"/);
+  assert.match(closeCron, /nextGroupBuyCloseTime\(\)/);
+  assert.match(closeCron, /items:\s*true/);
+  assert.match(closeCron, /clonedFrom/);
+});
+
 test("vercel.json schedules both the open and close crons a week apart, open before close", () => {
   const vercelConfig = JSON.parse(read("vercel.json"));
   const crons = vercelConfig.crons;
