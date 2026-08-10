@@ -65,10 +65,8 @@ test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there
   assert.doesNotMatch(homepage, /featuredItem/);
   assert.match(homepage, /This week&rsquo;s group buy/);
   // The gamified bar shown before any real reservation exists must be
-  // driven by real elapsed window time, not a fabricated demand number --
-  // labeled honestly as "Window time used", not "reserved"/"capacity".
+  // driven by real elapsed window time, not a fabricated demand number.
   assert.match(homepage, /windowProgress/);
-  assert.match(homepage, /Window time used/);
 });
 
 test("closing a group buy automatically drafts its replacement for the following week, so staff never have to recreate it", () => {

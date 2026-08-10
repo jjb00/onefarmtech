@@ -289,8 +289,7 @@ better prices, quality and reliability.
                             Be the first to join this week&rsquo;s group before it closes.
                           </p>
                           <div className="mt-4">
-                            <div className="flex items-center justify-between text-sm font-bold text-white/70">
-                              <span>Window time used</span>
+                            <div className="flex items-center justify-end text-sm font-bold text-white/70">
                               <span>{activity.windowProgress}%</span>
                             </div>
                             <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
