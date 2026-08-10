@@ -57,12 +57,12 @@ test("window progress reflects real elapsed time in the Sunday-to-Thursday windo
 
 test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there's no paid activity yet", () => {
   // A visible "0%" progress bar and "0 buyer places" reads as failure to a
-  // first-time visitor, not FOMO. When there's no real paid reservation
-  // yet, the card should lead with the actual featured product and the
-  // closing deadline instead of a fabricated-looking empty stat.
+  // first-time visitor, not FOMO. It also must not name a specific
+  // product/price -- that's a per-window business decision, not something
+  // to bake into the homepage as if settled.
   const homepage = read("src/app/page.tsx");
   assert.match(homepage, /activity\.buyerPlaces > 0/);
-  assert.match(homepage, /featuredItem/);
+  assert.doesNotMatch(homepage, /featuredItem/);
   assert.match(homepage, /This week&rsquo;s group buy/);
   // The gamified bar shown before any real reservation exists must be
   // driven by real elapsed window time, not a fabricated demand number --
