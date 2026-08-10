@@ -8,7 +8,7 @@ import GroupBuyCountdown from "@/components/GroupBuyCountdown";
 import {buildWhatsAppLink} from "@/lib/whatsapp";
 import {prisma} from "@/lib/prisma";
 import {publicPageMetadata} from "@/lib/publicSeo";
-import {nextGroupBuyOpenTime} from "@/lib/groupBuySchedule";
+import {nextGroupBuyOpenTime, groupBuyWindowProgress} from "@/lib/groupBuySchedule";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -21,6 +21,7 @@ export const runtime = "nodejs";
 const notOpenRightNow = {
   status: "Opens weekly",
   progress: 0,
+  windowProgress: 0,
   activeGroupBuyCount: 0,
   buyerPlaces: 0,
   closingDate: null as string | null,
@@ -94,6 +95,12 @@ async function getHomepageActivity() {
               Math.round((reservedQuantity / targetQuantity) * 100),
             )
           : 0,
+      // Real elapsed-time-in-window percentage -- not a demand/capacity
+      // claim, just how far through the Sunday-to-Thursday window we are.
+      // Used as the moving bar in the zero-reservation state so there's
+      // something honest to animate before any real "paid capacity"
+      // number exists.
+      windowProgress: earliestClosingDate ? groupBuyWindowProgress(earliestClosingDate) : 0,
       activeGroupBuyCount: activeGroupBuys.length,
       buyerPlaces,
       closingDate: earliestClosingDate ? earliestClosingDate.toISOString() : null,
@@ -293,6 +300,18 @@ better prices, quality and reliability.
                           <p className="mt-2 text-sm leading-6 text-white/70">
                             Be the first to join this week&rsquo;s group and lock this price before it closes.
                           </p>
+                          <div className="mt-4">
+                            <div className="flex items-center justify-between text-sm font-bold text-white/70">
+                              <span>Window time used</span>
+                              <span>{activity.windowProgress}%</span>
+                            </div>
+                            <div className="mt-2 h-4 overflow-hidden rounded-full bg-white/10">
+                              <div
+                                className="oft-progress-stripe oft-soft-pulse h-full rounded-full bg-[#F2B84B]"
+                                style={{width: `${activity.windowProgress}%`}}
+                              />
+                            </div>
+                          </div>
                         </div>
                       ) : null}
                     </>

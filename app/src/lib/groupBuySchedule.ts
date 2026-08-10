@@ -29,3 +29,14 @@ export function nextGroupBuyOpenTime(from: Date = new Date()) {
 export function nextGroupBuyCloseTime(from: Date = new Date()) {
   return nextWeekday(from, GROUP_BUY_CLOSE_DAY, GROUP_BUY_CLOSE_HOUR_WAT);
 }
+
+// Sunday 20:00 WAT to Thursday 22:00 WAT is a fixed-length window (98
+// hours) every week, so given a real closing date we can derive the real
+// opening instant of that same window without storing it separately.
+const GROUP_BUY_WINDOW_LENGTH_MS = 98 * 60 * 60 * 1000;
+
+export function groupBuyWindowProgress(closingDate: Date, from: Date = new Date()) {
+  const windowStart = new Date(closingDate.getTime() - GROUP_BUY_WINDOW_LENGTH_MS);
+  const elapsed = from.getTime() - windowStart.getTime();
+  return Math.min(100, Math.max(0, Math.round((elapsed / GROUP_BUY_WINDOW_LENGTH_MS) * 100)));
+}

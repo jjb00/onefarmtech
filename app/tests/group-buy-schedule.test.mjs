@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import test from "node:test";
-import {nextGroupBuyOpenTime, nextGroupBuyCloseTime} from "../src/lib/groupBuySchedule.ts";
+import {nextGroupBuyOpenTime, nextGroupBuyCloseTime, groupBuyWindowProgress} from "../src/lib/groupBuySchedule.ts";
 
 const read = (path) =>
   fs.readFileSync(new URL(`../${path}`, import.meta.url), "utf8");
@@ -40,6 +40,21 @@ test("the weekly open cron only publishes prepared (Draft) group buys and leaves
   assert.match(proposalAction, /status: "Proposed"/);
 });
 
+test("window progress reflects real elapsed time in the Sunday-to-Thursday window, never a fabricated number", () => {
+  const closingDate = new Date("2026-08-13T21:00:00.000Z"); // Thursday 22:00 WAT close
+  const windowStart = new Date("2026-08-09T19:00:00.000Z"); // Sunday 20:00 WAT open
+
+  assert.equal(groupBuyWindowProgress(closingDate, windowStart), 0);
+  assert.equal(groupBuyWindowProgress(closingDate, closingDate), 100);
+
+  const halfway = new Date((windowStart.getTime() + closingDate.getTime()) / 2);
+  assert.equal(groupBuyWindowProgress(closingDate, halfway), 50);
+
+  // Never negative or over 100 even if called outside the window.
+  assert.equal(groupBuyWindowProgress(closingDate, new Date("2026-08-01T00:00:00.000Z")), 0);
+  assert.equal(groupBuyWindowProgress(closingDate, new Date("2026-08-20T00:00:00.000Z")), 100);
+});
+
 test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there's no paid activity yet", () => {
   // A visible "0%" progress bar and "0 buyer places" reads as failure to a
   // first-time visitor, not FOMO. When there's no real paid reservation
@@ -49,6 +64,11 @@ test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there
   assert.match(homepage, /activity\.buyerPlaces > 0/);
   assert.match(homepage, /featuredItem/);
   assert.match(homepage, /This week&rsquo;s group buy/);
+  // The gamified bar shown before any real reservation exists must be
+  // driven by real elapsed window time, not a fabricated demand number --
+  // labeled honestly as "Window time used", not "reserved"/"capacity".
+  assert.match(homepage, /windowProgress/);
+  assert.match(homepage, /Window time used/);
 });
 
 test("closing a group buy automatically drafts its replacement for the following week, so staff never have to recreate it", () => {
