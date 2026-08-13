@@ -69,6 +69,12 @@ test("the group-buy card doesn't show a live 0% bar or 0 buyer places when there
   assert.match(homepage, /windowProgress/);
 });
 
+test("the empty group-buy prompt uses clear buyer-facing language", () => {
+  const homepage = read("src/app/page.tsx");
+  assert.match(homepage, /Join this week&rsquo;s buy group before it closes\./);
+  assert.doesNotMatch(homepage, /Be the first to join this week&rsquo;s group/);
+});
+
 test("closing a group buy automatically drafts its replacement for the following week, so staff never have to recreate it", () => {
   // Regression: the open cron only ever promotes an existing Draft. If
   // nothing gets recreated after a close, the very next week silently has

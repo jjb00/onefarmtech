@@ -151,6 +151,12 @@ export default async function HomePage() {
             </Link>
             <nav className="hidden items-center gap-3 md:flex">
               <Link
+                href="/products"
+                className="rounded-full px-4 py-3 text-sm font-black text-[#101712] hover:bg-white/70"
+              >
+                Products
+              </Link>
+              <Link
                 href="/buyer-account-request"
                 className="hidden rounded-full border border-[#101712]/10 bg-white px-5 py-3 text-sm font-black text-[#101712] shadow-sm hover:bg-[#f3f8ef] md:inline-flex"
               >
@@ -286,7 +292,7 @@ better prices, quality and reliability.
                             This week&rsquo;s group buy
                           </p>
                           <p className="mt-2 text-sm leading-6 text-white/70">
-                            Be the first to join this week&rsquo;s group before it closes.
+                            Join this week&rsquo;s buy group before it closes.
                           </p>
                           <div className="mt-4">
                             <div className="flex items-center justify-end text-sm font-bold text-white/70">
@@ -356,6 +362,7 @@ better prices, quality and reliability.
           </div>
         </div>
       </section>
+
       <PublicFooter />
     </main>
   );

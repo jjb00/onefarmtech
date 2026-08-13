@@ -13,6 +13,7 @@ export type PaymentCheckoutInput = {
   buyerPhone?: string | null;
   orderCode?: string | null;
   callbackPath?: string;
+  metadata?: Record<string, unknown>;
 };
 
 export type PaymentCheckoutResult = {
@@ -82,6 +83,7 @@ export async function createPaymentCheckout(
         buyerName: input.buyerName,
         buyerPhone: input.buyerPhone,
         source: "OneFarmTech",
+        ...(input.metadata || {}),
       },
     });
 

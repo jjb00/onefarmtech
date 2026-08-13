@@ -8,6 +8,7 @@ const sections = [
     title: "Start",
     links: [
       {label: "Order on WhatsApp", href: whatsappOrderHref, primary: true, external: true},
+      {label: "Products", href: "/products"},
       {label: "Order form", href: "/order-request"},
       {label: "Request buyer account", href: "/buyer-account-request"},
       {label: "Buyer login", href: "/buyer-login"},

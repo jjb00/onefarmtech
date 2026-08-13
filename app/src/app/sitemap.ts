@@ -9,6 +9,7 @@ const routeSettings: Record<
   Pick<MetadataRoute.Sitemap[number], "changeFrequency" | "priority">
 > = {
   "/": {changeFrequency: "weekly", priority: 1},
+  "/products": {changeFrequency: "weekly", priority: 0.9},
   "/order": {changeFrequency: "monthly", priority: 0.9},
   "/order-request": {changeFrequency: "monthly", priority: 0.9},
   "/buyer-account-request": {changeFrequency: "monthly", priority: 0.8},

@@ -7,6 +7,7 @@ export const DEFAULT_DESCRIPTION =
 
 export const INDEXABLE_PUBLIC_ROUTES = [
   "/",
+  "/products",
   "/order",
   "/order-request",
   "/buyer-account-request",
@@ -27,6 +28,11 @@ export const PUBLIC_ROUTE_METADATA = {
     title: "Fresh Produce Supplier for Nigerian Buyers",
     description:
       "Source fresh produce for restaurants, hotels, caterers, retailers, offices, groups and households through OneFarmTech's WhatsApp-first ordering.",
+  },
+  "/products": {
+    title: "Fresh Food Products and Produce Categories",
+    description:
+      "Browse the fresh produce, staples, poultry, meat and seafood categories supplied by OneFarmTech, with availability confirmed before ordering.",
   },
   "/order": {
     title: "Order Fresh Produce by WhatsApp or Online",

@@ -6,6 +6,8 @@ import {getDbGroupBuys, getDbProducts} from "@/data/dbAdmin";
 import {
   createGroupBuyAction,
   createGroupBuyReservationAction,
+  generateGroupBuyPaymentLinkAction,
+  verifyGroupBuyPaystackPaymentAction,
   updateGroupBuyAction,
   updateGroupBuyReservationAction,
   addGroupBuyPriceTierAction,
@@ -13,6 +15,7 @@ import {
 } from "@/actions/groupBuys";
 import {buyerTypes} from "@/constants/orderOptions";
 import {isPaidGroupBuyReservationStatus, resolveGroupBuyTierPrice} from "@/lib/groupBuyState.js";
+import {createWhatsappUrl} from "@/lib/whatsappMessages";
 
 function formatNaira(amount: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -57,6 +60,7 @@ const groupBuyFulfilmentStatuses = [
 
 const reservationPaymentStatuses = [
   "Unpaid",
+  "Payment pending",
   "Deposit pending",
   "Deposit paid",
   "Fully paid",
@@ -66,7 +70,12 @@ const reservationPaymentStatuses = [
   "Refunded",
 ];
 
-export default async function GroupBuysPage() {
+export default async function GroupBuysPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{paymentLink?: string; payment?: string; error?: string; detail?: string}>;
+}) {
+  const params = await searchParams;
   const [groupBuys, products] = await Promise.all([
     getDbGroupBuys(),
     getDbProducts(),
@@ -93,6 +102,21 @@ export default async function GroupBuysPage() {
       description="Create and manage group-buy windows."
     >
       <div className="grid gap-5">
+        {params?.paymentLink ? (
+          <p className="rounded-2xl bg-[#e7f5eb] p-4 text-sm font-bold text-[#176533]">
+            Paystack payment link {params.paymentLink === "reused" ? "reused" : "generated"}. Open the reservation below to send it to the buyer.
+          </p>
+        ) : null}
+        {params?.payment === "verified" ? (
+          <p className="rounded-2xl bg-[#e7f5eb] p-4 text-sm font-bold text-[#176533]">
+            The reservation payment was verified with Paystack.
+          </p>
+        ) : null}
+        {params?.error ? (
+          <p role="alert" className="rounded-2xl bg-[#fff4ef] p-4 text-sm font-bold text-[#9b2f12]">
+            {params.detail || "The group-buy payment action could not be completed."}
+          </p>
+        ) : null}
         <nav
           aria-label="Product workspace"
           className="flex gap-2 overflow-x-auto pb-1"
@@ -547,12 +571,16 @@ export default async function GroupBuysPage() {
                       >
                         <h3 className="font-black">Add reservation</h3>
                         <input type="hidden" name="groupBuyId" value={groupBuy.id} />
-                        <input type="hidden" name="unitPrice" value={unitPrice} />
-
                         <input
                           name="buyerName"
                           required
                           placeholder="Buyer name"
+                          className="rounded-xl border border-gray-200 px-4 py-3"
+                        />
+                        <input
+                          name="email"
+                          type="email"
+                          placeholder="Buyer email (optional)"
                           className="rounded-xl border border-gray-200 px-4 py-3"
                         />
                         <input
@@ -600,44 +628,78 @@ export default async function GroupBuysPage() {
                         <h3 className="font-black">Reservations</h3>
                         <div className="mt-3 grid gap-2">
                           {groupBuy.reservations.length ? (
-                            groupBuy.reservations.map((reservation) => (
-                              <form
+                            groupBuy.reservations.map((reservation) => {
+                              const latestPaymentRequest = reservation.paymentRequests[0];
+                              const paymentMessage = latestPaymentRequest?.paymentUrl
+                                ? `Hi ${reservation.buyerName}, pay ${formatNaira(reservation.amount)} for your ${reservation.quantity} ${groupBuy.unit} reservation in OneFarmTech group buy ${groupBuy.code}: ${latestPaymentRequest.paymentUrl}\n\nYour place is confirmed after Paystack verifies payment.`
+                                : "";
+
+                              return (
+                              <div
                                 key={reservation.id}
-                                action={updateGroupBuyReservationAction}
                                 className="grid gap-3 border-t border-[#102015]/10 py-3 first:border-t-0 first:pt-0 sm:grid-cols-[1fr_auto] sm:items-center"
                               >
                                 <div>
                                   <p className="font-bold">{reservation.buyerName}</p>
                                   <p className="mt-1 text-xs text-[#587063]">
                                     {reservation.phone} · {reservation.quantity}{" "}
-                                    {groupBuy.unit} · {formatNaira(reservation.amount)}
+                                    {groupBuy.unit} × {formatNaira(reservation.unitPrice)} · {formatNaira(reservation.amount)}
                                   </p>
+                                  {latestPaymentRequest ? (
+                                    <p className="mt-1 text-xs font-bold text-[#587063]">
+                                      Paystack: {latestPaymentRequest.status} · {latestPaymentRequest.reference}
+                                    </p>
+                                  ) : null}
+                                  {latestPaymentRequest?.paymentUrl && latestPaymentRequest.status === "Pending" ? (
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      <a href={latestPaymentRequest.paymentUrl} target="_blank" rel="noreferrer" className="text-xs font-black text-[#1f7a3f] hover:underline">
+                                        Open payment link
+                                      </a>
+                                      <a href={createWhatsappUrl(reservation.phone, paymentMessage)} target="_blank" rel="noreferrer" className="text-xs font-black text-[#1f7a3f] hover:underline">
+                                        Send link on WhatsApp
+                                      </a>
+                                    </div>
+                                  ) : null}
                                 </div>
 
                                 <div className="flex flex-wrap items-center gap-2">
-                                  <input
-                                    type="hidden"
-                                    name="reservationId"
-                                    value={reservation.id}
-                                  />
-                                  <select
-                                    name="paymentStatus"
-                                    defaultValue={reservation.paymentStatus}
-                                    className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
-                                  >
-                                    {reservationPaymentStatuses.map((status) => (
-                                      <option key={status}>{status}</option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    type="submit"
-                                    className="rounded-full border border-[#1f7a3f]/20 px-3 py-2 text-xs font-black text-[#1f7a3f]"
-                                  >
-                                    Update
-                                  </button>
+                                  <form action={updateGroupBuyReservationAction} className="flex flex-wrap items-center gap-2">
+                                    <input type="hidden" name="reservationId" value={reservation.id} />
+                                    <select
+                                      name="paymentStatus"
+                                      defaultValue={reservation.paymentStatus}
+                                      className="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+                                    >
+                                      {reservationPaymentStatuses.map((status) => (
+                                        <option key={status}>{status}</option>
+                                      ))}
+                                    </select>
+                                    <button type="submit" className="rounded-full border border-[#1f7a3f]/20 px-3 py-2 text-xs font-black text-[#1f7a3f]">
+                                      Update
+                                    </button>
+                                  </form>
+
+                                  {!isPaidGroupBuyReservationStatus(reservation.paymentStatus) && ["Open", "Minimum met"].includes(groupBuy.status) ? (
+                                    <form action={generateGroupBuyPaymentLinkAction}>
+                                      <input type="hidden" name="reservationId" value={reservation.id} />
+                                      <button type="submit" className="rounded-full bg-[#1f7a3f] px-3 py-2 text-xs font-black text-white">
+                                        {latestPaymentRequest?.paymentUrl ? "Reuse / replace link" : "Generate Paystack link"}
+                                      </button>
+                                    </form>
+                                  ) : null}
+
+                                  {latestPaymentRequest?.status === "Pending" ? (
+                                    <form action={verifyGroupBuyPaystackPaymentAction}>
+                                      <input type="hidden" name="paymentRequestId" value={latestPaymentRequest.id} />
+                                      <button type="submit" className="rounded-full border border-[#102015]/15 px-3 py-2 text-xs font-black text-[#102015]">
+                                        Verify payment
+                                      </button>
+                                    </form>
+                                  ) : null}
                                 </div>
-                              </form>
-                            ))
+                              </div>
+                              );
+                            })
                           ) : (
                             <p className="text-sm text-[#587063]">
                               No reservations yet.

@@ -7,8 +7,10 @@ import {getEmailBaseUrl, sendTransactionalEmail} from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
 import {validatePaystackVerification} from "@/lib/payments/verificationRules";
 import {settleVerifiedPaystackPayment} from "@/lib/payments/paystackSettlement.js";
+import {settleVerifiedGroupBuyPaystackPayment} from "@/lib/payments/groupBuyPaystackSettlement.js";
 import {validatePaystackWebhookPayment, verifyPaystackWebhookSignature} from "@/lib/payments/paystackWebhookRules.js";
 import {sendPaymentConfirmationWhatsApp, notifyAdminOfPaymentConfirmation} from "@/lib/whatsapp/statusReply";
+import {sendWhatsAppTextMessage} from "@/lib/whatsapp/provider";
 import * as Sentry from "@sentry/nextjs";
 
 export const runtime = "nodejs";
@@ -49,18 +51,84 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ok: false, error: "Missing reference"}, {status: 400});
   }
 
-  const paymentRequest = await prisma.paymentRequest.findFirst({
-    where: {
-      OR: [
-        {gatewayReference},
-        {reference: gatewayReference},
-      ],
-    },
-    include: {
-      order: true,
-      customer: true,
-    },
-  });
+  const [paymentRequest, groupBuyPaymentRequest] = await Promise.all([
+    prisma.paymentRequest.findFirst({
+      where: {
+        OR: [
+          {gatewayReference},
+          {reference: gatewayReference},
+        ],
+      },
+      include: {
+        order: true,
+        customer: true,
+      },
+    }),
+    prisma.groupBuyPaymentRequest.findFirst({
+      where: {
+        OR: [
+          {gatewayReference},
+          {reference: gatewayReference},
+        ],
+      },
+      include: {
+        reservation: {
+          include: {groupBuy: true},
+        },
+      },
+    }),
+  ]);
+
+  if (!paymentRequest && groupBuyPaymentRequest) {
+    let verification;
+    try {
+      verification = await verifyPaystackTransaction(gatewayReference);
+    } catch (error) {
+      Sentry.captureException(error, {tags: {component: "group-buy-paystack-verification"}, extra: {internalReference: groupBuyPaymentRequest.reference, gatewayReference}});
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: "Group-buy provider verification failed or timed out.", payloadMetadata: {event: event.event}, verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+      return NextResponse.json({ok: false, error: "Provider verification temporarily unavailable"}, {status: 503, headers: {"Retry-After": "60"}});
+    }
+
+    const verificationConflict = validatePaystackVerification({verification, reference: gatewayReference, amount: groupBuyPaymentRequest.amount, currency: groupBuyPaymentRequest.currency || "NGN"});
+    if (verificationConflict) {
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: `Group-buy provider verification conflict: ${verificationConflict}.`, payloadMetadata: {event: event.event}, verificationMetadata: verification});
+      return NextResponse.json({ok: true, ignored: "provider verification mismatch"});
+    }
+
+    const webhookConflict = validatePaystackWebhookPayment({data, expectedAmount: groupBuyPaymentRequest.amount, expectedCurrency: groupBuyPaymentRequest.currency || "NGN"});
+    if (webhookConflict) {
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: `Authenticated group-buy webhook conflict: ${webhookConflict}.`, payloadMetadata: {event: event.event, amountMinor: data.amount, currency: data.currency}});
+      return NextResponse.json({ok: true, ignored: "webhook payment details mismatch"});
+    }
+
+    const paidAt = data.paid_at ? new Date(data.paid_at) : new Date();
+    const settlement = await settleVerifiedGroupBuyPaystackPayment({db: prisma, paymentRequest: groupBuyPaymentRequest, verification, paidAt, source: "Paystack webhook"});
+    if (!settlement.ok) {
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: `Group-buy settlement verification conflict: ${settlement.conflict}.`, verificationMetadata: verification});
+      return NextResponse.json({ok: true, ignored: "settlement verification mismatch"});
+    }
+
+    if (settlement.reviewRequired) {
+      await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: settlement.duplicateCharge ? "A second Paystack charge was received for an already-paid group-buy reservation; refund review required." : "Group-buy payment arrived after collection closed or above remaining capacity; refund review required.", verificationMetadata: verification});
+    }
+
+    if (!settlement.duplicate) {
+      try {
+        const reservation = groupBuyPaymentRequest.reservation;
+        const amount = formatNaira(groupBuyPaymentRequest.amount);
+        const body = settlement.reviewRequired
+          ? `Hi ${reservation.buyerName}, OneFarmTech received your ${amount} payment for group buy ${reservation.groupBuy.code}. The reservation needs a staff review before confirmation, and the team will contact you.`
+          : `Hi ${reservation.buyerName}, OneFarmTech has confirmed your ${amount} payment for group buy ${reservation.groupBuy.code}. Your ${reservation.quantity} ${reservation.groupBuy.unit} reservation is now confirmed.`;
+        await sendWhatsAppTextMessage({to: reservation.phone, body});
+      } catch (error) {
+        Sentry.captureException(error, {tags: {component: "group-buy-payment-confirmation-whatsapp"}, extra: {internalReference: groupBuyPaymentRequest.reference}});
+        await createPaymentReconciliationIncident({provider: "Paystack", internalReference: groupBuyPaymentRequest.reference, providerReference: gatewayReference, reason: "Group-buy payment was verified but the WhatsApp confirmation failed.", verificationMetadata: {error: error instanceof Error ? error.message : "unknown"}});
+      }
+    }
+
+    for (const path of ["/", "/admin", "/admin/group-buys", "/admin/payments"]) revalidatePath(path);
+    return NextResponse.json({ok: true, duplicate: settlement.duplicate, groupBuy: true, reviewRequired: settlement.reviewRequired});
+  }
 
   if (!paymentRequest) {
     await createPaymentReconciliationIncident({provider: "Paystack", providerReference: gatewayReference, reason: "No internal payment request matched the webhook reference.", payloadMetadata: {event: event.event, reference: gatewayReference}});

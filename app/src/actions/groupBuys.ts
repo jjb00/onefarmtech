@@ -11,9 +11,18 @@ import {
   deriveGroupBuyState,
   isPaidGroupBuyReservationStatus,
   paidGroupBuyQuantity,
+  resolveGroupBuyTierPrice,
   LIVE_GROUP_BUY_STATUSES,
   MAX_CONCURRENT_GROUP_BUYS,
 } from "@/lib/groupBuyState.js";
+import {
+  GroupBuyPaymentInitializationError,
+  initialiseGroupBuyPayment,
+} from "@/lib/payments/groupBuyPaymentInitialization.js";
+import {createPaymentCheckout} from "@/lib/payments/provider";
+import {verifyPaystackTransaction} from "@/lib/payments/paystack";
+import {settleVerifiedGroupBuyPaystackPayment} from "@/lib/payments/groupBuyPaystackSettlement.js";
+import {createPaymentReconciliationIncident} from "@/lib/payments/reconciliation";
 
 function readText(formData: FormData, key: string, fallback = "") {
   const value = formData.get(key);
@@ -79,6 +88,12 @@ function refreshGroupBuyPaths() {
   revalidatePath("/admin");
   revalidatePath("/admin/group-buys");
   revalidatePath("/admin/products");
+}
+
+function groupBuyErrorRedirect(code: string, detail?: string): never {
+  const params = new URLSearchParams({error: code});
+  if (detail) params.set("detail", detail);
+  redirect(`/admin/group-buys?${params.toString()}`);
 }
 
 export async function createGroupBuyAction(formData: FormData) {
@@ -235,13 +250,13 @@ export async function createGroupBuyReservationAction(formData: FormData) {
   const groupBuyId = readText(formData, "groupBuyId");
   const buyerName = readText(formData, "buyerName");
   const phone = readText(formData, "phone");
+  const email = readText(formData, "email");
   const buyerType = readText(formData, "buyerType", "Individual");
   const quantity = readNumber(formData, "quantity");
-  const unitPrice = readNumber(formData, "unitPrice");
   const paymentStatus = readText(formData, "paymentStatus", "Unpaid");
 
-  if (!groupBuyId || !buyerName || !phone || quantity <= 0 || unitPrice <= 0) {
-    throw new Error("Group buy, buyer name, phone, quantity, and unit price are required.");
+  if (!groupBuyId || !buyerName || !phone || quantity <= 0) {
+    throw new Error("Group buy, buyer name, phone, and quantity are required.");
   }
 
   const groupBuy = await prisma.groupBuy.findUnique({
@@ -253,6 +268,8 @@ export async function createGroupBuyReservationAction(formData: FormData) {
           paymentStatus: true,
         },
       },
+      items: {orderBy: {id: "asc"}, take: 1},
+      priceTiers: {orderBy: {minQuantity: "asc"}},
     },
   });
 
@@ -262,6 +279,28 @@ export async function createGroupBuyReservationAction(formData: FormData) {
 
   if (["Cancelled", "Completed", "Fully reserved"].includes(groupBuy.status)) {
     throw new Error("This group buy is not accepting new reservations.");
+  }
+
+  const activeReservationQuantity = groupBuy.reservations.reduce(
+    (sum, reservation) =>
+      ["Refunded", "Cancelled"].includes(reservation.paymentStatus)
+        ? sum
+        : sum + reservation.quantity,
+    0,
+  );
+  if (
+    groupBuy.targetQuantity > 0 &&
+    activeReservationQuantity + quantity > groupBuy.targetQuantity
+  ) {
+    throw new Error("This reservation would exceed the group-buy target.");
+  }
+
+  const unitPrice =
+    resolveGroupBuyTierPrice(groupBuy.priceTiers, groupBuy.reservedQuantity) ??
+    groupBuy.items[0]?.unitPrice ??
+    0;
+  if (unitPrice <= 0) {
+    throw new Error("Set a valid group-buy price before adding reservations.");
   }
 
   const currentPaidQuantity = paidGroupBuyQuantity(groupBuy.reservations);
@@ -278,8 +317,10 @@ export async function createGroupBuyReservationAction(formData: FormData) {
       groupBuyId,
       buyerName,
       phone,
+      email: email || null,
       buyerType,
       quantity,
+      unitPrice,
       amount: quantity * unitPrice,
       paymentStatus,
     },
@@ -288,6 +329,110 @@ export async function createGroupBuyReservationAction(formData: FormData) {
   await syncGroupBuyState(groupBuyId);
   refreshGroupBuyPaths();
   redirect("/admin/group-buys");
+}
+
+export async function generateGroupBuyPaymentLinkAction(formData: FormData) {
+  await requireCapability("manage_group_buys");
+
+  const reservationId = readText(formData, "reservationId");
+  if (!reservationId) groupBuyErrorRedirect("missing-reservation");
+
+  let result;
+  try {
+    result = await initialiseGroupBuyPayment({
+      db: prisma,
+      reservationId,
+      createCheckout: createPaymentCheckout,
+    });
+  } catch (error) {
+    const code =
+      error instanceof GroupBuyPaymentInitializationError
+        ? error.code
+        : "payment-link-failed";
+    const detail = error instanceof Error ? error.message : "Payment link generation failed.";
+    groupBuyErrorRedirect(code, detail);
+  }
+
+  await createAuditLog({
+    action: result.reused
+      ? "Reused group-buy Paystack link"
+      : "Generated group-buy Paystack link",
+    entityType: "GroupBuyReservation",
+    entityId: result.reservation.id,
+    entityLabel: `${result.reservation.groupBuy.code} · ${result.reservation.buyerName}`,
+    actorName: "Staff",
+    actorRole: "Admin",
+    newValue: {
+      reference: result.paymentRequest.reference,
+      amount: result.paymentRequest.amount,
+      reused: result.reused,
+    },
+  });
+
+  refreshGroupBuyPaths();
+  redirect(`/admin/group-buys?paymentLink=${result.reused ? "reused" : "generated"}`);
+}
+
+export async function verifyGroupBuyPaystackPaymentAction(formData: FormData) {
+  await requireCapability("manage_group_buys");
+
+  const paymentRequestId = readText(formData, "paymentRequestId");
+  if (!paymentRequestId) groupBuyErrorRedirect("missing-payment-request");
+
+  const paymentRequest = await prisma.groupBuyPaymentRequest.findUnique({
+    where: {id: paymentRequestId},
+  });
+  if (!paymentRequest) groupBuyErrorRedirect("payment-request-not-found");
+
+  const providerReference = paymentRequest.gatewayReference || paymentRequest.reference;
+
+  try {
+    const verification = await verifyPaystackTransaction(providerReference);
+    const result = await settleVerifiedGroupBuyPaystackPayment({
+      db: prisma,
+      paymentRequest,
+      verification,
+      paidAt: verification.metadata?.paidAt
+        ? new Date(String(verification.metadata.paidAt))
+        : new Date(),
+      source: "Manual staff verification",
+    });
+
+    if (!result.ok) {
+      await createPaymentReconciliationIncident({
+        provider: "Paystack",
+        internalReference: paymentRequest.reference,
+        providerReference,
+        reason: `Manual group-buy verification conflict: ${result.conflict}.`,
+        verificationMetadata: verification,
+      });
+      groupBuyErrorRedirect("verification-mismatch");
+    }
+
+    if (result.reviewRequired) {
+      await createPaymentReconciliationIncident({
+        provider: "Paystack",
+        internalReference: paymentRequest.reference,
+        providerReference,
+        reason: result.duplicateCharge
+          ? "A second Paystack charge was received for an already-paid group-buy reservation; refund review required."
+          : "Group-buy payment arrived after collection closed or above remaining capacity; refund review required.",
+        verificationMetadata: verification,
+      });
+    }
+  } catch (error) {
+    await createPaymentReconciliationIncident({
+      provider: "Paystack",
+      internalReference: paymentRequest.reference,
+      providerReference,
+      reason: "Manual group-buy Paystack verification failed.",
+      verificationMetadata: {error: error instanceof Error ? error.message : "unknown"},
+    });
+    groupBuyErrorRedirect("verification-failed");
+  }
+
+  refreshGroupBuyPaths();
+  redirect("/admin/group-buys?payment=verified");
 }
 
 export async function updateGroupBuyReservationAction(formData: FormData) {
