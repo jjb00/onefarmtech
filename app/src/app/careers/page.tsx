@@ -3,239 +3,22 @@ import BrandMark from "@/components/BrandMark";
 import PublicFooter from "@/components/PublicFooter";
 import PublicImageCollage from "@/components/PublicImageCollage";
 import CareerApplicationModal from "@/components/CareerApplicationModal";
-import StructuredData from "@/components/StructuredData";
+import {careerPath, careerRoleByTitle, careerRoles} from "@/lib/careers";
 import {publicIntakeErrorMessage} from "@/lib/publicIntakeProtection";
-import {publicPageMetadata, SITE_URL} from "@/lib/publicSeo";
+import {publicPageMetadata} from "@/lib/publicSeo";
 
-type Role = {
-  title: string;
-  department: string;
-  stages: string[];
-  locations: string[];
-  qualification: string;
-  summary: string;
-  details: string;
-  datePosted?: string;
-};
-
-// Roles without an explicit datePosted (the original batch) were added
-// on this date -- see git history for src/app/careers/page.tsx.
-const ORIGINAL_ROLES_DATE_POSTED = "2026-07-09";
-
-const roles: Role[] = [
-  {
-    title: "Produce Sourcing Associate",
-    department: "Supply & Procurement",
-    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
-    locations: ["Plateau", "Jos", "Benue", "Nasarawa", "Kogi", "Kwara", "Niger", "Taraba", "Kaduna", "Kano"],
-    qualification: "OND, HND, degree or strong produce-market experience.",
-    summary: "Find reliable growers, aggregators and market suppliers for fresh produce supply.",
-    details:
-      "This role is suited to someone who understands local produce markets, farming communities or aggregation points. You will help identify dependable supply partners, confirm availability, track market prices, support quality checks and keep OneFarmTech updated on what can be sourced reliably in your region.",
-  },
-  {
-    title: "Supplier Partnerships Associate",
-    department: "Supply & Procurement",
-    stages: ["Full-time", "Part-time", "Contract"],
-    locations: ["Lagos", "Abuja", "Plateau", "Benue", "Kaduna", "Kano", "Rivers", "Enugu", "Cross River"],
-    qualification: "HND, degree or practical experience working with suppliers, cooperatives, farms or aggregators.",
-    summary: "Build and manage relationships with farms, cooperatives, aggregators and supply partners.",
-    details:
-      "You will help onboard supply partners, collect key supplier information, understand capacity, agree communication routines and maintain reliability records. The role requires good judgement, trust-building and the ability to spot suppliers who can consistently meet buyer expectations.",
-  },
-  {
-    title: "Produce Quality & Reliability Officer",
-    department: "Supply & Procurement",
-    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
-    locations: ["Lagos", "Abuja", "Port Harcourt", "Jos", "Plateau", "Benue", "Kaduna", "Kano"],
-    qualification: "OND, HND, degree or practical experience in food handling, quality control, warehouse, logistics or agriculture.",
-    summary: "Help maintain produce quality before, during and after fulfilment.",
-    details:
-      "You will record quality issues, support grading, flag unreliable suppliers, follow up on rejected items and help reduce buyer complaints. This role is important for keeping trust between buyers, suppliers and OneFarmTech.",
-  },
-  {
-    title: "Buyer Growth Associate",
-    department: "Sales & Buyer Growth",
-    stages: ["Full-time", "Part-time", "Contract", "NYSC", "Internship"],
-    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Onitsha", "Kano", "Kaduna"],
-    qualification: "OND, HND, degree or strong sales, customer service or field marketing experience.",
-    summary: "Introduce OneFarmTech to restaurants, caterers, food vendors, retailers and buying groups.",
-    details:
-      "You will speak with prospective buyers, understand their produce needs, explain how ordering works and help convert interest into repeat orders. This role is best for confident communicators who are comfortable with outreach, follow-up and relationship building.",
-  },
-  {
-    title: "Key Accounts Executive",
-    department: "Sales & Buyer Growth",
-    stages: ["Full-time", "Contract"],
-    locations: ["Lagos", "Abuja", "Port Harcourt"],
-    qualification: "HND, degree or proven B2B sales, account management, hospitality supply or FMCG experience.",
-    summary: "Manage larger recurring buyers and high-value food supply relationships.",
-    details:
-      "You will work with restaurants, hotels, caterers, corporate kitchens and larger recurring buyers. The role involves managing buyer expectations, supporting repeat orders, tracking account needs and helping OneFarmTech become a reliable supply partner.",
-  },
-  {
-    title: "Order Fulfilment Coordinator",
-    department: "Operations & Fulfilment",
-    stages: ["Full-time", "Part-time", "NYSC"],
-    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Kano", "Kaduna"],
-    qualification: "OND, HND, degree or logistics, dispatch, warehouse or customer operations experience.",
-    summary: "Coordinate confirmed orders from allocation through dispatch and delivery follow-up.",
-    details:
-      "You will help track order readiness, coordinate with internal teams and delivery partners, update buyers, collect delivery evidence and follow up on issues. The role requires calm execution, attention to detail and strong communication.",
-  },
-  {
-    title: "Payments & Reconciliation Officer",
-    department: "Finance & Admin",
-    stages: ["Full-time", "Part-time", "NYSC"],
-    locations: ["Remote", "Lagos", "Abuja"],
-    qualification: "OND, HND, degree or practical bookkeeping, finance admin, payment tracking or reconciliation experience.",
-    summary: "Keep payment requests, receipts and buyer balances accurate.",
-    details:
-      "You will help track payment requests, manual transfers, online payment references, receipts and buyer balances. This role requires accuracy, patience and comfort working with spreadsheets, admin systems and payment evidence.",
-  },
-  {
-    title: "Operations & Data Associate",
-    department: "Finance & Admin",
-    stages: ["Full-time", "Part-time", "Internship", "NYSC"],
-    locations: ["Remote", "Lagos", "Abuja"],
-    qualification: "HND, degree or strong spreadsheet, data entry, reporting or operations admin skills.",
-    summary: "Support clean operating records, weekly reporting and internal follow-up.",
-    details:
-      "You will help maintain order data, buyer records, supplier notes, fulfilment logs and performance reports. This role suits someone organised, numerate and comfortable turning messy operational information into usable records.",
-  },
-  {
-    title: "Product Engineer",
-    department: "Technology",
-    stages: ["Full-time", "Part-time", "Contract", "Internship"],
-    locations: ["Remote", "Lagos", "Abuja"],
-    qualification: "Strong practical engineering ability. Degree not mandatory.",
-    summary: "Build and improve the software behind OneFarmTech.",
-    details:
-      "You may work on the buyer portal, admin tools, payments, WhatsApp workflows, reporting, data models and internal operations systems. We value engineers who care about reliability, clean workflows and how real users actually work.",
-  },
-  {
-    title: "Product Designer / UIUX Associate",
-    department: "Technology",
-    stages: ["Full-time", "Part-time", "Contract", "Internship"],
-    locations: ["Remote", "Lagos", "Abuja"],
-    qualification: "Portfolio or practical product/design work preferred. Degree not mandatory.",
-    summary: "Design clear, mobile-friendly workflows for buyers, admins and partners.",
-    details:
-      "You will work on buyer journeys, admin pages, forms, tables, dashboards and reusable product patterns. This role is for designers who care about clarity, accessibility and operational products, not only beautiful screens.",
-  },
-  {
-    title: "Digital Content & Video Intern",
-    department: "Content",
-    stages: ["Internship", "NYSC", "Part-time"],
-    locations: ["Remote", "Lagos", "Abuja", "Jos", "Plateau", "Campus-based"],
-    qualification: "Student, graduate or NYSC member. Media, theatre arts, communications, agriculture or business backgrounds welcome.",
-    summary: "Create practical content around markets, growers, buyers and food supply.",
-    details:
-      "You will support short videos, market visits, buyer stories, grower stories, social posts and simple product explainers. A good eye, consistency, editing discipline and storytelling ability matter more than formal experience.",
-  },
-  {
-    title: "Community & Field Marketing Associate",
-    department: "Community",
-    stages: ["Part-time", "Contract", "NYSC", "Internship"],
-    locations: ["Lagos", "Abuja", "Port Harcourt", "Ibadan", "Enugu", "Onitsha", "Kano", "Kaduna", "Jos"],
-    qualification: "No degree required where local network, communication and reliability are strong.",
-    summary: "Build local awareness with buyers, neighbourhoods, offices and food communities.",
-    details:
-      "You will help introduce OneFarmTech to local buyer communities, support simple field activations, gather buyer feedback and connect interested groups to the ordering process. This role suits people who are trusted locally and can communicate clearly.",
-  },
-  {
-    title: "Regional Sales Associate — Jos, Benue & Kano",
-    department: "Sales & Buyer Growth",
-    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
-    locations: ["Jos", "Plateau", "Benue", "Kano"],
-    qualification: "OND, HND, degree or strong sales, customer service or field marketing experience in the region.",
-    summary: "Win and grow buyer relationships for restaurants, retailers and households across Jos, Benue and Kano.",
-    details:
-      "You will identify and approach prospective buyers in your region, explain how WhatsApp ordering works, follow up on interest and turn it into repeat orders. This role is for someone with a strong local network and the confidence to open new buyer relationships from scratch.",
-    datePosted: "2026-07-31",
-  },
-  {
-    title: "Regional Supplier Relations Associate — Jos, Benue & Kano",
-    department: "Supply & Procurement",
-    stages: ["Full-time", "Part-time", "Contract", "NYSC"],
-    locations: ["Jos", "Plateau", "Benue", "Kano"],
-    qualification: "OND, HND, degree or practical experience working with farms, cooperatives or aggregators in the region.",
-    summary: "Build and maintain supplier relationships with farms and aggregators across Jos, Benue and Kano.",
-    details:
-      "You will identify dependable growers and aggregators in your region, agree pricing and supply terms, confirm availability, and maintain the trust and communication routines that keep produce flowing reliably. Strong local knowledge of farming communities matters more than formal qualifications here.",
-    datePosted: "2026-07-31",
-  },
-  {
-    title: "Regional Admin & Operations Officer — Jos, Benue & Kano",
-    department: "Finance & Admin",
-    stages: ["Full-time", "Part-time", "NYSC"],
-    locations: ["Jos", "Plateau", "Benue", "Kano"],
-    qualification: "OND, HND, degree or practical admin, records or operations support experience.",
-    summary: "Keep regional orders, supplier records and buyer follow-up organised across Jos, Benue and Kano.",
-    details:
-      "You will support the regional sales and supplier teams with accurate records, order tracking, buyer follow-up and basic reporting back to the central operations team. This role suits someone organised, reliable and comfortable coordinating between multiple people in the field.",
-    datePosted: "2026-07-31",
-  },
+const departments = [
+  "All",
+  ...Array.from(new Set(careerRoles.map((role) => role.department))),
 ];
-
-const EMPLOYMENT_TYPE_MAP: Record<string, string> = {
-  "Full-time": "FULL_TIME",
-  "Part-time": "PART_TIME",
-  Contract: "CONTRACTOR",
-  NYSC: "INTERN",
-  Internship: "INTERN",
-};
-
-function jobPostingsFor(list: Role[]) {
-  return list.map((role) => {
-    const nonRemoteLocations = role.locations.filter((item) => item !== "Remote" && item !== "Campus-based");
-    const isRemote = role.locations.includes("Remote");
-
-    return {
-      "@context": "https://schema.org",
-      "@type": "JobPosting",
-      title: role.title,
-      description: `${role.summary} ${role.details}`,
-      datePosted: role.datePosted || ORIGINAL_ROLES_DATE_POSTED,
-      employmentType: Array.from(
-        new Set(role.stages.map((stage) => EMPLOYMENT_TYPE_MAP[stage]).filter(Boolean)),
-      ),
-      identifier: {
-        "@type": "PropertyValue",
-        name: "OneFarmTech",
-        value: role.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""),
-      },
-      hiringOrganization: {
-        "@type": "Organization",
-        name: "OneFarmTech",
-        sameAs: SITE_URL,
-        logo: `${SITE_URL}/icon.png`,
-      },
-      ...(isRemote
-        ? {
-            jobLocationType: "TELECOMMUTE",
-            applicantLocationRequirements: {"@type": "Country", name: "Nigeria"},
-          }
-        : {}),
-      ...(nonRemoteLocations.length
-        ? {
-            jobLocation: nonRemoteLocations.map((location) => ({
-              "@type": "Place",
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: location,
-                addressCountry: "NG",
-              },
-            })),
-          }
-        : {}),
-    };
-  });
-}
-
-const departments = ["All", ...Array.from(new Set(roles.map((role) => role.department)))];
-const stages = ["All", ...Array.from(new Set(roles.flatMap((role) => role.stages)))];
-const locations = ["All", ...Array.from(new Set(roles.flatMap((role) => role.locations)))].sort((a, b) => {
+const stages = [
+  "All",
+  ...Array.from(new Set(careerRoles.flatMap((role) => role.stages))),
+];
+const locations = [
+  "All",
+  ...Array.from(new Set(careerRoles.flatMap((role) => role.locations))),
+].sort((a, b) => {
   if (a === "All") return -1;
   if (b === "All") return 1;
   return a.localeCompare(b);
@@ -257,12 +40,12 @@ export default async function CareersPage({
   }>;
 }) {
   const params = await searchParams;
-
   const department = params?.department || "All";
   const location = params?.location || "All";
   const stage = params?.stage || "All";
   const selectedRole = String(params?.role || "").trim();
-  const showApplication = params?.apply === "1" && Boolean(selectedRole);
+  const selectedCareerRole = careerRoleByTitle(selectedRole);
+  const showApplication = params?.apply === "1" && Boolean(selectedCareerRole);
   const submitted = params?.submitted === "1";
   const careerErrorMessages: Record<string, string> = {
     validation: "Complete every required field and confirm your consent.",
@@ -275,7 +58,7 @@ export default async function CareersPage({
     ? careerErrorMessages[params.error] || publicIntakeErrorMessage(params.error)
     : null;
 
-  const filtered = roles.filter((role) => {
+  const filtered = careerRoles.filter((role) => {
     return (
       (department === "All" || role.department === department) &&
       (location === "All" || role.locations.includes(location)) &&
@@ -285,19 +68,20 @@ export default async function CareersPage({
 
   return (
     <main className="oft-product-shell min-h-screen bg-[#fbfff8] text-[#102015]">
-      <StructuredData data={jobPostingsFor(roles)} />
       <section className="relative overflow-hidden bg-[radial-gradient(circle_at_14%_16%,rgba(31,122,63,0.14),transparent_32%),radial-gradient(circle_at_88%_10%,rgba(242,184,75,0.18),transparent_30%),linear-gradient(180deg,#fbfff8_0%,#f5faef_58%,#fbfff8_100%)]">
         <PublicImageCollage
           images={[
             {
               src: "/backgrounds/buyers.png",
               alt: "",
-              className: "right-[-190px] top-[-30px] h-72 w-72 opacity-[0.22] md:h-[26rem] md:w-[26rem]",
+              className:
+                "right-[-190px] top-[-30px] h-72 w-72 opacity-[0.22] md:h-[26rem] md:w-[26rem]",
             },
             {
               src: "/backgrounds/trolley.png",
               alt: "",
-              className: "left-[-190px] bottom-[-120px] hidden h-[24rem] w-[24rem] opacity-[0.22] lg:block",
+              className:
+                "left-[-190px] bottom-[-120px] hidden h-[24rem] w-[24rem] opacity-[0.22] lg:block",
             },
           ]}
         />
@@ -325,8 +109,8 @@ export default async function CareersPage({
                 Work with us to improve fresh food supply.
               </h1>
               <p className="mt-5 max-w-3xl text-lg leading-8 text-[#405348]">
-                Explore practical roles across supply, sales, fulfilment, finance,
-                technology, content and community.
+                Explore practical roles across supply, sales, fulfilment,
+                finance, technology, content and community.
               </p>
             </div>
           </section>
@@ -339,9 +123,24 @@ export default async function CareersPage({
           className="rounded-[1.5rem] border border-[#102015]/10 bg-white/95 p-4 shadow-[0_18px_48px_rgba(16,23,18,0.08)] backdrop-blur"
         >
           <div className="grid gap-3 lg:grid-cols-3">
-            <FilterSelect label="Department" name="department" value={department} options={departments} />
-            <FilterSelect label="Location" name="location" value={location} options={locations} />
-            <FilterSelect label="Stage" name="stage" value={stage} options={stages} />
+            <FilterSelect
+              label="Department"
+              name="department"
+              value={department}
+              options={departments}
+            />
+            <FilterSelect
+              label="Location"
+              name="location"
+              value={location}
+              options={locations}
+            />
+            <FilterSelect
+              label="Stage"
+              name="stage"
+              value={stage}
+              options={stages}
+            />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-[#102015]/10 pt-3">
@@ -368,7 +167,7 @@ export default async function CareersPage({
         <section className="mt-6 grid gap-4">
           {filtered.map((role) => (
             <article
-              key={role.title}
+              key={role.slug}
               className="rounded-[1.5rem] border border-[#102015]/10 bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(16,23,18,0.08)]"
             >
               <div className="grid gap-4 lg:grid-cols-[1fr_0.34fr] lg:items-start">
@@ -376,26 +175,19 @@ export default async function CareersPage({
                   <div className="flex flex-wrap gap-2">
                     <Badge>{role.department}</Badge>
                     {role.stages.slice(0, 3).map((item) => (
-                      <Badge key={`${role.title}-${item}`}>{item}</Badge>
+                      <Badge key={`${role.slug}-${item}`}>{item}</Badge>
                     ))}
                   </div>
 
                   <h2 className="mt-4 text-2xl font-black text-[#102015]">
-                    {role.title}
+                    <Link className="hover:text-[#1f7a3f]" href={careerPath(role)}>
+                      {role.title}
+                    </Link>
                   </h2>
 
                   <p className="mt-3 max-w-3xl text-sm leading-7 text-[#405348]">
                     {role.summary}
                   </p>
-
-                  <details className="mt-4 rounded-2xl border border-[#102015]/10 bg-[#fbfff8] p-4">
-                    <summary className="cursor-pointer text-sm font-black text-[#102015]">
-                      View role details
-                    </summary>
-                    <p className="mt-3 text-sm leading-7 text-[#405348]">
-                      {role.details}
-                    </p>
-                  </details>
                 </div>
 
                 <div className="rounded-2xl bg-[#f3f8ef] p-4">
@@ -407,18 +199,11 @@ export default async function CareersPage({
                     {role.locations.length > 7 ? " and others" : ""}
                   </p>
 
-                  <p className="mt-4 text-xs font-black uppercase tracking-[0.14em] text-[#587063]">
-                    Qualification
-                  </p>
-                  <p className="mt-2 text-sm font-semibold leading-6 text-[#102015]">
-                    {role.qualification}
-                  </p>
-
                   <Link
-                    href={`/careers?apply=1&role=${encodeURIComponent(role.title)}`}
+                    href={careerPath(role)}
                     className="mt-4 inline-flex rounded-full bg-[#1f7a3f] px-4 py-2 text-xs font-black text-white"
                   >
-                    Apply for this role
+                    View role and apply
                   </Link>
                 </div>
               </div>
@@ -438,9 +223,9 @@ export default async function CareersPage({
 
       <PublicFooter />
 
-      {showApplication ? (
+      {showApplication && selectedCareerRole ? (
         <CareerApplicationModal
-          role={selectedRole}
+          role={selectedCareerRole.title}
           errorMessage={errorMessage}
           submitted={submitted}
         />
@@ -478,9 +263,9 @@ function FilterSelect({
   );
 }
 
-function Badge({children}: {children: string}) {
+function Badge({children}: {children: React.ReactNode}) {
   return (
-    <span className="rounded-full bg-[#f3f8ef] px-3 py-1 text-xs font-black uppercase tracking-[0.12em] text-[#1f7a3f]">
+    <span className="rounded-full bg-[#eef8ef] px-3 py-1 text-xs font-black text-[#1f7a3f]">
       {children}
     </span>
   );

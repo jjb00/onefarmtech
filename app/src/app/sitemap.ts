@@ -1,5 +1,10 @@
 import type {MetadataRoute} from "next";
 import {
+  CAREERS_LAST_MODIFIED,
+  careerPath,
+  careerRoles,
+} from "@/lib/careers";
+import {
   canonicalUrl,
   INDEXABLE_PUBLIC_ROUTES,
 } from "@/lib/publicSeo";
@@ -26,8 +31,22 @@ const routeSettings: Record<
 };
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  return INDEXABLE_PUBLIC_ROUTES.map((route) => ({
-    url: canonicalUrl(route),
-    ...routeSettings[route],
+  const publicRoutes: MetadataRoute.Sitemap = INDEXABLE_PUBLIC_ROUTES.map(
+    (route) => ({
+      url: canonicalUrl(route),
+      ...(route === "/careers"
+        ? {lastModified: CAREERS_LAST_MODIFIED}
+        : {}),
+      ...routeSettings[route],
+    }),
+  );
+
+  const careerRoutes: MetadataRoute.Sitemap = careerRoles.map((role) => ({
+    url: canonicalUrl(careerPath(role)),
+    lastModified: CAREERS_LAST_MODIFIED,
+    changeFrequency: "weekly",
+    priority: 0.7,
   }));
+
+  return [...publicRoutes, ...careerRoutes];
 }

@@ -7,12 +7,14 @@ import {createCareerApplicationAction} from "@/actions/publicApplications";
 
 type CareerApplicationModalProps = {
   role: string;
+  returnPath?: string;
   errorMessage?: string | null;
   submitted?: boolean;
 };
 
 export default function CareerApplicationModal({
   role,
+  returnPath = "/careers",
   errorMessage = null,
   submitted = false,
 }: CareerApplicationModalProps) {
@@ -20,8 +22,8 @@ export default function CareerApplicationModal({
   const nameRef = useRef<HTMLInputElement>(null);
 
   const closeModal = useCallback(() => {
-    router.push("/careers");
-  }, [router]);
+    router.push(returnPath);
+  }, [returnPath, router]);
 
   useEffect(() => {
     const previousOverflow = document.body.style.overflow;

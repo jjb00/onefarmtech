@@ -1,4 +1,5 @@
 import {redirect} from "next/navigation";
+import {careerPath, careerRoleByTitle} from "@/lib/careers";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,7 @@ export default async function CareerApplyPage({
   }>;
 }) {
   const params = await searchParams;
+  const role = params?.role ? careerRoleByTitle(params.role) : undefined;
   const query = new URLSearchParams();
 
   query.set("apply", "1");
@@ -20,5 +22,5 @@ export default async function CareerApplyPage({
   if (params?.submitted) query.set("submitted", params.submitted);
   if (params?.error) query.set("error", params.error);
 
-  redirect(`/careers?${query.toString()}`);
+  redirect(`${role ? careerPath(role) : "/careers"}?${query.toString()}`);
 }

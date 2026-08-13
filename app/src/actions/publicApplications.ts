@@ -9,6 +9,7 @@ import {
   type OperationalEmailGroup,
 } from "@/lib/email/service";
 import {emailTemplates} from "@/lib/email/templates";
+import {careerPath, careerRoleByTitle} from "@/lib/careers";
 import {protectPublicIntake, PublicIntakeError} from "@/lib/publicIntakeProtection";
 import {prisma} from "@/lib/prisma";
 import {requireCapability} from "@/lib/auth";
@@ -97,7 +98,10 @@ export async function submitCareerApplicationAction(formData: FormData) {
   const role = text(formData, "role");
   const experience = text(formData, "experience");
   const consent = formData.get("consent") === "on";
-  const reopen = `/careers?apply=1&role=${encodeURIComponent(role)}`;
+  const publishedRole = careerRoleByTitle(role);
+  const reopen = publishedRole
+    ? `${careerPath(publishedRole)}?apply=1`
+    : `/careers?apply=1&role=${encodeURIComponent(role)}`;
 
   try {
     await protectPublicIntake({
@@ -112,7 +116,7 @@ export async function submitCareerApplicationAction(formData: FormData) {
     redirect(`${reopen}&error=${encodeURIComponent(code)}`);
   }
 
-  if (!name || !email || !phone || !location || !role || !experience || !consent) {
+  if (!name || !email || !phone || !location || !publishedRole || !experience || !consent) {
     redirect(`${reopen}&error=validation`);
   }
 
@@ -169,7 +173,7 @@ export async function submitCareerApplicationAction(formData: FormData) {
     Sentry.captureException(error, {tags: {component: "career-application-admin-notification"}, extra: {email, role}});
   }
 
-  redirect("/careers?applied=1");
+  redirect(`${reopen}&submitted=1`);
 }
 
 export async function submitSupplierEnquiryAction(formData: FormData) {
@@ -299,4 +303,3 @@ export async function updateCareerApplicationStatusAction(formData: FormData) {
 
   revalidatePath("/admin/career-applications");
 }
-
