@@ -19,7 +19,7 @@ export const runtime = "nodejs";
 // The copy used to differ between them, and the "never happened yet"
 // wording read like an unlaunched feature rather than a live weekly cycle.
 const notOpenRightNow = {
-  status: "Opens weekly",
+  status: "Closed",
   progress: 0,
   windowProgress: 0,
   activeGroupBuyCount: 0,
@@ -233,12 +233,12 @@ better prices, quality and reliability.
                       <h2 className="mt-2 text-3xl font-black">
                         {activity.activeGroupBuyCount
                           ? "Buyer groups are active"
-                          : "This week's window opens soon"}
+                          : "Next group-buy window opens Sunday"}
                       </h2>
                       <p className="mt-2 text-sm leading-6 text-white/60">
                         {activity.activeGroupBuyCount
                           ? "Live activity based on confirmed paid reservations."
-                          : "Group buying runs every week, Sunday night to Thursday night, with delivery Friday and Saturday. Propose one now to be first in the next window."}
+                          : "The weekly window is currently closed. It runs Sunday 8pm to Thursday 10pm WAT, with delivery Friday and Saturday."}
                       </p>
                     </div>
                     <span className="shrink-0 whitespace-nowrap rounded-full bg-[#1f7a3f] px-3 py-1 text-xs font-black text-white">
